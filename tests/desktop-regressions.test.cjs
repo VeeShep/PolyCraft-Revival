@@ -160,6 +160,15 @@ test('returning to the app restores canvas input even when hover state is stale'
   assert.equal(input.isWindowFocused, false, 'Returning to a cheat field must not steal input focus');
 });
 
+test('returning with an already focused canvas reinstalls the actual root mouse-down listener', () => {
+  const window = {}, registrations = [];
+  const enter = runtime.method('setEventHandlersMouseEnter', { window });
+  const input = { isFocused: () => true, onMouseDown() {}, onMouseUp() {}, onMouseOver() {}, onWheel() {}, emptyEvent() {},
+    addInternalEventListener: (target, type, callback) => registrations.push({ target, type, callback }) };
+  enter.call(input);
+  assert.ok(registrations.some(listener => listener.target === window && listener.type === 'mousedown' && listener.callback === input.onMouseDown), 'Focus must not suppress restoration of a mouse-down handler removed by blur');
+});
+
 test('normal shop opens Craft Resource and preserves its conversion flow; premium tabs require cheat mode', () => {
   let enabled = false;
   function Shop() {}

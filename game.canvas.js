@@ -5375,7 +5375,7 @@
     this.isMouseLocked && (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement ? (this.ignoreNextMouseMoves = 2, this.requestBrowserLock()) : this.unlockMouse());
   };
   fa.prototype.setEventHandlersMouseEnter = function () {
-    this.isFocused() || this.addInternalEventListener(window, "mousedown", this.onMouseDown);
+    this.addInternalEventListener(window, "mousedown", this.onMouseDown);
     this.addInternalEventListener(window, "mouseup", this.onMouseUp);
     this.addInternalEventListener(window, "mousemove", this.onMouseOver);
     this.addInternalEventListener(window, "DOMMouseScroll", this.onWheel);

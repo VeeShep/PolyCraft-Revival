@@ -25,6 +25,7 @@
     finally { busy = false; }
   }
   async function checkpoint() {
+    if (controls.guestWorld) { status('The host saves this online island.'); return; }
     if (saving) return saving;
     saving = (async () => {
       status('Saving…');

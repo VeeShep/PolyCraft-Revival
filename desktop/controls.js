@@ -24,7 +24,7 @@
       app.updateGame = (...args) => { if (!this.paused || this.onlineWorld) update.apply(app, args); };
     }
     manager() { return this.app?.globals.gameManager; }
-    ready() { const game = this.manager(); return !!(game?.hasLoadedLevel && !game.getLoading() && game.getHero()); }
+    ready() { const game = this.manager(); return !this.guestWorld && !!(game?.hasLoadedLevel && !game.getLoading() && game.getHero()); }
     pause(value) {
       if (this.paused && !value && !this.onlineWorld && this.manager()?.gameClock) {
         this.manager().gameClock.prevEngineTime = this.app.globals.appCurrentTime;
@@ -220,6 +220,7 @@
       } finally { this.pause(wasPaused); }
     }
     writeCheckpoint() {
+      if (this.guestWorld) throw new Error('The host saves this online island.');
       const game = this.manager();
       game.saveLevel(true);
       const data = game.getPlayerData();

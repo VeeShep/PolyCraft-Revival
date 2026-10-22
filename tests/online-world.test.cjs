@@ -93,3 +93,28 @@ test('hosting cannot stack or start on a menu and failed native setup restores s
   assert.equal(game.updateSimulation, original);
   clock.pause(); assert.equal(clock.isStopped, true);
 });
+test('host streams an initial snapshot then bounded updates, waits for each transfer and stops on cancellation or host exit', async t => {
+  const { controls, transport } = setup(t);
+  const world = await startHostingWorld(controls, transport); t.after(() => world.close());
+  const sent = []; let captures = 0, release;
+  world.snapshot = async () => ({ tick: ++captures });
+  const connection = { peer: 'guest', state: 'connected', closed: false,
+    send(kind, state) { sent.push({ kind, ...state }); return sent.length === 1 ? new Promise(resolve => { release = resolve; }) : Promise.resolve(); },
+    fail(error) { throw error; }, close() { this.closed = true; }
+  };
+  transport.peers.set(connection.peer, connection);
+  assert.throws(() => world.streamTo({ ...connection }), /connected guest/);
+  const stop = world.streamTo(connection);
+  assert.throws(() => world.streamTo(connection), /connected guest/);
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert.deepEqual(sent, [{ kind: 'snapshot', tick: 1 }]); assert.equal(captures, 1);
+  release();
+  const deadline = Date.now() + 2000;
+  while (sent.length < 2 && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10));
+  assert.deepEqual(sent[1], { kind: 'update', tick: 2 });
+  stop(); const count = captures;
+  await new Promise(resolve => setTimeout(resolve, 150)); assert.equal(captures, count); assert.equal(world.streams.size, 0);
+  world.streamTo(connection); stop(); assert.equal(world.streams.size, 1, 'An old cancellation cannot remove a restarted stream');
+  await new Promise(resolve => setImmediate(resolve));
+  await world.close(); assert.equal(world.streams.size, 0);
+});

@@ -10,6 +10,7 @@
       this.game = controls.manager();
       if (this.game.getActiveGameState().name !== 'GamestatePlaying') throw new Error('Enter the island with Play before hosting.');
       this.captures = [];
+      this.streams = new Map();
       this.closed = false;
       const game = this.game, clock = game.gameClock, controller = game.getGameController();
       this.original = { pause: clock.pause, controllerUpdate: controller.update, simulation: game.updateSimulation };
@@ -67,9 +68,34 @@
       return JSON.parse(state);
     }
     snapshot() { return this.atBoundary(() => captureSnapshot(this.game)); }
+    streamTo(connection) {
+      if (this.closed || connection.closed || connection.state !== 'connected' || this.transport.peers.get(connection.peer) !== connection || this.streams.has(connection)) throw new Error('World streaming requires a connected guest of this host.');
+      const stream = { stopped: false, kind: 'snapshot' };
+      const stop = () => { if (stream.stopped) return; stream.stopped = true; clearTimeout(stream.timer); this.streams.delete(connection); };
+      stream.stop = stop;
+      this.streams.set(connection, stream);
+      const send = async () => {
+        if (stream.stopped || this.closed || connection.closed) { stop(); return; }
+        try {
+          const state = await this.snapshot();
+          if (stream.stopped || this.closed || connection.closed) { stop(); return; }
+          await connection.send(stream.kind, state);
+          stream.kind = 'update';
+        } catch (error) {
+          stop();
+          if (!this.closed && !connection.closed) connection.fail(error);
+          return;
+        }
+        // Wait for transfer completion before the next capture, so slow guests cannot accumulate world snapshots.
+        if (!stream.stopped) stream.timer = setTimeout(send, 100);
+      };
+      send();
+      return stop;
+    }
     async close() {
       if (this.closed) return;
       this.closed = true;
+      for (const stream of this.streams.values()) stream.stop();
       const game = this.game, clock = game.gameClock, controller = game.getGameController();
       clock.pause = this.original.pause;
       controller.update = this.original.controllerUpdate;

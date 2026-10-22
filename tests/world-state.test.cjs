@@ -64,3 +64,21 @@ test('entities without meshes or health and changing mesh visibility remain vali
   assert.equal(state.spaces[0].entities[1].mesh, null);
   assert.equal(state.spaces[0].entities[1].health, null);
 });
+test('snapshot owns bounded skin poses and the host torch transform without advancing simulation', () => {
+  const { game, mesh, transform } = fixture();
+  let updated = 0;
+  mesh.node.skinController = { output: new Float32Array(transform), update() { updated++; } };
+  game.gameLighting = { heroLightNode: { getLocalTransform: () => transform, disabled: false } };
+  const state = captureSnapshot(game);
+  assert.ok(updated > 0);
+  assert.deepEqual(state.spaces[0].entities[0].mesh.skin, Array.from(transform));
+  assert.deepEqual(state.torch, { transform: Array.from(transform), visible: true });
+  transform.fill(10); mesh.node.skinController.output.fill(5);
+  assert.equal(state.torch.transform[0], 1); assert.equal(state.spaces[0].entities[0].mesh.skin[0], 1);
+  for (const value of [[], [1], Array(3084).fill(1), Array(12).fill(Infinity)]) {
+    state.spaces[0].entities[0].mesh.skin = value;
+    assert.throws(() => validateSnapshot(state), /skin matrices/);
+  }
+  state.spaces[0].entities[0].mesh.skin = null; state.torch.visible = 'yes';
+  assert.throws(() => validateSnapshot(state), /hero light/);
+});
