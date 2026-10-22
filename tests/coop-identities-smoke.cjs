@@ -95,7 +95,7 @@ const assert = require('node:assert/strict');
           const heroes = Object.fromEntries(records.map(record => [record.id, { location: record.location, rotation: record.rotation }]));
           const rendered = records.every(record => !record.mesh || JSON.stringify(Array.from(window.guestWorld.scene.entities.get(record.id).node.getLocalTransform())) === JSON.stringify(record.mesh.transform));
           window.motionSamples.push({ tick: message.payload.tick, heroes, rendered });
-          if (window.motionSamples.length > 120) window.motionSamples.shift();
+          if (window.motionSamples.length > 2048) window.motionSamples.shift();
         }
       };
     }, motionStart);
@@ -156,8 +156,26 @@ const assert = require('node:assert/strict');
         assert.deepEqual(sample.heroes, history[sample.tick], 'Every hero position/rotation matches the authoritative host at tick ' + sample.tick);
         assert.equal(sample.rendered, true, 'Visible hero node transforms match their received poses');
       }
+      for (const name of Object.keys(motionStart.positions)) {
+        const first = matched[0].heroes[name].location;
+        const distance = Math.max(...matched.map(sample => Math.hypot(sample.heroes[name].location[0] - first[0], sample.heroes[name].location[2] - first[2])));
+        assert.ok(distance > 0.2, 'Guest ' + (index + 1) + ' must observe ' + name + ' actually moving');
+      }
     });
     console.log('Moving-player sync passed:', { distances: movement, samples: samples.map(received => received.filter(sample => history[sample.tick]).length) });
+    if (process.argv.includes('--movement-only')) {
+      await host.evaluate(() => window.hostWorld.close());
+      for (let index = 1; index <= 3; index++) {
+        await pages[index].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
+        assert.equal(await pages[index].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[index].state);
+        assert.deepEqual(fs.readFileSync(originals[index].file), originals[index].bytes);
+      }
+      assert.deepEqual(await host.evaluate(() => window.hostErrors), []);
+      assert.deepEqual(errors, []);
+      assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
+      console.log('PASS: four visible games; keyboard movement; every guest observes all four moving heroes with exact same-tick host poses; menu/focus stops; guest saves unchanged on host exit. Same-Mac acceptance only.');
+      return;
+    }
     const resource = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
       const game = window.hostWorld.game, hero = window.hostWorld.players.active.get(id).hero;
       const target = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECResourceDispenser')).find(entity => !entity.shouldBeDestroyed() && entity.getEC('ECInteractable')?.getActive() && entity.getEC('ECResourceDispenser').getResource() > 1 && entity.getEC('ECMesh'));

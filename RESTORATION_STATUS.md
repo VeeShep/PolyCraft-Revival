@@ -187,6 +187,12 @@ Use Electron's built-in WebRTC data channels. The host owns AI, combat, resource
 
 Join with a separate copy/paste invitation and reply for each guest. LAN must work without outside services. Internet may use STUN and optionally configured TURN credentials; no hosted relay is assumed. Show direct/relayed connection status and useful failure explanations. Connection information still needs exchange; see the [WebRTC connection model](https://webrtc.org/getting-started/peer-connections). Defer short room codes until a signaling service is available; keep invitation handling separate.
 
+### Dedicated moving-player synchronization check — 2026-10-22
+
+- `npm run test:coop-movement` runs the existing visible four-player fixture through keyboard movement and orderly host exit, without running construction/combat checks. The full co-op suite retains these strengthened movement assertions. Each guest must observe every hero actually moving, agree with authoritative positions/rotations at matching ticks, and render the received mesh poses. Retained samples cover the entire movement sequence instead of only its tail.
+- **Visible movement acceptance passed** on disposable `polycraft-coop-identities-yCOea1`: four heroes moved 2.10–5.21 world units; guests matched 95, 96 and 96 same-tick snapshots. Guest menu/native blur stops, movement while host input is paused, unchanged guest save bytes/bridge state on host exit, no renderer/host errors and no external HTTP(S) requests passed. All test-owned windows closed. The current working-tree unit suite reports **115 passing checks**.
+- This run used the current working source, which also contains unfinished guest construction UI changes. Those unrelated changes are excluded from the movement-test checkpoint. This is same-Mac movement evidence; construction UI, physical LAN, latency/smoothing and native cross-platform gameplay remain open. Personal islands and Beta 1 distributions were not used or modified.
+
 ## Milestone 3: later gameplay expansion — deferred
 
 Begin only after original gameplay and multiplayer pass acceptance. Inventory existing assets/mechanics first. Concept artwork is inspiration, not evidence of finished features. Keep balance/unlock values in a separate expansion plan.
