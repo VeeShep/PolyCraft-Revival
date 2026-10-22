@@ -2,6 +2,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('desktop', {
   reportError: (message, stack) => ipcRenderer.invoke('polycraft:reportError', message, stack),
+  reportGraphics: json => ipcRenderer.invoke('polycraft:reportGraphics', json),
   list: () => ipcRenderer.invoke('polycraft:list'),
   create: name => ipcRenderer.invoke('polycraft:create', name),
   load: id => ipcRenderer.invoke('polycraft:load', id),

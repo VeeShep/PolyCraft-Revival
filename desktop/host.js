@@ -302,6 +302,11 @@
         if ($('tips-dialog').open) controls.pause(true);
         wasReady = true;
         clearInterval(loading);
+        try {
+          const graphics = window.PolycraftGraphics.diagnostics(controls.manager());
+          console.info('PolyCraft graphics:', JSON.stringify(graphics));
+          window.desktop.reportGraphics(JSON.stringify(graphics)).catch(error => console.warn('Graphics diagnostic unavailable:', error.message));
+        } catch (error) { console.warn('Graphics diagnostic unavailable:', error.message); }
         status(slot.recovered ? 'Island loaded from its recovery backup.' : 'Island ready. Autosave is on.');
       }
     }, 250);

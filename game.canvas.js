@@ -5446,7 +5446,7 @@
   fa.prototype.addInternalEventListener = function (a, b, c) {
     var d = this.elementEventFlags[a];
     d || (this.elementEventFlags[a] = d = {});
-    d[b] || (d[b] = !0, (d = this.boundFunctions[c]) || (this.boundFunctions[c] = d = c.bind(this)), a.addEventListener(b, d, !1));
+    d[b] || (d[b] = !0, (d = this.boundFunctions[c]) || (this.boundFunctions[c] = d = c.bind(this)), a.addEventListener(b, d, { capture: !1, passive: !1 }));
   };
   fa.prototype.removeInternalEventListener = function (a, b, c) {
     var d = this.elementEventFlags[a];
@@ -8789,6 +8789,7 @@
       var q = c.createShader(n),
         l = l.code;
       a.fixIE && "0.93" > a.fixIE && (l = l.replace(/#.*\n/g, ""), l = l.replace(/TZ_LOWP/g, ""), -1 !== l.indexOf("texture2DProj") && (l = "vec4 texture2DProj(sampler2D s, vec3 uv){ return texture2D(s, uv.xy / uv.z);}\n" + l));
+      window.PolycraftGraphics && (l = window.PolycraftGraphics.prepareShader(c, l));
       c.shaderSource(q, l);
       c.compileShader(q);
       e[j] = q;

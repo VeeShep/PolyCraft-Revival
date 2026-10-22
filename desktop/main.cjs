@@ -50,6 +50,12 @@ app.whenReady().then(() => {
     if (typeof message !== 'string' || message.length > 8192 || typeof stack !== 'string' || stack.length > 8192) throw new Error('Invalid diagnostic message.');
     log('renderer-error', { message, stack });
   });
+  handle('reportGraphics', json => {
+    if (typeof json !== 'string' || json.length > 8192) throw new Error('Invalid graphics diagnostic.');
+    const details = JSON.parse(json);
+    if (!details || typeof details !== 'object' || Array.isArray(details)) throw new Error('Invalid graphics diagnostic.');
+    log('graphics-info', details);
+  });
   handle('list', () => saves.list());
   handle('create', name => saves.create(name));
   handle('load', id => saves.load(id));
