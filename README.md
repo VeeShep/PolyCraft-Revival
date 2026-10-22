@@ -50,7 +50,9 @@ Saves are stored outside the application folder. On Mac they are in `~/Library/A
 
 **Cheat history:** save selection shows **Clean**, **Cheats used** or **Unknown history**. Enabling Cheats permanently marks the island, even without using an action. Turning Cheats off does not clear that history. Older saves are Unknown unless saved cheat switches or the desktop hero-point edit marker prove use; resource amounts and hero levels are not evidence. This history is informational, not tamper-proof.
 
-The development version writes save format 2. On the first checkpoint of a Beta 1 save, it keeps the exact original file as `.json.pre-v2` and migrates both the current save and recovery file. Imported Beta 1 files also retain this untouched copy. Beta 1 cannot open migrated saves; keep that original backup if you need to return to Beta 1. The original file can be copied outside the managed folder to a `.json` filename for importing into Beta 1. Deleting an island deletes its managed backups too.
+Ordinary solo saves use format 2. On the first checkpoint of a Beta 1 save, the app keeps the exact original file as `.json.pre-v2` and migrates both the current save and recovery file. Imported Beta 1 files also retain this untouched copy. Beta 1 cannot open migrated saves; keep that original backup if you need to return to Beta 1. The original file can be copied outside the managed folder to a `.json` filename for importing into Beta 1. Deleting an island deletes its managed backups too.
+
+Co-op data is still a development feature without a launcher entry. When co-op records are first saved to an island, only that island moves to format 3 and retains its exact earlier checkpoint as `.json.pre-v3`. Older Beta 2 apps reject format 3, including recovery files. Rename, recovery and export/import preserve format 3. Export important islands before using newer builds; keep the untouched pre-conversion copy if you need to return to an older app.
 
 If a write fails, the app reports it. Keep the game open and retry after resolving the disk problem. Normal exit offers a choice if the latest progress cannot be saved. Force-quitting can lose progress since the last successful checkpoint. Export backups of islands you want to keep.
 
@@ -84,6 +86,7 @@ The first install needs internet access to download dependencies and Electron. I
 | `tests/` | Unit/regression checks and visible Electron acceptance scripts |
 | `scripts/` | Icon generation and the guarded, one-time readability transformation |
 | `reference/beta-1/` | Immutable original runtime/save-reader baseline and hashes; tracked, excluded from app packages |
+| `reference/beta-2-save-reader/` | Preserved format-2 reader and hash used to verify that older apps reject co-op saves; excluded from packages |
 | `package.json`, `package-lock.json` | Launch/build commands and pinned dependency graph; track both |
 | `RESTORATION_STATUS.md` | Authoritative roadmap, evidence and historical checkpoints |
 | `MULTIPLAYER_AUDIT.md`, `RUNTIME_READABILITY.md` | Networking audit and source-recovery details |
@@ -127,7 +130,7 @@ If macOS adds Finder metadata to bundles while building inside Documents or a sy
 npm run build:mac -- --config.directories.output=/private/tmp/polycraft-build
 ```
 
-Playable multiplayer remains in development; it is not available in the launcher yet. Transport, host simulation and guest world rendering/streaming are implemented for development checks; guest actions and co-op progression still need implementation. Details and remaining acceptance gates are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
+Playable multiplayer remains in development; it is not available in the launcher yet. Transport, host simulation, guest rendering/streaming and separate saved co-op player-data models are implemented for development checks. Binding those records to live heroes, guest actions and the full co-op progression loop remains unfinished. Details and remaining acceptance gates are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
 
 ### Builds on GitHub
 

@@ -43,6 +43,22 @@ Earlier repeat attempts timed out at Play; the test now moves across the canvas 
 
 Final verification for this checkpoint: 64 unit/regression checks pass; visible solo regression passed on `polycraft-game-M7IdEI`. Disconnect restoration now immediately restores original camera vectors/FOV and light transforms as well as scene roots/hooks, retaining an originally paused solo island. The final visible two-game repeat `polycraft-guest-world-KtaApU` passed after that correction. These are Apple Silicon Mac checks; native and real-network acceptance gates remain open.
 
+### Co-op data checkpoint — 2026-10-22
+
+`desktop/coop-data.js` provides strict, bounded host-island records with stable IDs for one host and three saved guests. `CoopData.createPlayerData()` reuses the existing player-data prototype, attaching separate XP, upgrades, statistics, play/share history to each record. Its resource/currency accessors share a new co-op pool; island quest flags and global settings retain their original shared backing. Solo progression/resources/premium ownership are not copied into the new co-op records. Inventory, health and position have validated record fields, but live ECS capture/restore and premium bridge scoping are still unfinished.
+
+Co-op-bearing slots alone enter outer save format 3; ordinary solo saves remain format 2. Exact pre-conversion bytes are retained in `.pre-v3`, with both backups kept on direct Beta 1 → format 3 conversion. The preserved actual Beta 2 reader in `reference/beta-2-save-reader/` rejects the newer primary/recovery files. Rename, recovery and export/import preserve the format and recorded history; future co-op schema versions block fallback/overwrite. Explicit co-op point-edit markers mark cheat history without guessing from wealth or level.
+
+73 unit/regression checks pass. Visible source `polycraft-coop-data-MMqGfO` and temporary packaged Apple Silicon `polycraft-coop-data-J7yvx7` checks instantiate actual engine models, verify independent co-op XP/upgrades and shared currency without changing solo data, checkpoint with exact pre-v3 bytes, reject the old reader and restore the records after a complete game reload. Package signature and 1,857 source/asset comparisons pass; tests/reference fixtures are not shipped. This is the data boundary, not independent hero control or playable co-op.
+
+Required engine work before enabling a shared session:
+
+- `ECPlayerData.init` and `ECHeroUpgrades.init` bind `gameManager.playerData`; create each hero with its own model synchronously and restore the global binding reliably. Keep the selected co-op host model as the shared world-economy path, preserving/reinstating the solo model on exit.
+- `ECPlayerData.adjustXP` calls `gameManager.refreshHeroEntity()` without an entity argument. Level-up refresh must replace the correct hero and keep its co-op identity/inventory/health, rather than refreshing the host for a guest reward.
+- `ECPlayerData.attachHandlers` registers every instance for global kill, gathering and currency events. Route statistics/rewards by actual actor, preventing multi-hero duplicate credit; shared quest rewards need an explicit authoritative path.
+- Respawn and inventory paths must use the assigned model and known local weapon definitions. Capture live health/location, held weapon/ammo and carried resources at a coherent simulation boundary; preserve the shared pool across reconnects, without importing a guest's solo inventory.
+- Bind invitation peers to saved hero IDs on the host. Guests must not select another hero identity or submit authoritative progress, inventory or world edits. Host-only cheats, replay-safe spending/build/demolition, hero-only fixed-session PvP, exit saving, guest HUD/input and presentation parity remain open.
+
 1. Introduce an explicit session boundary; solo remains the default. Keep WebRTC invitation exchange/transport separate from engine state and action validation. Validate protocol, session, peer and transfer limits before installing any state.
 2. Implement authoritative host snapshots and guest action routing with stable entity/player identities. Reconstruct real visible entities through audited engine hooks; do not claim success from data-channel connectivity alone.
 3. Split local input/menu blocking from simulation. Online host AI/world/network updates must continue under every menu and while taking coherent save snapshots. Preserve solo pauses and existing tests.

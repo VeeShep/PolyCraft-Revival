@@ -2,8 +2,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
+const { KEY: COOP_KEY, validateCoop } = require('./coop-data.js');
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
+const versionForState = state => Object.hasOwn(state.userData, COOP_KEY) ? 3 : 2;
 const MAX_BYTES = 32 * 1024 * 1024;
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 function checkJSON(value, depth = 0) {
@@ -25,6 +27,7 @@ function validateState(state) {
     if (!/^[\w-]{1,100}$/.test(key) || typeof value !== 'string') throw new Error('Invalid game data.');
     const data = JSON.parse(value);
     checkJSON(data);
+    if (key === COOP_KEY) validateCoop(data);
     if (['softCurrency', 'consumedSoftCurrency'].includes(key) && (!Number.isSafeInteger(data) || data < 0)) throw new Error('Invalid currency.');
     if (key === 'resource' && (!Array.isArray(data) || data.length !== 2 || data.some(n => !Number.isSafeInteger(n) || n < 0))) throw new Error('Invalid resources.');
     if (['heroUpgrades', 'progress', 'gameStats', 'settings', 'shareData', 'numberOfGamesPlayed', 'scriptFlags', 'taskFlags'].includes(key) && !plain(data)) throw new Error('Invalid player data: ' + key);
@@ -51,7 +54,7 @@ function validateState(state) {
   return state;
 }
 function validate(save) {
-  if (!plain(save) || save.format !== 'polycraft-offline' || ![1, SAVE_VERSION].includes(save.version)) {
+  if (!plain(save) || save.format !== 'polycraft-offline' || ![1, 2, SAVE_VERSION].includes(save.version)) {
     const error = new Error('Unsupported save format or version.');
     if (plain(save) && save.format === 'polycraft-offline' && Number.isInteger(save.version) && save.version > SAVE_VERSION) error.code = 'UNSUPPORTED_SAVE';
     throw error;
@@ -59,7 +62,10 @@ function validate(save) {
   validName(save.name);
   if (typeof save.updatedAt !== 'string' || !Number.isFinite(Date.parse(save.updatedAt))) throw new Error('Invalid save date.');
   validateState(save.state);
-  if (save.version === SAVE_VERSION && !Object.hasOwn(save.state.cheats, 'everEnabled')) throw new Error('Missing cheat history.');
+  if (save.version >= 2 && !Object.hasOwn(save.state.cheats, 'everEnabled')) throw new Error('Missing cheat history.');
+  if (save.version < 3 && Object.hasOwn(save.state.userData, COOP_KEY)) {
+    const error = new Error('Co-op islands require save format 3.'); error.code = 'UNSUPPORTED_SAVE'; throw error;
+  }
   if (save.version === 1) save.state.cheats.everEnabled = null;
   save.state = withHistory(save.state);
   return save;
@@ -72,7 +78,8 @@ function withHistory(state, previous) {
   validateState(state);
   const copy = structuredClone(state);
   const cheats = copy.cheats;
-  const editedPoints = Object.hasOwn(JSON.parse(copy.userData.progress || '{}'), 'desktopUpgradePoints');
+  const coop = copy.userData[COOP_KEY] ? JSON.parse(copy.userData[COOP_KEY]) : null;
+  const editedPoints = Object.hasOwn(JSON.parse(copy.userData.progress || '{}'), 'desktopUpgradePoints') || !!coop?.players.some(player => Object.hasOwn(player.progress, 'desktopUpgradePoints'));
   cheats.everEnabled = editedPoints || cheats.enabled || cheats.invincible || cheats.instantBuild || cheats.everEnabled === true || previous === true
     ? true : cheats.everEnabled === false && previous !== null ? false : null;
   return copy;
@@ -139,19 +146,21 @@ class Saves {
   save(id, state, name) {
     const file = this.file(id);
     const previous = this.load(id);
-    const next = { format: 'polycraft-offline', version: SAVE_VERSION, name: validName(name ?? previous.name), updatedAt: new Date().toISOString(), state: withHistory(state, previous.state.cheats.everEnabled) };
+    const next = { format: 'polycraft-offline', version: Math.max(previous.version, versionForState(state)), name: validName(name ?? previous.name), updatedAt: new Date().toISOString(), state: withHistory(state, previous.state.cheats.everEnabled) };
     const contents = JSON.stringify(next);
     if (Buffer.byteLength(contents) > MAX_BYTES) throw new Error('Save exceeds 32 MB.');
     if (previous.version === 1) this.atomic(file + '.pre-v2', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
+    if (previous.version < 3 && next.version === 3) this.atomic(file + '.pre-v3', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
     // Carry history into recovery so rolling back a checkpoint cannot erase known cheat use.
     const backupState = withHistory(previous.state, next.state.cheats.everEnabled);
-    this.atomic(file + '.bak', JSON.stringify({ format: previous.format, version: SAVE_VERSION, name: previous.name, updatedAt: previous.updatedAt, state: backupState }));
+    this.atomic(file + '.bak', JSON.stringify({ format: previous.format, version: next.version, name: previous.name, updatedAt: previous.updatedAt, state: backupState }));
     this.atomic(file, contents);
     return this.load(id);
   }
-  create(name, state = emptyState()) {
+  create(name, state = emptyState(), minimumVersion = 2) {
+    if (![2, 3].includes(minimumVersion)) throw new Error('Unsupported save format or version.');
     const id = randomUUID();
-    const save = { format: 'polycraft-offline', version: SAVE_VERSION, name: validName(name), updatedAt: new Date().toISOString(), state: withHistory(state) };
+    const save = { format: 'polycraft-offline', version: Math.max(minimumVersion, versionForState(state)), name: validName(name), updatedAt: new Date().toISOString(), state: withHistory(state) };
     const contents = JSON.stringify(save);
     if (Buffer.byteLength(contents) > MAX_BYTES) throw new Error('Save exceeds 32 MB.');
     this.atomic(this.file(id), contents);
@@ -160,11 +169,11 @@ class Saves {
   rename(id, name) { return this.save(id, this.load(id).state, name); }
   remove(id) {
     const file = this.file(id);
-    for (const suffix of ['', '.bak', '.pre-v2', '.tmp', '.bak.tmp', '.pre-v2.tmp']) if (this.io.existsSync(file + suffix)) this.io.unlinkSync(file + suffix);
+    for (const suffix of ['', '.bak', '.pre-v2', '.pre-v3', '.tmp', '.bak.tmp', '.pre-v2.tmp', '.pre-v3.tmp']) if (this.io.existsSync(file + suffix)) this.io.unlinkSync(file + suffix);
   }
   import(file) {
     const save = this.read(file);
-    const imported = this.create(save.name, save.state);
+    const imported = this.create(save.name, save.state, Math.max(2, save.version));
     if (save.version === 1) {
       try { this.atomic(this.file(imported.id) + '.pre-v2', this.io.readFileSync(file), true); }
       catch (error) { this.remove(imported.id); throw error; }
@@ -173,8 +182,8 @@ class Saves {
   }
   export(id, file) {
     if (path.resolve(file).startsWith(path.resolve(this.directory) + path.sep)) throw new Error('Choose a backup location outside the managed saves folder.');
-    const { format, name, updatedAt, state } = this.load(id);
-    const version = SAVE_VERSION;
+    const { format, name, updatedAt, state, version: previousVersion } = this.load(id);
+    const version = Math.max(2, previousVersion, versionForState(state));
     this.atomic(file, JSON.stringify({ format, version, name, updatedAt, state }, null, 2));
   }
 }
