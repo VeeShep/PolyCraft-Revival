@@ -2,7 +2,7 @@
 
 Prepared October 22, 2026 for the Beta 1 report of surface/decal/shadow Z-fighting, camera jitter and repeated passive-listener warnings. The tester reported an RTX 2080 Super, proprietary Nvidia driver, AppImage and kernel string `7.1.13+deb13-amd64`. Surface artifacts persist with shadows off. The exact driver version and graphics backend have not yet been established.
 
-This is a **retest candidate**, not a confirmed Linux graphics fix. It uses high-precision default shader floats when supported in both stages, explicitly permits the game's input listeners to cancel browser events, and records GPU/ANGLE, shader precision and actual default-framebuffer depth in local diagnostics. Original assets, camera clip distances, depth formats and shadow bias are unchanged. Playable multiplayer is still unavailable.
+**Retest result:** the user reports that Beta 2 fixes the Z-fighting on this tester's Linux/Nvidia machine. Camera jitter and complete Linux gameplay acceptance still need separate confirmation; the exact driver/backend diagnostics have not been supplied. The build uses high-precision default shader floats when supported in both stages, explicitly permits the game's input listeners to cancel browser events, and records GPU/ANGLE, shader precision and actual default-framebuffer depth in local diagnostics. Original assets, camera clip distances, depth formats and shadow bias are unchanged. Playable multiplayer is still unavailable.
 
 ## Run the candidate
 
@@ -27,6 +27,6 @@ nvidia-smi --query-gpu=driver_version --format=csv,noheader
 
 ## Verification scope
 
-Unit/regression checks and a visible Apple Silicon graphics test pass. The test checks 119 compiled shaders (including 17 shadow-related programs), actual wheel cancellation, hero movement, camera changes, shadows toggling and local diagnostic logging. That Mac reports 24 depth bits and 23-bit high/medium shader precision. These results do not establish the Nvidia/Linux visual result. Native Linux retesting remains open.
+Unit/regression checks and a visible Apple Silicon graphics test pass. The test checks 119 compiled shaders (including 17 shadow-related programs), actual wheel cancellation, hero movement, camera changes, shadows toggling and local diagnostic logging. That Mac reports 24 depth bits and 23-bit high/medium shader precision. The Linux Z-fighting result comes from the tester's report, independently of those Mac checks. Broader native Linux acceptance remains open.
 
 Original Beta 1 files and checksums are preserved. Candidate archives and their SHA256 manifest are local build output, excluded from Git; share them separately from source commits.

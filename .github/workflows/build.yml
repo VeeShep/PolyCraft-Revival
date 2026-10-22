@@ -1,0 +1,109 @@
+name: Desktop builds
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build.yml'
+      - 'desktop/**'
+      - 'game.canvas.js'
+      - 'staticmax/**'
+      - 'assets/**'
+      - 'img/**'
+      - '*.json'
+      - 'scripts/collect-build.cjs'
+      - 'tests/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-builds-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Unit and regression checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - run: npm test
+
+  package:
+    name: Package ${{ matrix.id }}
+    needs: checks
+    if: github.event_name != 'pull_request'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: mac-arm64
+            os: macos-15
+            platform: darwin
+            arch: arm64
+            arguments: --mac zip --arm64
+            app: dist/ci/mac-arm64/PolyCraft Offline.app
+          - id: mac-x64
+            os: macos-15-intel
+            platform: darwin
+            arch: x64
+            arguments: --mac zip --x64
+            app: dist/ci/mac/PolyCraft Offline.app
+          - id: win-x64
+            os: windows-2025
+            platform: win32
+            arch: x64
+            arguments: --win zip --x64
+          - id: linux-x64
+            os: ubuntu-24.04
+            platform: linux
+            arch: x64
+            arguments: --linux AppImage tar.gz --x64
+    defaults:
+      run:
+        shell: bash
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Confirm native runner architecture
+        env:
+          BUILD_PLATFORM: ${{ matrix.platform }}
+          BUILD_ARCH: ${{ matrix.arch }}
+        run: node -e "const assert = require('node:assert/strict'); assert.equal(process.platform, process.env.BUILD_PLATFORM); assert.equal(process.arch, process.env.BUILD_ARCH);"
+      - run: npm ci
+      - name: Build packages without publishing
+        run: npx --no-install electron-builder ${{ matrix.arguments }} --publish never --config.directories.output=dist/ci
+      - name: Verify Mac ad-hoc signature
+        if: runner.os == 'macOS'
+        run: codesign --verify --deep --strict "${{ matrix.app }}"
+      - name: Collect packages, instructions and checksums
+        run: node scripts/collect-build.cjs "${{ matrix.id }}" dist/ci "dist/artifacts/${{ matrix.id }}"
+      - name: Upload tester download
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: PolyCraft-${{ matrix.id }}-${{ github.run_number }}.${{ github.run_attempt }}
+          path: dist/artifacts/${{ matrix.id }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

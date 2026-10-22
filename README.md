@@ -58,7 +58,7 @@ If a write fails, the app reports it. Keep the game open and retry after resolvi
 
 Local diagnostic logs are in the save folder’s parent directory under `logs/game.log` (Mac: `~/Library/Application Support/PolyCraft Offline/logs/`; Linux normally `~/.config/PolyCraft Offline/logs/`, or under `XDG_CONFIG_HOME`). The previous log is retained as `game.log.previous`; each rotates at about 1 MB. Logs include starts/exits, save operations/failures, renderer errors and child-process crashes. The development version also records a `graphics-info` entry after the island loads: GPU/ANGLE renderer, shader precision, context settings, actual default-framebuffer depth and camera clip distances. Logs do not include whole save contents and are not uploaded. Native crash dumps, when available, stay in Electron’s local Crashpad directory. If the game closes unexpectedly, note what you were doing and the approximate time so the log can be matched to it. A forced termination may leave no final log entry.
 
-Linux Beta 1 testers have reported severe terrain/decal/shadow flickering and camera jitter on an Nvidia system, including with shadows disabled. A development candidate addresses passive input warnings and shader precision; the native visual result remains unverified. See [Linux graphics retest instructions](LINUX_GRAPHICS_RETEST.md).
+Linux Beta 1 testers reported severe terrain/decal/shadow flickering and camera jitter on an Nvidia system, including with shadows disabled. The tester now reports that **Beta 2 fixes the Z-fighting** on that machine following the shader precision change. Camera jitter and broader Linux gameplay acceptance still need separate confirmation. See [Linux graphics retest instructions](LINUX_GRAPHICS_RETEST.md).
 
 ## Development
 
@@ -128,6 +128,14 @@ npm run build:mac -- --config.directories.output=/private/tmp/polycraft-build
 ```
 
 Playable multiplayer remains in development; it is not available in the launcher yet. Transport and host simulation work are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
+
+### Builds on GitHub
+
+The [Desktop builds workflow](.github/workflows/build.yml) runs unit/regression checks, then builds packages on native Apple Silicon Mac, Intel Mac, Windows x64 and Linux x64 runners. Relevant source, asset, dependency, test or workflow changes pushed to `main` trigger a build. Pull requests run checks only. To request packages manually, open [Actions → Desktop builds](https://github.com/VeeShep/PolyCraft-Revival/actions/workflows/build.yml), choose **Run workflow**, and select the branch.
+
+Open a successful run and download your platform under **Artifacts**. Each bundle includes application archives, `START HERE.txt`, `BUILD_INFO.json` with its source commit/run, and `SHA256SUMS.txt`. Unzip the downloaded GitHub artifact first, then follow the included package instructions. Artifact names include the platform and build run/attempt, so development builds with the same app version remain distinguishable. They are retained for **seven days**; download and keep any build you want to preserve. GitHub requires sign-in to [download workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts); you can forward the downloaded package to testers.
+
+CI runs no game windows or hidden gameplay tests. A successful native package job proves a build, not playtester acceptance. Mac packages remain ad-hoc signed and unnotarized; Windows packages remain unsigned. The workflow uses read-only repository contents permission, does not automatically publish GitHub Releases, and never changes `dist/beta-1` or player saves.
 
 ### GitHub backup and continuation
 
