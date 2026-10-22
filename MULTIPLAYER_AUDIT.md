@@ -29,6 +29,14 @@ The visible host acceptance repeat captured a real 2,208-block / 352-entity isla
 
 ## Next implementation slice
 
+### Guest target actions and combat policy — 2026-10-22
+
+`desktop/coop-actions.js` adds bounded, sequenced, per-connection target actions with a four-entry queue and ten-action burst/refill. At tick start the host resolves its assigned live hero and the actual target. Resource callbacks require a live active dispenser, remaining resources, physical reach and an unobstructed path. Weapon requests require an eligible live target, session damage permission, range, ammo and readiness; original firearm code produces damage. Guest picking projects installed interactive geometry; pointer-down sends the action while preventing frozen-solo input. Results use the existing plain-text status area. Invitations now require `polycraft-1.0.0.25-coop-4`; saves are unchanged.
+
+`CoopPlayers.canDamage` enforces fixed-session PvP in original health, damage/force/stun and projectile collision paths: allied hero-versus-hero damage is optional; workers/buildings stay protected. Solo/enemy behavior remains original. Hero removal/replacement destroys its owned projectiles and cancels queued damage referencing that hero before destroying its components. Shared spending, construction/demolition, totems, normal weapon acquisition, charged/continuous attacks and automatic approach remain unfinished; current resource clicks require manually walking into reach.
+
+All 95 unit checks pass. Visible `polycraft-coop-identities-4u0eQL` passed four-player keyboard synchronization, real pointer gathering with original callback/resource accounting, PvP-off attack refusal, identity isolation, reconnect and guest save preservation. A second two-player session passed a real PvP pistol hit and replicated health. Fixtures position the temporary hero near the resource and equip the original test pistol. This establishes those action paths on one Mac, not normal progression, broader combat/area effects, complete visual parity, cross-platform or real-network acceptance. See RESTORATION_STATUS.md for incomplete attempts and remaining gates.
+
 ### Guest presentation checkpoint — 2026-10-22
 
 `desktop/guest-world.js` now reconstructs host terrain and entity geometry using the existing scene loader, without activating gameplay components. Installed asset names and snapshot schema are validated before reconstruction; incomplete asset loads are rejected. Stable entities reuse nodes across updates; mesh changes, deletion, visibility and terrain replacement are reconciled, with staged nodes cleaned up on load failure. Snapshot version 2 adds bounded skin matrices and the selected hero's torch transform/visibility; the invitation runtime tag is now `polycraft-1.0.0.25-coop-2`, so older development peers are rejected. Save formats remain unchanged.

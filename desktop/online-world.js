@@ -4,6 +4,7 @@
   const { captureSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { CoopPlayers } = typeof module !== 'undefined' ? require('./coop-players.js') : root.PolycraftCoopPlayers;
   const { HostMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
+  const { HostActions } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -37,7 +38,11 @@
       for (const binding of this.peerPlayers.values()) {
         const entry = this.players?.active.get(binding.id);
         if (!entry || !binding.ready) continue;
-        if (!this.closing && !binding.releasing && !binding.connection.closed && binding.connection.state === 'connected') binding.input.apply(entry.hero);
+        if (!this.closing && !binding.releasing && !binding.connection.closed && binding.connection.state === 'connected') {
+          binding.input.apply(entry.hero);
+          const result = binding.actions.apply(this.game, entry.hero, this.players);
+          if (result) binding.connection.send('result', result).catch(error => { if (!binding.connection.closed) binding.connection.fail(error); });
+        }
         else binding.input.stop(entry.hero);
       }
     }
@@ -100,7 +105,12 @@
       };
       this.transport.onMessage = (message, connection) => {
         this.playerFor(connection);
-        if (message.kind === 'action') { this.peerPlayers.get(connection.peer).input.receive(message.payload); return; }
+        if (message.kind === 'action') {
+          const binding = this.peerPlayers.get(connection.peer);
+          if (message.payload.type === 'target') binding.actions.receive(message.payload);
+          else binding.input.receive(message.payload);
+          return;
+        }
         if (message.kind !== 'hello' || Object.keys(message.payload).length !== 1 || message.payload.version !== 1) throw new Error('Invalid guest message. Guests cannot select heroes or edit saved state.');
         this.original.peerMessage?.(message, connection);
       };
@@ -109,7 +119,7 @@
     async createPlayerInvitation(id) {
       if (!this.players || this.closed || this.closing || id === this.players.registry.data.host || this.guestSlots.has(id) || (this.players.active.has(id) && !this.detachedPlayers.has(id))) throw new Error('Choose an available saved guest hero before creating an invitation.');
       this.players.registry.player(id);
-      const binding = { id, input: new HostMovement() };
+      const binding = { id, input: new HostMovement(), actions: new HostActions() };
       this.guestSlots.set(id, binding);
       try {
         await root.polycraft.checkpoint();

@@ -2,6 +2,7 @@
 (function (root) {
   const { validateSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
+  const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
 
   // Guests create presentation nodes only: activating ECS archetypes would run host-owned AI and rewards.
   class GuestScene {
@@ -108,6 +109,7 @@
     constructor(controls, connection) {
       if (!controls.ready() || controls.onlineWorld || controls.guestWorld || connection.role !== 'guest' || connection.closed) throw new Error('Joining needs a loaded renderer and an available guest connection.');
       this.controls = controls; this.connection = connection;
+      this.targetSequence = 0;
       this.game = controls.manager();
       const game = this.game, app = controls.app, globals = app.globals;
       const math = globals.mathDevice, camera = game.getGameCamera(), location = game.getHero().getv3Location();
@@ -146,6 +148,13 @@
           if (this.identity) this.identity.entity = message.payload.hero;
         }
         else if (message.kind === 'end') this.close();
+        else if (message.kind === 'result') {
+          const value = message.payload;
+          if (!value || Object.keys(value).length !== 3 || value.type !== 'target' || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          this.lastTargetResult = { ...value };
+          const status = root.document?.getElementById?.('status');
+          if (status) status.textContent = value.message;
+        }
         this.original.onMessage?.(message, link);
       };
       connection.onState = (state, details) => {
@@ -153,6 +162,11 @@
         this.original.onState?.(state, details);
       };
       this.movement = new GuestMovement(this);
+    }
+    clickTarget(event) {
+      const target = pickTarget(this, event);
+      if (!target) return;
+      this.connection.send('action', { type: 'target', sequence: ++this.targetSequence, target }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
     }
     update() {
       const game = this.game, globals = this.controls.app.globals;

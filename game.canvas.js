@@ -49803,7 +49803,7 @@
       }
     },
     takesFullDamageFromFriendlyFire: function () {
-      return this.archetype.takesFullDamageFromFriendlyFire;
+      return this.gameManager.desktopPlayers && this.gameManager.desktopPlayers.allowsHeroPvp(this.entity) || this.archetype.takesFullDamageFromFriendlyFire;
     },
     getDeathBehavior: function () {
       return this.archetype.deathBehavior;
@@ -50028,6 +50028,7 @@
       this.vulnerableTime = Math.max(this.vulnerableTime, a);
     },
     takeDamage: function (a, b, c, d, f) {
+      if (a > 0 && this.gameManager.desktopPlayers && !this.gameManager.desktopPlayers.canDamage(this.entity, c)) return;
       var e = this.entity,
         h = e.getEC("ECPlayerLife"),
         i = e.getEC("ECAgent"),
@@ -54203,7 +54204,10 @@
         l = this.getv3Location();
         h = h.v3Next = b.v3AddScalarMul(l, j, k, h.v3Next);
         if ((c = c.getCollisionInfo(l, h, !0)) && c.collidedEntity !== e) {
-          if (d && c.collidedEntity && e && e.isFriendlyWith(c.collidedEntity) && (d = c.collidedEntity.getEC("ECHealth"), !d || !d.takesFullDamageFromFriendlyFire())) f = !0;
+          if (d && c.collidedEntity && e && e.isFriendlyWith(c.collidedEntity)) {
+            d = c.collidedEntity.getEC("ECHealth");
+            f = this.gameManager.desktopPlayers ? !this.gameManager.desktopPlayers.canDamage(c.collidedEntity, e) : !d || !d.takesFullDamageFromFriendlyFire();
+          }
           !f && 1 < this.maxImpacts && c.collidedEntity && 0 <= this.impactedEntities.indexOf(c.collidedEntity) && (f = !0);
           f || (this.onImpact(c.collidedEntity, c.v3Location), this.entity.toBeDestroyed && (h = c.v3Location));
         }
@@ -65458,6 +65462,7 @@
     buildingDamage: void 0,
     isExplosion: !1,
     applyToEntity: function (a, b, c, d, f, e, h) {
+      if (this.damage >= 0 && this.gameManager.desktopPlayers && !this.gameManager.desktopPlayers.canDamage(a, b)) return;
       var i = this.globals,
         j = i.mathDevice,
         k;

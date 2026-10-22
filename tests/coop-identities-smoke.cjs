@@ -158,6 +158,43 @@ const assert = require('node:assert/strict');
       }
     });
     console.log('Moving-player sync passed:', { distances: movement, samples: samples.map(received => received.filter(sample => history[sample.tick]).length) });
+    const resource = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
+      const game = window.hostWorld.game, hero = window.hostWorld.players.active.get(id).hero;
+      const target = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECResourceDispenser')).find(entity => !entity.shouldBeDestroyed() && entity.getEC('ECInteractable')?.getActive() && entity.getEC('ECResourceDispenser').getResource() > 1 && entity.getEC('ECMesh'));
+      if (!target) throw new Error('The temporary island needs a live resource for click acceptance.');
+      const point = Array.from(target.getv3Location()); point[0] += 1;
+      hero.teleport(point);
+      window.gatherEvents = [];
+      game.eventManager.subscribe('InteractWithResourceDispenser', event => { if (event.interactor === hero && event.resourceDispenser === target) window.gatherEvents.push(event.amount); });
+      return { id: target.getName(), remaining: target.getEC('ECResourceDispenser').getResource() };
+    }), ids[0]);
+    const guest = pages[1];
+    await applications[1].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
+    await guest.locator('#turbulenz_game_engine_canvas').focus();
+    await guest.waitForFunction(() => window.guestWorld.movement.nativeFocused);
+    await guest.waitForTimeout(1000);
+    const click = await guest.evaluate(id => {
+      const world = window.guestWorld, globals = world.controls.app.globals;
+      const record = world.scene.entities.get(id).record, point = globals.camera.worldToScreen(record.location);
+      const canvas = document.getElementById('turbulenz_game_engine_canvas'), bounds = canvas.getBoundingClientRect();
+      const event = { clientX: bounds.left + point[0] * bounds.width / globals.graphicsDevice.width, clientY: bounds.top + point[1] * bounds.height / globals.graphicsDevice.height };
+      if (window.PolycraftCoopActions.pickTarget(world, event) !== id) throw new Error('Resource click must select the actual visible target.');
+      return event;
+    }, resource.id);
+    await guest.mouse.click(click.clientX, click.clientY);
+    await guest.waitForFunction(() => window.guestWorld.lastTargetResult);
+    assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Resources gathered.');
+    const gathered = await host.evaluate(id => ({ remaining: window.hostWorld.game.getGameEntityByName(id).getEC('ECResourceDispenser').getResource(), events: window.gatherEvents }), resource.id);
+    assert.equal(gathered.events.length, 1); assert.ok(gathered.events[0] > 0);
+    assert.equal(gathered.remaining, resource.remaining - gathered.events[0]);
+    const protectedHero = await host.evaluate(() => {
+      const players = window.hostWorld.players, hostHero = players.active.get(players.registry.data.host).hero;
+      return hostHero.getName();
+    });
+    await guest.evaluate(target => window.connection.send('action', { type: 'target', sequence: ++window.guestWorld.targetSequence, target }), protectedHero);
+    await guest.waitForFunction(() => window.guestWorld.lastTargetResult.sequence === 2);
+    assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Friendly targets are protected.');
+    console.log('Guest pointer gathered one original resource through the host; PvP-off rejects an allied hero attack.');
     await host.evaluate(async id => window.hostWorld.atBoundary(() => {
       const entry = window.hostWorld.players.active.get(id); entry.hero.getEC('ECPlayerData').adjustXP(33);
     }), ids[0]);
@@ -179,11 +216,36 @@ const assert = require('node:assert/strict');
       assert.equal(await pages[index].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[index].state);
       assert.deepEqual(fs.readFileSync(originals[index].file), originals[index].bytes);
     }
+    await host.evaluate(async () => {
+      window.hostSession = new window.PolycraftMultiplayer.HostSession({ pvp: true, onError: (peer, error) => window.hostErrors.push(error.message) });
+      window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
+      await window.hostWorld.enablePlayers(window.polycraft.bridge);
+    });
+    await join(1);
+    const combat = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
+      const world = window.hostWorld, game = world.game, target = game.getHero(), attacker = world.players.active.get(id).hero;
+      const position = Array.from(target.getv3Location());
+      const destinations = [[3, 0], [-3, 0], [0, 3], [0, -3]].map(([x, z]) => [position[0] + x, position[1], position[2] + z]);
+      const free = destinations.find(point => { const hit = game.getCollisionInfo(position, point, false, target); return !hit; });
+      if (!free) throw new Error('Need a clear projectile path in this disposable island.');
+      attacker.teleport(free); attacker.getEC('ECInventory').equipWeapon('wp_h_pistol');
+      return { target: target.getName(), health: target.getEC('ECHealth').getHealth() };
+    }), ids[0]);
+    await pages[1].evaluate(target => window.connection.send('action', { type: 'target', sequence: ++window.guestWorld.targetSequence, target }), combat.target);
+    await pages[1].waitForFunction(() => window.guestWorld.lastTargetResult);
+    assert.equal(await pages[1].evaluate(() => window.guestWorld.lastTargetResult.message), 'Attack issued.');
+    await host.waitForFunction(health => window.hostWorld.game.getHero().getEC('ECHealth').getHealth() < health, combat.health, { timeout: 10000 });
+    await pages[1].waitForFunction(({ target, health }) => window.guestWorld.scene.entities.get(target).record.health.current < health, combat);
+    console.log('PvP-on guest pistol hit damages the live host hero and replicates the reduced health.');
+    await host.evaluate(() => window.hostWorld.close());
+    await pages[1].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
+    assert.equal(await pages[1].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[1].state);
+    assert.deepEqual(fs.readFileSync(originals[1].file), originals[1].bytes);
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     const rejected = await host.evaluate(() => window.hostErrors);
     assert.equal(rejected.length, 1); assert.match(rejected[0], /Guests cannot select heroes/);
-    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; forged hero claim isolates its sender; reconnect restores saved XP; host exit restores unchanged guest islands.');
-    console.log('Same-Mac keyboard/network/rendering only. Full HUD/actions, PvP and real-network/platform acceptance remain open.');
+    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; original resource gathering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
+    console.log('Same-Mac acceptance only. Full HUD/actions, broader combat/PvP and real-network/platform acceptance remain open.');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
     for (let index = 0; index < pages.length; index++) try {

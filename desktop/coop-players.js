@@ -31,6 +31,16 @@
         if (name !== null && (!name.startsWith('wp_h_') || !this.weaponDefinition(name))) throw new Error('Unknown saved hero weapon: ' + name);
       }
     }
+    allowsHeroPvp(entity) {
+      return this.game.globals.desktopWorld?.transport.pvp === true && [...this.active.values()].some(entry => entry.hero === entity);
+    }
+    canDamage(victim, aggressor) {
+      if (!victim || victim.shouldBeDestroyed() || aggressor?.shouldBeDestroyed()) return false;
+      if (!aggressor || victim === aggressor) return true;
+      const host = this.active.get(this.registry.data.host)?.hero;
+      if (!host || !victim.isFriendlyWith(aggressor) || !aggressor.isFriendlyWith(host)) return true;
+      return this.allowsHeroPvp(victim) && this.allowsHeroPvp(aggressor);
+    }
     requireIdle(hero) {
       const builder = hero.getEC('ECPlayerBuilder');
       if (builder.isBuilding() || builder.isThrowing() || this.game.globals.gamePurchaseManager.consumeBuildingInProgress) throw new Error('Finish placing the held building and wait for shop requests before switching heroes or ending co-op.');
@@ -81,6 +91,12 @@
       finally { game.playerData = previous; game.randomPlayerIndex = index; }
     }
     destroy(hero) {
+      // Projectiles must not retain an owner whose components are about to be destroyed.
+      for (const space of this.game.getGameSpaceList()) for (const projectile of space.getEntitiesWithEC('ECProjectile')) if (projectile.getEC('ECProjectile').getOwner() === hero) projectile.setToBeDestroyed();
+      for (const queue of [this.game.actionManager.actionList, this.game.actionManager.otherActionList]) for (let index = queue.length - 1; index >= 0; index--) {
+        const action = queue[index];
+        if (action.actionName === 'ApplyDamageToEntity' && (action.actionArguments.aggressor === hero || action.actionArguments.victim === hero)) queue.splice(index, 1);
+      }
       hero.setToBeDestroyed();
       for (const space of this.game.getGameSpaceList()) space.destroyDeadEntities();
     }

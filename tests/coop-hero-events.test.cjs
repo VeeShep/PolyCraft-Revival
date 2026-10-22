@@ -2,6 +2,32 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const runtime = require('./runtime-ast.cjs');
+test('original ally-skipping projectile collision honors hero PvP and still passes protected friends, with solo behavior retained', () => {
+  const update = runtime.component('ECProjectile').update;
+  for (const [cooperative, permitted] of [[true, false], [true, true], [false, false], [false, true]]) {
+    let impacts = 0;
+    const victim = { getEC: () => ({ takesFullDamageFromFriendlyFire: () => permitted }) }, owner = { isFriendlyWith: () => true };
+    const game = { getCollisionInfo: () => ({ collidedEntity: victim, v3Location: [0, 0, 1] }) };
+    if (cooperative) game.desktopPlayers = { canDamage: (target, source) => { assert.equal(target, victim); assert.equal(source, owner); return permitted; } };
+    const projectile = { globals: { gameCurrentTime: 0, mathDevice: { v3AddScalarMul: () => [0, 0, 1], v3DistanceSq: () => 0 } },
+      gameManager: game, ignoresAllies: true, maxImpacts: 1, scratchpad: {}, fireTime: 0,
+      getOwner: () => owner, isManagedByThisMachine: () => true, getTimeSinceLastUpdate: () => 1 / 60, _super() {},
+      getv3Location: () => [0, 0, 0], applyRotation() {}, onImpact: () => { impacts++; }, getEntityEC: () => null,
+      entity: { setv3Location() {}, getAge: () => 0 } };
+    update.call(projectile); assert.equal(impacts, Number(permitted));
+  }
+});
+test('combat protection rejects health damage and area-hit side effects before original callbacks execute', () => {
+  const hero = {}, victim = {};
+  const manager = { desktopPlayers: { canDamage: (target, source) => { assert.equal(target, victim); assert.equal(source, hero); return false; } } };
+  const health = runtime.component('ECHealth');
+  assert.doesNotThrow(() => health.takeDamage.call({ entity: victim, gameManager: manager }, 5, false, hero, true, true));
+  assert.doesNotThrow(() => runtime.method('applyToEntity').call({ damage: 5, gameManager: manager }, victim, hero));
+  const context = { entity: victim, gameManager: { desktopPlayers: { allowsHeroPvp: () => true } }, archetype: { takesFullDamageFromFriendlyFire: false } };
+  assert.equal(health.takesFullDamageFromFriendlyFire.call(context), true);
+  delete context.gameManager.desktopPlayers;
+  assert.equal(health.takesFullDamageFromFriendlyFire.call(context), false);
+});
 test('original hero creation supplies a numeric rotation before the first simulation tick', () => {
   let rotation;
   const hero = { getEC: name => name === 'ECHero' ? { setHeroColour() {}, setHeroNumber() {} } : { setFaction() {} } };

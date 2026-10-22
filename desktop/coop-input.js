@@ -68,6 +68,7 @@
       for (const event of ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel', 'contextmenu']) listen(event, value => {
         if (value.target !== this.canvas) return;
         value.preventDefault(); value.stopImmediatePropagation(); this.canvas.focus();
+        if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown') && value.button === 0 && this.available()) this.world.clickTarget(value);
       });
       this.timer = setInterval(() => this.flush(), 50);
     }

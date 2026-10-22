@@ -40,7 +40,7 @@ test('per-peer movement rate is bounded and refills with monotonic elapsed time'
   input.receive({ type: 'move', sequence: 31, move: [0, 0] }); assert.equal(input.sequence, 31);
 });
 test('guest camera-relative keys normalize diagonals, cancel opposing aliases and send neutral on menus/focus loss', async t => {
-  const names = ['document', 'addEventListener', 'removeEventListener', 'desktop'];
+  const names = ['document', 'addEventListener', 'removeEventListener', 'desktop', 'PointerEvent'];
   const previous = Object.fromEntries(names.map(name => [name, global[name]]));
   t.after(() => { for (const name of names) if (previous[name] === undefined) delete global[name]; else global[name] = previous[name]; });
   const listeners = new Map(), sent = [], canvas = { focus() { global.document.activeElement = canvas; } };
@@ -49,11 +49,16 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   global.addEventListener = (name, handler, options) => { assert.deepEqual(options, { capture: true, passive: false }); listeners.set(name, handler); };
   global.removeEventListener = name => listeners.delete(name);
   const controls = { paused: false, app: { globals: { camera: { matrix: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0] } } } };
-  const world = { controls, identity: {}, scene: { snapshot: {} }, connection: { state: 'connected', send: async (kind, value) => { sent.push({ kind, value }); }, fail: error => { throw error; } } };
+  let clicks = 0;
+  global.PointerEvent = function () {};
+  const world = { controls, identity: {}, scene: { snapshot: {} }, clickTarget: () => { clicks++; }, connection: { state: 'connected', send: async (kind, value) => { sent.push({ kind, value }); }, fail: error => { throw error; } } };
   let nativeFocus, removed = false;
   global.desktop = { windowFocused: async () => true, onWindowFocusChanged: callback => { nativeFocus = callback; return () => { removed = true; }; } };
   const input = new GuestMovement(world); t.after(() => input.close());
   await Promise.resolve();
+  const click = { target: canvas, button: 0, preventDefault() {}, stopImmediatePropagation() {} };
+  listeners.get('pointerdown')(click); listeners.get('mousedown')(click);
+  assert.equal(clicks, 1, 'Use pointer-down without duplicating its compatibility mouse event');
   input.keys.add('KeyW'); assert.deepEqual(input.direction(), [0, -1]);
   input.keys.add('ArrowUp'); input.keys.add('KeyS'); assert.deepEqual(input.direction(), [0, 0]);
   input.keys.delete('KeyS'); input.keys.add('KeyD'); assert.ok(Math.abs(Math.hypot(...input.direction()) - 1) < 1e-12);
