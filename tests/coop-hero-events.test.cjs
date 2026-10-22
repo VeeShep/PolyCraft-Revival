@@ -2,6 +2,15 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const runtime = require('./runtime-ast.cjs');
+test('interface tween hook advances only the original drawing clock, preserving solo draw order', () => {
+  const calls = [], L = { drawUpdate: (...args) => calls.push(args) };
+  runtime.method('updateInterfaceTweens', { L }).call({ globals: { gameCurrentTime: 2, appCurrentTime: 3 } });
+  assert.deepEqual(calls, [[2000, 3000]]);
+  const order = [], game = { globals: { simpleFontRenderer: { render: () => order.push('font') } }, imgui: { draw2D: () => order.push('imgui') },
+    activeGameState: { draw2D: () => order.push('state') }, updateInterfaceTweens: () => order.push('tweens'), getGuiManager: () => ({ completeDraw: () => order.push('gui') }), gameController: { draw2D: () => order.push('controller') } };
+  runtime.prototypeWith('updateInterfaceTweens').draw2D.call(game);
+  assert.deepEqual(order, ['imgui', 'state', 'tweens', 'gui', 'controller', 'font']);
+});
 test('original ally-skipping projectile collision honors hero PvP and still passes protected friends, with solo behavior retained', () => {
   const update = runtime.component('ECProjectile').update;
   for (const [cooperative, permitted] of [[true, false], [true, true], [false, false], [false, true]]) {

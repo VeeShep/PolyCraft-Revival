@@ -29,6 +29,16 @@ The visible host acceptance repeat captured a real 2,208-block / 352-entity isla
 
 ## Next implementation slice
 
+### Original-style guest demolition — 2026-10-22
+
+Guest selection receives only host-authored building metadata. The original radial Demolish button and shared `Controls.drawDemolitionPrompt` draw through a presentation-only GUI controller, with drawing tweens advanced separately from simulation. Local menus block guest movement without pausing the host, support Escape/cancel and disappear on focus loss or target removal. Disconnect restores the original solo GUI controller.
+
+Host target actions include sequenced `demolish` with no client-supplied ownership, costs or refund. Existing `demolitionInfo`/`demolishBuilding` recheck map/HQ/anchor/shrine/scaffold/stack/faction protection and apply original capacity cleanup. A fresh serialized checkpoint must reach disk before success; older in-flight checkpoints cannot provide that acknowledgement. Host exit waits for accepted action saves and a fresh final snapshot before hero restoration. Cancelled snapshot captures are discarded without masking genuine failures. Invitations require `polycraft-1.0.0.25-coop-5`, saves unchanged.
+
+101 unit checks pass. Visible `polycraft-coop-identities-jzlTKj` includes actual original-style guest cancel/confirm, visible frame/text/buttons, capacity reduction, continuing host ticks, overlapping-checkpoint ordering and saved removal, alongside existing movement/gathering/PvP/reconnect/solo-isolation checks. Final-source repeat `polycraft-coop-identities-ypMHat` passed these checks with the completed exit action-save wait and fresh final checkpoint. Solo original-menu demolition and reload also passed on `polycraft-demolition-W1tEbk`; normal-play/autosave/reload passed on `polycraft-game-jmdlSK`. Incomplete repeats and their corrections are recorded in RESTORATION_STATUS.md. Targeted checks distinguish cancelled from genuine capture errors. Native OS and real-network gates remain open.
+
+Construction remains next: `ECDispenser` caches validity and pays through the actor model; `ECPlayerBuilder` validates real build zones/footprints, holds purchased items and creates scaffolds after a throw tween. Recompute validity/cost/caps on the host and reserve in-flight capacity across heroes; retain original placement and resource rules, and persist/cancel held construction safely. Do not expose guest arbitrary-archetype spawning or assume cached radial-menu validity is authoritative.
+
 ### Guest target actions and combat policy — 2026-10-22
 
 `desktop/coop-actions.js` adds bounded, sequenced, per-connection target actions with a four-entry queue and ten-action burst/refill. At tick start the host resolves its assigned live hero and the actual target. Resource callbacks require a live active dispenser, remaining resources, physical reach and an unobstructed path. Weapon requests require an eligible live target, session damage permission, range, ammo and readiness; original firearm code produces damage. Guest picking projects installed interactive geometry; pointer-down sends the action while preventing frozen-solo input. Results use the existing plain-text status area. Invitations now require `polycraft-1.0.0.25-coop-4`; saves are unchanged.
@@ -93,7 +103,7 @@ Native window focus is delivered through the existing guarded Electron IPC bound
 
 87 unit/regression checks pass. Visible `polycraft-coop-identities-wFqE2f` passed four real keyboard-controlled games, including guest WASD/arrows, guest-menu stops, native BrowserWindow blur, movement while the host's local pause was open, 95–96 same-tick position/rotation/mesh-pose samples per guest, forged-identity isolation, saved-XP reconnect and unchanged guest saves on host exit. Physical operator Alt-Tab, cross-platform keyboards and real-network latency remain unverified. Current guest arrows move the hero; original solo arrow-camera behavior remains, and complete guest camera controls are pending.
 
-**Next:** validated guest pointer/interact/combat/build actions and an original-style HUD, then complete held construction/death/exit and presentation parity before exposing Host/Join. Keep native OS and real-network acceptance open.
+**Next:** finish guest construction/spending, totem and combat/progression interactions and the original-style full HUD/camera controls. Resource clicks, basic attacks and original-style demolition are implemented above. Complete held construction/death/exit and presentation parity before exposing Host/Join. Keep native OS and real-network acceptance open.
 
 1. Introduce an explicit session boundary; solo remains the default. Keep WebRTC invitation exchange/transport separate from engine state and action validation. Validate protocol, session, peer and transfer limits before installing any state.
 2. Implement authoritative host snapshots and guest action routing with stable entity/player identities. Reconstruct real visible entities through audited engine hooks; do not claim success from data-channel connectivity alone.

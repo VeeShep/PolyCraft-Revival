@@ -17,6 +17,7 @@
       this.guestSlots = new Map();
       this.peerPlayers = new Map();
       this.detachedPlayers = new Set();
+      this.actionSaves = new Set();
       this.closed = false;
       const game = this.game, clock = game.gameClock, controller = game.getGameController();
       this.original = { pause: clock.pause, controllerUpdate: controller.update, simulation: game.updateSimulation };
@@ -40,8 +41,13 @@
         if (!entry || !binding.ready) continue;
         if (!this.closing && !binding.releasing && !binding.connection.closed && binding.connection.state === 'connected') {
           binding.input.apply(entry.hero);
-          const result = binding.actions.apply(this.game, entry.hero, this.players);
-          if (result) binding.connection.send('result', result).catch(error => { if (!binding.connection.closed) binding.connection.fail(error); });
+          const result = binding.actions.apply(this.game, entry.hero, this.players, this.controls);
+          if (result) {
+            const { save, ...payload } = result;
+            const saved = save ? root.polycraft.checkpoint(true) : Promise.resolve();
+            if (save) { this.actionSaves.add(saved); saved.then(() => this.actionSaves.delete(saved), () => this.actionSaves.delete(saved)); }
+            saved.then(() => { if (!binding.connection.closed) return binding.connection.send('result', payload); }).catch(error => { if (!binding.connection.closed) binding.connection.fail(error); });
+          }
         }
         else binding.input.stop(entry.hero);
       }
@@ -104,10 +110,11 @@
         this.original.peerState?.(peer, state, details);
       };
       this.transport.onMessage = (message, connection) => {
+        const binding = this.peerPlayers.get(connection.peer);
+        if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) return;
         this.playerFor(connection);
         if (message.kind === 'action') {
-          const binding = this.peerPlayers.get(connection.peer);
-          if (message.payload.type === 'target') binding.actions.receive(message.payload);
+          if (['target', 'demolish'].includes(message.payload.type)) binding.actions.receive(message.payload);
           else binding.input.receive(message.payload);
           return;
         }
@@ -211,8 +218,9 @@
           await connection.send(stream.kind, state);
           stream.kind = 'update';
         } catch (error) {
+          const cancelled = stream.stopped || this.closing || this.closed || connection.closed;
           stop();
-          if (!this.closed && !connection.closed) connection.fail(error);
+          if (!cancelled) connection.fail(error);
           return;
         }
         // Wait for transfer completion before the next capture, so slow guests cannot accumulate world snapshots.
@@ -228,7 +236,8 @@
       try {
         for (const stream of this.streams.values()) stream.stop();
         if (this.players) {
-          await root.polycraft.checkpoint();
+          await Promise.all(this.actionSaves);
+          await root.polycraft.checkpoint(true);
           await this.atBoundary(() => this.players.close());
         }
         this.closed = true;

@@ -6,10 +6,10 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 (async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-demolition-'));
-  let application;
+  let application, page;
   try {
     application = await electron.launch({ args: ['.'], env: { ...process.env, POLYCRAFT_TEST_DATA: directory } });
-    const page = await application.firstWindow();
+    page = await application.firstWindow();
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.locator('#new-name').fill('Demolition check');
     await page.locator('#new-game button').click({ noWaitAfter: true });
@@ -23,6 +23,10 @@ const assert = require('node:assert/strict');
     await page.mouse.move(bounds.x + play[0], bounds.y + play[1]); await page.waitForTimeout(250);
     await page.mouse.click(bounds.x + play[0], bounds.y + play[1], { delay: 100 });
     await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestatePlaying');
+    await page.evaluate(() => {
+      const game = window.polycraft.controls.manager();
+      game.runScripts = false; game.setScriptLocked(false); game.activeGameState.setPlayState('PlayStateNormal');
+    });
     await page.waitForTimeout(2000);
     const created = await page.evaluate(() => {
       const controls = window.polycraft.controls, game = controls.manager();
@@ -43,22 +47,32 @@ const assert = require('node:assert/strict');
     await page.evaluate(id => {
       const gui = window.polycraft.controls.manager().getIMGui(); const original = gui.doButton;
       gui.doButton = function (options, ...args) {
-        if (options.guiArchetype === 'demolish' && options.id.includes(id)) window.testDemolishButton = Array.from(options.v2ScreenLocation);
+        if (options.guiArchetype === 'demolish' && options.id.includes(id)) { window.testDemolishButton = Array.from(options.v2ScreenLocation); window.testDemolishId = options.id; }
         const clicked = original.call(this, options, ...args);
         if (options.guiArchetype === 'demolish' && clicked) window.testDemolishClicks = (window.testDemolishClicks || 0) + 1;
         return clicked;
       };
     }, created.id);
     const chooseDemolish = async () => {
+      await page.evaluate(() => {
+        const game = window.polycraft.controls.manager(), locomotion = game.getHero().getEC('ECLocomotion');
+        locomotion.clearDestination(); locomotion.clearDestinationEntity(); game.getGameCamera().setShouldSnap();
+      });
+      await page.waitForTimeout(250);
       const centre = await page.evaluate(id => Array.from(window.polycraft.controls.manager().getGameCamera().getv2ScreenLocationFromWorld(window.polycraft.controls.manager().getGameEntityByName(id).getv3Location(), false)), created.id);
       await page.mouse.move(bounds.x + centre[0], bounds.y + centre[1]);
       await page.evaluate(id => { window.testDemolishButton = null; window.polycraft.controls.manager().getGameEntityByName(id).getEC('ECSelectable').setActivated(true); }, created.id);
       await page.waitForFunction(() => window.testDemolishButton);
-      const button = await page.evaluate(() => window.testDemolishButton);
-      await page.mouse.move(bounds.x + button[0], bounds.y + button[1]); await page.waitForTimeout(250);
+      let hot = false;
+      for (let attempt = 0; attempt < 10 && !hot; attempt++) {
+        const button = await page.evaluate(() => window.testDemolishButton);
+        await page.mouse.move(bounds.x + button[0], bounds.y + button[1]); await page.waitForTimeout(100);
+        hot = await page.evaluate(() => window.polycraft.controls.manager().getIMGui().isHot(window.testDemolishId));
+      }
+      assert.equal(hot, true, 'The live radial button must be under the cursor before clicking');
       fs.mkdirSync('test-results', { recursive: true });
       await page.screenshot({ path: 'test-results/demolition-radial.png' });
-      await page.mouse.click(bounds.x + button[0], bounds.y + button[1], { delay: 100 });
+      await page.mouse.down(); await page.waitForTimeout(100); await page.mouse.up();
       await page.waitForFunction(() => window.polycraft.controls.manager().getActiveGameState().name === 'GamestateDemolition');
       await page.waitForTimeout(200);
       await page.screenshot({ path: 'test-results/demolition-confirmation.png' });
@@ -87,6 +101,13 @@ const assert = require('node:assert/strict');
     assert.equal(await page.evaluate(() => window.polycraft.controls.amounts().woodCap), created.before);
     assert.deepEqual(errors, []);
     console.log('PASS: original in-game radial Demolish button, original canvas confirmation/cancel, real storage cleanup, resource capacity, immediate save and reload without resurrection');
+  } catch (error) {
+    fs.mkdirSync('test-results', { recursive: true });
+    if (page) {
+      console.log('Demolition failure state:', await page.evaluate(() => ({ state: window.polycraft?.controls.manager().activeGameState.name, clicks: window.testDemolishClicks, button: window.testDemolishButton })).catch(() => null));
+      await page.screenshot({ path: 'test-results/demolition-failure.png' }).catch(() => {});
+    }
+    throw error;
   } finally {
     if (application) await application.evaluate(({ app }) => app.exit());
     console.log('Temporary test saves:', directory);

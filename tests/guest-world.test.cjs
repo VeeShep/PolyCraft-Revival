@@ -3,6 +3,23 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Controls } = require('../desktop/controls.js');
 const { GuestScene, GuestWorld } = require('../desktop/guest-world.js');
+test('guest original-style demolition menus use presentation input only, support cancel/confirm and disappear when the target vanishes', () => {
+  const calls = [], world = Object.create(GuestWorld.prototype);
+  let choice = null, radial = false;
+  world.guiInput = { down: false, pendingDown: false }; world.movement = { keys: new Set(), nativeFocused: true };
+  world.selectedBuilding = { id: 'storage', name: 'Storage', reason: '' };
+  world.scene = { entities: new Map([['storage', { record: { location: [1, 0, 2] } }]]) };
+  world.controls = { guiTypes: { BUTTON_ROUND: {} }, drawDemolitionPrompt: building => { assert.equal(building.id, 'storage'); return choice; }, app: { globals: { camera: { worldToScreen: () => [100, 100] } } } };
+  world.game = { getIMGui: () => ({ doButton: options => { assert.equal(options.guiArchetype, 'demolish'); return radial; } }) };
+  world.sendTarget = (type, id) => calls.push({ type, id });
+  world.updateMenu(); assert.equal(world.localMenu(), true); assert.equal(world.demolition, undefined);
+  radial = true; world.updateMenu(); assert.equal(world.demolition.id, 'storage'); assert.equal(world.selectedBuilding, null);
+  choice = false; world.updateMenu(); assert.equal(world.localMenu(), false); assert.deepEqual(calls, []);
+  world.demolition = { id: 'storage', name: 'Storage' }; choice = true; world.updateMenu();
+  assert.deepEqual(calls, [{ type: 'demolish', id: 'storage' }]); assert.equal(world.localMenu(), false);
+  world.demolition = { id: 'storage', name: 'Storage' }; world.scene.entities.clear(); world.updateMenu();
+  assert.equal(world.localMenu(), false); assert.equal(calls.length, 1);
+});
 const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
   const entity = id => ({ id, archetype: null, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
@@ -121,6 +138,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   controls.attach(app, [], {});
   controls.paused = true;
   const update = app.updateGame, draw = game.draw, save = game.saveLevel;
+  const guiController = game.imgui.controller;
   let forwarded = 0;
   const connection = { role: 'guest', pvp: false, onMessage() { forwarded++; }, close() { this.closed = true; this.onState?.('closed', {}); } };
   const world = new GuestWorld(controls, connection);
@@ -142,9 +160,16 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const ranked = snapshot(); ranked.tick++; ranked.hero = 'ranked-hero'; ranked.spaces[0].entities[0].id = ranked.hero;
   connection.onMessage({ kind: 'update', payload: ranked });
   assert.equal(world.identity.playerId, welcome.playerId); assert.equal(world.identity.entity, ranked.hero);
+  world.targetSequence = 1;
+  const selection = { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'storage', name: 'Storage', reason: '' } };
+  assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, building: { ...selection.building, reason: 5 } } }), /Invalid demolition/);
+  assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, type: 'demolish' } }), /Invalid demolition/);
+  connection.onMessage({ kind: 'result', payload: selection }); assert.deepEqual(world.selectedBuilding, selection.building);
+  assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
   assert.equal(app.updateGame, update); assert.equal(game.draw, draw); assert.equal(game.saveLevel, save);
+  assert.equal(game.imgui.controller, guiController); assert.equal(world.localMenu(), false);
   assert.equal(globals.gameCurrentTime, 20); assert.equal(game.gameClock.prevEngineTime, 100);
   assert.deepEqual(Array.from(camera.desiredV3Focus), [0, 0, 0]); assert.deepEqual(Array.from(camera.desiredV3Position), [0, 10, 10]);
   assert.equal(controls.paused, true, 'An originally paused solo island stays paused after disconnect');

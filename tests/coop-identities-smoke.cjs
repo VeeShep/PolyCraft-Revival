@@ -195,6 +195,69 @@ const assert = require('node:assert/strict');
     await guest.waitForFunction(() => window.guestWorld.lastTargetResult.sequence === 2);
     assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Friendly targets are protected.');
     console.log('Guest pointer gathered one original resource through the host; PvP-off rejects an allied hero attack.');
+    const storage = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
+      const controls = window.polycraft.controls, game = controls.manager(), before = controls.amounts().woodCap;
+      const faction = game.getFactionManager().getHeroFactionName(), parent = game.getFactionManager().getFactionByName(faction).getHQ();
+      const point = Array.from(window.hostWorld.players.active.get(id).hero.getv3Location()); point[0] += 3; point[2] += 3;
+      const building = game.getEntityFactory().createInactiveEntityInstance('TemporaryCoopStorage', 'a_b_lumberstorage', point, 0);
+      building.getEC('ECBuilding').setBuildingParentEntity(parent); building.getEC('ECFaction').setFaction(faction); building.activate();
+      const after = controls.amounts().woodCap, info = controls.demolitionInfo(building);
+      if (!info || info.reason || after <= before) throw new Error('Need an eligible temporary storage with real capacity.');
+      return { id: building.getName(), before, after };
+    }), ids[0]);
+    await guest.waitForFunction(id => window.guestWorld.scene.entities.has(id), storage.id);
+    async function clickEntity(id) {
+      const point = await guest.evaluate(id => {
+        const world = window.guestWorld, globals = world.controls.app.globals, record = world.scene.entities.get(id).record;
+        const point = globals.camera.worldToScreen(record.location), bounds = world.movement.canvas.getBoundingClientRect();
+        return { x: bounds.left + point[0] * bounds.width / globals.graphicsDevice.width, y: bounds.top + point[1] * bounds.height / globals.graphicsDevice.height };
+      }, id);
+      await guest.mouse.move(point.x, point.y); await guest.waitForTimeout(150); await guest.mouse.click(point.x, point.y, { delay: 100 });
+    }
+    async function openDemolition() {
+      await clickEntity(storage.id);
+      await guest.waitForFunction(id => window.guestWorld.selectedBuilding?.id === id, storage.id);
+      await clickEntity(storage.id);
+      await guest.waitForFunction(id => window.guestWorld.demolition?.id === id, storage.id);
+      await guest.waitForFunction(() => window.guestWorld.game.guiManager.prevDrawGuiMap['demolition-dialog']?.scale > 0.95);
+    }
+    async function clickDemolition(cancel) {
+      const point = await guest.evaluate(cancel => {
+        const world = window.guestWorld, globals = world.controls.app.globals;
+        const point = cancel ? globals.guiRenderer.getv2RenderLocation(-100, 100, 'topRight') : globals.guiRenderer.getv2RenderLocation(0, 0);
+        const bounds = world.movement.canvas.getBoundingClientRect();
+        return { x: bounds.left + point[0] * bounds.width / globals.graphicsDevice.width, y: bounds.top + point[1] * bounds.height / globals.graphicsDevice.height };
+      }, cancel);
+      await guest.mouse.move(point.x, point.y); await guest.waitForTimeout(150); await guest.mouse.click(point.x, point.y, { delay: 100 });
+      await guest.waitForFunction(() => !window.guestWorld.localMenu());
+    }
+    await openDemolition();
+    const menuTick = await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex());
+    await guest.keyboard.down('w'); await guest.waitForTimeout(300); await guest.keyboard.up('w');
+    assert.ok(await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex()) > menuTick, 'Original guest confirmation leaves the host simulation running');
+    assert.equal(await host.evaluate(id => window.hostWorld.guestSlots.get(id).input.moving, ids[0]), false);
+    fs.mkdirSync('test-results', { recursive: true }); await guest.screenshot({ path: 'test-results/coop-demolition-confirmation.png' });
+    await clickDemolition(true);
+    assert.equal(await host.evaluate(id => !!window.hostWorld.game.getGameEntityByName(id), storage.id), true);
+    await openDemolition();
+    await host.evaluate(() => {
+      const controls = window.polycraft.controls, original = controls.checkpoint;
+      const gate = new Promise(resolve => { window.releaseOlderSave = resolve; });
+      controls.checkpoint = async function (...args) { const snapshot = await original.apply(this, args); window.olderCaptured = true; await gate; return snapshot; };
+      window.restoreCheckpoint = () => { controls.checkpoint = original; };
+      window.olderSave = window.polycraft.checkpoint();
+    });
+    await host.waitForFunction(() => window.olderCaptured);
+    await clickDemolition(false);
+    await host.waitForFunction(id => !window.hostWorld.game.getGameEntityByName(id), storage.id);
+    assert.notEqual(await guest.evaluate(() => window.guestWorld.lastTargetResult.type), 'demolish', 'Do not acknowledge removal while an older checkpoint is still pending');
+    await host.evaluate(async () => { window.releaseOlderSave(); await window.olderSave; window.restoreCheckpoint(); });
+    await guest.waitForFunction(() => window.guestWorld.lastTargetResult.type === 'demolish');
+    assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Building demolished and saved.');
+    assert.equal(await host.evaluate(() => window.polycraft.controls.amounts().woodCap), storage.before);
+    const savedHost = JSON.parse(fs.readFileSync(originals[0].file));
+    assert.equal(JSON.parse(savedHost.state.userData.AdventureIncGameState).gameSpaceList.some(space => space.entityList.some(entity => entity.name === storage.id)), false);
+    console.log('Original guest demolition UI: cancel preserves storage, confirm removes capacity, host keeps simulating, fresh disk save precedes acknowledgement despite an overlapping older capture.');
     await host.evaluate(async id => window.hostWorld.atBoundary(() => {
       const entry = window.hostWorld.players.active.get(id); entry.hero.getEC('ECPlayerData').adjustXP(33);
     }), ids[0]);
@@ -244,7 +307,7 @@ const assert = require('node:assert/strict');
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     const rejected = await host.evaluate(() => window.hostErrors);
     assert.equal(rejected.length, 1); assert.match(rejected[0], /Guests cannot select heroes/);
-    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; original resource gathering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
+    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; original gathering; original guest demolition/cancel and fresh save ordering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
     console.log('Same-Mac acceptance only. Full HUD/actions, broader combat/PvP and real-network/platform acceptance remain open.');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });

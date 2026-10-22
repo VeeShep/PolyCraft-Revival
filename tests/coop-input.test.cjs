@@ -69,5 +69,10 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   assert.deepEqual(sent.at(-1).value.move, [0, 0]);
   focused = true; input.keys.add('KeyW'); input.lastSent = -Infinity; await input.flush();
   nativeFocus(false); await input.flush(); assert.deepEqual(sent.at(-1).value.move, [0, 0]);
+  let cancelled = 0;
+  world.localMenu = () => true; world.cancelLocalMenu = () => { cancelled++; };
+  nativeFocus(true); input.keys.add('KeyW'); assert.equal(input.available(), false);
+  listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} });
+  assert.equal(cancelled, 1); assert.equal(input.keys.size, 0);
   input.close(); assert.equal(listeners.size, 0); assert.equal(removed, true);
 });

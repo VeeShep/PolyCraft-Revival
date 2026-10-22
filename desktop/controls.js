@@ -135,12 +135,19 @@
     }
     canDemolish(entity) { return this.ready() && this.demolitionInfo(entity)?.reason === ''; }
     requestDemolition(entity) { if (this.canDemolish(entity)) this.onDemolish?.(entity.getName()); }
+    drawDemolitionPrompt(building) {
+      const game = this.manager(), renderer = this.app.globals.guiRenderer, gui = game.getIMGui();
+      gui.doBackground();
+      game.getGuiManager().addDrawGui('modalMessageFrame', { text1: 'Demolish ' + building.name + '?\nNo refund. Capacity may drop.' }, 'demolition-dialog');
+      const cancel = gui.doButton({ id: 'demolition-cancel', text: 'Cancel demolition', v2ScreenLocation: renderer.getv2RenderLocation(-100, 100, 'topRight'), guiArchetype: 'shopClose' });
+      const confirm = gui.doButton({ id: 'demolition-confirm', text: 'Demolish', v2ScreenLocation: renderer.getv2RenderLocation(0, 0), guiArchetype: 'demolitionConfirm' });
+      return cancel || confirm ? !!confirm : null;
+    }
     confirmDemolition(building) {
       const game = this.manager();
       const previous = game.getActiveGameState();
       const wasPaused = game.isPaused();
       const controller = game.getGameController();
-      const renderer = this.app.globals.guiRenderer;
       return new Promise(resolve => {
         const state = {
           name: 'GamestateDemolition', result: false,
@@ -160,15 +167,9 @@
           update: () => {
             controller.update();
             game.getGameSoundManager().update();
-            const gui = game.getIMGui();
-            gui.doBackground();
-            game.getGuiManager().addDrawGui('modalMessageFrame', {
-              text1: 'Demolish ' + building.name + '?\nNo refund. Capacity may drop.'
-            }, 'demolition-dialog');
-            const cancel = gui.doButton({ id: 'demolition-cancel', text: 'Cancel demolition', v2ScreenLocation: renderer.getv2RenderLocation(-100, 100, 'topRight'), guiArchetype: 'shopClose' });
-            const confirm = gui.doButton({ id: 'demolition-confirm', text: 'Demolish', v2ScreenLocation: renderer.getv2RenderLocation(0, 0), guiArchetype: 'demolitionConfirm' });
-            if (cancel || confirm || controller.isPressed(this.app.globals.inputDevice.keyCodes.ESCAPE)) {
-              state.result = !!confirm;
+            const choice = this.drawDemolitionPrompt(building);
+            if (choice !== null || controller.isPressed(this.app.globals.inputDevice.keyCodes.ESCAPE)) {
+              state.result = choice === true;
               game.setGameState(previous);
             }
           }

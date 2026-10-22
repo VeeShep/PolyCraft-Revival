@@ -24,9 +24,9 @@
     try { await callback(); } catch (error) { report(error); }
     finally { busy = false; }
   }
-  async function checkpoint() {
+  async function checkpoint(fresh = false) {
     if (controls.guestWorld) { status('The host saves this online island.'); return; }
-    if (saving) return saving;
+    while (saving) { if (!fresh) return saving; await saving; }
     saving = (async () => {
       status('Saving…');
       const state = await controls.checkpoint(bridge);

@@ -53,6 +53,7 @@
         if (event.ctrlKey || event.metaKey || event.altKey || root.document.activeElement !== this.canvas) return;
         if (event.code === 'Tab') { this.keys.clear(); this.flush(); return; }
         event.preventDefault(); event.stopImmediatePropagation();
+        if (this.world.localMenu?.()) { if (event.code === 'Escape') this.world.cancelLocalMenu(); this.keys.clear(); this.flush(); return; }
         if (event.repeat) return;
         if (KEY_AXES[event.code] && this.available()) this.keys.add(event.code);
         this.flush();
@@ -65,15 +66,17 @@
       });
       listen('blur', () => { this.keys.clear(); this.flush(); });
       listen('focusout', () => { if (root.document.activeElement !== this.canvas) { this.keys.clear(); this.flush(); } });
-      for (const event of ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel', 'contextmenu']) listen(event, value => {
+      for (const event of ['mousemove', 'pointermove', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel', 'contextmenu']) listen(event, value => {
         if (value.target !== this.canvas) return;
-        value.preventDefault(); value.stopImmediatePropagation(); this.canvas.focus();
+        value.preventDefault(); value.stopImmediatePropagation();
+        if (['mousedown', 'pointerdown', 'touchstart'].includes(event)) this.canvas.focus();
+        if (['mousemove', 'pointermove', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'].includes(event)) this.world.pointer?.(event, value);
         if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown') && value.button === 0 && this.available()) this.world.clickTarget(value);
       });
       this.timer = setInterval(() => this.flush(), 50);
     }
     available() {
-      return !this.closed && this.nativeFocused && this.world.identity && this.world.scene.snapshot && this.world.connection.state === 'connected' && !this.world.connection.closed && !this.world.controls.paused && root.document?.hasFocus() && root.document.activeElement === this.canvas && !root.document.querySelector('dialog[open]') && root.document.getElementById('launcher')?.hidden !== false;
+      return !this.closed && !this.world.localMenu?.() && this.nativeFocused && this.world.identity && this.world.scene.snapshot && this.world.connection.state === 'connected' && !this.world.connection.closed && !this.world.controls.paused && root.document?.hasFocus() && root.document.activeElement === this.canvas && !root.document.querySelector('dialog[open]') && root.document.getElementById('launcher')?.hidden !== false;
     }
     direction() {
       if (!this.available()) { this.keys.clear(); return [0, 0]; }

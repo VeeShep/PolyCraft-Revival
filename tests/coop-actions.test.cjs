@@ -51,6 +51,20 @@ test('combat rejects protected, out-of-range, unarmed, dead and reloading actors
   assert.match(actions.execute(game, hero, players, 'self'), /cannot be attacked/);
   assert.equal(actions.execute(game, hero, players, 'enemy'), 'Attack issued.'); assert.equal(state.fired, 1);
 });
+test('demolition selects host metadata, rechecks protection at execution and requests a fresh save only after removal', () => {
+  const { state, game, hero, players } = setup(), actions = new HostActions();
+  let removed = 0, reason = '', available = true;
+  const controls = { demolitionInfo: () => available ? { id: 'enemy', name: 'Storage', reason } : null,
+    demolishBuilding: id => { assert.equal(id, 'enemy'); removed++; } };
+  const send = (type, sequence) => actions.receive({ type, sequence, target: 'enemy' });
+  send('target', 1); assert.deepEqual(actions.apply(game, hero, players, controls), { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'enemy', name: 'Storage', reason: '' } });
+  send('demolish', 2); reason = 'Remove the buildings above this one first';
+  assert.equal(actions.apply(game, hero, players, controls).message, reason); assert.equal(removed, 0);
+  reason = ''; send('demolish', 3);
+  assert.deepEqual(actions.apply(game, hero, players, controls), { type: 'demolish', sequence: 3, message: 'Building demolished and saved.', save: true });
+  assert.equal(removed, 1); assert.equal(state.collected + state.fired, 0);
+  available = false; send('demolish', 4); assert.match(actions.apply(game, hero, players, controls).message, /cannot be demolished/); assert.equal(removed, 1);
+});
 test('guest picking maps CSS pixels to the rendered scene and ignores own hero, hidden meshes and noninteractive art', () => {
   const record = (id, location, visible = true) => ({ record: { id, location, archetype: id, mesh: { visible } } });
   const world = { identity: { entity: 'self' }, controls: { app: { globals: { graphicsDevice: { width: 200, height: 100, canvas: { getBoundingClientRect: () => ({ left: 10, top: 20, width: 100, height: 50 }) } }, camera: { worldToScreen: location => location } } } },

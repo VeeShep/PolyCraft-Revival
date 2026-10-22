@@ -117,7 +117,7 @@
       this.original = {
         update: app.updateGame, draw: game.draw, draw2D: game.draw2D, save: game.saveLevel,
         time: globals.gameCurrentTime, dayTime: game.getGameDayTime(),
-        paused: controls.paused,
+        paused: controls.paused, guiController: game.imgui.controller,
         camera: Object.fromEntries(['desiredV3Focus', 'desiredV3Position', 'currentV3Focus', 'currentV3Position', 'currentV3Up', 'currentv3Direction'].filter(key => camera[key]).map(key => [key, Array.from(camera[key])])),
         fov: camera.currentFOV,
         lights: [game.gameLighting.worldDirectionLightNode, game.gameLighting.heroLightNode].filter(Boolean).map(node => ({ node, transform: Array.from(node.getLocalTransform()), disabled: node.disabled })),
@@ -129,7 +129,10 @@
       controls.guestWorld = this;
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
-      game.draw = game.draw2D = () => {};
+      this.guiInput = { down: false, pendingDown: false, position: [0, 0], getGuiDown() { return this.down; }, getv2ScreenCoord() { return this.position; } };
+      game.imgui.controller = this.guiInput;
+      game.draw = () => {};
+      game.draw2D = () => { game.imgui.draw2D(); game.updateInterfaceTweens(); game.getGuiManager().completeDraw(); globals.simpleFontRenderer.render(); };
       game.saveLevel = () => { throw new Error('The host saves this online island.'); };
       game.getGameController().clearInputs();
       connection.onMessage = (message, link) => {
@@ -150,7 +153,12 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          if (!value || Object.keys(value).length !== 3 || value.type !== 'target' || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || Object.keys(value).length !== (value.building ? 4 : 3) || !['target', 'demolish'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (value.building) {
+            const building = value.building;
+            if (value.type !== 'target' || Object.keys(building).length !== 3 || !['id', 'name', 'reason'].every(key => typeof building[key] === 'string' && building[key].length <= 256) || !building.id || !building.name) throw new Error('Invalid demolition selection.');
+            this.selectedBuilding = building.reason ? null : { ...building };
+          }
           this.lastTargetResult = { ...value };
           const status = root.document?.getElementById?.('status');
           if (status) status.textContent = value.message;
@@ -166,13 +174,46 @@
     clickTarget(event) {
       const target = pickTarget(this, event);
       if (!target) return;
-      this.connection.send('action', { type: 'target', sequence: ++this.targetSequence, target }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      this.sendTarget('target', target);
+    }
+    sendTarget(type, target) {
+      this.connection.send('action', { type, sequence: ++this.targetSequence, target }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+    }
+    localMenu() { return !!(this.selectedBuilding || this.demolition); }
+    cancelLocalMenu() {
+      this.selectedBuilding = this.demolition = null;
+      this.guiInput.down = this.guiInput.pendingDown = false;
+      this.movement?.keys.clear();
+    }
+    pointer(event, value) {
+      const canvas = this.movement.canvas, bounds = canvas.getBoundingClientRect(), device = this.controls.app.globals.graphicsDevice;
+      this.guiInput.position = [(value.clientX - bounds.left) * device.width / bounds.width, (value.clientY - bounds.top) * device.height / bounds.height];
+      if (value.button !== 0) return;
+      if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = this.localMenu();
+      if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) this.guiInput.pendingDown = false;
+    }
+    updateMenu() {
+      const building = this.demolition || this.selectedBuilding;
+      if (!building) return;
+      const record = this.scene.entities.get(building.id)?.record;
+      if (!record || this.controls.paused || !this.movement.nativeFocused) { this.cancelLocalMenu(); return; }
+      if (this.demolition) {
+        const choice = this.controls.drawDemolitionPrompt(building);
+        if (choice !== null) { this.cancelLocalMenu(); if (choice) this.sendTarget('demolish', building.id); }
+        return;
+      }
+      const point = this.controls.app.globals.camera.worldToScreen(record.location), gui = this.game.getIMGui();
+      if (!point) { this.cancelLocalMenu(); return; }
+      if (gui.doButton({ id: 'guest-demolish-' + building.id, text: 'Demolish', v2ScreenLocation: point, buttonType: this.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'demolish' })) {
+        this.demolition = building; this.selectedBuilding = null;
+      }
     }
     update() {
       const game = this.game, globals = this.controls.app.globals;
       globals.simpleFontRenderer.clearFontList(); globals.simpleSpriteRenderer.clearSpriteList();
       globals.debugDraw.clearDebugLineList(); game.guiManager.clearDrawList();
       game.imgui.clearDrawList(); game.imgui.clearValidation(); globals.guiRenderer.clearShakeAmount();
+      this.guiInput.down = this.guiInput.pendingDown;
       const state = this.scene.snapshot;
       if (!state) return;
       globals.gameCurrentTime = state.time;
@@ -187,11 +228,13 @@
       const torch = game.gameLighting.heroLightNode;
       if (torch && state.torch) { torch.setLocalTransform(new Float32Array(state.torch.transform)); torch.setDisabled(!state.torch.visible); }
       this.hasFrame = true;
+      this.updateMenu();
     }
     close() {
       if (this.closed) return;
       this.closed = true;
       this.movement.close();
+      this.cancelLocalMenu(); this.game.imgui.controller = this.original.guiController;
       const game = this.game, app = this.controls.app, original = this.original;
       this.connection.onMessage = original.onMessage; this.connection.onState = original.onState;
       this.connection.close(); this.scene.close();

@@ -68097,10 +68097,13 @@
       var a = this.globals;
       this.imgui.draw2D();
       this.activeGameState.draw2D();
-      L.drawUpdate(1E3 * this.globals.gameCurrentTime, 1E3 * this.globals.appCurrentTime);
+      this.updateInterfaceTweens();
       this.getGuiManager().completeDraw();
       this.gameController.draw2D();
       a.simpleFontRenderer.render();
+    },
+    updateInterfaceTweens: function () {
+      L.drawUpdate(1E3 * this.globals.gameCurrentTime, 1E3 * this.globals.appCurrentTime);
     },
     skipCurrentSplashScreen: function () {
       var a = this.gamestateSplashScreens;

@@ -3,23 +3,30 @@
   class HostActions {
     constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); }
     receive(value) {
-      if (!value || Object.keys(value).length !== 3 || value.type !== 'target' || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== 3 || !['target', 'demolish'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
       const now = this.now();
       this.tokens = Math.min(10, this.tokens + Math.max(0, now - this.tokenTime) * 0.01); this.tokenTime = now;
       if (this.tokens < 1 || this.queue.length >= 4) throw new Error('Too many target actions.');
       this.tokens--; this.sequence = value.sequence; this.queue.push({ ...value });
     }
-    apply(game, hero, players) {
+    apply(game, hero, players, controls) {
       const action = this.queue.shift();
       if (!action) return null;
-      const message = this.execute(game, hero, players, action.target);
-      return { type: 'target', sequence: action.sequence, message };
+      const result = this.execute(game, hero, players, action.target, controls, action.type);
+      return { type: action.type, sequence: action.sequence, ...(typeof result === 'string' ? { message: result } : result) };
     }
-    execute(game, hero, players, id) {
+    execute(game, hero, players, id, controls, type = 'target') {
       const target = game.getGameEntityByName(id);
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
       if (game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
+      const building = controls?.demolitionInfo(target);
+      if (type === 'demolish') {
+        if (!building || building.reason) return building?.reason || 'This building cannot be demolished.';
+        controls.demolishBuilding(id);
+        return { message: 'Building demolished and saved.', save: true };
+      }
+      if (building) return { message: building.reason || 'Building selected.', building: { id: building.id, name: building.name, reason: building.reason } };
       const resource = target.getEC('ECResourceDispenser');
       if (resource) {
         const interaction = target.getEC('ECInteractable');
@@ -48,7 +55,7 @@
     const factory = world.game.getEntityFactory();
     for (const { record } of world.scene.entities.values()) {
       if (!record.archetype || !record.mesh?.visible || record.id === world.identity.entity) continue;
-      if (!factory.getECArchetype(record.archetype, 'ECResourceDispenser') && !factory.getECArchetype(record.archetype, 'ECTarget')) continue;
+      if (!factory.getECArchetype(record.archetype, 'ECResourceDispenser') && !factory.getECArchetype(record.archetype, 'ECTarget') && !factory.getECArchetype(record.archetype, 'ECBuilding')) continue;
       const point = globals.camera.worldToScreen(record.location);
       if (!point) continue;
       const distance = (point[0] - x) ** 2 + (point[1] - y) ** 2;
