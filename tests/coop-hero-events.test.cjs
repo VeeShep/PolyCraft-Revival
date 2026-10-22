@@ -2,6 +2,22 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const runtime = require('./runtime-ast.cjs');
+test('original hero creation supplies a numeric rotation before the first simulation tick', () => {
+  let rotation;
+  const hero = { getEC: name => name === 'ECHero' ? { setHeroColour() {}, setHeroNumber() {} } : { setFaction() {} } };
+  const game = { globals: { mathDevice: {} }, getFreeHeroIndex: () => 1,
+    getEntityFactory: () => ({ createActiveEntityInstance(name, archetype, location, angle) { rotation = angle; return hero; } }),
+    getFactionManager: () => ({ getHeroFactionName: () => 'heroes' }) };
+  assert.equal(runtime.method('createHero').call(game, 'Guest', 'hero', [0, 0, 0]), hero);
+  assert.equal(typeof rotation, 'number'); assert.equal(rotation, 1);
+});
+test('original preload loads both torch and daytime hands before any guest scene can need them', () => {
+  const loaded = new Set(), requests = [];
+  const globals = { simpleSceneLoader: { isLoadingMesh: name => loaded.has(name), load: name => { loaded.add(name); requests.push(name); } } };
+  const preload = runtime.staticMethod('ECHeroTorch', 'preload', { Xa: { create: () => ({}) } });
+  preload(globals); preload(globals);
+  assert.deepEqual(requests, ['characters/models/hero_torchhand.dae', 'characters/models/hero_lefthand.dae']);
+});
 test('co-op kill, gathering and currency statistics belong to the hero who performed the action, while solo global events still work', () => {
   const ec = runtime.component('ECPlayerData'), entity = {}, other = {}, calls = [];
   const context = { entity, gameManager: { desktopPlayers: {} }, autoSaveGameStats() {},

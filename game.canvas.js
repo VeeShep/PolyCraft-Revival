@@ -50590,6 +50590,12 @@
   ECHeroTorch.create = function (a, b) {
     return new ECHeroTorch(a, b);
   };
+  ECHeroTorch.preload = function (globals) {
+    var loader = globals.simpleSceneLoader;
+    for (var path of ["characters/models/hero_torchhand.dae", "characters/models/hero_lefthand.dae"]) {
+      if (!loader.isLoadingMesh(path)) loader.load(path, void 0, void 0, Xa.create({ name: "preloadHeroHand", dynamic: !1, disabled: !0 }));
+    }
+  };
   ECBase.prototype.eCCreationMap[ECHeroTorch.prototype.entityComponentName] = ECHeroTorch;
   var ECInventory = ECBase.extend({
     entityComponentName: "ECInventory",
@@ -67054,7 +67060,7 @@
         }],
         i = this.getFreeHeroIndex(),
         h = h[(i - 1) % h.length],
-        a = f.createActiveEntityInstance(a, b, c, !0),
+        a = f.createActiveEntityInstance(a, b, c, 1),
         b = a.getEC("ECHero");
       b.setHeroColour(h.r, h.g, h.b);
       b.setHeroNumber(i);

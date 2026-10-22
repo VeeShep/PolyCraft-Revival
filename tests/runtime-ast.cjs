@@ -34,4 +34,7 @@ function component(name) {
 function objectWith(name) {
   return evaluate(one(objects.filter(o => o.properties.some(p => key(p) === name)), `object containing ${name}`));
 }
-module.exports = { method, prototypeWith, component, objectWith };
+function staticMethod(owner, name, context) {
+  return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.name === owner && a.left.property.name === name && a.right.type === 'FunctionExpression'), `${owner}.${name}`).right, context);
+}
+module.exports = { method, prototypeWith, component, objectWith, staticMethod };

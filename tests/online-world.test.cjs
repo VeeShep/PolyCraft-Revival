@@ -4,6 +4,8 @@ const assert = require('node:assert/strict');
 const { Controls } = require('../desktop/controls.js');
 const { HostSession } = require('../desktop/multiplayer.js');
 const { startHostingWorld } = require('../desktop/online-world.js');
+const { CoopData } = require('../desktop/coop-data.js');
+const { emptyState } = require('../desktop/saves.cjs');
 function setup(t) {
   const previousDesktop = global.desktop, previousDocument = global.document;
   const modes = [];
@@ -26,6 +28,58 @@ function setup(t) {
   t.after(() => transport.close());
   return { controls, game, controller, clock, transport, modes, events };
 }
+test('host-selected invitation slots reserve identities, reject duplicate claims and keep saved heroes across peer replacement', async t => {
+  const { controls, transport, game } = setup(t), previous = global.polycraft;
+  let saves = 0, unblock;
+  const gate = new Promise(resolve => { unblock = resolve; });
+  global.polycraft = { checkpoint: async () => { await gate; saves++; } };
+  t.after(() => { global.polycraft = previous; });
+  const world = await startHostingWorld(controls, transport);
+  world.atBoundary = async read => read();
+  const registry = new CoopData(emptyState()), first = registry.addPlayer('One'), second = registry.addPlayer('Two');
+  const active = new Map();
+  const hero = name => ({ name, getName: () => name, getEC: () => null, shouldBeDestroyed: () => false, getv3Location: () => [0, 0, 0], getV3Scale: () => [1, 1, 1], getRotationY: () => 0 });
+  const host = hero('Host'); game.getHero = () => host;
+  game.gameClock.getFrameIndex = () => 1; game.globals = { gameCurrentTime: 0 }; game.getGameDayTime = () => 12;
+  game.getGameSpaceList = () => [{ calculateExtents: () => [-10, -10, -10, 10, 10, 10], getM43FullTransform: () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], getBlockList: () => [], getEntityList: () => [host, ...[...active.values()].map(entry => entry.hero)] }];
+  world.players = { registry, active, add(id) { active.set(id, { hero: hero('Hero_' + id), model: { id } }); },
+    remove(id) { active.delete(id); } };
+  const deliveries = [], streams = [];
+  transport.createInvitation = async () => {
+    const peer = crypto.randomUUID();
+    transport.peers.set(peer, { peer, closed: false, state: 'connected', send: async (kind, payload) => deliveries.push({ peer, kind, payload }), close() { this.closed = true; } });
+    return { peer, invitation: peer };
+  };
+  world.streamTo = connection => streams.push(connection.peer);
+  const pending = world.createPlayerInvitation(first.id);
+  await assert.rejects(world.createPlayerInvitation(first.id), /available saved/);
+  await assert.rejects(world.createPlayerInvitation(registry.data.host), /available saved/);
+  await assert.rejects(world.createPlayerInvitation('missing'), /does not belong/);
+  unblock();
+  const invitation = await pending, connection = transport.peers.get(invitation.peer);
+  assert.equal(invitation.playerId, first.id);
+  assert.throws(() => world.playerFor(connection), /no assigned/);
+  await world.connectPlayer(invitation.peer);
+  assert.equal(world.playerFor(connection).id, first.id);
+  assert.deepEqual(deliveries[0], { peer: invitation.peer, kind: 'welcome', payload: { version: 1, playerId: first.id, name: 'One', entity: 'Hero_' + first.id, pvp: false } });
+  assert.deepEqual(streams, [invitation.peer]);
+  await world.connectPlayer(invitation.peer); assert.equal(deliveries.length, 1);
+  assert.throws(() => world.playerFor({ ...connection }), /no assigned/, 'A copied peer identifier does not confer its connection authority');
+  const binding = world.peerPlayers.get(invitation.peer); connection.close(); await world.releasePlayer(binding);
+  assert.equal(active.has(first.id), false); assert.equal(registry.player(first.id).name, 'One');
+  const returning = await world.createPlayerInvitation(first.id);
+  assert.notEqual(returning.peer, invitation.peer); await world.connectPlayer(returning.peer);
+  assert.equal(world.playerFor(transport.peers.get(returning.peer)).id, first.id);
+  const unused = await world.createPlayerInvitation(second.id), unusedBinding = world.peerPlayers.get(unused.peer);
+  transport.peers.get(unused.peer).close(); await world.releasePlayer(unusedBinding);
+  assert.equal(world.guestSlots.has(second.id), false); assert.equal(active.has(second.id), false);
+  const before = registry.data.players.length;
+  global.polycraft.checkpoint = async () => { throw new Error('Save refused'); };
+  await assert.rejects(world.createPlayerInvitation(second.id), /Save refused/);
+  assert.equal(world.guestSlots.has(second.id), false); assert.equal(registry.data.players.length, before);
+  assert.ok(saves >= 4);
+  delete world.players; await world.close();
+});
 test('online host menus update the world once per tick and block only local modal input', async t => {
   const { controls, game, controller, clock, transport, modes, events } = setup(t);
   const world = await startHostingWorld(controls, transport);

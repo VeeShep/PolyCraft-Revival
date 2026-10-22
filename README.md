@@ -111,6 +111,8 @@ The game acceptance test opens a temporary game window and automates gameplay ac
 
 Additional acceptance scripts under `tests/` cover save migration/lifecycle, achievements, progression, demolition, loading tips, fullscreen, transport and online simulation boundaries. Transport checks alone do not establish working multiplayer. Consult the status document before choosing a run; test results are evidence for that source/build and platform only.
 
+`npm run test:coop-sync` opens four visible disposable games. It joins three assigned heroes, moves all four heroes, compares every guest's positions/rotations with the host at matching simulation ticks, checks rendered mesh poses, then exercises a forged identity, reconnect and host exit. Movement uses real host keyboard input and authoritative engine destinations for guest heroes; independent guest keyboard controls remain unfinished. It tests same-machine networking, not internet latency or cross-platform acceptance.
+
 ### Packaging
 
 ```sh
@@ -131,7 +133,7 @@ If macOS adds Finder metadata to bundles while building inside Documents or a sy
 npm run build:mac -- --config.directories.output=/private/tmp/polycraft-build
 ```
 
-Playable multiplayer remains in development; it is not available in the launcher yet. Transport, host simulation, guest rendering/streaming and separate saved models bound to live co-op heroes are implemented for development checks. Guest invitation identity mapping, controls/actions and the full co-op progression loop remain unfinished. The live adapter preserves solo progression/inventory while hosting, targets level-ups and reward statistics to the earning hero, and saves/restores co-op inventory. Held construction must finish before removing heroes or ending the current development session. Details and remaining acceptance gates are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
+Playable multiplayer remains in development; it is not available in the launcher yet. Transport, host simulation, guest rendering/streaming, host-selected invitation identities and separate saved models bound to live co-op heroes are implemented for development checks. Guest controls/actions and the full co-op progression loop remain unfinished. The live adapter preserves solo progression/inventory while hosting, targets level-ups and reward statistics to the earning hero, and saves/restores co-op inventory. Held construction must finish before removing heroes or ending the current development session. Details and remaining acceptance gates are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
 
 ### Builds on GitHub
 

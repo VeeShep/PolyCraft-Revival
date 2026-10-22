@@ -130,8 +130,20 @@
       game.saveLevel = () => { throw new Error('The host saves this online island.'); };
       game.getGameController().clearInputs();
       connection.onMessage = (message, link) => {
+        if (message.kind === 'welcome') {
+          const value = message.payload;
+          if (this.identity || this.scene.snapshot) throw new Error('Repeated or late host-assigned hero.');
+          if (!value || Object.keys(value).length !== 5 || value.version !== 1 || typeof value.playerId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.playerId)) throw new Error('Invalid host-assigned hero identity.');
+          if (typeof value.name !== 'string' || !value.name.trim() || value.name.length > 80 || typeof value.entity !== 'string' || !value.entity.length || value.entity.length > 256 || typeof value.pvp !== 'boolean' || value.pvp !== connection.pvp) throw new Error('Invalid host-assigned hero details.');
+          this.identity = { ...value };
+        }
         if (message.kind === 'update' && !this.scene.snapshot) throw new Error('The host must send an initial world snapshot first.');
-        if (message.kind === 'snapshot' || message.kind === 'update') this.scene.apply(message.payload);
+        if (message.kind === 'snapshot' || message.kind === 'update') {
+          if (this.identity && !this.scene.snapshot && message.payload.hero !== this.identity.entity) throw new Error('The initial host snapshot selects a different hero.');
+          this.scene.apply(message.payload);
+          // A rank-up recreates the entity; the assigned saved player identity stays unchanged.
+          if (this.identity) this.identity.entity = message.payload.hero;
+        }
         else if (message.kind === 'end') this.close();
         this.original.onMessage?.(message, link);
       };
