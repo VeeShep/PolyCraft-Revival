@@ -9,6 +9,7 @@ const packages = {
   'mac-arm64': [`PolyCraft-Offline-${version}-mac-arm64.zip`],
   'mac-x64': [`PolyCraft-Offline-${version}-mac-x64.zip`],
   'win-x64': [`PolyCraft-Offline-${version}-win-x64.zip`],
+  'win-arm64': [`PolyCraft-Offline-${version}-win-arm64.zip`],
   'linux-x64': [`PolyCraft-Offline-${version}-linux-x86_64.AppImage`, `PolyCraft-Offline-${version}-linux-x64.tar.gz`]
 };
 function collectBuild(platform, output, destination) {
@@ -34,7 +35,8 @@ Use mac-arm64 for Apple Silicon or mac-x64 for Intel. Mac builds are ad-hoc
 signed and are not notarized.
 
 Windows: Extract the entire ZIP and open PolyCraft Offline.exe. Keep all
-supporting files together. Windows builds are unsigned.
+supporting files together. Choose win-arm64 for Windows on Arm, or win-x64
+for Intel/AMD computers. Windows builds are unsigned.
 
 Linux: Mark the AppImage executable and open it. Alternatively, extract the
 tar.gz and run polycraft-offline inside its folder with all supporting files.

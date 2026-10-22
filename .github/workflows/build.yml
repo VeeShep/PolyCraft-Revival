@@ -68,6 +68,11 @@ jobs:
             platform: win32
             arch: x64
             arguments: --win zip --x64
+          - id: win-arm64
+            os: windows-11-arm
+            platform: win32
+            arch: arm64
+            arguments: --win zip --arm64
           - id: linux-x64
             os: ubuntu-24.04
             platform: linux

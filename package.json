@@ -10,7 +10,7 @@
     "test": "node --test tests/*.test.cjs",
     "test:game": "node tests/game-smoke.cjs",
     "build:mac": "electron-builder --mac zip --arm64 --x64",
-    "build:win": "electron-builder --win zip --x64",
+    "build:win": "electron-builder --win zip --x64 --arm64",
     "build:linux": "electron-builder --linux AppImage tar.gz --x64"
   },
   "devDependencies": {

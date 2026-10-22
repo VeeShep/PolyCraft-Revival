@@ -115,7 +115,7 @@ npm run build:win
 npm run build:linux
 ```
 
-Builds go to `dist/` by default. macOS targets Apple Silicon and Intel ZIPs; Windows targets x64 ZIP; Linux targets x64 AppImage and tar.gz. Cross-building may require additional platform tools or downloads. Build completion does not establish native gameplay compatibility.
+Builds go to `dist/` by default. macOS targets Apple Silicon and Intel ZIPs; Windows targets separate x64 and ARM64 ZIPs; Linux targets x64 AppImage and tar.gz. Choose `win-arm64` for Windows on Arm, or `win-x64` for Intel/AMD computers. Cross-building may require additional platform tools or downloads. Build completion does not establish native gameplay compatibility.
 
 Keep existing `dist/beta-1` files and checksums unchanged. New shared releases need a new version and output folder. Publish packages and their checksums as release attachments, rather than committing executables to the source repository.
 
@@ -131,7 +131,7 @@ Playable multiplayer remains in development; it is not available in the launcher
 
 ### Builds on GitHub
 
-The [Desktop builds workflow](.github/workflows/build.yml) runs unit/regression checks, then builds packages on native Apple Silicon Mac, Intel Mac, Windows x64 and Linux x64 runners. Relevant source, asset, dependency, test or workflow changes pushed to `main` trigger a build. Pull requests run checks only. To request packages manually, open [Actions → Desktop builds](https://github.com/VeeShep/PolyCraft-Revival/actions/workflows/build.yml), choose **Run workflow**, and select the branch.
+The [Desktop builds workflow](.github/workflows/build.yml) runs unit/regression checks, then builds packages on five native runners: Apple Silicon Mac, Intel Mac, Windows x64, Windows ARM64 and Linux x64. Windows ARM64 uses GitHub's [`windows-11-arm` runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Relevant source, asset, dependency, test or workflow changes pushed to `main` trigger a build. Pull requests run checks only. To request packages manually, open [Actions → Desktop builds](https://github.com/VeeShep/PolyCraft-Revival/actions/workflows/build.yml), choose **Run workflow**, and select the branch.
 
 Open a successful run and download your platform under **Artifacts**. Each bundle includes application archives, `START HERE.txt`, `BUILD_INFO.json` with its source commit/run, and `SHA256SUMS.txt`. Unzip the downloaded GitHub artifact first, then follow the included package instructions. Artifact names include the platform and build run/attempt, so development builds with the same app version remain distinguishable. They are retained for **seven days**; download and keep any build you want to preserve. GitHub requires sign-in to [download workflow artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts); you can forward the downloaded package to testers.
 

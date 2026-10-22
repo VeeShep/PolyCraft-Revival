@@ -20,6 +20,7 @@ test('tester bundles include only the expected platform packages, provenance, in
     'mac-arm64': [`PolyCraft-Offline-${version}-mac-arm64.zip`],
     'mac-x64': [`PolyCraft-Offline-${version}-mac-x64.zip`],
     'win-x64': [`PolyCraft-Offline-${version}-win-x64.zip`],
+    'win-arm64': [`PolyCraft-Offline-${version}-win-arm64.zip`],
     'linux-x64': [`PolyCraft-Offline-${version}-linux-x86_64.AppImage`, `PolyCraft-Offline-${version}-linux-x64.tar.gz`]
   };
   fs.writeFileSync(path.join(output, 'game.log'), 'Do not upload');
@@ -34,6 +35,7 @@ test('tester bundles include only the expected platform packages, provenance, in
     assert.match(metadata.sourceCommit, /^[a-f0-9]{40}$/i);
     assert.match(metadata.gameplayAcceptance, /Not established/);
     assert.match(fs.readFileSync(path.join(destination, 'START HERE.txt'), 'utf8'), /fresh named island/);
+    assert.match(fs.readFileSync(path.join(destination, 'START HERE.txt'), 'utf8'), /win-arm64 for Windows on Arm/);
     const lines = fs.readFileSync(path.join(destination, 'SHA256SUMS.txt'), 'utf8').trim().split('\n');
     assert.equal(lines.length, names.length + 2);
     for (const line of lines) {

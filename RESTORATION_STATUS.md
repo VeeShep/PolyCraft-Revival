@@ -1,6 +1,6 @@
 # PolyCraft restoration: current roadmap and status
 
-Updated 2026-10-22. **Resumable goal: paused at the user's request.** The goal record belongs to this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). Ask to resume when ready. Do not mark it complete while implementation or required acceptance remains open.
+Updated 2026-10-22. **Resumable goal: active; resumed by the user.** The goal record belongs to this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). Ask to pause or resume as needed. Do not mark it complete while implementation or required acceptance remains open.
 
 Preserve the original appearance and progression while making the game independently playable, maintainable, and shareable. Order: **foundations → multiplayer → gameplay expansion**. The historical appendix below records earlier work; its old instructions and status statements do not override this roadmap.
 
@@ -37,10 +37,17 @@ Recorded verification: 28 passing unit checks; Apple Silicon packaged gameplay, 
 
 ### Pause checkpoint — 2026-10-22
 
+**Resumed 2026-10-22:** finished the CI archive source audit. Linux has 1,855 exact source/asset matches. Windows has 1,855 matches after normalizing CRLF only in known text extensions and the five extensionless `PLACEHOLDER` text files; 1,250 text files differ only by line endings, with no remaining content differences. Package version/main metadata was checked separately. The paused observations below remain historical evidence.
+
 - GitHub automation is committed and pushed as `b6a77dda9d6b4768f70abc93acf11a13f7ee87eb`; the successful four-platform run above provides downloadable tester packages for seven days. No GitHub Release was published.
 - Additional archive source inspection verified all 1,855 source/asset files in each Mac package against the worktree, with package metadata checked separately. Windows comparison stopped at `assets/icons/PLACEHOLDER`; a checkout line-ending difference is suspected but unverified. Linux full app.asar source comparison was not reached. The previously completed archive integrity, provenance and architecture checks still pass.
 - Resume by inspecting that Windows placeholder difference and completing the Linux source comparison. Then continue guest world rendering, snapshot/update delivery, validated guest actions and island-owned co-op progression. Transport and host snapshots are implemented; playable multiplayer is not.
 - Linux Beta 2 Z-fighting is resolved according to the tester. Camera jitter, broader native gameplay, cross-platform multiplayer and real-network acceptance remain open. No additional game tests were launched for this pause; personal saves and immutable Beta 1 packages remain untouched.
+
+### Windows ARM64 output — 2026-10-22
+
+- User requested a Windows on Arm package. Added a fifth native build job using GitHub's `windows-11-arm` runner, with `win32`/`arm64` host assertions and explicit `--win zip --arm64` targeting. The collector includes a separate `win-arm64` artifact, package instructions, provenance and checksums. Local `npm run build:win` now produces both x64 and ARM64 ZIPs; existing x64 output names remain unchanged.
+- Package-selection/hash tests cover the new ARM64 bundle and architecture guidance. All 60 local checks pass (57 in this build checkpoint plus three uncommitted guest-renderer checks); workflow YAML parses with five targets and verified ARM64 host/target settings. Native Windows ARM64 build and executable verification are pending the first GitHub run; native ARM64 gameplay remains unverified. Mac signing and unsigned Windows policy remain unchanged. Guest-rendering work is in progress and is excluded from this build-system checkpoint until verified.
 
 ## Milestone 1: foundations — implementation checkpoint
 
