@@ -52,7 +52,7 @@ Saves are stored outside the application folder. On Mac they are in `~/Library/A
 
 Ordinary solo saves use format 2. On the first checkpoint of a Beta 1 save, the app keeps the exact original file as `.json.pre-v2` and migrates both the current save and recovery file. Imported Beta 1 files also retain this untouched copy. Beta 1 cannot open migrated saves; keep that original backup if you need to return to Beta 1. The original file can be copied outside the managed folder to a `.json` filename for importing into Beta 1. Deleting an island deletes its managed backups too.
 
-Co-op data is still a development feature without a launcher entry. When co-op records are first saved to an island, only that island moves to format 3 and retains its exact earlier checkpoint as `.json.pre-v3`. Older Beta 2 apps reject format 3, including recovery files. Rename, recovery and export/import preserve format 3. Export important islands before using newer builds; keep the untouched pre-conversion copy if you need to return to an older app.
+Co-op data is still a development feature without a launcher entry. Current co-op records use save format 4, which retains hero rotation, clip ammo, temporary-weapon ammo and the permanent weapon separately. Only islands containing these records migrate; ordinary solo saves remain format 2. The first migration preserves the exact earlier checkpoint as `.json.pre-v4`; earlier development format-3 records are supported and migrate when written. Older apps reject format 4, including recovery files. Rename, recovery and export/import preserve the newer format. Export important islands before using newer builds; keep the untouched pre-conversion copy if you need to return to an older app. Missing historical weapon details cannot be recovered from the earlier schema.
 
 If a write fails, the app reports it. Keep the game open and retry after resolving the disk problem. Normal exit offers a choice if the latest progress cannot be saved. Force-quitting can lose progress since the last successful checkpoint. Export backups of islands you want to keep.
 
@@ -87,6 +87,7 @@ The first install needs internet access to download dependencies and Electron. I
 | `scripts/` | Icon generation and the guarded, one-time readability transformation |
 | `reference/beta-1/` | Immutable original runtime/save-reader baseline and hashes; tracked, excluded from app packages |
 | `reference/beta-2-save-reader/` | Preserved format-2 reader and hash used to verify that older apps reject co-op saves; excluded from packages |
+| `reference/coop-schema-1/` | Preserved development format-3 reader and co-op schema used to verify migration and older-reader refusal; excluded from packages |
 | `package.json`, `package-lock.json` | Launch/build commands and pinned dependency graph; track both |
 | `RESTORATION_STATUS.md` | Authoritative roadmap, evidence and historical checkpoints |
 | `MULTIPLAYER_AUDIT.md`, `RUNTIME_READABILITY.md` | Networking audit and source-recovery details |

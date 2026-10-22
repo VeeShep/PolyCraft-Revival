@@ -1,7 +1,7 @@
 'use strict';
 (function (root) {
   const KEY = 'desktopCoop';
-  const VERSION = 1;
+  const VERSION = 2;
   const UPGRADES = ['movementSpeed', 'carrySpeed', 'shotgunDamage', 'reloadSpeed', 'maxHealth', 'explosionDamage', 'carryCapacity', 'chopEffectiveness'];
   const STATS = ['playerScore', 'totalCampaignsWon', 'totalWallsBuilt', 'totalTreesChopped', 'totalRocksDestroyed', 'totalEnemiesKilled', 'totalTimePlayed', 'softCurrencyFound'];
   const PERSONAL = ['progress', 'heroUpgrades', 'gameStats', 'numberOfGamesPlayed', 'shareData'];
@@ -19,7 +19,7 @@
   function newPlayer(name) {
     return { id: crypto.randomUUID(), name: playerName(name), progress: { xp: 0 }, heroUpgrades: {},
       gameStats: Object.fromEntries(STATS.map(key => [key, 0])), numberOfGamesPlayed: { count: 0 }, shareData: {},
-      location: null, health: null, inventory: { weapon: null, ammo: 0, carried: [0, 0] } };
+      location: null, rotation: 0, health: null, inventory: { weapon: null, mainWeapon: null, ammo: 0, temporaryAmmo: 0, carried: [0, 0] } };
   }
   function createCoop(name = 'Host') {
     const host = newPlayer(name);
@@ -29,11 +29,11 @@
     if (plain(value) && Number.isInteger(value.version) && value.version > VERSION) {
       const error = new Error('This co-op island needs a newer PolyCraft version.'); error.code = 'UNSUPPORTED_SAVE'; throw error;
     }
-    requireValue(keys(value, ['version', 'host', 'players', 'economy']) && value.version === VERSION, 'unsupported structure or version.');
+    requireValue(keys(value, ['version', 'host', 'players', 'economy']) && [1, VERSION].includes(value.version), 'unsupported structure or version.');
     requireValue(Array.isArray(value.players) && value.players.length >= 1 && value.players.length <= 4, 'an island has one host and at most three guest heroes.');
     const ids = new Set();
     for (const player of value.players) {
-      requireValue(keys(player, ['id', 'name', ...PERSONAL, 'location', 'health', 'inventory']) && typeof player.id === 'string' && UUID.test(player.id) && !ids.has(player.id), 'invalid or repeated hero identity.');
+      requireValue(keys(player, ['id', 'name', ...PERSONAL, 'location', ...(value.version === 2 ? ['rotation'] : []), 'health', 'inventory']) && typeof player.id === 'string' && UUID.test(player.id) && !ids.has(player.id), 'invalid or repeated hero identity.');
       ids.add(player.id); playerName(player.name);
       requireValue(plain(player.progress) && Object.keys(player.progress).every(key => ['xp', 'desktopUpgradePoints'].includes(key)) && integer(player.progress.xp) && (player.progress.desktopUpgradePoints === undefined || (Number.isSafeInteger(player.progress.desktopUpgradePoints) && Math.abs(player.progress.desktopUpgradePoints) <= 2147483647)), 'invalid hero progression.');
       requireValue(plain(player.heroUpgrades) && Object.entries(player.heroUpgrades).every(([key, level]) => [...UPGRADES, 'total'].includes(key) && integer(level) && level <= (key === 'total' ? 40 : 5)), 'invalid totem upgrades.');
@@ -43,9 +43,12 @@
       requireValue(keys(player.numberOfGamesPlayed, ['count']) && integer(player.numberOfGamesPlayed.count), 'invalid play count.');
       requireValue(plain(player.shareData) && Object.entries(player.shareData).every(([key, time]) => ['twitter', 'facebook'].includes(key) && typeof time === 'number' && Number.isFinite(time) && time >= 0 && time <= Number.MAX_SAFE_INTEGER), 'invalid share history.');
       requireValue(player.location === null || vector(player.location, 3), 'invalid hero position.');
+      if (value.version === 2) requireValue(finite(player.rotation), 'invalid hero rotation.');
       requireValue(player.health === null || (keys(player.health, ['current', 'maximum']) && finite(player.health.current) && finite(player.health.maximum) && player.health.current >= 0 && player.health.maximum > 0 && player.health.current <= player.health.maximum), 'invalid hero health.');
       const inventory = player.inventory;
-      requireValue(keys(inventory, ['weapon', 'ammo', 'carried']) && (inventory.weapon === null || (typeof inventory.weapon === 'string' && /^[a-zA-Z][\w-]{0,99}$/.test(inventory.weapon))) && integer(inventory.ammo) && Array.isArray(inventory.carried) && inventory.carried.length === 2 && inventory.carried.every(integer), 'invalid hero inventory.');
+      const weapon = name => name === null || (typeof name === 'string' && /^[a-zA-Z][\w-]{0,99}$/.test(name));
+      requireValue(keys(inventory, ['weapon', 'ammo', 'carried', ...(value.version === 2 ? ['mainWeapon', 'temporaryAmmo'] : [])]) && weapon(inventory.weapon) && integer(inventory.ammo) && Array.isArray(inventory.carried) && inventory.carried.length === 2 && inventory.carried.every(integer), 'invalid hero inventory.');
+      if (value.version === 2) requireValue(weapon(inventory.mainWeapon) && integer(inventory.temporaryAmmo), 'invalid temporary weapon state.');
     }
     requireValue(ids.has(value.host) && value.players[0].id === value.host, 'the first saved hero must be the host.');
     const economy = value.economy;
@@ -57,6 +60,14 @@
     constructor(state) {
       this.state = state;
       this.data = Object.hasOwn(state.userData, KEY) ? validateCoop(JSON.parse(state.userData[KEY])) : createCoop();
+      if (this.data.version === 1) {
+        for (const player of this.data.players) {
+          player.rotation = 0;
+          player.inventory.mainWeapon = player.inventory.weapon;
+          player.inventory.temporaryAmmo = 0;
+        }
+        this.data.version = VERSION;
+      }
     }
     persist() { this.state.userData[KEY] = JSON.stringify(validateCoop(this.data)); }
     addPlayer(name) {
