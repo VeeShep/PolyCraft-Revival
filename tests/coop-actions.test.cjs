@@ -2,6 +2,14 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { HostActions, pickTarget } = require('../desktop/coop-actions.js');
+test('build intent accepts only an owned copy of a bounded position and product index, never supplied costs or hero identity', () => {
+  const valid = { type: 'build', sequence: 1, target: 'HQ', index: 0, location: [1, 2, 3] };
+  for (const value of [{ ...valid, index: -1 }, { ...valid, index: 32 }, { ...valid, location: [1, NaN, 2] }, { ...valid, location: Array(3) }, { ...valid, location: [1, 2, 1e7] }, { ...valid, location: [1, 2] }, { ...valid, cost: 0 }, { ...valid, playerId: 'another' }]) {
+    const actions = new HostActions(); assert.throws(() => actions.receive(value), /Invalid/); assert.equal(actions.sequence, 0);
+  }
+  const actions = new HostActions(); actions.receive(valid); valid.location[0] = 999;
+  assert.deepEqual(actions.queue[0].location, [1, 2, 3]); assert.throws(() => actions.receive(valid), /repeated/);
+});
 function setup() {
   const state = { remaining: 4, range: 0, active: true, blocked: false, building: false, throwing: false, health: 50, permitted: true, armed: true, inRange: true, ready: true, ammo: 4, collected: 0, fired: 0 };
   const hero = { shouldBeDestroyed: () => false, getRadius: () => 1, getv3Location: () => [0, 0, 0], getEC: name => ({

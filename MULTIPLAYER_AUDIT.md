@@ -29,6 +29,16 @@ The visible host acceptance repeat captured a real 2,208-block / 352-entity isla
 
 ## Next implementation slice
 
+### Authoritative construction backend — 2026-10-22
+
+`HostConstruction` reserves in-flight registered-hero throws in original global/local building and scaffold limits, while retaining original footprint/build-zone checks and toolbox animations. It restores manager hooks on exit. Checkpoints wait for throws and recheck at their actual capture boundary; a stalled or failed placement cannot overwrite the previous checkpoint with a spent-but-missing building. Existing-building moves are tracked without reserving an extra building. Guest EmptyHanded events cannot consume the host's pending premium inventory.
+
+`GuestWorld.sendBuild(source, index, location)` sends a sequenced bounded intent through the existing assigned connection. The host resolves actual attached-workshop ownership, recomputes original product validity and funds, validates snapped placement, applies original costs and acknowledges only after scaffold creation and a fresh disk save. Rejected placement clears temporary in-hand state; rollback refunds raw currency to prevent Crown duplication. Runtime is `polycraft-1.0.0.25-coop-6`, save formats unchanged.
+
+110 unit checks pass. Visible `polycraft-coop-identities-dsYfCT` placed an original wall for exactly 100 stone through the real guest API/throw/scaffold path and verified the scaffold on disk before success, alongside four-player sync, gathering, demolition, PvP, reconnect and guest-save isolation. The disposable fixture creates an original HQ if needed, funds the pool and enables Wall with the original script command. This is backend/network acceptance, not a guest build-menu or normal unlock test. Visible solo regression `polycraft-game-jXRBHD` passed too. Incomplete attempts are recorded in RESTORATION_STATUS.md.
+
+**Next for construction:** add original-style product selection and placement preview, repeated/line controls, normal progression/upgrade and special self-consuming-dispenser paths. Atomic guest requests avoid a long-lived paid hand; host-held premium/move state, forced quit, death/reload and broader simultaneous spending/placement acceptance remain open. Keep Host/Join unexposed until the required gameplay loop and acceptance are complete.
+
 ### Original-style guest demolition — 2026-10-22
 
 Guest selection receives only host-authored building metadata. The original radial Demolish button and shared `Controls.drawDemolitionPrompt` draw through a presentation-only GUI controller, with drawing tweens advanced separately from simulation. Local menus block guest movement without pausing the host, support Escape/cancel and disappear on focus loss or target removal. Disconnect restores the original solo GUI controller.

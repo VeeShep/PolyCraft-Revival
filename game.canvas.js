@@ -56469,6 +56469,7 @@
       return c;
     },
     attemptToPlaceBuilding: function (a) {
+      if (this.gameManager.desktopConstruction && !this.gameManager.desktopConstruction.canPlace(this)) return !1;
       var b = !1,
         c = this.shouldPayWhenPlacingBuildings,
         a = this.getv3BuildLocation(a);
@@ -56536,6 +56537,8 @@
         s && (n *= s.getSummedScale());
         (p = p.getECArchetype(b, "ECMesh")) && (q = 0.75 * p.scale);
         this.throwing += 1;
+        var construction = this.gameManager.desktopConstruction,
+          reservation = construction && construction.reserve(this, b);
         var t = this.spBuildingParentEntity,
           w = this.spMoveFromEntity,
           p = L.Create({
@@ -56555,7 +56558,7 @@
             i.addRotationY(k);
             i.setScale(e.lerp(n, q, this.lerp));
           }).onComplete(function () {
-            l.placeScaffold(a, b, t, w);
+            construction ? construction.complete(reservation, function () { l.placeScaffold(a, b, t, w); }) : l.placeScaffold(a, b, t, w);
             f.setToBeDestroyed();
           });
         c && p.delay(c);
@@ -65847,7 +65850,8 @@
     },
     requestConsumeOnBuildingPlacement: function () {
       var a = this.globals.gameManager.eventManager;
-      this.onEmptyHandedCallback = function () {
+      this.onEmptyHandedCallback = function (event) {
+        if (this.globals.gameManager.desktopPlayers && (!event || event.entity !== this.globals.gameManager.getHero())) return;
         this.removeConsumeOnBuildingPlacement();
         this.createPlaceableBuildings();
       }.bind(this);

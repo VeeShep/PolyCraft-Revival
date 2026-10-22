@@ -153,7 +153,7 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          if (!value || Object.keys(value).length !== (value.building ? 4 : 3) || !['target', 'demolish'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || Object.keys(value).length !== (value.building ? 4 : 3) || !['target', 'demolish', 'build'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (value.building) {
             const building = value.building;
             if (value.type !== 'target' || Object.keys(building).length !== 3 || !['id', 'name', 'reason'].every(key => typeof building[key] === 'string' && building[key].length <= 256) || !building.id || !building.name) throw new Error('Invalid demolition selection.');
@@ -178,6 +178,11 @@
     }
     sendTarget(type, target) {
       this.connection.send('action', { type, sequence: ++this.targetSequence, target }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+    }
+    sendBuild(target, index, location) {
+      const sequence = ++this.targetSequence;
+      this.connection.send('action', { type: 'build', sequence, target, index, location }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      return sequence;
     }
     localMenu() { return !!(this.selectedBuilding || this.demolition); }
     cancelLocalMenu() {

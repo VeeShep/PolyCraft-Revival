@@ -5,6 +5,7 @@
   const { CoopPlayers } = typeof module !== 'undefined' ? require('./coop-players.js') : root.PolycraftCoopPlayers;
   const { HostMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { HostActions } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
+  const { HostConstruction } = typeof module !== 'undefined' ? require('./coop-construction.js') : root.PolycraftCoopConstruction;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -84,19 +85,28 @@
     }
     async checkpoint(bridge) {
       await this.controls.settle(bridge, this.game);
-      const state = await this.atBoundary(() => {
-        this.players?.capture();
-        this.controls.writeCheckpoint();
-        // LocalBridge applies writes synchronously; preserve this exact tick while acknowledgements finish.
-        return JSON.stringify(bridge.state);
-      });
+      let state;
+      do {
+        await this.construction?.settle();
+        state = await this.atBoundary(() => {
+          if (this.construction?.pending.size) return null;
+          this.players?.capture();
+          this.controls.writeCheckpoint();
+          // LocalBridge applies writes synchronously; preserve this exact tick while acknowledgements finish.
+          return JSON.stringify(bridge.state);
+        });
+      } while (state === null);
       await this.controls.settle(bridge, this.game);
       return JSON.parse(state);
     }
     async enablePlayers(bridge) {
       if (this.players) throw new Error('Co-op heroes are already active.');
       await root.polycraft.checkpoint();
-      this.players = await this.atBoundary(() => new CoopPlayers(this.game, bridge));
+      this.players = await this.atBoundary(() => {
+        const players = new CoopPlayers(this.game, bridge);
+        try { this.construction = new HostConstruction(this.game); return players; }
+        catch (error) { players.close(); throw error; }
+      });
       this.original.peerState = this.transport.onState;
       this.original.peerMessage = this.transport.onMessage;
       this.transport.onState = (peer, state, details) => {
@@ -114,7 +124,7 @@
         if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) return;
         this.playerFor(connection);
         if (message.kind === 'action') {
-          if (['target', 'demolish'].includes(message.payload.type)) binding.actions.receive(message.payload);
+          if (['target', 'demolish', 'build'].includes(message.payload.type)) binding.actions.receive(message.payload);
           else binding.input.receive(message.payload);
           return;
         }
@@ -239,6 +249,7 @@
           await Promise.all(this.actionSaves);
           await root.polycraft.checkpoint(true);
           await this.atBoundary(() => this.players.close());
+          this.construction?.close();
         }
         this.closed = true;
         const game = this.game, clock = game.gameClock, controller = game.getGameController();

@@ -2,6 +2,16 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const runtime = require('./runtime-ast.cjs');
+test('guest EmptyHanded events cannot consume host premium inventory; original host and solo placement callbacks remain', () => {
+  const host = {}, guest = {}; let callback, removed = 0, claimed = 0;
+  const game = { desktopPlayers: {}, getHero: () => host, eventManager: { subscribe: (name, value) => { assert.equal(name, 'EmptyHanded'); callback = value; } } };
+  const purchase = { globals: { gameManager: game }, removeConsumeOnBuildingPlacement: () => { removed++; }, createPlaceableBuildings: () => { claimed++; } };
+  runtime.method('requestConsumeOnBuildingPlacement').call(purchase);
+  callback({ entity: guest }); assert.equal(removed + claimed, 0);
+  callback(); assert.equal(removed + claimed, 0);
+  callback({ entity: host }); assert.equal(removed, 1); assert.equal(claimed, 1);
+  delete game.desktopPlayers; callback(); assert.equal(removed, 2); assert.equal(claimed, 2);
+});
 test('interface tween hook advances only the original drawing clock, preserving solo draw order', () => {
   const calls = [], L = { drawUpdate: (...args) => calls.push(args) };
   runtime.method('updateInterfaceTweens', { L }).call({ globals: { gameCurrentTime: 2, appCurrentTime: 3 } });

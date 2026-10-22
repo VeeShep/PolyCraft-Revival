@@ -195,6 +195,54 @@ const assert = require('node:assert/strict');
     await guest.waitForFunction(() => window.guestWorld.lastTargetResult.sequence === 2);
     assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Friendly targets are protected.');
     console.log('Guest pointer gathered one original resource through the host; PvP-off rejects an allied hero attack.');
+    const build = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
+      const world = window.hostWorld, game = world.game, hero = world.players.active.get(id).hero, builder = hero.getEC('ECPlayerBuilder');
+      // Exercise placement in an unlocked disposable settlement, separately from tutorial progression.
+      if (!game.getBuildingManager().getBuildingsAtMinLevel('HQ', 1, false).length) {
+        const position = Array.from(game.getHero().getv3Location()); position[2] += 6;
+        const headquarters = game.getEntityFactory().createInactiveEntityInstance('TemporaryBuildHQ', 'a_b_hq', game.placeOnGround(position, 0.5), 0);
+        headquarters.getEC('ECFaction').setFaction(game.getFactionManager().getHeroFactionName()); headquarters.activate();
+      }
+      window.SetBuildingTypeEnabled({ globals: game.globals, script: { add: command => command.update() } }, 'Wall', true);
+      const amounts = window.polycraft.controls.amounts(); window.polycraft.controls.setAmounts(1000, amounts.woodCap, amounts.stoneCap);
+      const sources = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECDispenser'));
+      const diagnostics = [];
+      for (const source of sources) {
+        const dispenser = source.getEC('ECDispenser');
+        const owner = source.getEC('ECAttach')?.getBaseEntity() || source;
+        if (dispenser.archetype.destroySelfOnDispense || !owner.isFriendlyWith(hero)) continue;
+        dispenser.evaluateProductInfo();
+        for (let index = 0; index < dispenser.contents.length; index++) {
+          diagnostics.push({ source: source.getName(), product: dispenser.getDispensedArchetypeName(index), valid: dispenser.getValid(index), affordable: dispenser.canAfford(hero, index) });
+          if (!dispenser.getValid(index) || !dispenser.canAfford(hero, index)) continue;
+          const archetype = dispenser.getDispensedArchetypeName(index);
+          builder.placeInHand(archetype, 1, false, false, dispenser.buildingParentEntity, true);
+          try {
+            const center = source.getv3Location();
+            for (let x = -10; x <= 10; x += 2) for (let z = -10; z <= 10; z += 2) {
+              const location = [center[0] + x, center[1], center[2] + z];
+              if (!world.construction.canPlace(builder) || !builder.canBuildAtPosition(builder.getv3BuildLocation(location))) continue;
+              window.buildEvents = [];
+              game.eventManager.subscribe('BuildingEvent', event => { if (event.reason === 'placed' && event.building === hero) window.buildEvents.push(event.scaffold.getName()); });
+              return { source: source.getName(), index, location, archetype,
+                costs: [dispenser.getResourceCost(index), dispenser.getSecondaryResourceCost(index), dispenser.getSoftCurrencyCost(index)],
+                before: window.polycraft.controls.amounts() };
+            }
+          } finally { builder.clearInHand(); }
+        }
+      }
+      throw new Error('No eligible original building placement in temporary fixture: ' + JSON.stringify(diagnostics));
+    }), ids[0]);
+    const buildSequence = await guest.evaluate(request => window.guestWorld.sendBuild(request.source, request.index, request.location), build);
+    await guest.waitForFunction(sequence => window.guestWorld.lastTargetResult.sequence === sequence, buildSequence);
+    assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Building placed and saved.');
+    const built = await host.evaluate(() => ({ amounts: window.polycraft.controls.amounts(), pending: window.hostWorld.construction.pending.size, events: window.buildEvents }));
+    assert.equal(built.pending, 0); assert.equal(built.events.length, 1);
+    assert.equal(built.amounts.wood, build.before.wood - build.costs[0]); assert.equal(built.amounts.stone, build.before.stone - build.costs[1]);
+    assert.equal(built.amounts.amber, build.before.amber - build.costs[2]);
+    const builtSave = JSON.parse(fs.readFileSync(originals[0].file));
+    assert.equal(JSON.parse(builtSave.state.userData.AdventureIncGameState).gameSpaceList.some(space => space.entityList.some(entity => entity.name === built.events[0])), true, 'The paid scaffold exists on disk before acceptance');
+    console.log('Original guest build accepted:', { archetype: build.archetype, costs: build.costs, scaffold: built.events[0], pending: built.pending });
     const storage = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
       const controls = window.polycraft.controls, game = controls.manager(), before = controls.amounts().woodCap;
       const faction = game.getFactionManager().getHeroFactionName(), parent = game.getFactionManager().getFactionByName(faction).getHQ();
@@ -307,7 +355,7 @@ const assert = require('node:assert/strict');
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     const rejected = await host.evaluate(() => window.hostErrors);
     assert.equal(rejected.length, 1); assert.match(rejected[0], /Guests cannot select heroes/);
-    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; original gathering; original guest demolition/cancel and fresh save ordering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
+    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; original gathering; original guest build/cost/throw/scaffold/save; original guest demolition/cancel and fresh save ordering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
     console.log('Same-Mac acceptance only. Full HUD/actions, broader combat/PvP and real-network/platform acceptance remain open.');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });

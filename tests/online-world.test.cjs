@@ -166,6 +166,17 @@ test('online captures occur only after simulation and checkpoint preserves the c
   await assert.rejects(rejected, /host ended/);
   await assert.rejects(world.atBoundary(() => {}), /not ready/);
 });
+test('a checkpoint rechecks construction at its capture boundary and waits for a throw that began after the first settle', async t => {
+  const { controls, game, transport } = setup(t), world = await startHostingWorld(controls, transport);
+  const bridge = { state: {} }; let pass = 0, captured = 0;
+  controls.settle = async () => {}; controls.writeCheckpoint = () => { bridge.state.captured = ++captured; };
+  const pending = new Set();
+  world.construction = { pending, settle: async () => { pass++; if (pass === 2) pending.clear(); } };
+  const original = world.atBoundary.bind(world);
+  world.atBoundary = async read => { if (pass === 1) pending.add({}); const result = original(read); world.beginTick(); world.endTick(); return result; };
+  assert.deepEqual(await world.checkpoint(bridge), { captured: 1 }); assert.equal(pass, 2);
+  await world.close();
+});
 test('hosting cannot stack or start on a menu and failed native setup restores solo hooks', async t => {
   const { controls, game, clock, transport } = setup(t);
   const original = game.updateSimulation;
