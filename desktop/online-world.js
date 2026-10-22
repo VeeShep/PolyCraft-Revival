@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
   const { HostSession } = typeof module !== 'undefined' ? require('./multiplayer.js') : root.PolycraftMultiplayer;
+  const { captureSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -65,6 +66,7 @@
       await this.controls.settle(bridge, this.game);
       return JSON.parse(state);
     }
+    snapshot() { return this.atBoundary(() => captureSnapshot(this.game)); }
     async close() {
       if (this.closed) return;
       this.closed = true;

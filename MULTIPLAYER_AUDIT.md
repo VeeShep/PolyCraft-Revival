@@ -23,6 +23,10 @@ Inspected after the complete runtime formatting pass on 2026-10-21. This is an i
 
 The old `Kf` session manager remains inactive. No legacy authority, election or broken receive path was enabled. Next work must still reconstruct real guest-visible worlds, route validated actions and persist separate co-op heroes. Do not add a visible Host/Join workflow until it can actually enter a shared island.
 
+On 2026-10-22, `desktop/world-state.js` adds a separate live replication view: versioned, bounded terrain/entity records with stable names, copied transforms, mesh path/matrix/visibility and health. Ordinary save serialization filters out the hero and transient pickups, so it cannot serve as the complete live snapshot. `HostWorld.snapshot()` captures this view at the existing synchronous simulation boundary without invoking a save or mutating save formats. Validation rejects duplicate IDs, missing hero, invalid transforms/paths and extra fields; optional receive-side asset predicates reject unknown local mesh/block identifiers before reconstruction. These predicates must be supplied by the eventual guest installer.
+
+The visible host acceptance repeat captured a real 2,208-block / 352-entity island, including its unsaved hero. All 51 unit checks and the complete visible host menu/checkpoint test passed. This does not yet deliver the snapshot into a guest world. Mesh records describe current geometry transforms, not every animation, particle, decal or custom shader state. Complete guest presentation and gameplay metadata still require audited reconstruction and updates; avoid claiming visual/gameplay parity from this capture alone. Post-extraction visible solo regression also passed; evidence is in RESTORATION_STATUS.md.
+
 ## Next implementation slice
 
 1. Introduce an explicit session boundary; solo remains the default. Keep WebRTC invitation exchange/transport separate from engine state and action validation. Validate protocol, session, peer and transfer limits before installing any state.

@@ -49,6 +49,27 @@ const assert = require('node:assert/strict');
       console.log('Running:', label);
     }
     await advancing('playing');
+    const worldSnapshot = await page.evaluate(async () => {
+      const snapshot = await window.onlineWorld.snapshot();
+      const game = window.polycraft.controls.manager();
+      const entities = snapshot.spaces.flatMap(space => space.entities);
+      const hero = entities.find(entity => entity.id === snapshot.hero);
+      window.firstWorldSnapshot = snapshot;
+      return { tick: snapshot.tick, hero, spaces: snapshot.spaces.length,
+        blocks: snapshot.spaces.reduce((sum, space) => sum + space.blocks.length, 0), entities: entities.length,
+        unsavedHero: !game.getHero().shouldLevelSave && !game.getHero().shouldPlayerSave,
+        bytes: new TextEncoder().encode(JSON.stringify(snapshot)).length };
+    });
+    assert.ok(worldSnapshot.spaces > 0 && worldSnapshot.blocks > 0 && worldSnapshot.entities > 0);
+    assert.ok(worldSnapshot.hero.mesh && worldSnapshot.hero.health);
+    assert.equal(worldSnapshot.unsavedHero, true, 'Replication includes the hero missing from ordinary save serialization');
+    console.log('Full live world snapshot:', worldSnapshot);
+    const capturedTick = await page.evaluate(async () => {
+      const before = JSON.stringify(window.firstWorldSnapshot);
+      const next = await window.onlineWorld.snapshot();
+      return { immutable: before === JSON.stringify(window.firstWorldSnapshot), advanced: next.tick > window.firstWorldSnapshot.tick };
+    });
+    assert.deepEqual(capturedTick, { immutable: true, advanced: true });
     await canvas.focus(); await page.keyboard.type('moreamberplease');
     await page.locator('#cheat-dialog').waitFor({ state: 'visible' });
     assert.match(await page.locator('#cheat-pause').textContent(), /keeps running/);
