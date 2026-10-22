@@ -56,7 +56,9 @@ If a write fails, the app reports it. Keep the game open and retry after resolvi
 
 ## Debug logs
 
-Local diagnostic logs are in the save folder’s parent directory under `logs/game.log` (Mac: `~/Library/Application Support/PolyCraft Offline/logs/`). The previous log is retained as `game.log.previous`; each rotates at about 1 MB. Logs include starts/exits, save operations/failures, renderer errors and child-process crashes. They do not include whole save contents and are not uploaded. Native crash dumps, when available, stay in Electron’s local Crashpad directory. If the game closes unexpectedly, note what you were doing and the approximate time so the log can be matched to it. A forced termination may leave no final log entry.
+Local diagnostic logs are in the save folder’s parent directory under `logs/game.log` (Mac: `~/Library/Application Support/PolyCraft Offline/logs/`; Linux normally `~/.config/PolyCraft Offline/logs/`, or under `XDG_CONFIG_HOME`). The previous log is retained as `game.log.previous`; each rotates at about 1 MB. Logs include starts/exits, save operations/failures, renderer errors and child-process crashes. The development version also records a `graphics-info` entry after the island loads: GPU/ANGLE renderer, shader precision, context settings, actual default-framebuffer depth and camera clip distances. Logs do not include whole save contents and are not uploaded. Native crash dumps, when available, stay in Electron’s local Crashpad directory. If the game closes unexpectedly, note what you were doing and the approximate time so the log can be matched to it. A forced termination may leave no final log entry.
+
+Linux Beta 1 testers have reported severe terrain/decal/shadow flickering and camera jitter on an Nvidia system, including with shadows disabled. A development candidate addresses passive input warnings and shader precision; the native visual result remains unverified. See [Linux graphics retest instructions](LINUX_GRAPHICS_RETEST.md).
 
 ## Development
 
