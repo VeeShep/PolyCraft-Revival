@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
   const { validateSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
+  const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
 
   // Guests create presentation nodes only: activating ECS archetypes would run host-owned AI and rewards.
   class GuestScene {
@@ -151,6 +152,7 @@
         if (state === 'closed') this.close();
         this.original.onState?.(state, details);
       };
+      this.movement = new GuestMovement(this);
     }
     update() {
       const game = this.game, globals = this.controls.app.globals;
@@ -175,6 +177,7 @@
     close() {
       if (this.closed) return;
       this.closed = true;
+      this.movement.close();
       const game = this.game, app = this.controls.app, original = this.original;
       this.connection.onMessage = original.onMessage; this.connection.onState = original.onState;
       this.connection.close(); this.scene.close();

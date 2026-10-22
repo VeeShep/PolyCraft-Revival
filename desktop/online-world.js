@@ -3,6 +3,7 @@
   const { HostSession } = typeof module !== 'undefined' ? require('./multiplayer.js') : root.PolycraftMultiplayer;
   const { captureSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { CoopPlayers } = typeof module !== 'undefined' ? require('./coop-players.js') : root.PolycraftCoopPlayers;
+  const { HostMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -31,7 +32,15 @@
       controls.app.globals.desktopWorld = this;
       controller.clearInputs();
     }
-    beginTick() { this.worldUpdated = false; }
+    beginTick() {
+      this.worldUpdated = false;
+      for (const binding of this.peerPlayers.values()) {
+        const entry = this.players?.active.get(binding.id);
+        if (!entry || !binding.ready) continue;
+        if (!this.closing && !binding.releasing && !binding.connection.closed && binding.connection.state === 'connected') binding.input.apply(entry.hero);
+        else binding.input.stop(entry.hero);
+      }
+    }
     endTick() {
       if (this.closed || !this.game.hasLoadedLevel) return;
       if (!this.worldUpdated) {
@@ -91,7 +100,8 @@
       };
       this.transport.onMessage = (message, connection) => {
         this.playerFor(connection);
-        if (message.kind !== 'hello' || Object.keys(message.payload).length !== 1 || message.payload.version !== 1) throw new Error('Guest gameplay actions are not enabled yet. Guests cannot select heroes or edit saved state.');
+        if (message.kind === 'action') { this.peerPlayers.get(connection.peer).input.receive(message.payload); return; }
+        if (message.kind !== 'hello' || Object.keys(message.payload).length !== 1 || message.payload.version !== 1) throw new Error('Invalid guest message. Guests cannot select heroes or edit saved state.');
         this.original.peerMessage?.(message, connection);
       };
       return this.players;
@@ -99,7 +109,7 @@
     async createPlayerInvitation(id) {
       if (!this.players || this.closed || this.closing || id === this.players.registry.data.host || this.guestSlots.has(id) || (this.players.active.has(id) && !this.detachedPlayers.has(id))) throw new Error('Choose an available saved guest hero before creating an invitation.');
       this.players.registry.player(id);
-      const binding = { id };
+      const binding = { id, input: new HostMovement() };
       this.guestSlots.set(id, binding);
       try {
         await root.polycraft.checkpoint();
@@ -151,6 +161,8 @@
       try {
         if (binding.joined && !this.closed) {
           await this.atBoundary(() => {
+            const entry = this.players.active.get(binding.id);
+            if (entry) binding.input.stop(entry.hero);
             try { this.players.remove(binding.id); }
             catch (error) {
               // Keep a disconnected hero's held construction alive until the host can reconnect or finish it.

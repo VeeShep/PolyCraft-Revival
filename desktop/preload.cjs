@@ -14,6 +14,12 @@ contextBridge.exposeInMainWorld('desktop', {
   onlineMode: enabled => ipcRenderer.invoke('polycraft:onlineMode', enabled),
   fullscreen: () => ipcRenderer.invoke('polycraft:fullscreen'),
   onFullscreenChanged: callback => ipcRenderer.on('polycraft:fullscreen-changed', (_event, entered) => callback(entered)),
+  windowFocused: () => ipcRenderer.invoke('polycraft:windowFocused'),
+  onWindowFocusChanged: callback => {
+    const listener = (_event, focused) => callback(focused);
+    ipcRenderer.on('polycraft:focus-changed', listener);
+    return () => ipcRenderer.removeListener('polycraft:focus-changed', listener);
+  },
   closeReady: () => ipcRenderer.invoke('polycraft:closeReady'),
   closeFailed: message => ipcRenderer.invoke('polycraft:closeFailed', message),
   onBeforeClose: callback => ipcRenderer.on('polycraft:before-close', () => callback())

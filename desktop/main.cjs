@@ -82,6 +82,7 @@ app.whenReady().then(() => {
     log('online-mode', { enabled });
   });
   handle('fullscreen', () => window.setFullScreen(!window.isFullScreen()));
+  handle('windowFocused', () => window.isFocused());
   handle('closeReady', () => { closing = true; window.close(); });
   handle('closeFailed', async message => {
     const result = await dialog.showMessageBox(window, { type: 'error', message: 'The latest progress could not be saved.', detail: String(message) + '\nYour last successful checkpoint is still available.', buttons: ['Keep playing', 'Quit without saving'], defaultId: 0, cancelId: 0 });
@@ -98,6 +99,8 @@ app.whenReady().then(() => {
   log('startup-phase', { phase: 'window-created' });
   window.on('enter-full-screen', () => window.webContents.send('polycraft:fullscreen-changed', true));
   window.on('leave-full-screen', () => window.webContents.send('polycraft:fullscreen-changed', false));
+  window.on('focus', () => window.webContents.send('polycraft:focus-changed', true));
+  window.on('blur', () => window.webContents.send('polycraft:focus-changed', false));
   window.webContents.session.webRequest.onBeforeRequest((details, callback) => {
     callback({ cancel: !details.url.startsWith('polycraft://game/') && !details.url.startsWith('data:') && !details.url.startsWith('blob:') && !details.url.startsWith('devtools:') });
   });

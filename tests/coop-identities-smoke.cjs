@@ -20,7 +20,7 @@ const assert = require('node:assert/strict');
       await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#new-game button').click({ noWaitAfter: true })]);
       await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
       await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestateStartScreen');
-      await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus());
+      await application.evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
       const canvas = page.locator('#turbulenz_game_engine_canvas'), bounds = await canvas.boundingBox();
       const play = await page.evaluate(() => Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)));
       await canvas.focus(); await page.mouse.move(10, 10);
@@ -99,17 +99,41 @@ const assert = require('node:assert/strict');
         }
       };
     }, motionStart);
-    await host.evaluate(async ids => window.hostWorld.atBoundary(() => {
-      const directions = [[3, 0, 3], [-3, 0, 3], [0, 0, -4]];
-      ids.forEach((id, index) => {
-        const hero = window.hostWorld.players.active.get(id).hero, location = Array.from(hero.getv3Location());
-        hero.getEC('ECLocomotion').setDestination(location.map((value, axis) => value + directions[index][axis]));
-      });
-    }), ids);
-    await applications[0].evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus());
+    await applications[0].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
     await host.locator('#turbulenz_game_engine_canvas').focus();
+    await host.waitForFunction(() => document.hasFocus());
     for (const key of ['w', 'd', 's', 'a', 'w', 'd', 's', 'a']) {
       await host.keyboard.down(key); await host.waitForTimeout(500); await host.keyboard.up(key);
+    }
+    for (let index = 1; index <= 3; index++) {
+      const guest = pages[index];
+      await applications[index].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
+      await guest.locator('#turbulenz_game_engine_canvas').focus();
+      await guest.waitForFunction(() => document.hasFocus());
+      await guest.waitForFunction(() => window.guestWorld.movement.nativeFocused);
+      if (index === 1) {
+        await guest.keyboard.down('w'); await guest.waitForTimeout(500);
+        const tick = await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex());
+        await guest.evaluate(() => window.polycraft.controls.pause(true));
+        await host.waitForFunction(id => !window.hostWorld.guestSlots.get(id).input.moving, ids[index - 1]);
+        await guest.waitForTimeout(500);
+        assert.ok(await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex()) > tick, 'Guest menus stop their input without stopping the shared world');
+        await guest.keyboard.up('w'); await guest.evaluate(() => window.polycraft.controls.pause(false));
+      }
+      if (index === 2) await host.evaluate(() => window.polycraft.controls.pause(true));
+      for (const key of index === 2 ? ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'] : ['w', 'd', 's', 'a']) {
+        await guest.keyboard.down(key); await guest.waitForTimeout(500); await guest.keyboard.up(key);
+      }
+      if (index === 2) await host.evaluate(() => window.polycraft.controls.pause(false));
+      if (index === 3) {
+        await guest.keyboard.down('w'); await guest.waitForTimeout(500);
+        await applications[index].evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].blur());
+        await applications[0].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
+        // Playwright emulates document focus; check the native window signal instead.
+        await guest.waitForFunction(() => !window.guestWorld.movement.nativeFocused);
+        await host.waitForFunction(id => !window.hostWorld.guestSlots.get(id).input.moving, ids[index - 1]);
+        await guest.keyboard.up('w');
+      }
     }
     await host.waitForTimeout(1000);
     const samples = [];
@@ -159,14 +183,15 @@ const assert = require('node:assert/strict');
     const rejected = await host.evaluate(() => window.hostErrors);
     assert.equal(rejected.length, 1); assert.match(rejected[0], /Guests cannot select heroes/);
     console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; forged hero claim isolates its sender; reconnect restores saved XP; host exit restores unchanged guest islands.');
-    console.log('Same-Mac networking/rendering only. Independent guest input, full HUD/actions, PvP and real-network/platform acceptance remain open.');
+    console.log('Same-Mac keyboard/network/rendering only. Full HUD/actions, PvP and real-network/platform acceptance remain open.');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
     for (let index = 0; index < pages.length; index++) try {
       console.log('Failure state', index, await pages[index].evaluate(() => ({ hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
-        connection: window.connection && { closed: window.connection.closed, state: window.connection.state },
+        connection: window.connection && { closed: window.connection.closed, state: window.connection.state }, focused: document.hasFocus(),
+        movement: window.guestWorld?.movement && { keys: [...window.guestWorld.movement.keys], available: window.guestWorld.movement.available(), nativeFocused: window.guestWorld.movement.nativeFocused },
         identity: window.guestWorld?.identity, tick: window.guestWorld?.scene.tick,
-        slots: window.hostWorld && [...window.hostWorld.guestSlots.values()].map(binding => ({ id: binding.id, ready: binding.ready, joined: binding.joined, releasing: binding.releasing })) })));
+        slots: window.hostWorld && [...window.hostWorld.guestSlots.values()].map(binding => ({ id: binding.id, ready: binding.ready, joined: binding.joined, releasing: binding.releasing, input: { sequence: binding.input.sequence, move: binding.input.move, moving: binding.input.moving, age: performance.now() - binding.input.receivedAt } })) })));
       await pages[index].screenshot({ path: 'test-results/coop-identities-failure-' + index + '.png' });
     } catch {}
     console.log('Renderer errors:', errors); throw error;
