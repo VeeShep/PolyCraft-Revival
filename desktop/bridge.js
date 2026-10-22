@@ -52,11 +52,12 @@
       return '';
     }
     currency() { return { currencyName: 'Free', alphabeticCode: 'USD', numericCode: 840, minorUnitPrecision: 2, htmlCode: '' }; }
+    inventory() { return this.coopEconomy || this.state; }
     claim() {
       if (!this.state.cheats.enabled) throw new Error('Enable cheats to claim premium items.');
       const items = Object.entries(this.basket);
       if (!items.length) throw new Error('Choose an item to claim.');
-      const next = JSON.parse(JSON.stringify(this.state.userItems));
+      const next = JSON.parse(JSON.stringify(this.inventory().userItems));
       for (const [key, item] of items) {
         const offering = this.metadata.store.items[key];
         if (!offering?.available || !Number.isSafeInteger(item.amount) || item.amount < 1 || item.amount > 999) throw new Error('Invalid shop item.');
@@ -67,7 +68,7 @@
           next[resource] = { amount: total };
         }
       }
-      this.state.userItems = next;
+      this.inventory().userItems = next;
       this.basket = {};
     }
     service(name, request = {}) {
@@ -88,12 +89,12 @@
           return ok({});
         case 'userdata.remove': delete state.userData[key]; return ok({});
         case 'userdata.removeall': state.userData = {}; return ok({});
-        case 'store.useritems': return ok({ data: { userItems: state.userItems } });
+        case 'store.useritems': return ok({ data: { userItems: this.inventory().userItems } });
         case 'store.useritems-consume': {
-          const item = state.userItems[data.key];
+          const item = this.inventory().userItems[data.key];
           if (!item || this.metadata.store.resources[data.key]?.type !== 'consume' || !Number.isSafeInteger(data.consume) || data.consume <= 0 || data.consume > item.amount) throw new Error('Invalid inventory consumption.');
           item.amount -= data.consume;
-          return ok({ data: { userItems: state.userItems, consumed: data.consume } });
+          return ok({ data: { userItems: this.inventory().userItems, consumed: data.consume } });
         }
         case 'badge.meta': return ok({ data: this.metadata.badges });
         case 'badge.read': return ok({ data: Object.entries(state.badges).map(([key, current]) => {

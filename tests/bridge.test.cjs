@@ -5,6 +5,20 @@ const { LocalBridge } = require('../desktop/bridge.js');
 const { emptyState } = require('../desktop/saves.cjs');
 const metadata = { store: require('../storeitems.json').data, badges: require('../badges.json').data, leaderboards: require('../leaderboards.json').data, notifications: require('../gamenotifications.json').data };
 function bridge(state = emptyState()) { return new LocalBridge(state, structuredClone(metadata), error => { throw error; }); }
+test('co-op shop claims and consumption use only the co-op pool while solo ownership survives unchanged', () => {
+  const local = bridge(); local.state.cheats.enabled = true;
+  local.state.userItems = { amber: { amount: 50 }, 'amber-crown': { amount: 1 } };
+  const before = JSON.stringify(local.state.userItems);
+  local.coopEconomy = { userItems: {} };
+  local.basket = { amberpack500Chunk: { amount: 1 } }; local.claim();
+  assert.equal(local.service('store.useritems').data.userItems.amber.amount, 500);
+  local.service('store.useritems-consume', { data: { key: 'amber', consume: 30 } });
+  assert.equal(local.coopEconomy.userItems.amber.amount, 470);
+  assert.equal(local.service('store.useritems').data.userItems['amber-crown'], undefined);
+  assert.equal(JSON.stringify(local.state.userItems), before);
+  delete local.coopEconomy;
+  assert.equal(local.service('store.useritems').data.userItems.amber.amount, 50);
+});
 test('free packs repeat, owned items stay unique, inventory consumption cannot replay', () => {
   const local = bridge();
   local.state.cheats.enabled = true;

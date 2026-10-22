@@ -51,13 +51,25 @@ Co-op-bearing slots alone enter outer save format 3; ordinary solo saves remain 
 
 73 unit/regression checks pass. Visible source `polycraft-coop-data-MMqGfO` and temporary packaged Apple Silicon `polycraft-coop-data-J7yvx7` checks instantiate actual engine models, verify independent co-op XP/upgrades and shared currency without changing solo data, checkpoint with exact pre-v3 bytes, reject the old reader and restore the records after a complete game reload. Package signature and 1,857 source/asset comparisons pass; tests/reference fixtures are not shipped. This is the data boundary, not independent hero control or playable co-op.
 
-Required engine work before enabling a shared session:
+Engine work identified at the data checkpoint (live-binding items below are superseded by the next checkpoint):
 
 - `ECPlayerData.init` and `ECHeroUpgrades.init` bind `gameManager.playerData`; create each hero with its own model synchronously and restore the global binding reliably. Keep the selected co-op host model as the shared world-economy path, preserving/reinstating the solo model on exit.
 - `ECPlayerData.adjustXP` calls `gameManager.refreshHeroEntity()` without an entity argument. Level-up refresh must replace the correct hero and keep its co-op identity/inventory/health, rather than refreshing the host for a guest reward.
 - `ECPlayerData.attachHandlers` registers every instance for global kill, gathering and currency events. Route statistics/rewards by actual actor, preventing multi-hero duplicate credit; shared quest rewards need an explicit authoritative path.
 - Respawn and inventory paths must use the assigned model and known local weapon definitions. Capture live health/location, held weapon/ammo and carried resources at a coherent simulation boundary; preserve the shared pool across reconnects, without importing a guest's solo inventory.
 - Bind invitation peers to saved hero IDs on the host. Guests must not select another hero identity or submit authoritative progress, inventory or world edits. Host-only cheats, replay-safe spending/build/demolition, hero-only fixed-session PvP, exit saving, guest HUD/input and presentation parity remain open.
+
+### Live co-op hero checkpoint — 2026-10-22
+
+`desktop/coop-players.js`, explicitly activated through `HostWorld.enablePlayers(bridge)`, binds each original hero's `ECPlayerData` and `ECHeroUpgrades` to its own saved model. A normal solo checkpoint precedes activation. The selected host model supplies the shared economy; the solo model, live inventory, health and position are retained separately and recreated on session exit. Premium service claims/consumption use the co-op pool without changing solo `state.userItems`; original shop ownership, Crown state, basket and pending EmptyHanded subscription are restored afterward. Known installed hero weapon definitions are checked before replacing the solo hero.
+
+Level-up now passes the earning entity, and co-op refresh replaces that entity alone, retaining health fraction, position/rotation, clip ammo, permanent/temporary weapon state and carried resources. Kill and gathering statistics are filtered by actor; currency uses a targeted statistic update while retaining the old numeric event for shared listeners. Solo global statistics behavior is covered separately. Building/campaign events still award shared participation credit; guest construction attribution and quest/action authority require the remaining action path.
+
+Co-op schema 2 and outer format 4 retain full ammo/rotation; schema-1 development records migrate with exact `.pre-v4` bytes. The actual old format-3 reader is preserved under `reference/coop-schema-1/` and tested against newer primary/recovery files. Earlier format-3 evidence above describes its historical checkpoint.
+
+Visible single-process acceptance has four actual bound heroes, guest-specific level-up replacement, one kill/currency credit, removal/rejoining with matching inventory/health/position and return to the original solo model/inventory on host exit. This is not four networked clients or independent guest control. Held construction delays rank replacement; removal and session exit refuse to discard it. Forced quit while holding construction, pending shop requests, dead-hero recovery, complete reload with live bindings and broader presentation remain acceptance gaps. Resolve held construction before shipping Host/Join; no visible multiplayer menu is exposed yet.
+
+**Next:** bind host-created invitation slots to saved identities, deliver independent validated input and actions, and add guest HUD/hero selection. Finish replay-safe shared spending/build/demolition, combat/PvP authority, network reconnect and host-exit handling, then expose a playable Host/Join flow. Keep native OS and real-network acceptance open.
 
 1. Introduce an explicit session boundary; solo remains the default. Keep WebRTC invitation exchange/transport separate from engine state and action validation. Validate protocol, session, peer and transfer limits before installing any state.
 2. Implement authoritative host snapshots and guest action routing with stable entity/player identities. Reconstruct real visible entities through audited engine hooks; do not claim success from data-channel connectivity alone.

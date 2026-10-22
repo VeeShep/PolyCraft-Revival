@@ -83,6 +83,7 @@
       const player = this.player(id), economy = this.data.economy;
       const model = Object.create(Object.getPrototypeOf(solo));
       model.init(solo.globals);
+      model.coopPlayerId = id;
       for (const key of PERSONAL) model[key] = player[key];
       for (const key of ['resource', 'softCurrency', 'consumedSoftCurrency']) Object.defineProperty(model, key, { configurable: true, enumerable: true, get: () => economy[key], set: value => { economy[key] = value; } });
       model.resourceCap = solo.resourceCap;

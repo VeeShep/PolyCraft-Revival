@@ -2,6 +2,7 @@
 (function (root) {
   const { HostSession } = typeof module !== 'undefined' ? require('./multiplayer.js') : root.PolycraftMultiplayer;
   const { captureSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
+  const { CoopPlayers } = typeof module !== 'undefined' ? require('./coop-players.js') : root.PolycraftCoopPlayers;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -35,6 +36,7 @@
         this.game.beginWorldUpdate(true);
         this.game.updateSimulation();
       }
+      this.players?.flushRefreshes();
       const captures = this.captures.splice(0);
       for (const capture of captures) {
         clearTimeout(capture.timer);
@@ -60,12 +62,19 @@
     async checkpoint(bridge) {
       await this.controls.settle(bridge, this.game);
       const state = await this.atBoundary(() => {
+        this.players?.capture();
         this.controls.writeCheckpoint();
         // LocalBridge applies writes synchronously; preserve this exact tick while acknowledgements finish.
         return JSON.stringify(bridge.state);
       });
       await this.controls.settle(bridge, this.game);
       return JSON.parse(state);
+    }
+    async enablePlayers(bridge) {
+      if (this.players) throw new Error('Co-op heroes are already active.');
+      await root.polycraft.checkpoint();
+      this.players = await this.atBoundary(() => new CoopPlayers(this.game, bridge));
+      return this.players;
     }
     snapshot() { return this.atBoundary(() => captureSnapshot(this.game)); }
     streamTo(connection) {
@@ -94,8 +103,12 @@
     }
     async close() {
       if (this.closed) return;
-      this.closed = true;
       for (const stream of this.streams.values()) stream.stop();
+      if (this.players) {
+        await root.polycraft.checkpoint();
+        await this.atBoundary(() => this.players.close());
+      }
+      this.closed = true;
       const game = this.game, clock = game.gameClock, controller = game.getGameController();
       clock.pause = this.original.pause;
       controller.update = this.original.controllerUpdate;

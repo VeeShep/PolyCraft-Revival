@@ -131,7 +131,7 @@ If macOS adds Finder metadata to bundles while building inside Documents or a sy
 npm run build:mac -- --config.directories.output=/private/tmp/polycraft-build
 ```
 
-Playable multiplayer remains in development; it is not available in the launcher yet. Transport, host simulation, guest rendering/streaming and separate saved co-op player-data models are implemented for development checks. Binding those records to live heroes, guest actions and the full co-op progression loop remains unfinished. Details and remaining acceptance gates are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
+Playable multiplayer remains in development; it is not available in the launcher yet. Transport, host simulation, guest rendering/streaming and separate saved models bound to live co-op heroes are implemented for development checks. Guest invitation identity mapping, controls/actions and the full co-op progression loop remain unfinished. The live adapter preserves solo progression/inventory while hosting, targets level-ups and reward statistics to the earning hero, and saves/restores co-op inventory. Held construction must finish before removing heroes or ending the current development session. Details and remaining acceptance gates are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
 
 ### Builds on GitHub
 

@@ -50714,6 +50714,9 @@
     getHeldWeapon: function () {
       return this.heldWeapon;
     },
+    getWeaponDefinition: function (name) {
+      return Object.prototype.hasOwnProperty.call(aa.archetypes, name) ? aa.archetypes[name] : void 0;
+    },
     getEquippedItems: function () {
       return this.equippedItems;
     },
@@ -53322,7 +53325,7 @@
     onPickupSoftCurrency: function (a) {
       var b = this.archetype,
         a = a.getEC("ECPlayerData");
-      b.softCurrency && (a && a.adjustSoftCurrency(b.softCurrency), this.gameManager.eventManager.notify("SoftCurrencyFound", b.softCurrency));
+      b.softCurrency && (a && (a.adjustSoftCurrency(b.softCurrency), this.gameManager.desktopPlayers && a.addSoftCurrencyFound(b.softCurrency, !0)), this.gameManager.eventManager.notify("SoftCurrencyFound", b.softCurrency));
     },
     setXP: function (a) {
       this.xp = a;
@@ -53581,7 +53584,7 @@
         this.xpTime = this.globals.appCurrentTime;
         var b = this.getLevel();
         this.playerData.addXP(a);
-        this.getLevel() > b && (this.saveProgress(), this.onLevelUp(), this.gameManager.refreshHeroEntity());
+        this.getLevel() > b && (this.saveProgress(), this.onLevelUp(), this.gameManager.refreshHeroEntity(this.entity));
         this.autoSaveProgress();
       }
     },
@@ -53591,7 +53594,7 @@
       (a = kd.getXPFromLevel(a)) && this.adjustXP(a - b);
     },
     onLevelUp: function () {
-      var a = this.globals.gameManager.getHero();
+      var a = this.entity;
       a && a.playEffect("sfx_hero_level_up");
       this.sendLevelUpMetric();
       this.sendLevelUpEvent();
@@ -53780,12 +53783,14 @@
       return this.playerData.getPlayerScore();
     },
     addKill: function (a) {
+      if (this.gameManager.desktopPlayers && a.aggressor !== this.entity) return;
       a.victim.getEC("ECAgent") && (this.playerData.addKill(), this.autoSaveGameStats());
     },
     getTotalEnemiesKilled: function () {
       return this.playerData.getTotalEnemiesKilled();
     },
     addResourceDispsenserDepletedByHero: function (a) {
+      if (this.gameManager.desktopPlayers && a.hero !== this.entity) return;
       a.resourceType === H.LUMBER ? this.playerData.addTreeChopped() : this.playerData.addRockDestroyed();
       this.autoSaveGameStats();
     },
@@ -53812,7 +53817,8 @@
     getTotalTimePlayed: function () {
       return this.playerData.getTotalTimePlayed();
     },
-    addSoftCurrencyFound: function (a) {
+    addSoftCurrencyFound: function (a, targeted) {
+      if (this.gameManager.desktopPlayers && !targeted) return;
       this.playerData.addSoftCurrencyFound(a);
       this.autoSaveGameStats();
     },
@@ -55096,7 +55102,8 @@
       this.playSound(h.interactSound);
       this.entity.shudder(0.5, 0.25, 0);
       0.1 >= this.resource ? (this.resource = 0, this.growFactor = 0.025, this.archetype.regrows ? (f.loadMesh(c.growingMesh), this.refreshGrowDuration(), this.setToUpdate(!0), this.updateGrowth(0), f.update()) : this.entity.setToBeDestroyed(), this.getEntityEC("ECSelectable").setValid(!1), this.setIgnoringCollision(!0), a && a.hasEC("ECHero") && e.notify("ResourceDispsenserDepletedByHero", {
-        resourceType: b
+        resourceType: b,
+        hero: a
       })) : (b = Math.floor(0.5 + c.depletedMeshes.length * (1 - this.growFactor)), b = Math.min(b, c.depletedMeshes.length - 1), f.loadMesh(c.depletedMeshes[b]));
       e.notify("InteractWithResourceDispenser", {
         resourceDispenser: this.entity,
@@ -67403,13 +67410,14 @@
       a = this.createHero("HeroDude", this.getHeroArchetype());
       this.setHero(a);
     },
-    refreshHeroEntity: function () {
+    refreshHeroEntity: function (hero) {
+      if (this.desktopPlayers) return this.desktopPlayers.refresh(hero || this.heroEntity);
       this.heroEntity.setToBeDestroyed();
       var a = this.createHero("HeroDude", this.getHeroArchetype(), this.heroEntity.getv3Location());
       this.setHero(a);
     },
-    getHeroArchetype: function () {
-      var a = this.getPlayerData(),
+    getHeroArchetype: function (playerData) {
+      var a = playerData || this.getPlayerData(),
         a = kd.getLevelFromXP(a.getXP()),
         a = Math.min(ba.heroArchetype.length - 1, a);
       return ba.heroArchetype[a];
