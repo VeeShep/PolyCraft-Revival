@@ -1,0 +1,20 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { createLogger } = require('../desktop/logging.cjs');
+test('diagnostics append, rotate and never fail gameplay when writing is unavailable', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-log-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const log = createLogger(directory);
+  log('save-error', { message: 'disk full' });
+  const file = path.join(directory, 'game.log');
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).event, 'save-error');
+  fs.writeFileSync(file, 'x'.repeat(1024 * 1024));
+  log('app-start');
+  assert.equal(fs.statSync(file + '.previous').size, 1024 * 1024);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).event, 'app-start');
+  assert.doesNotThrow(() => createLogger(path.join(file, 'impossible'))('error'));
+});

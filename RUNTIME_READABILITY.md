@@ -1,0 +1,15 @@
+# Runtime readability checkpoint
+
+The complete running `game.canvas.js` is formatted. No engine replacement, gameplay rewrite or execution-order change was introduced.
+
+The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`. The baseline was extracted from the verified shipped Apple Silicon app and matched the working source byte for byte before transformation. The original Beta 1 save reader is preserved alongside it to test that old apps reject migrated saves. These files are read-only references, excluded by the packaging whitelist.
+
+`scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
+
+This is partial semantic recovery, not a claim to have recovered lost original source. Short local variable names, many core constructor aliases, packed expressions and library internals remain unresolved. Do not invent original names. Recover more only with local definition evidence or a verified matching upstream implementation. Save and asset keys, public properties and embedded strings stay unchanged. Syntax-tree equivalence does not replace actual gameplay acceptance.
+
+The next work is to identify and isolate the save/network boundaries needed for authoritative co-op. Keep the existing runtime and serializers until their behavior has been audited. Do not split the entire engine or replace it with a newer upstream version.
+
+References: [Turbulenz benchmark](https://github.com/turbulenz/webgl_benchmark), [license](https://github.com/turbulenz/webgl_benchmark/blob/master/LICENSE), [Turbulenz engine](https://github.com/turbulenz/turbulenz_engine). The benchmark contains readable engine/capture references, not the complete game source. No upstream code was copied in this transformation; existing bundle notices remain intact. Retain applicable notices and attribution when copying matching code later.
+
+Subsequent multiplayer work: the initial formatted hash is historical evidence for the one-time formatting pass. The running bundle now deliberately adds two desktop session tick hooks and extracts `beginWorldUpdate` / `updateSimulation`, preserving the solo sequence and enabling non-pausing host menus. It is expected to differ from that initial formatted hash. The immutable Beta 1 baseline and name-evidence manifest remain unchanged. Current behavior and acceptance are tracked in RESTORATION_STATUS.md.

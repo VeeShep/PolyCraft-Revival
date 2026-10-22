@@ -1,0 +1,648 @@
+{
+  "baselineSHA256": "6b98cfec00d094123516fe7aa2742081650153d8facf63bfa5bac5e33ff9b7ea",
+  "formattedSHA256": "e45005083110fc1a05899fe8306805eb21a5b7e97ed5a8e0d04f3d6333630d91",
+  "names": [
+    {
+      "original": "G",
+      "name": "ECBase",
+      "offset": 1034908,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ie",
+      "name": "ECAgent",
+      "offset": 1085273,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ug",
+      "name": "ECAnimationPlayer",
+      "offset": 1098769,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Vg",
+      "name": "ECAttackerLimit",
+      "offset": 1100939,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Wg",
+      "name": "ECAttach",
+      "offset": 1102125,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Xg",
+      "name": "ECAttackWavesManager",
+      "offset": 1104741,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Yg",
+      "name": "ECAutoFire",
+      "offset": 1109148,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ic",
+      "name": "ECBoomerang",
+      "offset": 1111801,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Zg",
+      "name": "ECBoulder",
+      "offset": 1114139,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "$g",
+      "name": "ECBuilding",
+      "offset": 1116452,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Tb",
+      "name": "ECBuildingPlacementRadius",
+      "offset": 1128686,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "ah",
+      "name": "ECBumpAttack",
+      "offset": 1134415,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "bh",
+      "name": "ECCameraFollower",
+      "offset": 1138245,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "ch",
+      "name": "ECCampaignStarter",
+      "offset": 1139129,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "dh",
+      "name": "ECCapDispenser",
+      "offset": 1141366,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Je",
+      "name": "ECChargeableShot",
+      "offset": 1150385,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "eh",
+      "name": "ECChargeAttack",
+      "offset": 1155066,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "fh",
+      "name": "ECCloud",
+      "offset": 1157925,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "gh",
+      "name": "ECDeathAgent",
+      "offset": 1159336,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ke",
+      "name": "ECDispenser",
+      "offset": 1161012,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "hh",
+      "name": "ECEntityDispenser",
+      "offset": 1172649,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "ih",
+      "name": "ECEntitySpawnManager",
+      "offset": 1178470,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "jh",
+      "name": "ECEffectSpawner",
+      "offset": 1182728,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "kh",
+      "name": "ECExplode",
+      "offset": 1184469,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "lh",
+      "name": "ECExchanger",
+      "offset": 1185410,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "mh",
+      "name": "ECFaction",
+      "offset": 1187620,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "xb",
+      "name": "ECFirearm",
+      "offset": 1189545,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "nh",
+      "name": "ECGameGridEntity",
+      "offset": 1203681,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "id",
+      "name": "ECGameCritical",
+      "offset": 1205062,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "oh",
+      "name": "ECGate",
+      "offset": 1205707,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "ph",
+      "name": "ECGateTriggerer",
+      "offset": 1208487,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "jd",
+      "name": "ECHealth",
+      "offset": 1209668,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "qh",
+      "name": "ECHealthRegenerator",
+      "offset": 1222445,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "rh",
+      "name": "ECHero",
+      "offset": 1223062,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "sh",
+      "name": "ECHeroUpgrades",
+      "offset": 1224374,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "th",
+      "name": "ECHeroShrine",
+      "offset": 1227014,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "uh",
+      "name": "ECHeroTorch",
+      "offset": 1232735,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "vh",
+      "name": "ECInventory",
+      "offset": 1234219,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "wh",
+      "name": "ECInteractable",
+      "offset": 1237642,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "xh",
+      "name": "ECLifetime",
+      "offset": 1239269,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Gb",
+      "name": "ECLight",
+      "offset": 1240169,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "yh",
+      "name": "ECLocationMarker",
+      "offset": 1246501,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Rd",
+      "name": "ECLocomotion",
+      "offset": 1247942,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "zh",
+      "name": "ECLootDropper",
+      "offset": 1258567,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ah",
+      "name": "ECMelee",
+      "offset": 1261299,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Bh",
+      "name": "ECMeleeTarget",
+      "offset": 1269280,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Le",
+      "name": "ECMesh",
+      "offset": 1270689,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ch",
+      "name": "ECMeshAnimation",
+      "offset": 1282402,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "uc",
+      "name": "ECNav",
+      "offset": 1284708,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Dh",
+      "name": "ECOrientate",
+      "offset": 1288030,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "sa",
+      "name": "ECPhysicsSphere",
+      "offset": 1289260,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Me",
+      "name": "ECPhysicsCube",
+      "offset": 1298888,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ub",
+      "name": "ECPickup",
+      "offset": 1302446,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Eh",
+      "name": "ECPlacedBuildingTracker",
+      "offset": 1312402,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Fh",
+      "name": "ECPlayerData",
+      "offset": 1315338,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Gh",
+      "name": "ECPlayerLife",
+      "offset": 1326924,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Hh",
+      "name": "ECProjectile",
+      "offset": 1333771,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ih",
+      "name": "ECRadar",
+      "offset": 1338713,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Jh",
+      "name": "ECRadialMenu",
+      "offset": 1340054,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ne",
+      "name": "ECRepairable",
+      "offset": 1348360,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Kh",
+      "name": "ECRepairer",
+      "offset": 1355397,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Oe",
+      "name": "ECResourceDispenser",
+      "offset": 1359354,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Lh",
+      "name": "ECScaffold",
+      "offset": 1365568,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Mh",
+      "name": "ECSignPost",
+      "offset": 1381247,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Nh",
+      "name": "ECSleeping",
+      "offset": 1384307,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Oh",
+      "name": "ECSockets",
+      "offset": 1385768,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Ph",
+      "name": "ECSpawner",
+      "offset": 1388001,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Pe",
+      "name": "ECSprite",
+      "offset": 1391464,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Jc",
+      "name": "ECPlayerBuilder",
+      "offset": 1392903,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Qh",
+      "name": "ECResourceCarrier",
+      "offset": 1415290,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Rh",
+      "name": "ECResourceDestination",
+      "offset": 1423060,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Sh",
+      "name": "ECResourceGenerator",
+      "offset": 1424556,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Th",
+      "name": "ECResourceStorage",
+      "offset": 1427448,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Kc",
+      "name": "ECSelectable",
+      "offset": 1430385,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Uh",
+      "name": "ECSmartSelectableTrigger",
+      "offset": 1436294,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Sd",
+      "name": "ECSuper",
+      "offset": 1437869,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Vh",
+      "name": "ECSuperPhysicsCube",
+      "offset": 1442715,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Wh",
+      "name": "ECTarget",
+      "offset": 1445257,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Xh",
+      "name": "ECTrap",
+      "offset": 1446451,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "kc",
+      "name": "ECTrigger",
+      "offset": 1449515,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Qe",
+      "name": "ECUpgradable",
+      "offset": 1459399,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Re",
+      "name": "ECUpgrader",
+      "offset": 1468433,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Yh",
+      "name": "ECWarManager",
+      "offset": 1479142,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "sb",
+      "name": "ECWildlingAgent",
+      "offset": 1490679,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "Zh",
+      "name": "ECWildlingHouse",
+      "offset": 1522139,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "$h",
+      "name": "ECWildlingLeader",
+      "offset": 1526983,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "ai",
+      "name": "ECWorldText",
+      "offset": 1530186,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "bi",
+      "name": "ECWorldGui",
+      "offset": 1532907,
+      "evidence": "literal entityComponentName on component definition"
+    },
+    {
+      "original": "de",
+      "name": "GamestateBuildingInfoPanel",
+      "offset": 4913,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Sf",
+      "name": "GamestateCampaignScore",
+      "offset": 4928,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Tf",
+      "name": "GamestateCredits",
+      "offset": 4944,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Uf",
+      "name": "GamestateDebugNav",
+      "offset": 4959,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Vf",
+      "name": "GamestateEditor",
+      "offset": 4974,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "ud",
+      "name": "GamestatePaused",
+      "offset": 4989,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "ob",
+      "name": "GamestatePlaying",
+      "offset": 5004,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "wc",
+      "name": "GamestatePrepareForCampaign",
+      "offset": 5019,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Wf",
+      "name": "GamestatePrepareForNextBattle",
+      "offset": 5034,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "si",
+      "name": "GamestateProfileGame",
+      "offset": 5049,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "vd",
+      "name": "GamestateResetGame",
+      "offset": 5064,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Ua",
+      "name": "GamestateShop",
+      "offset": 5079,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Xf",
+      "name": "GamestateSplashScreens",
+      "offset": 5094,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "ee",
+      "name": "GamestateStartScreen",
+      "offset": 5109,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Yf",
+      "name": "GamestateSyncing",
+      "offset": 5124,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "ti",
+      "name": "GamestateTaskComplete",
+      "offset": 5139,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "ui",
+      "name": "GamestateTaskDescription",
+      "offset": 5154,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "Zf",
+      "name": "GamestateRegister",
+      "offset": 5169,
+      "evidence": "literal state name on prototype"
+    },
+    {
+      "original": "xc",
+      "name": "GamestateTutorial",
+      "offset": 5184,
+      "evidence": "literal state name on prototype"
+    }
+  ]
+}

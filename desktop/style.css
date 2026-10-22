@@ -1,0 +1,52 @@
+:root { color-scheme: light; font: 16px/1.45 Arial, sans-serif; background: #194344; color: #244949; --teal: #00a2a7; }
+* { box-sizing: border-box; }
+body { margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: linear-gradient(#103b48bb, #103b48bb), url('/staticmax/polycraft_splash_screen_tvOfX-nkqDGWy88ga4GwLQ.jpg') center / cover; }
+[hidden] { display: none !important; }
+header { display: flex; align-items: center; gap: 18px; min-height: 58px; padding: 8px 20px; background: var(--teal); border-bottom: 4px solid #007e85; color: white; }
+.brand { display: flex; align-items: end; gap: 8px; }
+.brand img { width: 170px; height: auto; }
+.brand small { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+#slot-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
+nav { margin-left: auto; display: flex; gap: 8px; }
+button, input { font: inherit; border-radius: 0; padding: 10px 16px; }
+button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid #fff; border-bottom-width: 5px; background: var(--teal); color: #fff; cursor: pointer; min-height: 43px; }
+button:hover { background: #008b94; transform: translateY(-1px); }
+button:active { transform: translateY(2px); }
+nav button { background: #fff; color: #008b94; border-color: #d2f3ef; padding: 5px 13px; }
+nav button:hover { background: #e5fffa; }
+button:disabled { opacity: .45; cursor: default; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #ff9a21; outline-offset: 3px; }
+input { background: #fff; color: #244949; border: 2px solid #7bb6b5; max-width: 100%; min-width: 0; }
+label { display: grid; gap: 5px; margin: 14px 0; font-weight: bold; }
+#status { background: #007e85; margin: 0; min-height: 24px; padding: 3px 20px; font-size: 12px; color: #fff; }
+#launcher { padding: 28px max(24px, calc((100vw - 960px) / 2)); overflow: auto; flex: 1; background: #163f4673; }
+#launcher > h1, #launcher > p { color: #fff; text-shadow: 0 2px #235351; }
+h1 { font-size: 36px; margin: 8px 0; }
+#new-game { display: flex; gap: 14px; align-items: end; padding: 18px 22px; margin: 24px 0 14px; background: #f5faf0; border-left: 7px solid var(--teal); }
+#new-game label { margin: 0; flex: 1; }
+#new-game button { background: #ff7b00; border-color: #fff; }
+#save-list { display: grid; gap: 14px; margin: 22px 0; }
+.save { background: #f5faf0; border: 3px solid #fff; border-left: 7px solid var(--teal); padding: 20px; }
+.save h2 { margin: 0 0 4px; font-size: 23px; overflow-wrap: anywhere; }
+.save p { margin: 0 0 14px; color: #477170; font-size: 14px; }
+.save button { margin: 4px 6px 0 0; }
+#play-area { flex: 1; min-height: 0; position: relative; background: #173d42; }
+#turbulenz_game_engine_canvas { display: block; width: 100%; height: 100%; outline: none; }
+.polycraft-label { display: block; max-width: 100%; object-fit: contain; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+dialog { color: #244949; background: #f5faf0; border: 5px solid var(--teal); border-top-width: 12px; border-radius: 0; padding: 26px; max-width: 680px; max-height: 90vh; overflow: auto; }
+dialog::backdrop { background: #082e36d9; }
+dialog h2 { margin-top: 0; color: #008b94; }
+#tips-dialog { width: min(1100px, 94vw); max-width: 1100px; }
+#tip-image { display: block; width: 100%; max-height: calc(80vh - 170px); object-fit: contain; background: #fff; }
+#tips-dialog nav { justify-content: center; flex-wrap: wrap; }
+fieldset { padding: 0; border: 0; min-width: 0; }
+#resource-form, #progression-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+#resource-form button, #progression-form button { grid-column: 1 / -1; }
+.toggle { display: flex; align-items: center; gap: 12px; }
+.toggle input { width: 20px; height: 20px; accent-color: #00a2a7; }
+#totem-levels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+#totem-cheats { margin: 18px 0; }
+#totem-cheats summary { cursor: pointer; font-weight: bold; color: #008b94; }
+body:has(#launcher:not([hidden])) header { justify-content: center; min-height: 100px; background: #00a2a7e8; }
+body:has(#launcher:not([hidden])) .brand img { width: 380px; max-width: 65vw; }

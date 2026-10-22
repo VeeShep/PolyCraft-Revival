@@ -1,0 +1,59 @@
+{
+  "name": "polycraft-offline",
+  "productName": "PolyCraft Offline",
+  "version": "1.0.0-beta.2",
+  "private": true,
+  "description": "Offline desktop restoration of PolyCraft",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "test:game": "node tests/game-smoke.cjs",
+    "build:mac": "electron-builder --mac zip --arm64 --x64",
+    "build:win": "electron-builder --win zip --x64",
+    "build:linux": "electron-builder --linux AppImage tar.gz --x64"
+  },
+  "devDependencies": {
+    "@babel/generator": "8.0.6",
+    "@babel/parser": "8.0.7",
+    "@babel/traverse": "8.0.7",
+    "electron": "45.0.0",
+    "electron-builder": "26.15.3",
+    "playwright-core": "1.64.1"
+  },
+  "build": {
+    "appId": "local.polycraft.offline",
+    "asar": true,
+    "artifactName": "PolyCraft-Offline-${version}-${os}-${arch}.${ext}",
+    "afterPack": "desktop/after-pack.cjs",
+    "files": [
+      "desktop/**/*",
+      "game.canvas.js",
+      "mapping_table.json",
+      "staticmax/**/*",
+      "assets/**/*",
+      "img/**/*",
+      "128.png",
+      "badges.json",
+      "leaderboards.json",
+      "gamenotifications.json",
+      "storeitems.json"
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "identity": "-",
+      "timestamp": "none",
+      "icon": "assets/offline-ui/icons/icon.icns"
+    },
+    "win": {
+      "icon": "assets/offline-ui/icons/icon.ico",
+      "signExecutable": false
+    },
+    "linux": {
+      "icon": "assets/offline-ui/icons/png",
+      "category": "Game",
+      "syncDesktopName": true
+    }
+  },
+  "desktopName": "polycraft-offline.desktop"
+}

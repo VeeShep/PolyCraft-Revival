@@ -1,0 +1,46 @@
+# Installed dependencies and package-manager caches
+node_modules/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Packaged applications and generated test output
+/dist/
+/test-results/
+/playwright-report/
+/coverage/
+
+# Local game data and diagnostics (normal saves live outside this repo)
+/saves/
+/logs/
+/Crashpad/
+/crashDumps/
+/polycraft-game-*/
+/polycraft-peers-*/
+/polycraft-online-world-*/
+*.log
+*.dmp
+*.json.bak
+*.json.pre-v*
+*.tmp
+
+# Local environment settings and signing credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.p12
+*.pfx
+*.key
+
+# OS metadata and editor scratch files
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+__pycache__/
+*.py[cod]

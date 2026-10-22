@@ -1,32 +1,140 @@
-# PolyCRACK
-A Re-Upload of PolyCraft 1.0.0.25
+# PolyCraft Offline
 
-## To Install Extension using the ZIP
-1. Download the files by downloading the ZIP from the Releases Tab
-2. Extract the downloaded ZIP (PolyCraft_1.0.0.25.zip)
-3. Go to chrome://extensions/
-4. Enable Developer Mode (you cannot play this game without it)
-5. Click the ```Load Unpacked``` Button
-6. Select the PolyCraft_1.0.0.25 Folder (NOT ZIP)
-> DO NOT click into the folder or anything inside, just select solely the folder
+An unofficial offline desktop restoration of PolyCraft 1.0.0.25, using its existing game engine and assets inside Electron. No game account, Chrome extension or internet connection is required to play.
 
-After that, it should be installed and can be accessed by opening the App Drawer and Opening the PolyCraft App
+The working source is **1.0.0-beta.2 in development**. **Beta 1 (1.0.0-beta.1)** is the existing packaged checkpoint. Build output in `dist/` is deliberately excluded from Git, so cloning this repository does not download a playable package. The [Beta 1 installation guide](BETA_README.txt) is tracked; packaged downloads can be attached separately to a GitHub Release.
 
-## To Install Extension using the CRX
-> ZIP is recommended, because CRX usually fails
-1. Download the CRX from the Releases Tab
-2. Do steps 3-4 from the ZIP instructions
-3. Open your Computer's File Manager
-> You still need to keep the ```chrome://extension``` tab open and on screen, even if only partially
+Offline solo play is implemented. Permanent cheat history, original hero badge icons and the first runtime readability pass are implemented in the development source. Multiplayer transport and host simulation work are in progress; **playable co-op is not available yet**. Gameplay expansions remain planned.
 
-4. Drag and Drop the CRX file onto the ```chrome://extension``` tab
+Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadmap, verification evidence, remaining acceptance checks and continuation instructions. Earlier entries in its historical appendix describe older checkpoints, not the current release state.
 
-After that, it should be installed and can be accessed by opening the App Drawer and Opening the PolyCraft App
+## Play
 
-### Also "Source Code" Above
-If you reeeaaallllly want to, you can pain-stakingly modify it to do things like remove ga.me and micro-transactions, or maybe even replace the micro-transactions screen with a cheats screen i guess.
+Extract the package for your computer. On Mac, move **PolyCraft Offline.app** to Applications and open it. On Windows, keep the extracted folder together and open **PolyCraft Offline.exe**.
 
-You can do anything with Source Code if you have patience and time ... an ungodly amount of free time. But that's what I call the 'Power of Unemployment'!
+Linux x64 has an **AppImage** (mark it executable, then open it) and a portable **tar.gz** alternative (extract and run `polycraft-offline` inside its folder). Read **START HERE - BETA.txt** before sharing. Use `mac-arm64` for Apple Silicon and `mac-x64` for Intel. No Node.js or separate Electron installation is needed for packaged builds.
 
-### Also Also
-Was thinking about making a website to be able to play without extensions or Developer Mode, but the ```staticmax``` folder has 1802 FUCKING FILES, plus I think there is a extension-only component baked into this, so that's not happening anytime soon (by me, but then again, The POWER OF UNEMPLOYMENT!)
+Create a named save slot, then click **Play** in the original game menu. Creating a slot replaces the old account step; PolyCraft still handles the island and tutorial itself.
+
+The top bar provides **Save now**, **Saves** and **Fullscreen**. Move with **W/A/S/D** or click-to-move; **left/right arrows** rotate the camera. The original controls remain available, including **P** to pause and **F** for the game's fullscreen view.
+
+## Shop and cheats
+
+- Cheats are hidden until enabled. Click the game canvas and type **`moreamberplease`**, all lowercase, without pausing more than three seconds between letters. This opens Cheats and enables cheat mode for that island. A **Cheats** button then stays in the header while cheat mode is enabled, including after reloading that island. Turning cheats off hides it again. Typing in name or number fields does not trigger the code.
+- Premium claims are **disabled by default**. While cheat mode is enabled, the Amber Shop becomes available: Amber packs, the Amber Crown and the Amber Well are free to claim. Packs can be claimed repeatedly. Owned items remain unique.
+- Uncheck **Cheats enabled** to disable premium claims, invincibility and instant building. The setting saves per island. Previously edited stats, resources and owned items remain. Type the code again to reopen and enable Cheats.
+- Normal building costs, progression and unlock requirements remain.
+- **Cheats** pauses the game and lets you heal the hero, set Amber/wood/stone, fill storage, enable hero invincibility, or finish construction/upgrades without waiting.
+- **Hero level**, **XP in this level** and **Unspent hero points** are editable in Cheats. Levels follow the original 0–40 curve. Spend points at the map’s totems; each upgrade consumes one point. Setting level/XP also sets the unspent points shown in the form. Quests and upgrade prerequisites still apply, and lowering a level keeps purchased upgrades.
+- **Totem stats** expands inside Cheats and lets you set all eight totem upgrade levels directly from 0–5. These edits bypass totem visits, level/prerequisite gates and point spending; unspent points stay unchanged. Applying saves immediately and refreshes the hero’s actual abilities. Set a field to 0 to remove that upgrade.
+- Wood and stone still require storage capacity. Cheat switches are saved separately for each island.
+- **Craft Resource** exchanges Amber for wood or stone. Offers appear when there is storage space to fill; the tab explains when storage is missing or full.
+
+## Demolishing buildings
+
+Select a player-built building on the island and choose **Demolish** in its existing action wheel, alongside Move and Upgrade. The confirmation matches the original **Not enough resources** screen, with its turquoise frame and wide orange action button inside. Choose the **X** or press **Escape** to keep the building; choose **Demolish** to remove it. The game pauses during confirmation and saves the removal immediately. There is no resource refund; removing storage lowers capacity and discards resources above the remaining capacity.
+
+The action is unavailable on original map structures, HQs/territory anchors, unfinished or moving structures, and buildings with structures above them. Remove stacked buildings from the top down. The game’s normal cleanup updates building limits, worker housing and storage.
+
+## Hidden loading-tip viewer
+
+Type **`moretips`**, all lowercase, on the save-selection screen or while your island loads. Click outside text fields first. The viewer shows all original loading-tip images; use **Previous / Next** or the **left / right arrow keys** to browse, and **Close** or **Escape** to return. It does not enable cheats or change your island. If loading finishes while the viewer is open, gameplay waits until you close it.
+
+## Saves and backups
+
+Each named island has its own world, progress, resources, premium ownership and cheat settings. The game saves every 30 seconds, before switching slots, and during normal exit. **Save now** creates an immediate checkpoint. Wait for the saved status before treating a checkpoint as complete.
+
+Open **Saves** to continue, rename, delete or export an island. **Import backup** creates a new slot without replacing an existing one. Backup files are versioned JSON files from this restored version; original Chrome App saves are not supported.
+
+Saves are stored outside the application folder. On Mac they are in `~/Library/Application Support/PolyCraft Offline/saves/`; on Windows the default is `%APPDATA%/PolyCraft Offline/saves/`. Updating the app does not replace that folder. Every successful checkpoint keeps the previous valid checkpoint as a `.bak` recovery file. If the main save is damaged or missing, the app loads the recovery file and tells you it did so. If both files are unreadable, import an exported backup as a new island.
+
+**Cheat history:** save selection shows **Clean**, **Cheats used** or **Unknown history**. Enabling Cheats permanently marks the island, even without using an action. Turning Cheats off does not clear that history. Older saves are Unknown unless saved cheat switches or the desktop hero-point edit marker prove use; resource amounts and hero levels are not evidence. This history is informational, not tamper-proof.
+
+The development version writes save format 2. On the first checkpoint of a Beta 1 save, it keeps the exact original file as `.json.pre-v2` and migrates both the current save and recovery file. Imported Beta 1 files also retain this untouched copy. Beta 1 cannot open migrated saves; keep that original backup if you need to return to Beta 1. The original file can be copied outside the managed folder to a `.json` filename for importing into Beta 1. Deleting an island deletes its managed backups too.
+
+If a write fails, the app reports it. Keep the game open and retry after resolving the disk problem. Normal exit offers a choice if the latest progress cannot be saved. Force-quitting can lose progress since the last successful checkpoint. Export backups of islands you want to keep.
+
+## Debug logs
+
+Local diagnostic logs are in the save folder’s parent directory under `logs/game.log` (Mac: `~/Library/Application Support/PolyCraft Offline/logs/`). The previous log is retained as `game.log.previous`; each rotates at about 1 MB. Logs include starts/exits, save operations/failures, renderer errors and child-process crashes. They do not include whole save contents and are not uploaded. Native crash dumps, when available, stay in Electron’s local Crashpad directory. If the game closes unexpectedly, note what you were doing and the approximate time so the log can be matched to it. A forced termination may leave no final log entry.
+
+## Development
+
+### Run from source
+
+Use Node.js 22 or newer compatible with the locked dependencies; Node.js 22 was used for development. From the repository root:
+
+```sh
+npm ci
+npm start
+```
+
+The first install needs internet access to download dependencies and Electron. Installed solo gameplay runs offline. Open the game through `npm start`; the root HTML and Chrome App manifest are preserved legacy files, not the desktop entry point. Do not run the game through a generic web server.
+
+### Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `desktop/` | Electron launcher, local protocol, save storage, controls, UI and multiplayer work |
+| `game.canvas.js` | Running game bundle, formatted with verified names partially restored |
+| `staticmax/`, `assets/`, `img/`, `mapping_table.json`, root data JSON files | Original game assets/data and restoration UI assets; required in source control |
+| `js/`, `index.html`, `main.html`, `manifest.json` | Preserved original browser/Chrome App shell |
+| `tests/` | Unit/regression checks and visible Electron acceptance scripts |
+| `scripts/` | Icon generation and the guarded, one-time readability transformation |
+| `reference/beta-1/` | Immutable original runtime/save-reader baseline and hashes; tracked, excluded from app packages |
+| `package.json`, `package-lock.json` | Launch/build commands and pinned dependency graph; track both |
+| `RESTORATION_STATUS.md` | Authoritative roadmap, evidence and historical checkpoints |
+| `MULTIPLAYER_AUDIT.md`, `RUNTIME_READABILITY.md` | Networking audit and source-recovery details |
+| `BETA_README.txt` | Player installation guide for the unchanged Beta 1 packages |
+| `dist/`, `test-results/`, `node_modules/` | Local build output, test captures and installed dependencies; ignored |
+
+### Checks
+
+Automated test profiles (`POLYCRAFT_TEST_DATA`) use visible windows clearly labelled as temporary tests and never use personal islands. Announce a run before starting it so the user can observe issues. A finished or failed check closes its own test process. The user explicitly requested visible tests; do not hide them in the background.
+
+The running bundle is formatted, with 107 component/state names recovered from its own definitions using scoped syntax tools. Unresolved local names remain; see [RUNTIME_READABILITY.md](RUNTIME_READABILITY.md). The immutable Beta 1 reference and hashes are in `reference/beta-1` and are excluded from packages. Original hero badge platform icons are generated with `python3 scripts/generate-icons.py` (requires Pillow).
+
+Unit/regression checks do not launch the game. The gameplay acceptance command opens a visible window and performs automated actions:
+
+```sh
+npm test
+npm run test:game
+```
+
+The game acceptance test opens a temporary game window and automates gameplay actions. Run it when it will not interrupt a manual play session. It uses its own temporary save folder. To test a packaged app, set `POLYCRAFT_EXECUTABLE` to its executable path. `POLYCRAFT_TEST_DATA` explicitly overrides the save location for test launches.
+
+Additional acceptance scripts under `tests/` cover save migration/lifecycle, achievements, progression, demolition, loading tips, fullscreen, transport and online simulation boundaries. Transport checks alone do not establish working multiplayer. Consult the status document before choosing a run; test results are evidence for that source/build and platform only.
+
+### Packaging
+
+```sh
+npm run build:mac
+npm run build:win
+npm run build:linux
+```
+
+Builds go to `dist/` by default. macOS targets Apple Silicon and Intel ZIPs; Windows targets x64 ZIP; Linux targets x64 AppImage and tar.gz. Cross-building may require additional platform tools or downloads. Build completion does not establish native gameplay compatibility.
+
+Keep existing `dist/beta-1` files and checksums unchanged. New shared releases need a new version and output folder. Publish packages and their checksums as release attachments, rather than committing executables to the source repository.
+
+Mac builds are ad-hoc signed, without notarization or a paid developer certificate. Windows builds are unsigned. Windows and Linux gameplay need testing on those operating systems; archive checks do not establish runtime acceptance.
+
+If macOS adds Finder metadata to bundles while building inside Documents or a synced folder, stage the build in a temporary directory instead:
+
+```sh
+npm run build:mac -- --config.directories.output=/private/tmp/polycraft-build
+```
+
+Playable multiplayer remains in development; it is not available in the launcher yet. Transport and host simulation work are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
+
+### GitHub backup and continuation
+
+Commit the source, original assets, documentation, tests, platform icons, lockfile and immutable reference baseline together so a fresh clone can reproduce the working setup. `.gitignore` excludes dependencies, build archives, test captures, local saves/recovery files, logs, crash dumps, environment files and common signing-key formats. Normal player data is stored outside this repository; GitHub source history does not back up your islands. Use the game's export feature and store those backups separately.
+
+Before each push, review `git status --short` and the staged changes. Ignore rules do not remove files already tracked by Git, and they do not detect secrets inside source files. Keep TURN credentials, signing material and personal island exports out of commits.
+
+To continue work in another clone or chat, read the current sections of `RESTORATION_STATUS.md`, then the relevant audit, and install with `npm ci`. The chat's resumable goal is separate from Git; the tracked roadmap is the portable continuation record.
+
+## Original material and notices
+
+This restoration preserves original game code, artwork, audio and embedded third-party notices. No repository-wide license grant for that original material is asserted here. Preserve existing notices and establish the applicable rights before redistributing original material publicly. The [Turbulenz benchmark reference](https://github.com/turbulenz/webgl_benchmark) is not a release of the complete PolyCraft source; its license does not automatically cover this repository's assets.

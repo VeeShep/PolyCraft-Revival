@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PolyCraft Offline</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="bridge.js"></script>
+  <script defer src="controls.js"></script>
+  <script defer src="retro-ui.js"></script>
+  <script defer src="multiplayer.js"></script>
+  <script defer src="online-world.js"></script>
+  <script defer src="host.js"></script>
+</head>
+<body>
+  <header>
+    <div class="brand"><img src="/assets/offline-ui/polycraft-logo.svg" alt="PolyCraft"><small>Offline</small></div>
+    <span id="slot-name"></span>
+    <nav id="game-actions" hidden aria-label="Game controls">
+      <button id="save-now">Save now</button><button id="cheats" hidden>Cheats</button><button id="slots">Saves</button><button id="fullscreen">Fullscreen</button>
+    </nav>
+  </header>
+  <p id="status" role="status">Loading local saves…</p>
+  <main id="play-area" hidden><canvas id="turbulenz_game_engine_canvas" tabindex="0" aria-label="PolyCraft game"></canvas></main>
+  <section id="launcher" aria-labelledby="welcome">
+    <h1 id="welcome">Choose your island</h1>
+    <p>Continue an island or start a new adventure.</p>
+    <form id="new-game"><label>New island name <input id="new-name" maxlength="80" required placeholder="My island"></label><button>Create island</button></form>
+    <button id="import">Import backup</button>
+    <div id="save-list"></div>
+  </section>
+  <dialog id="cheat-dialog" aria-labelledby="cheat-title">
+    <h2 id="cheat-title">Cheats</h2><p id="cheat-pause">Game paused. Changes apply to this island.</p>
+    <label class="toggle"><input id="cheats-enabled" type="checkbox"> Cheats enabled · unlock free premium items</label>
+    <fieldset id="cheat-tools">
+    <button id="heal">Restore hero health</button><button id="fill">Fill wood and stone storage</button>
+    <form id="resource-form">
+      <label>Amber <input id="amber" type="number" min="0" max="2147483647" step="1" required></label>
+      <label>Wood <input id="wood" type="number" min="0" step="1" required></label>
+      <label>Stone <input id="stone" type="number" min="0" step="1" required></label>
+      <button>Apply amounts</button>
+    </form>
+    <form id="progression-form">
+      <label>Hero level <input id="hero-level" type="number" min="0" step="1" required></label>
+      <label>XP in this level <input id="hero-xp" type="number" min="0" step="1" required></label>
+      <label>Unspent hero points <input id="hero-points" type="number" min="0" max="1000000" step="1" required></label>
+      <button>Apply hero progression</button>
+    </form>
+    <p>Spend hero points at the map’s totems. Level controls level-based unlocks; quests and upgrade prerequisites still apply. Lowering a level keeps purchased upgrades.</p>
+    <details id="totem-cheats">
+      <summary>Totem stats</summary>
+      <p>Set each upgrade level directly. No visit, hero level or points required. Your unspent points stay the same.</p>
+      <form id="totem-form"><div id="totem-levels"></div><button>Apply totem stats</button></form>
+    </details>
+    <label class="toggle"><input id="invincible" type="checkbox"> Invincible hero</label>
+    <label class="toggle"><input id="instant-build" type="checkbox"> Instant construction and upgrades</label>
+    <p>Normal costs and unlock requirements still apply. Wood and stone stay within storage capacity.</p>
+    </fieldset>
+    <button id="close-cheats">Return to game</button>
+  </dialog>
+  <dialog id="tips-dialog" aria-labelledby="tips-title">
+    <h2 id="tips-title">Loading tips</h2>
+    <img id="tip-image" alt="">
+    <p id="tip-caption" aria-live="polite"></p>
+    <nav aria-label="Loading tip controls"><button id="tip-previous">Previous</button><button id="tip-next">Next</button><button id="close-tips">Close</button></nav>
+  </dialog>
+  <dialog id="name-dialog" aria-labelledby="name-title">
+    <form method="dialog"><h2 id="name-title">Rename island</h2><label>Name <input id="rename-value" maxlength="80" required></label><button value="save">Save name</button><button value="cancel" formnovalidate>Cancel</button></form>
+  </dialog>
+  <dialog id="error-dialog" aria-labelledby="error-title"><h2 id="error-title">Something needs attention</h2><p id="error-text"></p><form method="dialog"><button>OK</button></form></dialog>
+</body>
+</html>
