@@ -38,6 +38,20 @@ const assert = require('node:assert/strict');
       console.log('Visible temporary game ready:', role);
     }
     const host = pages[0];
+    async function focus(index) {
+      const page = pages[index];
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await applications[index].evaluate(({ app, BrowserWindow }) => {
+          app.focus({ steal: true });
+          const window = BrowserWindow.getAllWindows()[0]; window.show(); window.moveTop(); window.focus();
+        });
+        await page.bringToFront(); await page.locator('#turbulenz_game_engine_canvas').focus();
+        try {
+          await page.waitForFunction(() => document.hasFocus() && (!window.guestWorld || window.guestWorld.movement.nativeFocused), null, { timeout: 5000 });
+          return;
+        } catch (error) { if (attempt) throw error; }
+      }
+    }
     const ids = await host.evaluate(async () => {
       window.hostErrors = [];
       window.hostSession = new window.PolycraftMultiplayer.HostSession({ onError: (peer, error) => window.hostErrors.push(error.message) });
@@ -99,18 +113,13 @@ const assert = require('node:assert/strict');
         }
       };
     }, motionStart);
-    await applications[0].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
-    await host.locator('#turbulenz_game_engine_canvas').focus();
-    await host.waitForFunction(() => document.hasFocus());
+    await focus(0);
     for (const key of ['w', 'd', 's', 'a', 'w', 'd', 's', 'a']) {
       await host.keyboard.down(key); await host.waitForTimeout(500); await host.keyboard.up(key);
     }
     for (let index = 1; index <= 3; index++) {
       const guest = pages[index];
-      await applications[index].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
-      await guest.locator('#turbulenz_game_engine_canvas').focus();
-      await guest.waitForFunction(() => document.hasFocus());
-      await guest.waitForFunction(() => window.guestWorld.movement.nativeFocused);
+      await focus(index);
       if (index === 1) {
         await guest.keyboard.down('w'); await guest.waitForTimeout(500);
         const tick = await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex());
@@ -187,9 +196,7 @@ const assert = require('node:assert/strict');
       return { id: target.getName(), remaining: target.getEC('ECResourceDispenser').getResource() };
     }), ids[0]);
     const guest = pages[1];
-    await applications[1].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
-    await guest.locator('#turbulenz_game_engine_canvas').focus();
-    await guest.waitForFunction(() => window.guestWorld.movement.nativeFocused);
+    await focus(1);
     await guest.waitForTimeout(1000);
     const click = await guest.evaluate(id => {
       const world = window.guestWorld, globals = world.controls.app.globals;
@@ -251,15 +258,64 @@ const assert = require('node:assert/strict');
       }
       throw new Error('No eligible original building placement in temporary fixture: ' + JSON.stringify(diagnostics));
     }), ids[0]);
-    const buildSequence = await guest.evaluate(request => window.guestWorld.sendBuild(request.source, request.index, request.location), build);
-    await guest.waitForFunction(sequence => window.guestWorld.lastTargetResult.sequence === sequence, buildSequence);
-    assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Building placed and saved.');
+    await host.evaluate(async ({ id, source }) => window.hostWorld.atBoundary(() => {
+      const game = window.hostWorld.game, position = Array.from(game.getGameEntityByName(source).getv3Location()); position[0] += 3;
+      window.hostWorld.players.active.get(id).hero.teleport(game.placeOnGround(position, 1));
+    }), { id: ids[0], source: build.source });
+    await guest.waitForTimeout(1000);
+    const buildLocations = await host.evaluate(async ({ id, source, index }) => window.hostWorld.atBoundary(() => {
+      const world = window.hostWorld, hero = world.players.active.get(id).hero, entity = world.game.getGameEntityByName(source), center = entity.getv3Location();
+      const locations = [];
+      for (let x = -10; x <= 10; x += 2) for (let z = -10; z <= 10; z += 2) {
+        const point = [center[0] + x, hero.getv3Location()[1], center[2] + z];
+        if (world.construction.preview(hero, entity, index, point).preview.valid) locations.push(point);
+      }
+      if (!locations.length) throw new Error('No valid preview after moving the temporary hero near its workshop.');
+      return locations;
+    }), { id: ids[0], source: build.source, index: build.index });
+    await clickEntity(build.source);
+    await guest.waitForFunction(source => window.guestWorld.construction.menu?.source === source, build.source);
+    assert.deepEqual(await host.evaluate(() => window.polycraft.controls.amounts()), build.before, 'Opening the product menu spends nothing');
+    await guest.waitForFunction(({ source, index }) => window.guestWorld.game.guiManager.prevDrawGuiMap['guest-build-' + source + '-' + index]?.scale > 0.95, { source: build.source, index: build.index });
+    fs.mkdirSync('test-results', { recursive: true }); await guest.screenshot({ path: 'test-results/coop-build-menu.png' });
+    await clickEntity(build.source);
+    await guest.waitForFunction(() => window.guestWorld.construction.placement);
+    const placementPoint = await guest.evaluate(locations => {
+      const world = window.guestWorld, globals = world.controls.app.globals, hero = world.scene.entities.get(world.identity.entity).record;
+      const bounds = world.movement.canvas.getBoundingClientRect();
+      const candidates = locations.map(location => {
+        const point = globals.camera.worldToScreen([location[0], hero.location[1], location[2]]);
+        return point && { location, x: bounds.left + point[0] * bounds.width / globals.graphicsDevice.width, y: bounds.top + point[1] * bounds.height / globals.graphicsDevice.height };
+      });
+      const visible = candidates.find(point => point && point.x > bounds.left + 60 && point.x < bounds.right - 60 && point.y > bounds.top + 60 && point.y < bounds.bottom - 100);
+      if (!visible) throw new Error('Need a host-valid footprint inside the guest canvas: ' + JSON.stringify({ bounds: bounds.toJSON(), candidates }));
+      return { ...visible, firstCandidate: candidates[0], bounds: bounds.toJSON() };
+    }, buildLocations);
+    build.location = placementPoint.location;
+    console.log('Visible placement candidate:', placementPoint);
+    await guest.mouse.move(placementPoint.x, placementPoint.y);
+    await guest.waitForFunction(location => {
+      const cursor = window.guestWorld.construction.cursor();
+      return cursor && Math.hypot(cursor[0] - location[0], cursor[2] - location[2]) < 0.15;
+    }, build.location);
+    await guest.waitForFunction(() => { const ui = window.guestWorld.construction; return ui.preview?.valid && ui.matches(ui.preview.location); });
+    const expectedPlacement = await guest.evaluate(() => [...window.guestWorld.construction.preview.position]);
+    assert.deepEqual(await host.evaluate(() => window.polycraft.controls.amounts()), build.before, 'Previewing a building spends nothing');
+    await guest.screenshot({ path: 'test-results/coop-build-preview.png' });
+    await guest.mouse.click(placementPoint.x, placementPoint.y, { delay: 100 });
+    await guest.waitForFunction(() => window.guestWorld.construction.lastBuildResult);
+    assert.equal(await guest.evaluate(() => window.guestWorld.construction.lastBuildResult.message), 'Building placed and saved.');
+    assert.equal(await guest.evaluate(() => !!window.guestWorld.construction.placement), true, 'Original repeat-building products retain the local blueprint');
+    await guest.keyboard.press('Escape');
+    await guest.waitForFunction(() => !window.guestWorld.construction.placement);
     const built = await host.evaluate(() => ({ amounts: window.polycraft.controls.amounts(), pending: window.hostWorld.construction.pending.size, events: window.buildEvents }));
     assert.equal(built.pending, 0); assert.equal(built.events.length, 1);
     assert.equal(built.amounts.wood, build.before.wood - build.costs[0]); assert.equal(built.amounts.stone, build.before.stone - build.costs[1]);
     assert.equal(built.amounts.amber, build.before.amber - build.costs[2]);
     const builtSave = JSON.parse(fs.readFileSync(originals[0].file));
-    assert.equal(JSON.parse(builtSave.state.userData.AdventureIncGameState).gameSpaceList.some(space => space.entityList.some(entity => entity.name === built.events[0])), true, 'The paid scaffold exists on disk before acceptance');
+    const savedScaffold = JSON.parse(builtSave.state.userData.AdventureIncGameState).gameSpaceList.flatMap(space => space.entityList).find(entity => entity.name === built.events[0]);
+    assert.ok(savedScaffold, 'The paid scaffold exists on disk before acceptance');
+    assert.ok(Math.hypot(savedScaffold.v3Location[0] - expectedPlacement[0], savedScaffold.v3Location[2] - expectedPlacement[2]) < 0.01, 'The saved scaffold occupies the confirmed preview footprint');
     console.log('Original guest build accepted:', { archetype: build.archetype, costs: build.costs, scaffold: built.events[0], pending: built.pending });
     const storage = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
       const controls = window.polycraft.controls, game = controls.manager(), before = controls.amounts().woodCap;
@@ -276,8 +332,10 @@ const assert = require('node:assert/strict');
       const point = await guest.evaluate(id => {
         const world = window.guestWorld, globals = world.controls.app.globals, record = world.scene.entities.get(id).record;
         const point = globals.camera.worldToScreen(record.location), bounds = world.movement.canvas.getBoundingClientRect();
-        return { x: bounds.left + point[0] * bounds.width / globals.graphicsDevice.width, y: bounds.top + point[1] * bounds.height / globals.graphicsDevice.height };
+        const result = { x: bounds.left + point[0] * bounds.width / globals.graphicsDevice.width, y: bounds.top + point[1] * bounds.height / globals.graphicsDevice.height };
+        return { ...result, picked: window.PolycraftCoopActions.pickTarget(world, { clientX: result.x, clientY: result.y }), visible: record.mesh?.visible, available: world.movement.available() };
       }, id);
+      if (!await guest.evaluate(() => window.guestWorld.localMenu())) assert.equal(point.picked, id, 'Visible target pick: ' + JSON.stringify(point));
       await guest.mouse.move(point.x, point.y); await guest.waitForTimeout(150); await guest.mouse.click(point.x, point.y, { delay: 100 });
     }
     async function openDemolition() {
@@ -378,11 +436,12 @@ const assert = require('node:assert/strict');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
     for (let index = 0; index < pages.length; index++) try {
-      console.log('Failure state', index, await pages[index].evaluate(() => ({ hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
+      console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
         connection: window.connection && { closed: window.connection.closed, state: window.connection.state }, focused: document.hasFocus(),
         movement: window.guestWorld?.movement && { keys: [...window.guestWorld.movement.keys], available: window.guestWorld.movement.available(), nativeFocused: window.guestWorld.movement.nativeFocused },
         identity: window.guestWorld?.identity, tick: window.guestWorld?.scene.tick,
-        slots: window.hostWorld && [...window.hostWorld.guestSlots.values()].map(binding => ({ id: binding.id, ready: binding.ready, joined: binding.joined, releasing: binding.releasing, input: { sequence: binding.input.sequence, move: binding.input.move, moving: binding.input.moving, age: performance.now() - binding.input.receivedAt } })) })));
+        action: window.guestWorld && { sequence: window.guestWorld.targetSequence, selection: window.guestWorld.selectionRequest, result: window.guestWorld.lastTargetResult, menu: window.guestWorld.construction?.menu, placement: window.guestWorld.construction?.placement, preview: window.guestWorld.construction?.preview },
+        slots: window.hostWorld && [...window.hostWorld.guestSlots.values()].map(binding => ({ id: binding.id, ready: binding.ready, joined: binding.joined, releasing: binding.releasing, input: { sequence: binding.input.sequence, move: binding.input.move, moving: binding.input.moving, age: performance.now() - binding.input.receivedAt } })) }))));
       await pages[index].screenshot({ path: 'test-results/coop-identities-failure-' + index + '.png' });
     } catch {}
     console.log('Renderer errors:', errors); throw error;

@@ -2,13 +2,15 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { HostActions, pickTarget } = require('../desktop/coop-actions.js');
-test('build intent accepts only an owned copy of a bounded position and product index, never supplied costs or hero identity', () => {
-  const valid = { type: 'build', sequence: 1, target: 'HQ', index: 0, location: [1, 2, 3] };
-  for (const value of [{ ...valid, index: -1 }, { ...valid, index: 32 }, { ...valid, location: [1, NaN, 2] }, { ...valid, location: Array(3) }, { ...valid, location: [1, 2, 1e7] }, { ...valid, location: [1, 2] }, { ...valid, cost: 0 }, { ...valid, playerId: 'another' }]) {
-    const actions = new HostActions(); assert.throws(() => actions.receive(value), /Invalid/); assert.equal(actions.sequence, 0);
+test('build and preview intents accept only an owned copy of a bounded position and product index, never supplied costs or hero identity', () => {
+  for (const type of ['build', 'preview']) {
+    const valid = { type, sequence: 1, target: 'HQ', index: 0, location: [1, 2, 3] };
+    for (const value of [{ ...valid, index: -1 }, { ...valid, index: 32 }, { ...valid, location: [1, NaN, 2] }, { ...valid, location: Array(3) }, { ...valid, location: [1, 2, 1e7] }, { ...valid, location: [1, 2] }, { ...valid, cost: 0 }, { ...valid, playerId: 'another' }]) {
+      const actions = new HostActions(); assert.throws(() => actions.receive(value), /Invalid/); assert.equal(actions.sequence, 0);
+    }
+    const actions = new HostActions(); actions.receive(valid); valid.location[0] = 999;
+    assert.deepEqual(actions.queue[0].location, [1, 2, 3]); assert.throws(() => actions.receive(valid), /repeated/);
   }
-  const actions = new HostActions(); actions.receive(valid); valid.location[0] = 999;
-  assert.deepEqual(actions.queue[0].location, [1, 2, 3]); assert.throws(() => actions.receive(valid), /repeated/);
 });
 function setup() {
   const state = { remaining: 4, range: 0, active: true, blocked: false, building: false, throwing: false, health: 50, permitted: true, armed: true, inRange: true, ready: true, ammo: 4, collected: 0, fired: 0 };
@@ -26,6 +28,24 @@ function setup() {
   const players = { canDamage: (target, actor) => { assert.equal(target, enemy); assert.equal(actor, hero); return state.permitted; } };
   return { state, hero, resource, game, players };
 }
+test('target menus and previews use the assigned hero and current host construction metadata without requesting a save', () => {
+  const { game, hero, resource, players, state } = setup(), actions = new HostActions();
+  const construction = { source: 'tree', products: [{}] }, preview = { valid: false };
+  game.desktopConstruction = {
+    menu(actor, source) { assert.equal(actor, hero); assert.equal(source, resource); return construction; },
+    preview(actor, source, index, location) {
+      assert.equal(actor, hero); assert.equal(source, resource); assert.equal(index, 2); assert.deepEqual(location, [1, 0, 2]);
+      return { message: 'Cannot build here.', preview };
+    }
+  };
+  actions.receive({ type: 'target', sequence: 1, target: 'tree' });
+  assert.equal(actions.apply(game, hero, players).construction, construction);
+  actions.receive({ type: 'preview', sequence: 2, target: 'tree', index: 2, location: [1, 0, 2] });
+  assert.deepEqual(actions.apply(game, hero, players), { type: 'preview', sequence: 2, message: 'Cannot build here.', preview });
+  assert.equal(state.collected + state.fired, 0);
+  state.throwing = true;
+  assert.match(actions.execute(game, hero, players, 'tree', null, 'preview', { index: 2, location: [1, 0, 2] }), /Finish/);
+});
 test('target actions reject replay, authority fields, malformed IDs, queue overflow and excess rate without advancing accepted sequence', () => {
   for (const value of [null, {}, { type: 'target', sequence: 2, target: 'tree' }, { type: 'target', sequence: 1, target: '' }, { type: 'target', sequence: 1, target: 'x'.repeat(257) }, { type: 'target', sequence: 1, target: 'tree', playerId: 'other' }]) {
     const actions = new HostActions(() => 0); assert.throws(() => actions.receive(value), /Invalid/); assert.equal(actions.sequence, 0);
@@ -74,7 +94,7 @@ test('demolition selects host metadata, rechecks protection at execution and req
   available = false; send('demolish', 4); assert.match(actions.apply(game, hero, players, controls).message, /cannot be demolished/); assert.equal(removed, 1);
 });
 test('guest picking maps CSS pixels to the rendered scene and ignores own hero, hidden meshes and noninteractive art', () => {
-  const record = (id, location, visible = true) => ({ record: { id, location, archetype: id, mesh: { visible } } });
+  const record = (id, location, visible = true) => ({ record: { id, location, archetype: null, interactive: id !== 'art', mesh: { visible } } });
   const world = { identity: { entity: 'self' }, controls: { app: { globals: { graphicsDevice: { width: 200, height: 100, canvas: { getBoundingClientRect: () => ({ left: 10, top: 20, width: 100, height: 50 }) } }, camera: { worldToScreen: location => location } } } },
     game: { getEntityFactory: () => ({ getECArchetype: (id, component) => id !== 'art' && component === 'ECTarget' }) },
     scene: { entities: new Map([['self', record('self', [40, 20])], ['art', record('art', [40, 20])], ['hidden', record('hidden', [40, 20], false)], ['enemy', record('enemy', [45, 20])]]) } };

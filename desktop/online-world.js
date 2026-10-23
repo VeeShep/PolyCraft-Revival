@@ -124,7 +124,7 @@
         if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) return;
         this.playerFor(connection);
         if (message.kind === 'action') {
-          if (['target', 'demolish', 'build'].includes(message.payload.type)) binding.actions.receive(message.payload);
+          if (['target', 'demolish', 'build', 'preview'].includes(message.payload.type)) binding.actions.receive(message.payload);
           else binding.input.receive(message.payload);
           return;
         }

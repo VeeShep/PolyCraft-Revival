@@ -29,6 +29,16 @@ The visible host acceptance repeat captured a real 2,208-block / 352-entity isla
 
 ## Next implementation slice
 
+### Original-style guest construction interface — 2026-10-22
+
+`GuestConstruction` draws original product buttons/cost/time artwork and ground guidelines using host-authored dispenser metadata. Selecting a product creates only a local blueprint. Bounded, sequenced preview queries use a shadow of the original builder placement fields, without creating held entities, spending or reserving capacity. Click placement uses the existing authoritative build/throw/save path and rechecks all rules. Eligible repeat products retain the blueprint; Escape, the original Cancel button, focus loss and source removal clear local selection. Late selection/preview replies cannot reopen cancelled menus or place at an obsolete cursor point.
+
+Snapshot version 3 adds an actual live-component `interactive` flag. Attached workshop icons have deliberately cleared archetype names, so static archetype lookups could not select them; the host flag supports their real components without inventing archetype names or activating guest ECS. Invitations require `polycraft-1.0.0.25-coop-7`; saves are unchanged. Guest cursor unprojection divides homogeneous coordinates before intersecting the replicated hero's height plane; the frozen solo world is not queried and the legacy solo camera helper is unchanged.
+
+116 unit/regression checks pass. Visible `polycraft-coop-identities-lkaWlw` passed actual original product-menu/preview/click placement, no spend before confirmation, cursor round trip, exact 100-stone cost and saved scaffold at the confirmed footprint. Repeat blueprint/Escape, four-player keyboard synchronization, gathering, demolition, PvP-off/on, reconnect and solo-save isolation also passed. Screenshots reviewed. Visible solo regression passed on `polycraft-game-eYTk78` (Play, Craft Resource X both cheat modes, cheats, checkpoint/autosave, separate islands and saved reload). The strengthened fixture chooses host-valid on-screen ground, confirms native focus, and reads the acknowledged disk scaffold because a zero-second build may already have completed live. Incomplete attempts and their corrections are recorded in RESTORATION_STATUS.md.
+
+**Remaining:** line placement, self-consuming dispensers/upgrades, normal progression/totems and the wider gameplay loop. Guest motion still jumps to complete snapshots, with at least 100 ms between completed transfers; interpolation and real-network performance are open. Smooth presentation must retain separate authoritative state and must not weaken host same-tick synchronization assertions. Native gameplay and physical-network acceptance remain open.
+
 ### Authoritative construction backend — 2026-10-22
 
 `HostConstruction` reserves in-flight registered-hero throws in original global/local building and scaffold limits, while retaining original footprint/build-zone checks and toolbox animations. It restores manager hooks on exit. Checkpoints wait for throws and recheck at their actual capture boundary; a stalled or failed placement cannot overwrite the previous checkpoint with a spent-but-missing building. Existing-building moves are tracked without reserving an extra building. Guest EmptyHanded events cannot consume the host's pending premium inventory.

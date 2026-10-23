@@ -42,10 +42,47 @@
         if (this.failure) throw this.failure;
       } finally { clearTimeout(timer); }
     }
-    build(hero, source, index, location) {
-      const dispenser = source.getEC('ECDispenser'), builder = hero.getEC('ECPlayerBuilder');
+    dispenser(hero, source) {
+      const dispenser = source.getEC('ECDispenser');
       const owner = source.getEC('ECAttach')?.getBaseEntity() || source;
-      if (!dispenser || dispenser.archetype.destroySelfOnDispense || dispenser.getQuantityPerPurchase(index) !== 1 || owner.shouldBeDestroyed?.() || owner.getEC('ECHealth')?.getHealth() <= 0 || !owner.isFriendlyWith(hero)) return 'This is not an available building dispenser.';
+      return dispenser && !dispenser.archetype.destroySelfOnDispense && !owner.shouldBeDestroyed?.() && !(owner.getEC('ECHealth')?.getHealth() <= 0) && owner.isFriendlyWith(hero) ? dispenser : null;
+    }
+    menu(hero, source) {
+      const dispenser = this.dispenser(hero, source);
+      if (!dispenser?.contents.length) return null;
+      dispenser.evaluateProductInfo();
+      return { source: source.getName(), products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
+        if (dispenser.archetype.showUnavailableDueToPrerequisites === false && !dispenser.arePrerequisitesMet(index)) return [];
+        if (dispenser.getQuantityPerPurchase(index) !== 1 || !this.game.getEntityFactory().getECArchetype(product.dispensedArchetypeName, 'ECBuilding')) return [];
+        return [{ index, name: dispenser.getDispenseName(index), archetype: product.dispensedArchetypeName,
+          costs: [dispenser.getResourceCost(index), dispenser.getSecondaryResourceCost(index), dispenser.getSoftCurrencyCost(index)],
+          valid: !!dispenser.getValid(index), affordable: !!dispenser.canAfford(hero, index), time: dispenser.getBuildTime(index), repeat: !!dispenser.getUsesInfiniteBuildMode(index) }];
+      }) };
+    }
+    preview(hero, source, index, location) {
+      const dispenser = this.dispenser(hero, source), product = dispenser?.getProductInfo(index);
+      if (!product || dispenser.getQuantityPerPurchase(index) !== 1) return 'That building is not available here.';
+      const factory = this.game.getEntityFactory(), definition = factory.getECArchetype(product.dispensedArchetypeName, 'ECBuilding');
+      if (!definition) return 'That building is not available here.';
+      dispenser.evaluateProductInfo();
+      // Shadow placement fields only: preview queries must never create entities, spend or fire EmptyHanded.
+      const builder = Object.assign(Object.create(hero.getEC('ECPlayerBuilder')), {
+        heldObjectName: product.dispensedArchetypeName, v3HeldObjectExtents: factory.getv3ObjectFootprintExtents(product.dispensedArchetypeName),
+        heldObjectFootplateBuffer: factory.getObjectBuildBuffer(product.dispensedArchetypeName),
+        spBuildingParentEntity: dispenser.buildingParentEntity?.getSmartPointer(), spMoveFromEntity: undefined,
+        v3LastPlacedLocation: undefined, throwing: 0, maxLinePlacementLength: factory.getBuildingMaxLinePlacementLength(product.dispensedArchetypeName),
+        heldEntityIsTrap: definition.buildingType === 'Trap', heldEntityCanPlaceAnywhere: definition.canPlaceAnywhere, heldEntityStackable: definition.stackable,
+        heldEntityMustPlaceNearCreator: definition.mustPlaceNearCreator, heldEntityBuildingType: definition.buildingType
+      });
+      const snapped = builder.getv3BuildLocation(location);
+      const valid = !!(dispenser.getValid(index) && dispenser.canAfford(hero, index) && this.canPlace(builder) && builder.canBuildAtPosition(snapped));
+      return { message: valid ? 'Click to place. Escape cancels.' : 'Cannot build here, or requirements are not met.',
+        preview: { source: source.getName(), index, location: [...location], position: Array.from(this.game.placeOnGround(snapped, 0.1)),
+          extents: [builder.v3HeldObjectExtents[0], builder.v3HeldObjectExtents[2]], buffer: builder.heldObjectFootplateBuffer, valid } };
+    }
+    build(hero, source, index, location) {
+      const dispenser = this.dispenser(hero, source), builder = hero.getEC('ECPlayerBuilder');
+      if (!dispenser || dispenser.getQuantityPerPurchase(index) !== 1) return 'This is not an available building dispenser.';
       const product = dispenser.getProductInfo(index);
       if (!product) return 'That building is not available here.';
       dispenser.evaluateProductInfo();

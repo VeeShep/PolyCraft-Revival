@@ -7,7 +7,7 @@ function setup() {
   let count = 0;
   const manager = { getRemainingBuildingsBeforeCap: () => Math.max(0, 1 - count), getNumScaffoldsForCap: () => 0,
     canCreateBuilding(type, parent, prerequisites, scaffolds, scaffoldType) { return this.getRemainingBuildingsBeforeCap(type, parent) > 0 && (!scaffolds || this.getNumScaffoldsForCap(scaffoldType) < 1); } };
-  const game = { desktopPlayers: { active: new Map() }, getBuildingManager: () => manager, getEntityFactory: () => ({ getECArchetype: () => definition }) };
+  const game = { desktopPlayers: { active: new Map() }, getBuildingManager: () => manager, placeOnGround: location => [location[0], 0.1, location[2]], getEntityFactory: () => ({ getECArchetype: () => definition, getv3ObjectFootprintExtents: () => [2, 3, 4], getObjectBuildBuffer: () => 0.2, getBuildingMaxLinePlacementLength: () => 0 }) };
   const construction = new HostConstruction(game);
   const actor = () => {
     const state = { resource: [100, 100], amber: 100, held: false, throwing: false, valid: true };
@@ -20,14 +20,26 @@ function setup() {
   };
   const first = actor(), second = actor();
   let valid = true, friendly = true, evaluated = 0;
-  const dispenser = { archetype: {}, getQuantityPerPurchase: () => 1, getProductInfo: index => index === 0 ? { dispensedArchetypeName: 'wall' } : null,
+  const dispenser = { archetype: {}, contents: [{ dispensedArchetypeName: 'wall' }], getDispenseName: () => 'Wall', getBuildTime: () => 10, getUsesInfiniteBuildMode: () => true,
+    getQuantityPerPurchase: () => 1, getProductInfo: index => index === 0 ? { dispensedArchetypeName: 'wall' } : null,
     evaluateProductInfo: () => { evaluated++; }, getValid: () => valid && construction.canPlace(first.builder),
     canAfford: hero => hero === first.hero && first.state.resource[0] >= 10 && first.state.resource[1] >= 5 && first.state.amber >= 3,
     getResourceCost: () => 10, getSecondaryResourceCost: () => 5, getSoftCurrencyCost: () => 3,
     payForDispensedEntity: hero => { const data = hero.getEC('ECPlayerData'); data.adjustResource(0, -10); data.adjustResource(1, -5); data.playerData.adjustSoftCurrency(-3); } };
-  const source = { getEC: name => name === 'ECDispenser' ? dispenser : undefined, isFriendlyWith: () => friendly };
+  const source = { getName: () => 'Workshop', getEC: name => name === 'ECDispenser' ? dispenser : undefined, isFriendlyWith: () => friendly };
   return { construction, game, manager, definition, first, second, source, dispenser, evaluated: () => evaluated, disable: () => { valid = false; }, enemy: () => { friendly = false; }, placed: () => { count++; } };
 }
+test('original menu and dry-run previews report current validity without spawning, spending, changing the real builder or reserving capacity', () => {
+  const { construction, first, source, evaluated } = setup();
+  const before = JSON.stringify(first.state), fields = Object.keys(first.builder);
+  const menu = construction.menu(first.hero, source);
+  assert.equal(menu.source, 'Workshop'); assert.deepEqual(menu.products[0].costs, [10, 5, 3]); assert.equal(menu.products[0].repeat, true);
+  const preview = construction.preview(first.hero, source, 0, [1, 2, 3]);
+  assert.deepEqual(preview.preview, { source: 'Workshop', index: 0, location: [1, 2, 3], position: [1, 0.1, 3], extents: [2, 4], buffer: 0.2, valid: true });
+  assert.equal(JSON.stringify(first.state), before); assert.deepEqual(Object.keys(first.builder), fields); assert.equal(construction.pending.size, 0); assert.equal(evaluated(), 2);
+  first.state.valid = false; assert.equal(construction.preview(first.hero, source, 0, [1, 2, 3]).preview.valid, false);
+  construction.close();
+});
 test('stalled construction refuses the save after its deadline and permits a retry after the throw completes', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const { construction, first } = setup(), pending = construction.reserve(first.builder, 'wall');

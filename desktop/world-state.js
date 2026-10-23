@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const VERSION = 2;
+  const VERSION = 3;
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
   const number = value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= 1e9;
@@ -30,7 +30,7 @@
         if (assets) requireValue(assets.hasBlock(block.archetype), 'unknown terrain block.');
       }
       for (const entity of space.entities) {
-        requireValue(keys(entity, ['id', 'archetype', 'location', 'scale', 'rotation', 'mesh', 'health']) && name(entity.id) && (entity.archetype === null || name(entity.archetype)) && vector(entity.location, 3) && vector(entity.scale, 3) && number(entity.rotation), 'invalid entity.');
+        requireValue(keys(entity, ['id', 'archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health']) && name(entity.id) && (entity.archetype === null || name(entity.archetype)) && typeof entity.interactive === 'boolean' && vector(entity.location, 3) && vector(entity.scale, 3) && number(entity.rotation), 'invalid entity.');
         requireValue(!ids.has(entity.id), 'duplicate entity identity.'); ids.add(entity.id);
         if (entity.mesh !== null) {
           const mesh = entity.mesh;
@@ -65,6 +65,7 @@
           skin?.update();
           return {
             id: entity.name, archetype: entity.archetypeName || null,
+            interactive: !!(entity.getEC('ECResourceDispenser') || entity.getEC('ECTarget') || entity.getEC('ECBuilding') || entity.getEC('ECDispenser')),
             location: Array.from(entity.getv3Location()), scale: Array.from(entity.getV3Scale()), rotation: entity.getRotationY(),
             mesh: mesh?.node ? { path: mesh.getMeshPath(), transform: Array.from(mesh.getm43Transform()), visible: !mesh.node.disabled, skin: skin ? Array.from(skin.output) : null } : null,
             health: health ? { current: health.getHealth(), maximum: health.getMaxHealth() } : null

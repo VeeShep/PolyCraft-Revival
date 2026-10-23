@@ -22,9 +22,9 @@ test('guest original-style demolition menus use presentation input only, support
 });
 const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
-  const entity = id => ({ id, archetype: null, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
+  const entity = id => ({ id, archetype: null, interactive: true, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50 } });
-  return { version: 2, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, spaces: [{
+  return { version: 3, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -161,6 +161,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   connection.onMessage({ kind: 'update', payload: ranked });
   assert.equal(world.identity.playerId, welcome.playerId); assert.equal(world.identity.entity, ranked.hero);
   world.targetSequence = 1;
+  world.selectionRequest = 1;
   const selection = { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'storage', name: 'Storage', reason: '' } };
   assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, building: { ...selection.building, reason: 5 } } }), /Invalid demolition/);
   assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, type: 'demolish' } }), /Invalid demolition/);

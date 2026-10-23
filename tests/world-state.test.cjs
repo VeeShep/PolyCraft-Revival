@@ -7,7 +7,7 @@ function fixture() {
   const transform = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3, 4]);
   const mesh = { node: { disabled: false }, getMeshPath: () => 'models/hero.dae', getm43Transform: () => transform };
   const entity = (id, destroyed = false) => ({ name: id, shouldLevelSave: false, shouldPlayerSave: false,
-    shouldBeDestroyed: () => destroyed, getEC: name => name === 'ECMesh' ? mesh : { getHealth: () => 31, getMaxHealth: () => 50 },
+    shouldBeDestroyed: () => destroyed, getEC: name => name === 'ECMesh' ? mesh : name === 'ECHealth' ? { getHealth: () => 31, getMaxHealth: () => 50 } : name === 'ECTarget' && id === 'hero' ? {} : null,
     getv3Location: () => location, getV3Scale: () => scale, getRotationY: () => 0
   });
   const entities = [entity('hero'), entity('pickup'), entity('removed', true)];
@@ -24,6 +24,7 @@ test('replication captures unsaved heroes and transient objects, excludes destro
   assert.deepEqual(snapshot.spaces[0].entities[0].health, { current: 31, maximum: 50 });
   assert.equal(snapshot.tick, 17);
   assert.equal(snapshot.time, 0.5);
+  assert.deepEqual(snapshot.spaces[0].entities.map(entity => entity.interactive), [true, false]);
   const before = JSON.stringify(snapshot);
   location.fill(100); scale.fill(100); transform.fill(100);
   assert.equal(JSON.stringify(snapshot), before, 'Later simulation cannot mutate queued network state');
@@ -38,7 +39,8 @@ test('world validation requires unique live identities, selected hero and bounde
     state => { state.tick = -1; },
     state => { state.version++; },
     state => { state.spaces[0].blocks = Array(LIMITS.blocks + 1).fill(state.spaces[0].blocks[0]); },
-    state => { state.spaces[0].entities[0].ecData = { ECHealth: { health: 999 } }; }
+    state => { state.spaces[0].entities[0].ecData = { ECHealth: { health: 999 } }; },
+    state => { state.spaces[0].entities[0].interactive = 'yes'; }
   ]) {
     const state = captureSnapshot(fixture().game); mutate(state);
     assert.throws(() => validateSnapshot(state), /Invalid world snapshot/);

@@ -3,6 +3,7 @@
   const { validateSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
+  const { GuestConstruction } = typeof module !== 'undefined' ? require('./guest-construction.js') : root.PolycraftGuestConstruction;
 
   // Guests create presentation nodes only: activating ECS archetypes would run host-owned AI and rewards.
   class GuestScene {
@@ -130,6 +131,7 @@
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
       this.guiInput = { down: false, pendingDown: false, position: [0, 0], getGuiDown() { return this.down; }, getv2ScreenCoord() { return this.position; } };
+      this.construction = new GuestConstruction(this);
       game.imgui.controller = this.guiInput;
       game.draw = () => {};
       game.draw2D = () => { game.imgui.draw2D(); game.updateInterfaceTweens(); game.getGuiManager().completeDraw(); globals.simpleFontRenderer.render(); };
@@ -153,12 +155,17 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          if (!value || Object.keys(value).length !== (value.building ? 4 : 3) || !['target', 'demolish', 'build'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          const extras = value && ['building', 'construction', 'preview'].filter(key => Object.hasOwn(value, key));
+          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (extras.length && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
+          const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
             const building = value.building;
             if (value.type !== 'target' || Object.keys(building).length !== 3 || !['id', 'name', 'reason'].every(key => typeof building[key] === 'string' && building[key].length <= 256) || !building.id || !building.name) throw new Error('Invalid demolition selection.');
-            this.selectedBuilding = building.reason ? null : { ...building };
+            if (selected) this.selectedBuilding = building.reason ? null : { ...building };
           }
+          this.construction.receive(value, selected);
+          if (selected) { this.selectionRequest = null; if (value.construction) this.selectedBuilding = this.demolition = null; }
           this.lastTargetResult = { ...value };
           const status = root.document?.getElementById?.('status');
           if (status) status.textContent = value.message;
@@ -174,30 +181,38 @@
     clickTarget(event) {
       const target = pickTarget(this, event);
       if (!target) return;
-      this.sendTarget('target', target);
+      this.selectionRequest = this.sendTarget('target', target);
     }
     sendTarget(type, target) {
-      this.connection.send('action', { type, sequence: ++this.targetSequence, target }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
-    }
-    sendBuild(target, index, location) {
       const sequence = ++this.targetSequence;
-      this.connection.send('action', { type: 'build', sequence, target, index, location }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      this.connection.send('action', { type, sequence, target }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
-    localMenu() { return !!(this.selectedBuilding || this.demolition); }
+    sendBuild(target, index, location) {
+      return this.sendPlacement('build', target, index, location);
+    }
+    sendPlacement(type, target, index, location) {
+      const sequence = ++this.targetSequence;
+      this.connection.send('action', { type, sequence, target, index, location }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      return sequence;
+    }
+    localMenu() { return !!(this.selectedBuilding || this.demolition || this.construction?.menu); }
     cancelLocalMenu() {
       this.selectedBuilding = this.demolition = null;
+      this.selectionRequest = null; this.construction?.cancel();
       this.guiInput.down = this.guiInput.pendingDown = false;
       this.movement?.keys.clear();
     }
     pointer(event, value) {
       const canvas = this.movement.canvas, bounds = canvas.getBoundingClientRect(), device = this.controls.app.globals.graphicsDevice;
       this.guiInput.position = [(value.clientX - bounds.left) * device.width / bounds.width, (value.clientY - bounds.top) * device.height / bounds.height];
+      this.construction.pointer(event, value);
       if (value.button !== 0) return;
-      if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = this.localMenu();
+      if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = this.localMenu() || !!this.construction.placement;
       if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) this.guiInput.pendingDown = false;
     }
     updateMenu() {
+      this.construction?.update();
       const building = this.demolition || this.selectedBuilding;
       if (!building) return;
       const record = this.scene.entities.get(building.id)?.record;
