@@ -1,7 +1,7 @@
 'use strict';
 (function (root) {
   const PROTOCOL = 1;
-  const RUNTIME = 'polycraft-1.0.0.25-coop-7';
+  const RUNTIME = 'polycraft-1.0.0.25-coop-8';
   const PREFIX = 'polycraft1.';
   const INVITE_LIFETIME = 30 * 60 * 1000;
   const CHUNK_BYTES = 8192;
@@ -9,7 +9,7 @@
   const MAX_TRANSFER = 32 * 1024 * 1024;
   const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
   const HOST_MESSAGES = new Set(['welcome', 'snapshot', 'update', 'result', 'end']);
-  const GUEST_MESSAGES = new Set(['hello', 'action', 'ack']);
+  const GUEST_MESSAGES = new Set(['hello', 'action', 'ack', 'resync']);
   const encoder = new TextEncoder();
   const decoder = new TextDecoder('utf-8', { fatal: true });
   const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);

@@ -66,7 +66,9 @@ const assert = require('node:assert/strict');
     async function publish(kind) {
       const result = await host.evaluate(async ({ peer, kind }) => {
         const snapshot = await window.hostWorld.snapshot();
-        await window.hostSession.peers.get(peer).send(kind, snapshot);
+        const delta = kind === 'update' && window.PolycraftWorldState.createDelta(window.lastPublishedWorld, snapshot);
+        await window.hostSession.peers.get(peer).send(delta ? 'update' : 'snapshot', delta || snapshot);
+        window.lastPublishedWorld = snapshot;
         return { tick: snapshot.tick, hero: snapshot.spaces.flatMap(space => space.entities).find(entity => entity.id === snapshot.hero),
           blocks: snapshot.spaces.reduce((sum, space) => sum + space.blocks.length, 0), entities: snapshot.spaces.reduce((sum, space) => sum + space.entities.length, 0) };
       }, { peer: invitation.peer, kind });

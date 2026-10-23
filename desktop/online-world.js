@@ -1,7 +1,7 @@
 'use strict';
 (function (root) {
   const { HostSession } = typeof module !== 'undefined' ? require('./multiplayer.js') : root.PolycraftMultiplayer;
-  const { captureSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
+  const { captureSnapshot, createDelta } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { CoopPlayers } = typeof module !== 'undefined' ? require('./coop-players.js') : root.PolycraftCoopPlayers;
   const { HostMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { HostActions } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
@@ -123,6 +123,7 @@
         const binding = this.peerPlayers.get(connection.peer);
         if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) return;
         this.playerFor(connection);
+        if (message.kind === 'resync') { this.requestResync(connection, message.payload); return; }
         if (message.kind === 'action') {
           if (['target', 'demolish', 'build', 'preview'].includes(message.payload.type)) binding.actions.receive(message.payload);
           else binding.input.receive(message.payload);
@@ -213,9 +214,16 @@
         return snapshot;
       });
     }
+    requestResync(connection, value) {
+      const stream = this.streams.get(connection);
+      if (this.closed || this.closing || !stream || connection.closed || connection.state !== 'connected' || this.transport.peers.get(connection.peer) !== connection) throw new Error('Resynchronizing requires this guest\'s active world stream.');
+      if (!value || Object.keys(value).length !== 2 || value.version !== 1 || !Number.isSafeInteger(value.tick) || value.tick < 0) throw new Error('Invalid world resync request.');
+      const now = performance.now();
+      if (now - stream.resyncRequestedAt >= 1000) { stream.resyncRequestedAt = now; stream.forceFull = true; }
+    }
     streamTo(connection, initial) {
       if (this.closed || this.closing || connection.closed || connection.state !== 'connected' || this.transport.peers.get(connection.peer) !== connection || this.streams.has(connection)) throw new Error('World streaming requires a connected guest of this host.');
-      const stream = { stopped: false, kind: 'snapshot', initial };
+      const stream = { stopped: false, initial, previous: null, lastFull: -Infinity, resyncRequestedAt: -Infinity, forceFull: false };
       const stop = () => { if (stream.stopped) return; stream.stopped = true; clearTimeout(stream.timer); this.streams.delete(connection); };
       stream.stop = stop;
       this.streams.set(connection, stream);
@@ -225,8 +233,12 @@
           const state = stream.initial || await this.snapshot(connection);
           stream.initial = null;
           if (stream.stopped || this.closed || connection.closed) { stop(); return; }
-          await connection.send(stream.kind, state);
-          stream.kind = 'update';
+          const full = stream.forceFull || performance.now() - stream.lastFull >= 5000;
+          stream.forceFull = false;
+          const delta = !full && stream.previous && createDelta(stream.previous, state);
+          await connection.send(delta ? 'update' : 'snapshot', delta || state);
+          if (!delta) stream.lastFull = performance.now();
+          stream.previous = state;
         } catch (error) {
           const cancelled = stream.stopped || this.closing || this.closed || connection.closed;
           stop();

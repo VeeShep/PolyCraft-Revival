@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Controls } = require('../desktop/controls.js');
 const { GuestScene, GuestWorld } = require('../desktop/guest-world.js');
+const { createDelta } = require('../desktop/world-state.js');
 test('guest original-style demolition menus use presentation input only, support cancel/confirm and disappear when the target vanishes', () => {
   const calls = [], world = Object.create(GuestWorld.prototype);
   let choice = null, radial = false;
@@ -200,7 +201,9 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const update = app.updateGame, draw = game.draw, save = game.saveLevel;
   const guiController = game.imgui.controller;
   let forwarded = 0;
-  const connection = { role: 'guest', pvp: false, onMessage() { forwarded++; }, close() { this.closed = true; this.onState?.('closed', {}); } };
+  const requests = [];
+  const connection = { role: 'guest', pvp: false, state: 'connected', send: async (kind, payload) => requests.push({ kind, payload }),
+    onMessage() { forwarded++; }, close() { this.closed = true; this.onState?.('closed', {}); } };
   const world = new GuestWorld(controls, connection);
   assert.equal(controls.ready(), false); assert.equal(roots.includes(originalRoot), false);
   assert.throws(() => controls.writeCheckpoint(), /host saves/);
@@ -218,8 +221,21 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.deepEqual(camera.desiredV3Focus, [2, 0, 3]);
   assert.equal(globals.gameCurrentTime, 1 / 30);
   const ranked = snapshot(); ranked.tick++; ranked.hero = 'ranked-hero'; ranked.spaces[0].entities[0].id = ranked.hero;
-  connection.onMessage({ kind: 'update', payload: ranked });
+  connection.onMessage({ kind: 'update', payload: createDelta(world.scene.snapshot, ranked) });
   assert.equal(world.identity.playerId, welcome.playerId); assert.equal(world.identity.entity, ranked.hero);
+  const missing = structuredClone(ranked); missing.tick++; missing.spaces[0].entities[0].health.current--;
+  const recovered = structuredClone(missing); recovered.tick++; recovered.spaces[0].entities[0].health.current--;
+  const lostBase = createDelta(missing, recovered), before = JSON.stringify(world.scene.snapshot);
+  connection.onMessage({ kind: 'update', payload: lostBase });
+  assert.equal(world.resyncing, true); assert.equal(world.movement.available(), false);
+  assert.equal(JSON.stringify(world.scene.snapshot), before, 'A missing base never partially edits the last valid world');
+  assert.deepEqual(requests, [{ kind: 'resync', payload: { version: 1, tick: ranked.tick } }]);
+  connection.onMessage({ kind: 'update', payload: lostBase }); assert.equal(requests.length, 1, 'Only one recovery request is outstanding');
+  assert.throws(() => connection.onMessage({ kind: 'update', payload: { ...lostBase, resources: 999 } }), /Invalid world snapshot/);
+  connection.onMessage({ kind: 'snapshot', payload: recovered });
+  assert.equal(world.resyncing, false); assert.equal(world.scene.tick, recovered.tick);
+  assert.equal(world.scene.entities.get(ranked.hero).record.health.current, 38);
+  assert.equal(world.identity.playerId, welcome.playerId); assert.equal(connection.closed, undefined);
   world.targetSequence = 1;
   world.selectionRequest = 1;
   const selection = { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'storage', name: 'Storage', reason: '' } };
@@ -237,4 +253,16 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(controls.ready(), true); app.updateGame(); assert.equal(simulations, 0);
   controls.paused = false; app.updateGame(); assert.equal(simulations, 1);
   assert.equal(connection.closed, true); world.close();
+});
+test('an unanswered guest resync times out without repeatedly requesting snapshots or editing progress', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const world = Object.create(GuestWorld.prototype), sent = []; let failed, cancelled = 0, neutral = 0;
+  world.scene = { tick: 17, snapshot: { tick: 17 } }; world.cancelLocalMenu = () => { cancelled++; };
+  world.movement = { flush: () => { neutral++; } };
+  world.connection = { send: async (kind, value) => sent.push({ kind, value }), fail: error => { failed = error; } };
+  world.requestResync(); world.requestResync();
+  assert.equal(cancelled, 1); assert.equal(neutral, 1); assert.equal(sent.length, 1);
+  t.mock.timers.tick(14999); assert.equal(failed, undefined);
+  t.mock.timers.tick(1); assert.match(failed.message, /resync timed out/);
+  assert.deepEqual(world.scene.snapshot, { tick: 17 }); world.closed = true; world.requestResync(); assert.equal(sent.length, 1);
 });

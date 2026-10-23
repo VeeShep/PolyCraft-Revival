@@ -77,7 +77,7 @@
       this.timer = setInterval(() => this.flush(), 50);
     }
     available() {
-      return !this.closed && !this.world.localMenu?.() && this.nativeFocused && this.world.identity && this.world.scene.snapshot && this.world.connection.state === 'connected' && !this.world.connection.closed && !this.world.controls.paused && root.document?.hasFocus() && root.document.activeElement === this.canvas && !root.document.querySelector('dialog[open]') && root.document.getElementById('launcher')?.hidden !== false;
+      return !this.closed && !this.world.resyncing && !this.world.localMenu?.() && this.nativeFocused && this.world.identity && this.world.scene.snapshot && this.world.connection.state === 'connected' && !this.world.connection.closed && !this.world.controls.paused && root.document?.hasFocus() && root.document.activeElement === this.canvas && !root.document.querySelector('dialog[open]') && root.document.getElementById('launcher')?.hidden !== false;
     }
     direction() {
       if (!this.available()) { this.keys.clear(); return [0, 0]; }

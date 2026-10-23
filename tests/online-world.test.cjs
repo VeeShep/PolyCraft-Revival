@@ -194,7 +194,7 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
   const { controls, transport } = setup(t);
   const world = await startHostingWorld(controls, transport); t.after(() => world.close());
   const sent = []; let captures = 0, release;
-  world.snapshot = async () => ({ tick: ++captures });
+  world.snapshot = async () => worldSnapshot(++captures);
   const connection = { peer: 'guest', state: 'connected', closed: false,
     send(kind, state) { sent.push({ kind, ...state }); return sent.length === 1 ? new Promise(resolve => { release = resolve; }) : Promise.resolve(); },
     fail(error) { throw error; }, close() { this.closed = true; }
@@ -204,11 +204,12 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
   const stop = world.streamTo(connection);
   assert.throws(() => world.streamTo(connection), /connected guest/);
   await new Promise(resolve => setTimeout(resolve, 150));
-  assert.deepEqual(sent, [{ kind: 'snapshot', tick: 1 }]); assert.equal(captures, 1);
+  assert.equal(sent.length, 1); assert.equal(sent[0].kind, 'snapshot'); assert.equal(sent[0].tick, 1); assert.equal(captures, 1);
   release();
   const deadline = Date.now() + 2000;
   while (sent.length < 2 && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10));
-  assert.deepEqual(sent[1], { kind: 'update', tick: 2 });
+  assert.equal(sent[1].kind, 'update'); assert.equal(sent[1].tick, 2); assert.equal(sent[1].baseTick, 1);
+  assert.deepEqual(sent[1].spaces, [{ index: 0, remove: [], entities: [{ id: 'hero', location: [2, 0, 0] }] }]);
   stop(); const count = captures;
   await new Promise(resolve => setTimeout(resolve, 150)); assert.equal(captures, count); assert.equal(world.streams.size, 0);
   const originalSnapshot = world.snapshot, failures = []; let rejectCapture;
@@ -223,4 +224,42 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
   world.streamTo(connection); stop(); assert.equal(world.streams.size, 1, 'An old cancellation cannot remove a restarted stream');
   await new Promise(resolve => setImmediate(resolve));
   await world.close(); assert.equal(world.streams.size, 0);
+});
+
+function worldSnapshot(tick) {
+  return { version: 3, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null,
+    spaces: [{ extents: [-10, -10, -10, 10, 10, 10], transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], blocks: [],
+      entities: [{ id: 'hero', archetype: null, interactive: true, location: [tick, 0, 0], scale: [1, 1, 1], rotation: 0, mesh: null, health: null }] }] };
+}
+test('host full resyncs are periodic, rate-limited, connection-bound and wait for any in-flight transfer', async t => {
+  const { controls, transport } = setup(t), world = await startHostingWorld(controls, transport);
+  t.after(() => world.close());
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let now = 0, captures = 0, release, addSpace = false;
+  t.mock.method(performance, 'now', () => now);
+  const sent = [];
+  world.snapshot = async () => {
+    const state = worldSnapshot(++captures);
+    if (addSpace) state.spaces.push({ ...structuredClone(state.spaces[0]), entities: [] });
+    return state;
+  };
+  const connection = { peer: 'guest', state: 'connected', closed: false,
+    send(kind, payload) { sent.push({ kind, payload }); return sent.length === 2 ? new Promise(resolve => { release = resolve; }) : Promise.resolve(); },
+    fail(error) { throw error; }, close() { this.closed = true; } };
+  transport.peers.set('guest', connection); world.streamTo(connection);
+  const flush = () => new Promise(resolve => setImmediate(resolve));
+  await flush(); assert.equal(sent[0].kind, 'snapshot');
+  now = 100; t.mock.timers.tick(100); await flush(); assert.equal(sent[1].kind, 'update');
+  world.requestResync(connection, { version: 1, tick: 1 });
+  now = 500; t.mock.timers.tick(400); await flush(); assert.equal(captures, 2, 'A resync never overtakes an unfinished update');
+  release(); await flush(); now = 600; t.mock.timers.tick(100); await flush();
+  assert.equal(sent[2].kind, 'snapshot'); assert.equal(sent[2].payload.tick, 3);
+  world.requestResync(connection, { version: 1, tick: 1 });
+  assert.equal(world.streams.get(connection).forceFull, false, 'Repeated resync requests cannot force another transfer within one second');
+  assert.throws(() => world.requestResync({ ...connection }, { version: 1, tick: 1 }), /active world stream/);
+  for (const value of [null, { version: 1, tick: -1 }, { version: 1, tick: NaN }, { version: 1, tick: 1, playerId: 'other' }]) assert.throws(() => world.requestResync(connection, value), /Invalid/);
+  now = 5601; t.mock.timers.tick(100); await flush(); assert.equal(sent[3].kind, 'snapshot', 'A full snapshot repairs state at least once every five seconds while transfers can proceed');
+  now = 5701; addSpace = true; t.mock.timers.tick(100); await flush(); assert.equal(sent[4].kind, 'snapshot', 'A layout change replaces the complete baseline');
+  now = 5801; t.mock.timers.tick(100); await flush(); assert.equal(sent[5].kind, 'update'); assert.equal(sent[5].payload.baseTick, 5);
+  await world.close();
 });

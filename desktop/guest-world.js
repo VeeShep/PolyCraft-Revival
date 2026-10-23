@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const { validateSnapshot } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
+  const { validateSnapshot, validateDelta, applyDelta } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   const { GuestConstruction } = typeof module !== 'undefined' ? require('./guest-construction.js') : root.PolycraftGuestConstruction;
@@ -220,9 +220,20 @@
         if (message.kind === 'update' && !this.scene.snapshot) throw new Error('The host must send an initial world snapshot first.');
         if (message.kind === 'snapshot' || message.kind === 'update') {
           if (this.identity && !this.scene.snapshot && message.payload.hero !== this.identity.entity) throw new Error('The initial host snapshot selects a different hero.');
-          this.scene.apply(message.payload);
+          if (message.kind === 'update') {
+            if (this.resyncing) validateDelta(message.payload, this.scene.assets);
+            else try { this.scene.apply(applyDelta(this.scene.snapshot, message.payload, this.scene.assets)); }
+            catch (error) { if (error.code === 'WORLD_BASE_MISMATCH') this.requestResync(); else throw error; }
+          } else {
+            this.scene.apply(message.payload);
+            if (this.resyncing) {
+              this.resyncing = false; clearTimeout(this.resyncTimer);
+              const status = root.document?.getElementById?.('status');
+              if (status) status.textContent = 'World synchronized.';
+            }
+          }
           // A rank-up recreates the entity; the assigned saved player identity stays unchanged.
-          if (this.identity) this.identity.entity = message.payload.hero;
+          if (this.identity) this.identity.entity = this.scene.snapshot.hero;
         }
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
@@ -249,6 +260,14 @@
         this.original.onState?.(state, details);
       };
       this.movement = new GuestMovement(this);
+    }
+    requestResync() {
+      if (this.closed || this.resyncing || !this.scene.snapshot) return;
+      this.resyncing = true; this.cancelLocalMenu(); this.movement.flush();
+      const status = root.document?.getElementById?.('status');
+      if (status) status.textContent = 'Resynchronizing world…';
+      this.resyncTimer = setTimeout(() => { if (!this.closed && this.resyncing) this.connection.fail(new Error('World resync timed out. Rejoin the host for a fresh connection.')); }, 15000);
+      this.connection.send('resync', { version: 1, tick: this.scene.tick }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
     }
     clickTarget(event) {
       const target = pickTarget(this, event);
@@ -329,6 +348,7 @@
     close() {
       if (this.closed) return;
       this.closed = true;
+      clearTimeout(this.resyncTimer); this.resyncing = false;
       this.movement.close();
       this.cancelLocalMenu(); this.game.imgui.controller = this.original.guiController;
       const game = this.game, app = this.controls.app, original = this.original;

@@ -27,6 +27,16 @@ On 2026-10-22, `desktop/world-state.js` adds a separate live replication view: v
 
 The visible host acceptance repeat captured a real 2,208-block / 352-entity island, including its unsaved hero. All 51 unit checks and the complete visible host menu/checkpoint test passed. This does not yet deliver the snapshot into a guest world. Mesh records describe current geometry transforms, not every animation, particle, decal or custom shader state. Complete guest presentation and gameplay metadata still require audited reconstruction and updates; avoid claiming visual/gameplay parity from this capture alone. Post-extraction visible solo regression also passed; evidence is in RESTORATION_STATUS.md.
 
+## Current world-transfer and resync checkpoint — 2026-10-22
+
+`HostWorld.streamTo()` sends an initial canonical snapshot (schema 3), field deltas (schema 1) and a new complete snapshot after five seconds since the preceding full transfer completes. Changes in space count also force a full replacement. Deltas identify their exact base tick, preserve entity ordering, include additions/removals, and send terrain/mesh metadata only when changed. Every transfer finishes before the next capture; full refreshes do not overtake queued updates or accumulate a second world-transfer queue. Full capture, validation and comparison still cost host CPU; this reduces wire traffic rather than eliminating that work.
+
+A guest validates each delta before applying it to an owned copy. A valid delta with a mismatched base retains the last valid world, clears menus and sends neutral movement, blocks local movement/click input, and requests one full snapshot. Further deltas are validated but ignored until a full state arrives. Successful replacement restores input without reconnecting or editing progression/saves. A 15-second unanswered request fails that connection with a rejoin explanation. Malformed data remains an error. Host requests are bound to the assigned connection/active stream, rate-limited to one accepted request per second, and cannot change world state or affect another guest's stream. Reliable ordered data channels and existing message/transfer limits remain in force.
+
+**126 unit checks pass.** Visible `polycraft-coop-identities-qG45Hv` passed independent whole-world hashes, movement/presentation, periodic cached-terrain repair, requested recovery after a dropped update and guest-save isolation. Measured movement payloads were approximately 96.5% smaller than equivalent full states. Visible solo `polycraft-game-BeLxOe` passed. Broader `polycraft-coop-identities-cF0SIu` passed through build/demolish/reconnect but timed out on final authoritative PvP pistol damage; the full suite is not accepted. See RESTORATION_STATUS.md for exact evidence and remaining gates.
+
+Runtime `polycraft-1.0.0.25-coop-8` rejects older development invitations; canonical snapshot and save formats are unchanged. Earlier checkpoint descriptions below are historical. Recovery repairs only the replicated state: missing shader/particle/decal/point-light features and any authoritative host simulation bugs are separate work. Slow links may delay a refresh until the current transfer completes; physical LAN, internet/relay, congestion and native cross-platform acceptance remain open.
+
 ## Next implementation slice
 
 ### Guest presentation smoothing — 2026-10-22
@@ -39,7 +49,7 @@ The four-player fixture now compares canonical guest records with same-tick host
 
 119 unit/regression checks pass. Visible movement `polycraft-coop-identities-PolHKt` passed exact canonical synchronization and 350–637 moving display frames between updates per hero/guest. Full co-op `polycraft-coop-identities-PyAQxQ` passed 91/92/91 exact host samples and 499–634 moving display frames per hero/guest, alongside original gathering, build-menu/preview/cost/saved footprint, demolition, PvP, reconnect and guest-save isolation. Visible solo regression passed on `polycraft-game-28NiuG`. Incomplete loading/grid-boundary fixture attempts and remaining acceptance gates are recorded in RESTORATION_STATUS.md.
 
-**Remaining:** full snapshots still repeat terrain/asset metadata and wait 100 ms after transfer; bandwidth, congestion and real-network latency still need work. The visual delay is not local movement prediction, and shader clocks/particles/decals and broader animation parity remain separate gaps. Native gameplay and physical-network acceptance remain open.
+**At this historical smoothing checkpoint:** full snapshots repeated terrain/asset metadata; the current world-transfer checkpoint above supersedes that limitation. Captures still wait 100 ms after transfer, and congestion and real-network latency remain open. The visual delay is not local movement prediction, and shader clocks/particles/decals and broader animation parity remain separate gaps. Native gameplay and physical-network acceptance remain open.
 
 ### Original-style guest construction interface — 2026-10-22
 

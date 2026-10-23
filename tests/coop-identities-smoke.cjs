@@ -88,6 +88,13 @@ const assert = require('node:assert/strict');
     const motionStart = await host.evaluate(() => {
       const game = window.hostWorld.game;
       window.motionHistory = new Map(); window.motionOriginalUpdate = game.updateSimulation;
+      window.worldHashes = {}; window.motionOriginalSnapshot = window.hostWorld.snapshot;
+      window.hostWorld.snapshot = async function (...args) {
+        const state = await window.motionOriginalSnapshot.apply(this, args);
+        const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(state))))).join(',');
+        window.worldHashes[state.tick + ':' + state.hero] = hash;
+        return state;
+      };
       function positions() {
         return Object.fromEntries([...window.hostWorld.players.active.values()].map(({ hero }) => [hero.getName(), { location: Array.from(hero.getv3Location()), rotation: hero.getRotationY() }]));
       }
@@ -100,15 +107,20 @@ const assert = require('node:assert/strict');
       return { tick: game.gameClock.getFrameIndex(), positions: positions() };
     });
     for (let index = 1; index <= 3; index++) await pages[index].evaluate(start => {
-      window.motionSamples = [];
+      window.motionSamples = []; window.motionHashes = []; window.wireStats = { full: 0, delta: 0, bytes: 0, equivalent: 0 };
       const receive = window.connection.onMessage, names = Object.keys(start.positions);
       window.connection.onMessage = (message, link) => {
         receive(message, link);
-        if (['snapshot', 'update'].includes(message.kind) && message.payload.tick > start.tick) {
-          const records = message.payload.spaces.flatMap(space => space.entities).filter(entity => names.includes(entity.id));
+        if (['snapshot', 'update'].includes(message.kind) && message.payload.tick > start.tick && window.guestWorld.scene.tick === message.payload.tick) {
           const scene = window.guestWorld.scene;
+          const records = scene.snapshot.spaces.flatMap(space => space.entities).filter(entity => names.includes(entity.id));
+          const key = scene.tick + ':' + scene.snapshot.hero, encoded = new TextEncoder().encode(JSON.stringify(scene.snapshot));
+          window.wireStats[message.kind === 'snapshot' ? 'full' : 'delta']++;
+          window.wireStats.bytes += new TextEncoder().encode(JSON.stringify(message.payload)).length;
+          window.wireStats.equivalent += encoded.length;
+          window.motionHashes.push(crypto.subtle.digest('SHA-256', encoded).then(hash => ({ key, hash: Array.from(new Uint8Array(hash)).join(',') })));
           const heroes = Object.fromEntries(records.map(record => { const actual = scene.entities.get(record.id).record; return [record.id, { location: actual.location, rotation: actual.rotation }]; }));
-          const canonical = scene.tick === message.payload.tick && records.every(record => JSON.stringify(scene.entities.get(record.id).record) === JSON.stringify(record));
+          const canonical = records.every(record => JSON.stringify(scene.entities.get(record.id).record) === JSON.stringify(record));
           const rendered = records.every(record => !record.mesh || JSON.stringify(Array.from(scene.entities.get(record.id).node.getLocalTransform())) === JSON.stringify(Array.from(scene.entities.get(record.id).displayTransform)));
           window.motionSamples.push({ tick: message.payload.tick, heroes, canonical, rendered });
           if (window.motionSamples.length > 2048) window.motionSamples.shift();
@@ -166,10 +178,26 @@ const assert = require('node:assert/strict');
     await host.waitForTimeout(1000);
     const samples = [];
     for (let index = 1; index <= 3; index++) samples.push(await pages[index].evaluate(() => window.motionSamples));
+    const guestHashes = [], wireStats = [];
+    for (let index = 1; index <= 3; index++) {
+      guestHashes.push(await pages[index].evaluate(() => Promise.all(window.motionHashes)));
+      wireStats.push(await pages[index].evaluate(() => window.wireStats));
+    }
+    const hostHashes = await host.evaluate(() => window.worldHashes);
+    guestHashes.forEach(hashes => {
+      const matched = hashes.filter(sample => hostHashes[sample.key]);
+      assert.ok(matched.length >= 8);
+      for (const sample of matched) assert.equal(sample.hash, hostHashes[sample.key], 'Decoded whole world matches its independently captured host snapshot');
+    });
+    for (const stats of wireStats) {
+      assert.ok(stats.full >= 2 && stats.delta >= 8, 'Periodic full snapshots accompany delta updates');
+      assert.ok(stats.bytes < stats.equivalent * 0.85, 'Delta transfers substantially reduce repeated world data');
+    }
     const history = await host.evaluate(() => {
       const game = window.hostWorld.game, history = Object.fromEntries(window.motionHistory);
       for (const { hero } of window.hostWorld.players.active.values()) hero.getEC('ECLocomotion').clearDestination();
       game.updateSimulation = window.motionOriginalUpdate;
+      window.hostWorld.snapshot = window.motionOriginalSnapshot;
       return history;
     });
     const movement = {};
@@ -198,7 +226,40 @@ const assert = require('node:assert/strict');
       for (const [name, count] of Object.entries(result.frames)) assert.ok(count >= 8, 'Guest ' + index + ' must draw multiple moving frames between updates for ' + name);
       smooth.push(result.frames);
     }
-    console.log('Moving-player sync passed:', { distances: movement, samples: samples.map(received => received.filter(sample => history[sample.tick]).length), smoothFrames: smooth });
+    console.log('Moving-player sync passed:', { wireStats, distances: movement, samples: samples.map(received => received.filter(sample => history[sample.tick]).length), smoothFrames: smooth });
+    // Corrupt only a disposable guest cache; periodic full snapshots must repair unchanged terrain.
+    const corrupt = await pages[1].evaluate(() => {
+      const scene = window.guestWorld.scene, block = scene.snapshot.spaces.flatMap(space => space.blocks)[0];
+      if (!block) throw new Error('Recovery acceptance needs terrain.');
+      window.terrainRecovery = { tick: scene.tick, original: block.location[0] };
+      block.location[0] += 0.25;
+      return { identity: window.guestWorld.identity.playerId, tick: scene.tick };
+    });
+    await pages[1].waitForFunction(() => {
+      const scene = window.guestWorld.scene;
+      return scene.tick > window.terrainRecovery.tick && scene.snapshot.spaces.flatMap(space => space.blocks)[0].location[0] === window.terrainRecovery.original;
+    }, null, { timeout: 15000 });
+    await pages[1].evaluate(() => {
+      const receive = window.connection.onMessage, send = window.connection.send;
+      window.recovery = { dropped: false, pending: false, complete: false, requests: 0 };
+      window.connection.send = function (kind, value) { if (kind === 'resync') window.recovery.requests++; return send.call(this, kind, value); };
+      window.connection.onMessage = (message, link) => {
+        if (message.kind === 'update' && !window.recovery.dropped) { window.recovery.dropped = true; return; }
+        receive(message, link);
+        if (window.guestWorld.resyncing) window.recovery.pending = true;
+        if (message.kind === 'snapshot' && window.recovery.pending && !window.guestWorld.resyncing) window.recovery.complete = true;
+      };
+      window.restoreRecovery = () => { window.connection.onMessage = receive; window.connection.send = send; };
+    });
+    await pages[1].waitForFunction(() => window.recovery.complete || window.connection.closed, null, { timeout: 20000 });
+    const recovery = await pages[1].evaluate(() => {
+      window.restoreRecovery(); return { ...window.recovery, closed: window.connection.closed, identity: window.guestWorld.identity.playerId, tick: window.guestWorld.scene.tick };
+    });
+    assert.equal(recovery.closed, false); assert.equal(recovery.complete, true); assert.equal(recovery.requests, 1);
+    assert.equal(recovery.identity, corrupt.identity); assert.ok(recovery.tick > corrupt.tick);
+    assert.deepEqual(fs.readFileSync(originals[1].file), originals[1].bytes);
+    assert.ok(await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex()) > corrupt.tick);
+    console.log('Full resync passed: periodic terrain repair and one requested recovery after a deliberately dropped update.', recovery);
     if (process.argv.includes('--movement-only')) {
       await host.evaluate(() => window.hostWorld.close());
       for (let index = 1; index <= 3; index++) {

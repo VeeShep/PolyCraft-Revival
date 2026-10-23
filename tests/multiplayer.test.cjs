@@ -101,6 +101,16 @@ test('large Unicode snapshots are bounded, reassembled once and ordered ahead of
   await assert.rejects(guest.send('snapshot', {}), /cannot send/);
   await assert.rejects(host.send('action', {}), /cannot send/);
 });
+test('guests can request a full resync without gaining permission to send world state', async t => {
+  mock(t);
+  const received = [], host = link(t, 'host', { onMessage: message => received.push(message) }), guest = link(t, 'guest');
+  const payload = { version: 1, tick: 42 };
+  await guest.send('resync', payload);
+  for (const frame of guest.channel.sent) host.receive(frame);
+  assert.deepEqual(received, [{ kind: 'resync', payload }]);
+  await assert.rejects(guest.send('update', { tick: 43 }), /cannot send/);
+  await assert.rejects(host.send('resync', payload), /cannot send/);
+});
 test('malformed, repeated and guest-authoritative frames close only that peer before dispatch', async t => {
   mock(t);
   const host = link(t);
