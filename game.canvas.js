@@ -32889,9 +32889,19 @@
     c = A.clamp(c, 0, d);
     return A.v3Add(a, A.v3ScalarMul(b, c));
   };
-  A.getLineIntersectSphere = function (a, b, c, d) {
-    a = A.getNearestPointOnLineToPoint(a, b, c);
-    if (A.v3DistanceSq(a, c) <= d * d) return A.v3Distance(a, c);
+  // Sphere and terrain queries must compare entry distances along the same finite segment.
+  A.getLineIntersectSphere = function (start, end, center, radius) {
+    const dx = end[0] - start[0], dy = end[1] - start[1], dz = end[2] - start[2];
+    const ox = start[0] - center[0], oy = start[1] - center[1], oz = start[2] - center[2];
+    const outside = ox * ox + oy * oy + oz * oz - radius * radius;
+    if (outside <= 0) return 0;
+    const length = Math.hypot(dx, dy, dz);
+    if (!length) return;
+    const projection = (ox * dx + oy * dy + oz * dz) / length;
+    const discriminant = projection * projection - outside;
+    if (discriminant < 0) return;
+    const distance = -projection - Math.sqrt(discriminant);
+    if (distance >= 0 && distance <= length) return distance;
   };
   A.getDistanceBetweenSegmentsSq = function (a, b, c, d, f, g) {
     var e = A,
@@ -32919,14 +32929,24 @@
     g && e.v3AddScalarMul(c, d, w, g);
     return e.v3LengthSq(m);
   };
-  A.getLineIntersectCapsule = function (a, b, c, d, f) {
-    var g = A,
-      e = g.scratchpad,
-      m = e.v3NearestPoint = g.v3BuildZero(e.v3NearestPoint),
-      e = e.v3CentreTop = g.v3Copy(c, e.v3CentreTop);
-    e[1] += f;
-    a = g.getDistanceBetweenSegmentsSq(a, b, c, e, m);
-    if (a <= d * d) return Math.sqrt(a);
+  A.getLineIntersectCapsule = function (start, end, center, radius, height) {
+    const top = [center[0], center[1] + height, center[2]];
+    const lower = A.getLineIntersectSphere(start, end, center, radius);
+    const upper = A.getLineIntersectSphere(start, end, top, radius);
+    let nearest = Math.min(lower === undefined ? Infinity : lower, upper === undefined ? Infinity : upper);
+    const ox = start[0] - center[0], oy = start[1] - center[1], oz = start[2] - center[2];
+    if (oy >= 0 && oy <= height && ox * ox + oz * oz <= radius * radius) return 0;
+    const length = Math.hypot(end[0] - start[0], end[1] - start[1], end[2] - start[2]);
+    if (length) {
+      const dx = (end[0] - start[0]) / length, dy = (end[1] - start[1]) / length, dz = (end[2] - start[2]) / length;
+      const a = dx * dx + dz * dz, b = ox * dx + oz * dz, c = ox * ox + oz * oz - radius * radius;
+      const discriminant = b * b - a * c;
+      if (a > 0 && discriminant >= 0) for (const distance of [(-b - Math.sqrt(discriminant)) / a, (-b + Math.sqrt(discriminant)) / a]) {
+        const y = oy + distance * dy;
+        if (distance >= 0 && distance <= length && y >= 0 && y <= height) nearest = Math.min(nearest, distance);
+      }
+    }
+    if (nearest !== Infinity) return nearest;
   };
   A.getLineIntersectSphereOrCapsule = function (a, b, c, d, f) {
     var g = A;
@@ -54203,7 +54223,7 @@
         }
         l = this.getv3Location();
         h = h.v3Next = b.v3AddScalarMul(l, j, k, h.v3Next);
-        if ((c = c.getCollisionInfo(l, h, !0)) && c.collidedEntity !== e) {
+        if ((c = c.getCollisionInfo(l, h, !0, e)) && c.collidedEntity !== e) {
           if (d && c.collidedEntity && e && e.isFriendlyWith(c.collidedEntity)) {
             d = c.collidedEntity.getEC("ECHealth");
             f = this.gameManager.desktopPlayers ? !this.gameManager.desktopPlayers.canDamage(c.collidedEntity, e) : !d || !d.takesFullDamageFromFriendlyFire();
@@ -64311,20 +64331,26 @@
         for (e = 0; e < h; e += 1) f = c[e], f.collisionCheck(b) && f.collisionResolve(b);
       }
     },
-    getCollisionInfoForSpheres: function (a, b, c) {
+    getCollisionInfoForSpheres: function (a, b, c, ignoredEntity) {
       var d = this.globals.mathDevice,
         f = this.scratchpad,
         e = null,
         f = f.aabbExtents = d.aabbBuild(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2]), Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2]), f.aabbExtents);
       this.getGameGrid().applyToPhysicsSpheresWithinExtents(f, function (f) {
+        if (ignoredEntity && f.entity === ignoredEntity) return;
         var i = f.getv3Location(),
           j = d.getLineIntersectSphereOrCapsule(a, b, i, f.getRadius(), f.getCapsuleHeight());
-        if (j && (j < c || void 0 === c)) c = j, e = {
-          v3Location: d.v3Copy(f.getv3Location(), e ? e.v3Location : void 0),
-          v3Normal: d.v3Normalize(d.v3Sub(a, i, e ? e.v3Normal : void 0), e ? e.v3Normal : void 0),
-          distance: j,
-          collidedEntity: f.entity
-        };
+        if (j !== undefined && (j < c || void 0 === c)) {
+          const point = d.v3AddScalarMul(a, d.v3Normalize(d.v3Sub(b, a)), j);
+          const center = d.v3Copy(i);
+          center[1] = d.clamp(point[1], i[1], i[1] + f.getCapsuleHeight());
+          c = j; e = {
+            v3Location: point,
+            v3Normal: d.v3Normalize(d.v3Sub(point, center)),
+            distance: j,
+            collidedEntity: f.entity
+          };
+        }
       });
       return e;
     },
@@ -67675,7 +67701,7 @@
         collidedEntity: n.externalNode ? n.externalNode.entity : void 0,
         collidedWorldCube: n.externalNode
       });
-      if (c) for (n = 0; n < l; n += 1) q = k[n], (c = q.getCollisionInfoForSpheres(a, b, void 0 !== h ? h.distance : void 0)) && (h = c);
+      if (c) for (n = 0; n < l; n += 1) q = k[n], (c = q.getCollisionInfoForSpheres(a, b, void 0 !== h ? h.distance : void 0, d)) && (h = c);
       return h;
     },
     applyToEntities: function (a) {

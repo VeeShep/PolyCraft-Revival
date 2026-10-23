@@ -508,13 +508,32 @@ const assert = require('node:assert/strict');
       const free = destinations.find(point => { const hit = game.getCollisionInfo(position, point, false, target); return !hit; });
       if (!free) throw new Error('Need a clear projectile path in this disposable island.');
       attacker.teleport(free); attacker.getEC('ECInventory').equipWeapon('wp_h_pistol');
-      return { target: target.getName(), health: target.getEC('ECHealth').getHealth() };
+      window.combatTrace = [];
+      const collision = game.getCollisionInfo, factory = game.getProjectileFactory(), create = factory.createProjectile;
+      game.getCollisionInfo = function (...args) {
+        const hit = collision.apply(this, args);
+        if (args[2] === true && window.combatTrace.length < 100) window.combatTrace.push({ from: Array.from(args[0]), to: Array.from(args[1]), hit: hit?.collidedEntity?.getName() || (hit ? 'terrain' : null), distance: hit?.distance });
+        return hit;
+      };
+      factory.createProjectile = function (...args) {
+        const projectile = create.apply(this, args), ec = projectile.getEC('ECProjectile'), impact = ec.onImpact;
+        window.combatTrace.push({ projectile: projectile.getName(), from: Array.from(args[1]), to: Array.from(args[2]), owner: args[0].getName() });
+        ec.onImpact = function (entity, point) {
+          window.combatTrace.push({ impact: entity?.getName() || 'terrain', health: entity?.getEC('ECHealth')?.getHealth(), invulnerable: entity?.getEC('ECHealth')?.getInvulnerable() });
+          return impact.call(this, entity, point);
+        };
+        return projectile;
+      };
+      window.restoreCombatTrace = () => { game.getCollisionInfo = collision; factory.createProjectile = create; };
+      return { target: target.getName(), attacker: attacker.getName(), health: target.getEC('ECHealth').getHealth(), invulnerable: target.getEC('ECHealth').getInvulnerable(), position: Array.from(target.getv3Location()), from: free };
     }), ids[0]);
+    console.log('PvP setup:', combat);
     await pages[1].evaluate(target => window.connection.send('action', { type: 'target', sequence: ++window.guestWorld.targetSequence, target }), combat.target);
     await pages[1].waitForFunction(() => window.guestWorld.lastTargetResult);
     assert.equal(await pages[1].evaluate(() => window.guestWorld.lastTargetResult.message), 'Attack issued.');
     await host.waitForFunction(health => window.hostWorld.game.getHero().getEC('ECHealth').getHealth() < health, combat.health, { timeout: 10000 });
     await pages[1].waitForFunction(({ target, health }) => window.guestWorld.scene.entities.get(target).record.health.current < health, combat);
+    console.log('PvP trace:', await host.evaluate(() => { window.restoreCombatTrace(); return window.combatTrace; }));
     console.log('PvP-on guest pistol hit damages the live host hero and replicates the reduced health.');
     await host.evaluate(() => window.hostWorld.close());
     await pages[1].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
@@ -528,7 +547,7 @@ const assert = require('node:assert/strict');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
     for (let index = 0; index < pages.length; index++) try {
-      console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
+      console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ combatTrace: window.combatTrace, hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
         connection: window.connection && { closed: window.connection.closed, state: window.connection.state }, focused: document.hasFocus(),
         startup: window.polycraft?.controls && { ready: window.polycraft.controls.ready(), loaded: window.polycraft.controls.manager()?.hasLoadedLevel, loading: window.polycraft.controls.manager()?.getLoading(), hero: !!window.polycraft.controls.manager()?.getHero(), state: window.polycraft.controls.manager()?.activeGameState?.name },
         movement: window.guestWorld?.movement && { keys: [...window.guestWorld.movement.keys], available: window.guestWorld.movement.available(), nativeFocused: window.guestWorld.movement.nativeFocused },
