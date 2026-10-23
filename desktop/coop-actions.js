@@ -1,11 +1,13 @@
 'use strict';
 (function (root) {
+  const { totemMenu, upgradeTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
   class HostActions {
     constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); }
     receive(value) {
-      const placement = ['build', 'preview'].includes(value?.type);
-      if (!value || Object.keys(value).length !== (placement ? 5 : 3) || !['target', 'demolish', 'build', 'preview'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade';
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : 3) || !['target', 'demolish', 'build', 'preview', 'upgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
       if (placement && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 32 || !Array.isArray(value.location) || value.location.length !== 3 || ![0, 1, 2].every(index => typeof value.location[index] === 'number' && Number.isFinite(value.location[index]) && Math.abs(value.location[index]) <= 1e6))) throw new Error('Invalid building placement.');
+      if (upgrade && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 2 || !Number.isInteger(value.level) || value.level < 0 || value.level >= 5 || typeof value.amber !== 'boolean')) throw new Error('Invalid totem upgrade.');
       const now = this.now();
       this.tokens = Math.min(10, this.tokens + Math.max(0, now - this.tokenTime) * 0.01); this.tokenTime = now;
       if (this.tokens < 1 || this.queue.length >= 4) throw new Error('Too many target actions.');
@@ -23,6 +25,9 @@
       const builder = hero.getEC('ECPlayerBuilder');
       if (game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
+      if (type === 'upgrade') return upgradeTotem(game, hero, players, target, action, controls);
+      const totem = type === 'target' ? totemMenu(hero, target, controls) : null;
+      if (totem) return { message: 'Choose a hero upgrade. Escape cancels.', totem };
       const construction = type === 'target' ? game.desktopConstruction?.menu(hero, target) : null;
       if (construction?.products.length) return { message: 'Choose a building. Escape cancels.', construction };
       const building = controls?.demolitionInfo(target);

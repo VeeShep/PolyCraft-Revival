@@ -84,7 +84,7 @@
           skin?.update();
           return {
             id: entity.name, archetype: entity.archetypeName || null,
-            interactive: !!(entity.getEC('ECResourceDispenser') || entity.getEC('ECTarget') || entity.getEC('ECBuilding') || entity.getEC('ECDispenser')),
+            interactive: !!(entity.getEC('ECResourceDispenser') || entity.getEC('ECTarget') || entity.getEC('ECBuilding') || entity.getEC('ECDispenser') || entity.getEC('ECHeroShrine')),
             location: Array.from(entity.getv3Location()), scale: Array.from(entity.getV3Scale()), rotation: entity.getRotationY(),
             mesh: mesh?.node ? { path: mesh.getMeshPath(), transform: Array.from(mesh.getm43Transform()), visible: !mesh.node.disabled, skin: skin ? Array.from(skin.output) : null } : null,
             health: health ? { current: health.getHealth(), maximum: health.getMaxHealth() } : null

@@ -273,6 +273,99 @@ const assert = require('node:assert/strict');
       console.log('PASS: four visible games; keyboard movement; every guest retains exact same-tick host records and renders all four moving heroes smoothly between updates; menu/focus stops; guest saves unchanged on host exit. Same-Mac acceptance only.');
       return;
     }
+    const totem = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
+      const world = window.hostWorld, game = world.game;
+      const source = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECHeroShrine')).find(entity => entity.getEC('ECHeroShrine').archetype.upgradeTypes[0].upgradeType === 'movementSpeed');
+      if (!source) throw new Error('The temporary island needs the original Agility totem.');
+      world.players.active.get(id).hero.getEC('ECPlayerData').levelUp();
+      const hero = world.players.active.get(id).hero, location = Array.from(source.getv3Location()); location[0] += 3;
+      hero.getEC('ECLocomotion').clearDestination();
+      hero.teleport(location, game.globals.mathDevice.v3Sub(location, hero.getv3Location()));
+      world.players.active.get(world.players.registry.data.host).model.softCurrency = 150;
+      return { source: source.getName(), hero: hero.getName(), location: Array.from(hero.getv3Location()), hostUpgrades: JSON.stringify(game.getHero().getEC('ECHeroUpgrades').playerData.heroUpgrades), hostXP: game.getHero().getEC('ECPlayerData').getXP() };
+    }), ids[0]);
+    await focus(1);
+    await pages[1].waitForFunction(({ source, hero, location }) => {
+      const world = window.guestWorld, record = world.scene.entities.get(hero)?.record;
+      return world.identity.entity === hero && record && Math.hypot(record.location[0] - location[0], record.location[2] - location[2]) < 0.2 && world.scene.entities.get(source)?.record.interactive;
+    }, totem);
+    await pages[1].evaluate(() => {
+      const gui = window.guestWorld.game.getIMGui(), draw = gui.doButtonFromGuiArchetype;
+      window.totemButtons = {}; window.totemClicks = [];
+      const target = window.guestWorld.clickTarget;
+      window.guestWorld.clickTarget = function (event) { window.totemClicks.push({ x: event.clientX, y: event.clientY, selected: window.PolycraftCoopActions.pickTarget(this, event), available: this.movement.available() }); return target.call(this, event); };
+      gui.doButtonFromGuiArchetype = function (style, options, id) {
+        if (id.startsWith('guest-totem-')) window.totemButtons[id] = { style, position: Array.from(options.v2ScreenLocation), svg: options.svg1 };
+        return draw.call(this, style, options, id);
+      };
+      window.restoreTotemButtons = () => { gui.doButtonFromGuiArchetype = draw; window.guestWorld.clickTarget = target; };
+    });
+    async function openTotem() {
+      await pages[1].waitForFunction(() => {
+        const camera = window.guestWorld.game.getGameCamera();
+        const math = window.guestWorld.controls.app.globals.mathDevice;
+        return math.v3Distance(camera.currentV3Focus, camera.desiredV3Focus) < 0.01 && math.v3Distance(camera.currentV3Position, camera.desiredV3Position) < 0.01;
+      }, null, { timeout: 10000 });
+      await focus(1);
+      await pages[1].waitForFunction(source => {
+        const world = window.guestWorld, entry = world.scene.entities.get(source), device = world.controls.app.globals.graphicsDevice;
+        const point = entry && world.controls.app.globals.camera.worldToScreen(entry.displayLocation);
+        return point && point[0] > 32 && point[0] < device.width - 32 && point[1] > 32 && point[1] < device.height - 32;
+      }, totem.source, { timeout: 10000 });
+      const point = await pages[1].evaluate(source => {
+        const world = window.guestWorld, entry = world.scene.entities.get(source), globals = world.controls.app.globals;
+        const screen = globals.camera.worldToScreen(entry.displayLocation), bounds = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect();
+        const event = { clientX: bounds.left + screen[0] * bounds.width / globals.graphicsDevice.width, clientY: bounds.top + screen[1] * bounds.height / globals.graphicsDevice.height };
+        if (window.PolycraftCoopActions.pickTarget(world, event) !== source) throw new Error('The totem must be selectable through the actual guest pointer.');
+        console.log('Totem click target', event.clientX, event.clientY); return { x: event.clientX, y: event.clientY };
+      }, totem.source);
+      console.log('Totem pointer requested:', point);
+      await pages[1].mouse.move(point.x, point.y, { steps: 5 }); await pages[1].mouse.click(point.x, point.y, { delay: 100 });
+      await pages[1].waitForFunction(source => {
+        const menu = window.guestWorld.totem.menu, button = window.totemButtons['guest-totem-' + source + '-0'];
+        return menu?.source === source && button?.style === (menu.products[0].amber ? 'heroUpgradeUsingAmber' : 'heroUpgradeValid');
+      }, totem.source);
+    }
+    async function clickTotem() {
+      const button = await pages[1].evaluate(source => {
+        window.guestWorld.totem.lastResult = null;
+        const world = window.guestWorld, button = window.totemButtons['guest-totem-' + source + '-0'], bounds = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect();
+        return { ...button, x: bounds.left + button.position[0] * bounds.width / world.controls.app.globals.graphicsDevice.width, y: bounds.top + button.position[1] * bounds.height / world.controls.app.globals.graphicsDevice.height };
+      }, totem.source);
+      assert.equal(button.svg, 'gui/icon_totem_agility_n.svg');
+      await pages[1].mouse.move(button.x, button.y, { steps: 5 }); await pages[1].mouse.click(button.x, button.y, { delay: 100 });
+      await pages[1].waitForFunction(() => window.guestWorld.totem.lastResult?.message === 'Hero upgraded and saved.');
+      return button;
+    }
+    await openTotem();
+    assert.equal(await pages[1].evaluate(() => window.guestWorld.movement.available()), false);
+    const totemMenuTick = await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex());
+    await pages[1].waitForTimeout(500);
+    assert.ok(await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex()) > totemMenuTick, 'The guest totem menu must not pause the host world');
+    fs.mkdirSync('test-results', { recursive: true });
+    await pages[1].screenshot({ path: 'test-results/guest-totem-menu.png' });
+    assert.equal((await clickTotem()).style, 'heroUpgradeValid');
+    let savedTotem = JSON.parse(JSON.parse(fs.readFileSync(originals[0].file)).state.userData.desktopCoop);
+    assert.equal(savedTotem.players.find(player => player.id === ids[0]).heroUpgrades.movementSpeed, 1);
+    assert.equal(savedTotem.economy.softCurrency, 150);
+    const pointResult = await host.evaluate(id => {
+      const hero = window.hostWorld.players.active.get(id).hero;
+      return { level: hero.getEC('ECPlayerData').getLevel(), points: hero.getEC('ECPlayerData').getUpgradePoints(), speed: hero.getEC('ECHeroUpgrades').getHeroUpgrade('movementSpeed'), factor: hero.getEC('ECLocomotion').fastSpeedFactor, amber: hero.getEC('ECPlayerData').getSoftCurrency() };
+    }, ids[0]);
+    assert.equal(pointResult.speed, 1); assert.equal(pointResult.points, 0); assert.equal(pointResult.amber, 150); assert.ok(pointResult.factor > 1);
+    await openTotem();
+    assert.equal((await clickTotem()).style, 'heroUpgradeUsingAmber');
+    const boostResult = await host.evaluate(id => {
+      const hero = window.hostWorld.players.active.get(id).hero;
+      return { level: hero.getEC('ECPlayerData').getLevel(), speed: hero.getEC('ECHeroUpgrades').getHeroUpgrade('movementSpeed'), amber: hero.getEC('ECPlayerData').getSoftCurrency(), hostUpgrades: JSON.stringify(window.hostWorld.game.getHero().getEC('ECHeroUpgrades').playerData.heroUpgrades), hostXP: window.hostWorld.game.getHero().getEC('ECPlayerData').getXP() };
+    }, ids[0]);
+    assert.equal(boostResult.level, 2); assert.equal(boostResult.speed, 2); assert.equal(boostResult.amber, 75);
+    savedTotem = JSON.parse(JSON.parse(fs.readFileSync(originals[0].file)).state.userData.desktopCoop);
+    assert.equal(savedTotem.players.find(player => player.id === ids[0]).heroUpgrades.movementSpeed, 2);
+    assert.equal(savedTotem.economy.softCurrency, 75);
+    assert.equal(boostResult.hostUpgrades, totem.hostUpgrades); assert.equal(boostResult.hostXP, totem.hostXP);
+    await pages[1].evaluate(() => window.restoreTotemButtons());
+    console.log('Original guest totem point purchase and 75-Amber boost saved; correct hero upgraded, host progression unchanged.', { pointResult, boostResult });
     const resource = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
       const game = window.hostWorld.game, hero = window.hostWorld.players.active.get(id).hero;
       const target = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECResourceDispenser')).find(entity => !entity.shouldBeDestroyed() && entity.getEC('ECInteractable')?.getActive() && entity.getEC('ECResourceDispenser').getResource() > 1 && entity.getEC('ECMesh'));
@@ -287,6 +380,7 @@ const assert = require('node:assert/strict');
     await focus(1);
     await guest.waitForTimeout(1000);
     const click = await guest.evaluate(id => {
+      window.guestWorld.lastTargetResult = null;
       const world = window.guestWorld, globals = world.controls.app.globals;
       const record = world.scene.entities.get(id).record, point = globals.camera.worldToScreen(record.location);
       const canvas = document.getElementById('turbulenz_game_engine_canvas'), bounds = canvas.getBoundingClientRect();
@@ -304,8 +398,11 @@ const assert = require('node:assert/strict');
       const players = window.hostWorld.players, hostHero = players.active.get(players.registry.data.host).hero;
       return hostHero.getName();
     });
-    await guest.evaluate(target => window.connection.send('action', { type: 'target', sequence: ++window.guestWorld.targetSequence, target }), protectedHero);
-    await guest.waitForFunction(() => window.guestWorld.lastTargetResult.sequence === 2);
+    const protectedRequest = await guest.evaluate(async target => {
+      const sequence = ++window.guestWorld.targetSequence;
+      await window.connection.send('action', { type: 'target', sequence, target }); return sequence;
+    }, protectedHero);
+    await guest.waitForFunction(sequence => window.guestWorld.lastTargetResult?.sequence === sequence, protectedRequest);
     assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Friendly targets are protected.');
     console.log('Guest pointer gathered one original resource through the host; PvP-off rejects an allied hero attack.');
     const build = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
@@ -474,6 +571,7 @@ const assert = require('node:assert/strict');
     const savedHost = JSON.parse(fs.readFileSync(originals[0].file));
     assert.equal(JSON.parse(savedHost.state.userData.AdventureIncGameState).gameSpaceList.some(space => space.entityList.some(entity => entity.name === storage.id)), false);
     console.log('Original guest demolition UI: cancel preserves storage, confirm removes capacity, host keeps simulating, fresh disk save precedes acknowledgement despite an overlapping older capture.');
+    const reconnectXP = await host.evaluate(id => window.hostWorld.players.active.get(id).model.getXP() + 33, ids[0]);
     await host.evaluate(async id => window.hostWorld.atBoundary(() => {
       const entry = window.hostWorld.players.active.get(id); entry.hero.getEC('ECPlayerData').adjustXP(33);
     }), ids[0]);
@@ -483,12 +581,17 @@ const assert = require('node:assert/strict');
     assert.equal(await pages[1].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[1].state);
     assert.deepEqual(fs.readFileSync(originals[1].file), originals[1].bytes);
     await host.waitForFunction(id => !window.hostWorld.guestSlots.has(id) && !window.hostWorld.players.active.has(id), ids[0]);
-    assert.equal(await host.evaluate(id => window.hostWorld.players.registry.player(id).progress.xp, ids[0]), 33);
+    assert.equal(await host.evaluate(id => window.hostWorld.players.registry.player(id).progress.xp, ids[0]), reconnectXP);
     await pages[2].waitForFunction(tick => window.guestWorld.scene.tick > tick, firstTick);
     assert.equal(await pages[2].evaluate(() => window.connection.closed), false);
     const returning = await join(1);
     assert.notEqual(returning.peer, offers[0].peer);
-    assert.equal(await host.evaluate(id => window.hostWorld.players.active.get(id).model.getXP(), ids[0]), 33);
+    assert.equal(await host.evaluate(id => window.hostWorld.players.active.get(id).model.getXP(), ids[0]), reconnectXP);
+    const returnedTotem = await host.evaluate(id => {
+      const hero = window.hostWorld.players.active.get(id).hero, upgrades = hero.getEC('ECHeroUpgrades');
+      return { speed: upgrades.getHeroUpgrade('movementSpeed'), factor: hero.getEC('ECLocomotion').fastSpeedFactor, expected: upgrades.archetype.movementSpeedFactors[2] };
+    }, ids[0]);
+    assert.equal(returnedTotem.speed, 2); assert.equal(returnedTotem.factor, returnedTotem.expected);
     await host.evaluate(() => window.hostWorld.close());
     for (let index = 1; index <= 3; index++) {
       await pages[index].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
@@ -547,12 +650,12 @@ const assert = require('node:assert/strict');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
     for (let index = 0; index < pages.length; index++) try {
-      console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ combatTrace: window.combatTrace, hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
+      console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ totemClicks: window.totemClicks, totemButtons: window.totemButtons, combatTrace: window.combatTrace, hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
         connection: window.connection && { closed: window.connection.closed, state: window.connection.state }, focused: document.hasFocus(),
         startup: window.polycraft?.controls && { ready: window.polycraft.controls.ready(), loaded: window.polycraft.controls.manager()?.hasLoadedLevel, loading: window.polycraft.controls.manager()?.getLoading(), hero: !!window.polycraft.controls.manager()?.getHero(), state: window.polycraft.controls.manager()?.activeGameState?.name },
         movement: window.guestWorld?.movement && { keys: [...window.guestWorld.movement.keys], available: window.guestWorld.movement.available(), nativeFocused: window.guestWorld.movement.nativeFocused },
         identity: window.guestWorld?.identity, tick: window.guestWorld?.scene.tick,
-        action: window.guestWorld && { sequence: window.guestWorld.targetSequence, selection: window.guestWorld.selectionRequest, result: window.guestWorld.lastTargetResult, menu: window.guestWorld.construction?.menu, placement: window.guestWorld.construction?.placement, preview: window.guestWorld.construction?.preview },
+        action: window.guestWorld && { sequence: window.guestWorld.targetSequence, selection: window.guestWorld.selectionRequest, result: window.guestWorld.lastTargetResult, totem: window.guestWorld.totem?.menu, menu: window.guestWorld.construction?.menu, placement: window.guestWorld.construction?.placement, preview: window.guestWorld.construction?.preview },
         slots: window.hostWorld && [...window.hostWorld.guestSlots.values()].map(binding => ({ id: binding.id, ready: binding.ready, joined: binding.joined, releasing: binding.releasing, input: { sequence: binding.input.sequence, move: binding.input.move, moving: binding.input.moving, age: performance.now() - binding.input.receivedAt } })) }))));
       await pages[index].screenshot({ path: 'test-results/coop-identities-failure-' + index + '.png' });
     } catch {}

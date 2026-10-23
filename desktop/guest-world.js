@@ -1,5 +1,6 @@
 'use strict';
 (function (root) {
+  const { GuestTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
   const { validateSnapshot, validateDelta, applyDelta } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
@@ -203,7 +204,7 @@
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
       this.guiInput = { down: false, pendingDown: false, position: [0, 0], getGuiDown() { return this.down; }, getv2ScreenCoord() { return this.position; } };
-      this.construction = new GuestConstruction(this);
+      this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this);
       game.imgui.controller = this.guiInput;
       game.draw = () => {};
       game.draw2D = () => { game.imgui.draw2D(); game.updateInterfaceTweens(); game.getGuiManager().completeDraw(); globals.simpleFontRenderer.render(); };
@@ -238,8 +239,8 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          const extras = value && ['building', 'construction', 'preview'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          const extras = value && ['building', 'construction', 'preview', 'totem'].filter(key => Object.hasOwn(value, key));
+          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (extras.length && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
@@ -247,8 +248,10 @@
             if (value.type !== 'target' || Object.keys(building).length !== 3 || !['id', 'name', 'reason'].every(key => typeof building[key] === 'string' && building[key].length <= 256) || !building.id || !building.name) throw new Error('Invalid demolition selection.');
             if (selected) this.selectedBuilding = building.reason ? null : { ...building };
           }
+          if (value.totem && !['target', 'upgrade'].includes(value.type)) throw new Error('Invalid totem result.');
+          this.totem.receive(value, selected);
           this.construction.receive(value, selected);
-          if (selected) { this.selectionRequest = null; if (value.construction) this.selectedBuilding = this.demolition = null; }
+          if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
           this.lastTargetResult = { ...value };
           const status = root.document?.getElementById?.('status');
           if (status) status.textContent = value.message;
@@ -287,10 +290,15 @@
       this.connection.send('action', { type, sequence, target, index, location }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
-    localMenu() { return !!(this.selectedBuilding || this.demolition || this.construction?.menu); }
+    sendUpgrade(target, index, level, amber) {
+      const sequence = ++this.targetSequence;
+      this.connection.send('action', { type: 'upgrade', sequence, target, index, level, amber }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      return sequence;
+    }
+    localMenu() { return !!(this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu); }
     cancelLocalMenu() {
       this.selectedBuilding = this.demolition = null;
-      this.selectionRequest = null; this.construction?.cancel();
+      this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel();
       this.guiInput.down = this.guiInput.pendingDown = false;
       this.movement?.keys.clear();
     }
@@ -303,7 +311,7 @@
       if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) this.guiInput.pendingDown = false;
     }
     updateMenu() {
-      this.construction?.update();
+      this.construction?.update(); this.totem?.update();
       const building = this.demolition || this.selectedBuilding;
       if (!building) return;
       const entry = this.scene.entities.get(building.id), record = entry?.record;
