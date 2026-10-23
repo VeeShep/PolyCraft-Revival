@@ -106,12 +106,31 @@ const assert = require('node:assert/strict');
         receive(message, link);
         if (['snapshot', 'update'].includes(message.kind) && message.payload.tick > start.tick) {
           const records = message.payload.spaces.flatMap(space => space.entities).filter(entity => names.includes(entity.id));
-          const heroes = Object.fromEntries(records.map(record => [record.id, { location: record.location, rotation: record.rotation }]));
-          const rendered = records.every(record => !record.mesh || JSON.stringify(Array.from(window.guestWorld.scene.entities.get(record.id).node.getLocalTransform())) === JSON.stringify(record.mesh.transform));
-          window.motionSamples.push({ tick: message.payload.tick, heroes, rendered });
+          const scene = window.guestWorld.scene;
+          const heroes = Object.fromEntries(records.map(record => { const actual = scene.entities.get(record.id).record; return [record.id, { location: actual.location, rotation: actual.rotation }]; }));
+          const canonical = scene.tick === message.payload.tick && records.every(record => JSON.stringify(scene.entities.get(record.id).record) === JSON.stringify(record));
+          const rendered = records.every(record => !record.mesh || JSON.stringify(Array.from(scene.entities.get(record.id).node.getLocalTransform())) === JSON.stringify(Array.from(scene.entities.get(record.id).displayTransform)));
+          window.motionSamples.push({ tick: message.payload.tick, heroes, canonical, rendered });
           if (window.motionSamples.length > 2048) window.motionSamples.shift();
         }
       };
+      const scene = window.guestWorld.scene, render = scene.render;
+      window.smoothFrames = Object.fromEntries(names.map(name => [name, 0])); window.badPresentationFrames = 0;
+      let previous;
+      scene.render = function (now) {
+        render.call(this, now);
+        if (now !== undefined) return;
+        const frame = { tick: this.tick, heroes: {} };
+        for (const name of names) {
+          const entry = this.entities.get(name); if (!entry?.node) continue;
+          const transform = Array.from(entry.node.getLocalTransform());
+          if (!transform.every(Number.isFinite) || JSON.stringify(transform) !== JSON.stringify(Array.from(entry.displayTransform))) window.badPresentationFrames++;
+          frame.heroes[name] = [...entry.displayLocation];
+          if (previous?.tick === frame.tick && previous.heroes[name] && Math.hypot(...entry.displayLocation.map((value, index) => value - previous.heroes[name][index])) > 1e-6) window.smoothFrames[name]++;
+        }
+        previous = frame;
+      };
+      window.restoreMotionRendering = () => { scene.render = render; };
     }, motionStart);
     await focus(0);
     for (const key of ['w', 'd', 's', 'a', 'w', 'd', 's', 'a']) {
@@ -163,7 +182,8 @@ const assert = require('node:assert/strict');
       assert.ok(matched.length >= 8, 'Guest ' + (index + 1) + ' must receive multiple moving-world samples');
       for (const sample of matched) {
         assert.deepEqual(sample.heroes, history[sample.tick], 'Every hero position/rotation matches the authoritative host at tick ' + sample.tick);
-        assert.equal(sample.rendered, true, 'Visible hero node transforms match their received poses');
+        assert.equal(sample.canonical, true, 'Canonical guest records retain the exact received host state');
+        assert.equal(sample.rendered, true, 'Visible hero node transforms match their separate presentation poses');
       }
       for (const name of Object.keys(motionStart.positions)) {
         const first = matched[0].heroes[name].location;
@@ -171,7 +191,14 @@ const assert = require('node:assert/strict');
         assert.ok(distance > 0.2, 'Guest ' + (index + 1) + ' must observe ' + name + ' actually moving');
       }
     });
-    console.log('Moving-player sync passed:', { distances: movement, samples: samples.map(received => received.filter(sample => history[sample.tick]).length) });
+    const smooth = [];
+    for (let index = 1; index <= 3; index++) {
+      const result = await pages[index].evaluate(() => { window.restoreMotionRendering(); return { frames: window.smoothFrames, bad: window.badPresentationFrames }; });
+      assert.equal(result.bad, 0, 'Rendered node poses remain finite and equal the presentation state');
+      for (const [name, count] of Object.entries(result.frames)) assert.ok(count >= 8, 'Guest ' + index + ' must draw multiple moving frames between updates for ' + name);
+      smooth.push(result.frames);
+    }
+    console.log('Moving-player sync passed:', { distances: movement, samples: samples.map(received => received.filter(sample => history[sample.tick]).length), smoothFrames: smooth });
     if (process.argv.includes('--movement-only')) {
       await host.evaluate(() => window.hostWorld.close());
       for (let index = 1; index <= 3; index++) {
@@ -182,7 +209,7 @@ const assert = require('node:assert/strict');
       assert.deepEqual(await host.evaluate(() => window.hostErrors), []);
       assert.deepEqual(errors, []);
       assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
-      console.log('PASS: four visible games; keyboard movement; every guest observes all four moving heroes with exact same-tick host poses; menu/focus stops; guest saves unchanged on host exit. Same-Mac acceptance only.');
+      console.log('PASS: four visible games; keyboard movement; every guest retains exact same-tick host records and renders all four moving heroes smoothly between updates; menu/focus stops; guest saves unchanged on host exit. Same-Mac acceptance only.');
       return;
     }
     const resource = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
@@ -268,7 +295,11 @@ const assert = require('node:assert/strict');
       const locations = [];
       for (let x = -10; x <= 10; x += 2) for (let z = -10; z <= 10; z += 2) {
         const point = [center[0] + x, hero.getv3Location()[1], center[2] + z];
-        if (world.construction.preview(hero, entity, index, point).preview.valid) locations.push(point);
+        const preview = world.construction.preview(hero, entity, index, point).preview;
+        if (preview.valid) {
+          const centered = [preview.position[0], point[1], preview.position[2]];
+          if (world.construction.preview(hero, entity, index, centered).preview.valid) locations.push(centered);
+        }
       }
       if (!locations.length) throw new Error('No valid preview after moving the temporary hero near its workshop.');
       return locations;
@@ -431,13 +462,14 @@ const assert = require('node:assert/strict');
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     const rejected = await host.evaluate(() => window.hostErrors);
     assert.equal(rejected.length, 1); assert.match(rejected[0], /Guests cannot select heroes/);
-    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest matches same-tick host positions/rotations and visible mesh poses; original gathering; original guest build/cost/throw/scaffold/save; original guest demolition/cancel and fresh save ordering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
+    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest retains same-tick host positions/rotations and separately renders smooth finite mesh poses; original gathering; original guest build/cost/throw/scaffold/save; original guest demolition/cancel and fresh save ordering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
     console.log('Same-Mac acceptance only. Full HUD/actions, broader combat/PvP and real-network/platform acceptance remain open.');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
     for (let index = 0; index < pages.length; index++) try {
       console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
         connection: window.connection && { closed: window.connection.closed, state: window.connection.state }, focused: document.hasFocus(),
+        startup: window.polycraft?.controls && { ready: window.polycraft.controls.ready(), loaded: window.polycraft.controls.manager()?.hasLoadedLevel, loading: window.polycraft.controls.manager()?.getLoading(), hero: !!window.polycraft.controls.manager()?.getHero(), state: window.polycraft.controls.manager()?.activeGameState?.name },
         movement: window.guestWorld?.movement && { keys: [...window.guestWorld.movement.keys], available: window.guestWorld.movement.available(), nativeFocused: window.guestWorld.movement.nativeFocused },
         identity: window.guestWorld?.identity, tick: window.guestWorld?.scene.tick,
         action: window.guestWorld && { sequence: window.guestWorld.targetSequence, selection: window.guestWorld.selectionRequest, result: window.guestWorld.lastTargetResult, menu: window.guestWorld.construction?.menu, placement: window.guestWorld.construction?.placement, preview: window.guestWorld.construction?.preview },

@@ -5,6 +5,27 @@
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   const { GuestConstruction } = typeof module !== 'undefined' ? require('./guest-construction.js') : root.PolycraftGuestConstruction;
 
+  const same = (a, b) => a === b || !!(a && b && a.length === b.length && a.every((value, index) => value === b[index]));
+  function transformParts(math, transform) {
+    const normalized = new Float32Array(transform), scale = [0, 3, 6].map(offset => Math.hypot(...transform.slice(offset, offset + 3)));
+    if (scale.some(value => value < 1e-6)) return null;
+    if (math.m43Determinant(transform) < 0) scale[0] *= -1;
+    for (let column = 0; column < 3; column++) for (let row = 0; row < 3; row++) normalized[column * 3 + row] /= scale[column];
+    for (const [a, b] of [[0, 3], [0, 6], [3, 6]]) if (Math.abs(normalized[a] * normalized[b] + normalized[a + 1] * normalized[b + 1] + normalized[a + 2] * normalized[b + 2]) > 1e-3) return null;
+    return { rotation: math.quatFromM43(normalized), scale, position: transform.slice(9, 12) };
+  }
+  function blendTransform(math, motion, amount, output) {
+    return math.m43FromRTS(math.quatSlerp(motion.from.rotation, motion.to.rotation, amount),
+      math.v3Lerp(motion.from.position, motion.to.position, amount), math.v3Lerp(motion.from.scale, motion.to.scale, amount), output);
+  }
+  function transformMotion(math, from, to) {
+    if (same(from, to)) return null;
+    const start = transformParts(math, from), end = transformParts(math, to);
+    // Keep the engine's near-angle slerp on the same quaternion hemisphere at yaw wrap.
+    if (start && end && start.rotation.reduce((sum, value, index) => sum + value * end.rotation[index], 0) < 0) end.rotation = Array.from(end.rotation, value => -value);
+    return start && end && start.scale.every((value, index) => value * end.scale[index] > 0) ? { from: start, to: end } : null;
+  }
+
   // Guests create presentation nodes only: activating ECS archetypes would run host-owned AI and rewards.
   class GuestScene {
     constructor(globals, blocks) {
@@ -38,16 +59,17 @@
         controller?.output.destroy?.();
         controller = { output: this.globals.graphicsDevice.createTechniqueParameterBuffer({ numFloats: matrices.length, dynamic: true }), update() {} };
       }
-      if (matrices) controller.output.setData(new Float32Array(matrices));
+      if (matrices) controller.output.setData(matrices instanceof Float32Array ? matrices : new Float32Array(matrices));
       else { controller?.output.destroy?.(); controller = null; }
+      const changed = node.skinController !== controller;
       node.skinController = controller;
       function attach(child) {
         for (const renderable of child.renderables || []) if (renderable.isSkinned()) renderable.skinController = controller;
         for (const descendant of child.children || []) attach(descendant);
       }
-      attach(node);
+      if (changed) attach(node);
     }
-    apply(value) {
+    apply(value, now = performance.now()) {
       if (this.closed) throw new Error('The guest scene has closed.');
       validateSnapshot(value, this.assets);
       if (value.tick <= this.tick) throw new Error('The host sent an outdated world snapshot.');
@@ -81,11 +103,29 @@
         for (const node of created) this.remove(node);
         throw error;
       }
+      const gap = this.receivedAt === undefined ? 0 : now - this.receivedAt, duration = Math.min(250, Math.max(100, gap));
       try {
-        for (const { record, node } of next.values()) if (node) {
-          node.setLocalTransform(new Float32Array(record.mesh.transform));
+        this.render(now);
+        for (const entry of next.values()) {
+          const { record, node } = entry, previous = this.entities.get(record.id);
+          entry.displayLocation = [...record.location];
+          if (!node) continue;
+          entry.displayTransform = new Float32Array(record.mesh.transform);
+          entry.displaySkin = record.mesh.skin && new Float32Array(record.mesh.skin);
+          // A large correction or stalled stream snaps instead of dragging actors across the island.
+          const continuous = previous?.node === node && previous.record.mesh?.visible && record.mesh.visible && gap > 0 && gap <= 1000 && Math.hypot(...record.location.map((value, index) => value - previous.record.location[index])) <= 8;
+          if (continuous) {
+            const transform = transformMotion(this.globals.mathDevice, previous.displayTransform, record.mesh.transform);
+            const skin = previous.displaySkin && entry.displaySkin && previous.displaySkin.length === entry.displaySkin.length && !same(previous.displaySkin, entry.displaySkin);
+            if (transform || skin) {
+              entry.motion = { start: now, duration, transform, location: [...previous.displayLocation], skin: skin ? new Float32Array(previous.displaySkin) : null };
+              if (transform) { entry.displayTransform.set(previous.displayTransform); entry.displayLocation = [...previous.displayLocation]; }
+              if (skin) entry.displaySkin.set(previous.displaySkin);
+            }
+          }
+          node.setLocalTransform(entry.displayTransform);
           node.enableHierarchy(record.mesh.visible);
-          this.pose(node, record.mesh.skin);
+          this.pose(node, entry.displaySkin);
         }
       } catch (error) {
         for (const node of created) this.remove(node);
@@ -94,15 +134,47 @@
       for (const [id, previous] of this.entities) if (previous.node !== next.get(id)?.node) this.remove(previous.node);
       if (terrain !== this.terrain) for (const node of this.terrain) this.remove(node);
       this.terrain = terrain; this.terrainKey = terrainKey; this.entities = next;
+      const torch = snapshot.torch, before = this.torch;
+      this.torchMotion = torch?.visible && before?.visible && gap > 0 && gap <= 1000 && Math.hypot(...torch.transform.slice(9).map((value, index) => value - before.transform[index + 9])) <= 8 ? transformMotion(this.globals.mathDevice, before.transform, torch.transform) : null;
+      if (this.torchMotion) Object.assign(this.torchMotion, { start: now, duration });
+      this.torch = torch && { visible: torch.visible, transform: new Float32Array(this.torchMotion ? before.transform : torch.transform) };
+      this.receivedAt = now;
       this.tick = snapshot.tick; this.snapshot = snapshot;
       return snapshot;
+    }
+    render(now = performance.now()) {
+      if (this.closed) return;
+      const math = this.globals.mathDevice;
+      for (const entry of this.entities.values()) {
+        const motion = entry.motion;
+        if (!motion) continue;
+        const amount = Math.max(0, Math.min(1, (now - motion.start) / motion.duration));
+        if (motion.transform) {
+          if (amount === 1) entry.displayTransform.set(entry.record.mesh.transform);
+          else blendTransform(math, motion.transform, amount, entry.displayTransform);
+          entry.displayLocation = entry.record.location.map((value, index) => motion.location[index] + (value - motion.location[index]) * amount);
+          entry.node.setLocalTransform(entry.displayTransform);
+        }
+        if (motion.skin) {
+          // shortcut: blend received skin matrices; replicate local bone poses if fast joint turns visibly deform.
+          if (amount === 1) entry.displaySkin.set(entry.record.mesh.skin);
+          else for (let index = 0; index < entry.displaySkin.length; index++) entry.displaySkin[index] = motion.skin[index] + (entry.record.mesh.skin[index] - motion.skin[index]) * amount;
+          this.pose(entry.node, entry.displaySkin);
+        }
+        if (amount === 1) entry.motion = null;
+      }
+      if (this.torchMotion) {
+        const amount = Math.max(0, Math.min(1, (now - this.torchMotion.start) / this.torchMotion.duration));
+        if (amount === 1) { this.torch.transform.set(this.snapshot.torch.transform); this.torchMotion = null; }
+        else blendTransform(math, this.torchMotion, amount, this.torch.transform);
+      }
     }
     close() {
       if (this.closed) return;
       this.closed = true;
       for (const node of this.terrain) this.remove(node);
       for (const { node } of this.entities.values()) this.remove(node);
-      this.terrain = []; this.entities.clear(); this.snapshot = null;
+      this.terrain = []; this.entities.clear(); this.snapshot = this.torch = this.torchMotion = null;
     }
   }
 
@@ -215,14 +287,14 @@
       this.construction?.update();
       const building = this.demolition || this.selectedBuilding;
       if (!building) return;
-      const record = this.scene.entities.get(building.id)?.record;
+      const entry = this.scene.entities.get(building.id), record = entry?.record;
       if (!record || this.controls.paused || !this.movement.nativeFocused) { this.cancelLocalMenu(); return; }
       if (this.demolition) {
         const choice = this.controls.drawDemolitionPrompt(building);
         if (choice !== null) { this.cancelLocalMenu(); if (choice) this.sendTarget('demolish', building.id); }
         return;
       }
-      const point = this.controls.app.globals.camera.worldToScreen(record.location), gui = this.game.getIMGui();
+      const point = this.controls.app.globals.camera.worldToScreen(entry.displayLocation || record.location), gui = this.game.getIMGui();
       if (!point) { this.cancelLocalMenu(); return; }
       if (gui.doButton({ id: 'guest-demolish-' + building.id, text: 'Demolish', v2ScreenLocation: point, buttonType: this.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'demolish' })) {
         this.demolition = building; this.selectedBuilding = null;
@@ -236,17 +308,21 @@
       this.guiInput.down = this.guiInput.pendingDown;
       const state = this.scene.snapshot;
       if (!state) return;
+      this.scene.render();
       globals.gameCurrentTime = state.time;
       game.gameDayTime = state.dayTime;
       game.applyDayNightTime();
       const camera = game.getGameCamera(), math = globals.mathDevice;
-      const hero = this.scene.entities.get(state.hero).record;
-      camera.setDesiredFocus(math.v3Add(hero.location, this.focusOffset));
-      camera.setDesiredPosition(math.v3Add(hero.location, this.positionOffset));
+      const hero = this.scene.entities.get(state.hero);
+      camera.setDesiredFocus(math.v3Add(hero.displayLocation, this.focusOffset));
+      camera.setDesiredPosition(math.v3Add(hero.displayLocation, this.positionOffset));
       camera.blendLerp(this.hasFrame ? camera.getTimeAdjustedBlendFactor(0.15) : 1);
       camera.apply(); game.gameLighting.update();
       const torch = game.gameLighting.heroLightNode;
-      if (torch && state.torch) { torch.setLocalTransform(new Float32Array(state.torch.transform)); torch.setDisabled(!state.torch.visible); }
+      if (torch) {
+        if (this.scene.torch) torch.setLocalTransform(this.scene.torch.transform);
+        torch.setDisabled(!this.scene.torch?.visible);
+      }
       this.hasFrame = true;
       this.updateMenu();
     }

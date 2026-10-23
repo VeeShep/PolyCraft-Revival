@@ -86,16 +86,76 @@ test('guest terrain and meshes reconcile identities, transformations, visibility
 });
 test('host skin matrices update a render-only controller without advancing an animation or sharing caller arrays', () => {
   const { globals, blocks } = setup(), scene = new GuestScene(globals, blocks), value = snapshot();
-  value.spaces[0].entities[0].mesh.skin = identity(); scene.apply(value);
+  value.spaces[0].entities[0].mesh.skin = identity(); scene.apply(value, 0);
   const node = scene.entities.get('hero').node;
   assert.deepEqual(Array.from(node.skinController.output), identity());
   assert.equal(node.renderables[0].skinController, node.skinController);
   value.spaces[0].entities[0].mesh.skin[0] = 7;
   assert.equal(node.skinController.output[0], 1);
-  value.tick = 2; scene.apply(value); assert.equal(node.skinController.output[0], 7);
-  value.tick = 3; value.spaces[0].entities[0].mesh.skin = [NaN];
+  value.tick = 2; scene.apply(value, 200); assert.equal(node.skinController.output[0], 1);
+  const controller = node.skinController;
+  scene.render(300); assert.equal(node.skinController.output[0], 4); assert.equal(node.skinController, controller);
+  scene.render(450); assert.equal(node.skinController.output[0], 7);
+  const extreme = snapshot(3); extreme.spaces[0].entities[0].mesh.skin = identity(); extreme.spaces[0].entities[0].mesh.skin[0] = 1e9;
+  scene.apply(extreme, 600); scene.render(850);
+  extreme.tick = 4; extreme.spaces[0].entities[0].mesh.skin[0] = Math.fround(1e-9);
+  scene.apply(extreme, 1000); scene.render(1250);
+  assert.equal(node.skinController.output[0], Math.fround(1e-9), 'The settled skin copies the exact host endpoint without cancellation error');
+  value.tick = 5; value.spaces[0].entities[0].mesh.skin = [NaN];
   assert.throws(() => scene.apply(value), /skin matrices/);
   scene.close();
+});
+function motionSetup() {
+  const env = setup(), math = env.globals.mathDevice, runtime = require('./runtime-ast.cjs');
+  math.precision = 1e-6; math.cosMinSlerpAngle = Math.cos(Math.PI / 40);
+  for (const name of ['m43Determinant', 'quatFromM43', 'quatNormalize', 'quatDot', 'v4Dot', 'v4BuildZero', 'v4ScalarMul', 'quatConjugate', 'quatSlerp', 'v3Lerp', 'm43FromRTS']) math[name] = runtime.method(name, { A: math, F: Float32Array });
+  return { ...env, scene: new GuestScene(env.globals, env.blocks), math };
+}
+test('guest display interpolates translation, shortest rotation and scale using the real engine math while keeping host records exact', () => {
+  const { scene, math } = motionSetup(), initial = snapshot(), update = snapshot(2);
+  const pose = (angle, location, scale) => Array.from(math.m43FromRTS([0, Math.sin(angle / 2), 0, Math.cos(angle / 2)], location, scale));
+  const a = initial.spaces[0].entities[0], b = update.spaces[0].entities[0];
+  a.location = [0, 0, 0]; a.mesh.transform = pose(179 * Math.PI / 180, a.location, [2, 3, 4]);
+  b.location = [4, 0, 2]; b.mesh.transform = pose(-179 * Math.PI / 180, b.location, [4, 5, 6]);
+  scene.apply(initial, 0); scene.apply(update, 200);
+  const hero = scene.entities.get('hero'), canonical = JSON.stringify(hero.record);
+  assert.deepEqual(hero.displayLocation, [0, 0, 0]); assert.deepEqual(hero.record.location, [4, 0, 2]);
+  scene.render(300);
+  assert.deepEqual(hero.displayLocation, [2, 0, 1]);
+  const expected = pose(Math.PI, [2, 0, 1], [3, 4, 5]);
+  hero.node.transform.forEach((value, index) => assert.ok(Math.abs(value - expected[index]) < 1e-5, 'Rotation/scale must remain intact, not collapse under matrix lerp'));
+  assert.equal(JSON.stringify(hero.record), canonical); assert.deepEqual(scene.snapshot.spaces[0].entities[0].location, [4, 0, 2]);
+  scene.render(320); const before = [...hero.node.transform], third = structuredClone(update); third.tick = 3;
+  third.spaces[0].entities[0].location = [6, 0, 2]; third.spaces[0].entities[0].mesh.transform[9] = 6;
+  scene.apply(third, 320);
+  assert.deepEqual(scene.entities.get('hero').node.transform, before, 'An early update starts from the current display without snapping');
+  scene.render(1000); assert.deepEqual(scene.entities.get('hero').node.transform, third.spaces[0].entities[0].mesh.transform);
+  assert.equal(scene.entities.get('hero').motion, null); scene.close(); scene.render(1100);
+});
+test('guest display snaps teleports, long transfer gaps, changed models and degenerate transforms and removes stale motion', () => {
+  const { scene } = motionSetup(), initial = snapshot(); scene.apply(initial, 0);
+  const update = snapshot(2); update.spaces[0].entities[0].location[0] = 30; update.spaces[0].entities[0].mesh.transform[9] = 30;
+  scene.apply(update, 200); assert.equal(scene.entities.get('hero').node.transform[9], 30); assert.equal(scene.entities.get('hero').motion, undefined);
+  update.tick = 3; update.spaces[0].entities[0].location[0] = 31; update.spaces[0].entities[0].mesh.transform[9] = 31;
+  scene.apply(update, 1500); assert.equal(scene.entities.get('hero').node.transform[9], 31);
+  update.tick = 4; update.spaces[0].entities[0].mesh.path = 'changed.dae'; update.spaces[0].entities[0].mesh.transform[9] = 32;
+  scene.apply(update, 1700); assert.equal(scene.entities.get('hero').node.transform[9], 32);
+  update.tick = 5; update.spaces[0].entities[0].mesh.transform.fill(0);
+  scene.apply(update, 1900); assert.deepEqual(scene.entities.get('hero').node.transform, Array(12).fill(0));
+  update.tick = 6; update.spaces[0].entities[0].mesh = null;
+  scene.apply(update, 2100); assert.equal(scene.entities.get('hero').node, null); scene.render(2200); scene.close();
+});
+test('guest display preserves mirrored scale and smooths the received torch without mutating snapshots', () => {
+  const { scene, math } = motionSetup(), initial = snapshot(), update = snapshot(2);
+  initial.torch = { visible: true, transform: identity() }; update.torch = { visible: true, transform: identity() }; update.torch.transform[9] = 4;
+  initial.spaces[0].entities[0].mesh.transform = Array.from(math.m43FromRTS([0, 0, 0, 1], [0, 0, 0], [-2, 3, 4]));
+  update.spaces[0].entities[0].mesh.transform = Array.from(math.m43FromRTS([0, 0, 0, 1], [4, 0, 0], [-4, 5, 6]));
+  scene.apply(initial, 0); scene.apply(update, 200); scene.render(300);
+  assert.equal(scene.torch.transform[9], 2); assert.equal(scene.snapshot.torch.transform[9], 4);
+  assert.equal(scene.entities.get('hero').node.transform[0], -3);
+  scene.render(500); assert.equal(scene.torch.transform[9], 4);
+  update.tick = 3; update.torch.visible = false; scene.apply(update, 600); assert.equal(scene.torch.visible, false); assert.equal(scene.torchMotion, null);
+  update.tick = 4; update.torch = null; scene.apply(update, 800); assert.equal(scene.torch, null); scene.close();
 });
 test('invalid assets, stale ticks and incomplete mesh loads leave the previous guest scene intact', () => {
   const { globals, blocks, loader } = setup(), scene = new GuestScene(globals, blocks);

@@ -18,7 +18,7 @@ function setup() {
 }
 test('cursor unprojection divides homogeneous coordinates before casting onto the replicated hero plane and refuses invalid rays', () => {
   const { ui, world } = setup(); delete ui.cursor;
-  world.identity = { entity: 'hero' }; world.scene.entities.set('hero', { record: { location: [0, 3, 0] } }); world.guiInput = { position: [10, 20] };
+  world.identity = { entity: 'hero' }; world.scene.entities.set('hero', { displayLocation: [0, 3, 0], record: { location: [0, 30, 0] } }); world.guiInput = { position: [10, 20] };
   const globals = world.controls.app.globals;
   globals.camera.matrix = []; globals.camera.viewProjectionMatrix = [1]; globals.graphicsDevice = { width: 200, height: 100 };
   const math = globals.mathDevice;

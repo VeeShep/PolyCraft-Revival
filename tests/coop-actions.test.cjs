@@ -99,5 +99,7 @@ test('guest picking maps CSS pixels to the rendered scene and ignores own hero, 
     game: { getEntityFactory: () => ({ getECArchetype: (id, component) => id !== 'art' && component === 'ECTarget' }) },
     scene: { entities: new Map([['self', record('self', [40, 20])], ['art', record('art', [40, 20])], ['hidden', record('hidden', [40, 20], false)], ['enemy', record('enemy', [45, 20])]]) } };
   assert.equal(pickTarget(world, { clientX: 30, clientY: 30 }), 'enemy');
+  world.scene.entities.get('enemy').displayLocation = [45, 20]; world.scene.entities.get('enemy').record.location = [200, 200];
+  assert.equal(pickTarget(world, { clientX: 30, clientY: 30 }), 'enemy', 'Picking follows the visible interpolated target, not its newer authoritative position');
   assert.equal(pickTarget(world, { clientX: 100, clientY: 65 }), null);
 });

@@ -29,6 +29,18 @@ The visible host acceptance repeat captured a real 2,208-block / 352-entity isla
 
 ## Next implementation slice
 
+### Guest presentation smoothing — 2026-10-22
+
+`GuestScene` keeps exact latest authoritative records alongside separate display locations/transforms/skin buffers. On each received update, visible poses transition from their currently displayed state over the previous arrival interval, clamped to 100–250 ms. An early update restarts from the current display, not an old endpoint. Position and scale interpolate; the original math device slerps normalized rotations, including yaw wrap and mirrored scale. New/replaced/hidden meshes, near-zero/sheared transforms, changed reflection signs, corrections over eight world units and update gaps over one second snap. Rendering stops at the latest known target; it never extrapolates world state or runs guest ECS simulation.
+
+The received torch transform and same-size skin matrices also transition on display frames. Skin buffers/controllers are reused; hierarchy binding occurs only when the controller changes. Skin matrix blending remains an approximation: local bone-pose replication may be needed if fast joint turns visibly deform. Camera focus, product/demolition menus, cursor height plane and target picking follow display coordinates while action validation and saving retain host authority. Protocol/save versions are unchanged (`polycraft-1.0.0.25-coop-7`, snapshot 3).
+
+The four-player fixture now compares canonical guest records with same-tick host positions/rotations and separately checks actual node transforms against display state. It requires at least eight moving render frames between updates for every hero on every guest; canonical agreement cannot be replaced with a looser visual comparison. Unit coverage uses original engine math for shortest rotation, scale/reflection, early updates, exact endpoints, stalled streams and teleport/model replacement; it also checks received skin buffers and torch state without snapshot mutation.
+
+119 unit/regression checks pass. Visible movement `polycraft-coop-identities-PolHKt` passed exact canonical synchronization and 350–637 moving display frames between updates per hero/guest. Full co-op `polycraft-coop-identities-PyAQxQ` passed 91/92/91 exact host samples and 499–634 moving display frames per hero/guest, alongside original gathering, build-menu/preview/cost/saved footprint, demolition, PvP, reconnect and guest-save isolation. Visible solo regression passed on `polycraft-game-28NiuG`. Incomplete loading/grid-boundary fixture attempts and remaining acceptance gates are recorded in RESTORATION_STATUS.md.
+
+**Remaining:** full snapshots still repeat terrain/asset metadata and wait 100 ms after transfer; bandwidth, congestion and real-network latency still need work. The visual delay is not local movement prediction, and shader clocks/particles/decals and broader animation parity remain separate gaps. Native gameplay and physical-network acceptance remain open.
+
 ### Original-style guest construction interface — 2026-10-22
 
 `GuestConstruction` draws original product buttons/cost/time artwork and ground guidelines using host-authored dispenser metadata. Selecting a product creates only a local blueprint. Bounded, sequenced preview queries use a shadow of the original builder placement fields, without creating held entities, spending or reserving capacity. Click placement uses the existing authoritative build/throw/save path and rechecks all rules. Eligible repeat products retain the blueprint; Escape, the original Cancel button, focus loss and source removal clear local selection. Late selection/preview replies cannot reopen cancelled menus or place at an obsolete cursor point.

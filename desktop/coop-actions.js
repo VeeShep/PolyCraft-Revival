@@ -57,9 +57,9 @@
     const globals = world.controls.app.globals, canvas = globals.graphicsDevice.canvas || root.document.getElementById('turbulenz_game_engine_canvas');
     const bounds = canvas.getBoundingClientRect(), x = (event.clientX - bounds.left) * globals.graphicsDevice.width / bounds.width, y = (event.clientY - bounds.top) * globals.graphicsDevice.height / bounds.height;
     let nearest = 32 * 32, selected = null;
-    for (const { record } of world.scene.entities.values()) {
+    for (const { record, displayLocation } of world.scene.entities.values()) {
       if (!record.interactive || !record.mesh?.visible || record.id === world.identity.entity) continue;
-      const point = globals.camera.worldToScreen(record.location);
+      const point = globals.camera.worldToScreen(displayLocation || record.location);
       if (!point) continue;
       const distance = (point[0] - x) ** 2 + (point[1] - y) ** 2;
       if (distance < nearest) { nearest = distance; selected = record.id; }

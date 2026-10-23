@@ -31,7 +31,7 @@
     }
     cursor() {
       const world = this.world, globals = world.controls.app.globals, math = globals.mathDevice, camera = globals.camera;
-      const hero = world.scene.entities.get(world.identity.entity)?.record, device = globals.graphicsDevice;
+      const hero = world.scene.entities.get(world.identity.entity), device = globals.graphicsDevice;
       if (!hero || !device.width || !device.height) return null;
       const [x, y] = world.guiInput.position;
       const inverse = math.m44Inverse(camera.viewProjectionMatrix);
@@ -41,7 +41,7 @@
       // The legacy screenToWorld drops w; perspective unprojection must divide before casting the ray.
       const near = math.v3Build(point[0] / point[3], point[1] / point[3], point[2] / point[3]);
       const origin = math.m43Pos(camera.matrix);
-      const location = math.getRayPlaneIntersection(hero.location, math.v3BuildYAxis(), origin, math.v3Sub(near, origin));
+      const location = math.getRayPlaneIntersection(hero.displayLocation || hero.record.location, math.v3BuildYAxis(), origin, math.v3Sub(near, origin));
       return location && vector(Array.from(location), 3) ? Array.from(location) : null;
     }
     matches(location) { const cursor = this.cursor(); return cursor && Math.hypot(...location.map((number, index) => number - cursor[index])) < 0.05; }
@@ -61,12 +61,12 @@
       const source = this.menu?.source || this.placement?.source;
       if (!source) return;
       const gui = world.game.getIMGui();
-      const record = world.scene.entities.get(source)?.record;
+      const entry = world.scene.entities.get(source), record = entry?.record;
       if (!record || world.controls.paused || !world.movement.nativeFocused) { world.cancelLocalMenu(); return; }
       if (this.menu) {
         if (performance.now() - this.menuUpdated > 1000 && !world.selectionRequest) world.selectionRequest = world.sendTarget('target', source);
         const products = this.menu.products, scale = gui.getRadialScaleFactor(products.length);
-        const point = globals.camera.worldToScreen(record.location);
+        const point = globals.camera.worldToScreen(entry.displayLocation || record.location);
         if (!point) return;
         const center = products.length > 1 ? gui.getRadialCentre(point, scale) : point;
         if (products.length > 1) world.game.getGuiManager().addDrawGui('radialFrame', { v2ScreenLocation: center, scale }, 'guest-build-frame');
