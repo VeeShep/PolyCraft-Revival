@@ -50446,32 +50446,49 @@
     remapMenuIndexToValidIndex: function (a) {
       return this.menuIndexToValidIndex[a];
     },
-    doRadialMenuButton: function (a, b, c, d) {
-      d = this.remapMenuIndexToValidIndex(d);
-      if (void 0 !== d) {
-        var f = this.getupgradeDisplayName(d),
-          e,
-          h = "",
-          i = "";
-        e = this.isOnZeroLevel(b);
-        var j = this.canLevelUp(b),
-          k = !this.isFullyUpgraded(d),
-          l = this.getHeroLevelMet(d),
-          n = this.getPrerequisitesMet(d),
-          h = j && l && n && k,
-          n = this.getGuiArchetype(d, h, j || !k || e);
-        h ? (e = this.getLevelInfo(d, this.getupgradeLevel(d) + 1), h = "" + f + "\n" + e.levelText, c = {
-          text1: h,
-          v2ScreenLocation: c,
-          buttonType: Z.BUTTON_ROUND,
-          svg1: this.archetype.svgPath
-        }, f = "ecHeroShrine" + this.entity.getName() + "Upgrade" + d, a.doButtonFromGuiArchetype(n, c, f) && (this.unlockUpgrade(b, d), this.sendUpgradeUnlockedMetric(this.getupgradeType(d)))) : (h = "" + f + "\n", e ? h = "Level Up\nto unlock hero upgrades" : k ? j ? h = l ? "(Need to upgrade " + this.getPrerequisiteText(d) + ")" : h + ("(Unlocked at Level " + this.getupgradeMinimumHeroLevel(d) + ")") : (h += "(Level up or boost using Amber)", i = "75") : h += "(Maxed Out!)", c = {
-          v2ScreenLocation: c,
-          text1: h,
-          text4: i,
-          buttonType: Z.BUTTON_ROUND,
-          svg1: this.archetype.svgPath
-        }, f = "ecHeroShrine" + this.entity.getName() + "Upgrade Unavailable" + d, a.doButtonFromGuiArchetype(n, c, f) && !j && k && !e && (this.canAffordHeroLevelUp(b, 75) ? (this.payForLevelUp(b, 75), b = this.levelUpHero(b), this.sendLevelUpBoughtMetric(), this.unlockUpgrade(b, d), this.sendUpgradeUnlockedMetric(this.getupgradeType(d))) : this.openAmberShop(), this.closeRadialMenu()));
+    canBoostHeroUpgrade: function (hero, index) {
+      var data = hero.getEC("ECPlayerData");
+      return !!data && data.getLevel() > 0 && !data.canUpgrade() && !this.isFullyUpgraded(index) && this.getPrerequisitesMet(index) && data.getLevel() + 1 >= this.getupgradeMinimumHeroLevel(index) && void 0 !== kd.getXPFromLevel(data.getLevel() + 1);
+    },
+    doRadialMenuButton: function (gui, hero, location, menuIndex) {
+      var index = this.remapMenuIndexToValidIndex(menuIndex);
+      if (void 0 === index) return;
+      var title = this.getupgradeDisplayName(index),
+        hasPoints = this.canLevelUp(hero),
+        maxed = this.isFullyUpgraded(index),
+        prerequisites = this.getPrerequisitesMet(index),
+        minimumLevel = this.getupgradeMinimumHeroLevel(index),
+        level = hero.getEC("ECPlayerData").getLevel(),
+        available = hasPoints && this.getHeroLevelMet(index) && prerequisites && !maxed,
+        boost = this.canBoostHeroUpgrade(hero, index),
+        text = title + "\n";
+      if (available) text += this.getLevelInfo(index, this.getupgradeLevel(index) + 1).levelText;
+      else if (level === 0) text = "Level Up\nto unlock hero upgrades";
+      else if (maxed) text += "(Maxed Out!)";
+      else if (!prerequisites) text += "(Need to upgrade " + this.getPrerequisiteText(index) + ")";
+      else if (level + (hasPoints ? 0 : 1) < minimumLevel) text += "(Unlocked at Level " + minimumLevel + ")";
+      else if (!hasPoints && void 0 === kd.getXPFromLevel(level + 1)) text += "(Maximum hero level)";
+      else text += "(Level up or boost using Amber)";
+      var clicked = gui.doButtonFromGuiArchetype(this.getGuiArchetype(index, available, !boost), {
+        text1: text,
+        text4: boost ? "75" : "",
+        v2ScreenLocation: location,
+        buttonType: Z.BUTTON_ROUND,
+        svg1: this.archetype.svgPath
+      }, "ecHeroShrine" + this.entity.getName() + (available ? "Upgrade" : "Upgrade Unavailable") + index);
+      if (!clicked) return;
+      if (available) {
+        this.unlockUpgrade(hero, index);
+        this.sendUpgradeUnlockedMetric(this.getupgradeType(index));
+      } else if (boost) {
+        if (this.canAffordHeroLevelUp(hero, 75)) {
+          this.payForLevelUp(hero, 75);
+          hero = this.levelUpHero(hero);
+          this.sendLevelUpBoughtMetric();
+          this.unlockUpgrade(hero, index);
+          this.sendUpgradeUnlockedMetric(this.getupgradeType(index));
+        } else this.openAmberShop();
+        this.closeRadialMenu();
       }
     },
     sendLevelUpBoughtMetric: function () {

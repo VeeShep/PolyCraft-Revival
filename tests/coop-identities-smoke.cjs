@@ -13,14 +13,18 @@ const assert = require('node:assert/strict');
       applications.push(application);
       const page = await application.firstWindow(); pages.push(page);
       assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()), true);
-      await application.evaluate(({ BrowserWindow }, role) => BrowserWindow.getAllWindows()[0].setTitle('PolyCraft temporary ' + role + ' — co-op identities test'), role);
+      await application.evaluate(({ BrowserWindow }, role) => {
+        const window = BrowserWindow.getAllWindows()[0]; window.setTitle('PolyCraft temporary ' + role + ' — co-op identities test');
+        globalThis.testFocus = [];
+        for (const event of ['focus', 'blur']) window.on(event, () => { globalThis.testFocus.push({ time: Date.now(), event }); if (globalThis.testFocus.length > 80) globalThis.testFocus.shift(); });
+      }, role);
       page.on('pageerror', error => errors.push(role + ': ' + error.message));
       page.on('request', request => requests.push(request.url()));
       await page.locator('#new-name').fill('Temporary identity ' + role);
       await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#new-game button').click({ noWaitAfter: true })]);
       await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
       await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestateStartScreen');
-      await application.evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); BrowserWindow.getAllWindows()[0].focus(); });
+      await focus(applications.length - 1);
       const canvas = page.locator('#turbulenz_game_engine_canvas'), bounds = await canvas.boundingBox();
       const play = await page.evaluate(() => Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)));
       await canvas.focus(); await page.mouse.move(10, 10);
@@ -47,7 +51,7 @@ const assert = require('node:assert/strict');
         });
         await page.bringToFront(); await page.locator('#turbulenz_game_engine_canvas').focus();
         try {
-          await page.waitForFunction(() => document.hasFocus() && (!window.guestWorld || window.guestWorld.movement.nativeFocused), null, { timeout: 5000 });
+          await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && (!window.guestWorld || window.guestWorld.movement.nativeFocused), null, { timeout: 5000 });
           return;
         } catch (error) { if (attempt) throw error; }
       }
@@ -333,10 +337,13 @@ const assert = require('node:assert/strict');
       const button = await pages[1].evaluate(source => {
         window.guestWorld.totem.lastResult = null;
         const world = window.guestWorld, button = window.totemButtons['guest-totem-' + source + '-0'], bounds = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect();
-        return { ...button, x: bounds.left + button.position[0] * bounds.width / world.controls.app.globals.graphicsDevice.width, y: bounds.top + button.position[1] * bounds.height / world.controls.app.globals.graphicsDevice.height };
+        return { ...button, id: 'guest-totem-' + source + '-0', x: bounds.left + button.position[0] * bounds.width / world.controls.app.globals.graphicsDevice.width, y: bounds.top + button.position[1] * bounds.height / world.controls.app.globals.graphicsDevice.height };
       }, totem.source);
       assert.equal(button.svg, 'gui/icon_totem_agility_n.svg');
-      await pages[1].mouse.move(button.x, button.y, { steps: 5 }); await pages[1].mouse.click(button.x, button.y, { delay: 100 });
+      await pages[1].mouse.move(button.x, button.y, { steps: 5 });
+      await pages[1].waitForFunction(id => window.guestWorld.movement.nativeFocused && window.guestWorld.totem.menu && window.guestWorld.game.getIMGui().isHot(id), button.id);
+      console.log('Totem button ready', await pages[1].evaluate(id => ({ time: Date.now(), hot: window.guestWorld.game.getIMGui().isHot(id), focused: window.guestWorld.movement.nativeFocused, input: window.guestWorld.guiInput.position }), button.id));
+      await pages[1].mouse.click(button.x, button.y, { delay: 100 });
       await pages[1].waitForFunction(() => window.guestWorld.totem.lastResult?.message === 'Hero upgraded and saved.');
       return button;
     }
@@ -652,6 +659,9 @@ const assert = require('node:assert/strict');
     console.log('Same-Mac acceptance only. Full HUD/actions, broader combat/PvP and real-network/platform acceptance remain open.');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
+    for (let index = 0; index < applications.length; index++) try {
+      console.log('Native focus history', index, await applications[index].evaluate(({ BrowserWindow }) => ({ time: Date.now(), focused: BrowserWindow.getAllWindows()[0].isFocused(), events: globalThis.testFocus })));
+    } catch {}
     for (let index = 0; index < pages.length; index++) try {
       console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ totemClicks: window.totemClicks, totemButtons: window.totemButtons, combatTrace: window.combatTrace, hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
         connection: window.connection && { closed: window.connection.closed, state: window.connection.state }, focused: document.hasFocus(),

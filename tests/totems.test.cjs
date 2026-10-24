@@ -108,7 +108,7 @@ test('guest totem radial menus retain space for the lower label at the canvas ed
 
 test('original solo and host paid-totem buttons apply the upgrade to the replacement hero', () => {
   for (const online of [false, true]) {
-    const shrine = runtime.component('ECHeroShrine', { Z: { BUTTON_ROUND: 'round' } });
+    const shrine = runtime.component('ECHeroShrine', { Z: { BUTTON_ROUND: 'round' }, kd: { getXPFromLevel: level => level <= 40 ? level * 100 : undefined } });
     let level = 1, amber = 150, upgraded = 1, staleWrites = 0, freshWrites = 0;
     const old = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade() { staleWrites++; } } };
     const fresh = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade(type, value) { assert.equal(type, 'movementSpeed'); upgraded = value; freshWrites++; } } };
@@ -150,4 +150,33 @@ test('all eight original upgrades can be bought with guest points through their 
   }
   assert.equal(Object.keys(f.guest.upgrades).length, 8); assert.equal(f.hero().getEC('ECPlayerData').getUpgradePoints(), 12);
   assert.equal(f.economy.amber, 150); assert.equal(JSON.stringify(f.host), before);
+});
+
+
+test('original totem buttons enforce boost locks, permit the purchased minimum level and preserve point and insufficient-Amber paths', () => {
+  for (const scenario of [
+    { level: 5, index: 1, upgrades: [0, 0], prerequisites: [true, false] },
+    { level: 1, index: 1, upgrades: [1, 0], prerequisites: [true, true] },
+    { level: 40, index: 0, upgrades: [1, 0], prerequisites: [true, true] },
+    { level: 2, index: 1, upgrades: [1, 0], prerequisites: [true, true], boost: true },
+    { level: 2, index: 1, upgrades: [1, 0], prerequisites: [true, true], short: true },
+    { level: 0, index: 0, upgrades: [0, 0], prerequisites: [true, false], points: true }
+  ]) {
+    let amber = scenario.short ? 74 : 150, levelsBought = 0, upgradesBought = 0, shopOpened = 0;
+    const shrine = runtime.component('ECHeroShrine', { Z: { BUTTON_ROUND: 'round' }, kd: { getXPFromLevel: level => level <= 40 ? level * 100 : undefined } });
+    const data = { getLevel: () => scenario.level, canUpgrade: () => !!scenario.points, getSoftCurrency: () => amber, adjustSoftCurrency: amount => { amber += amount; }, levelUp: () => { levelsBought++; } };
+    const hero = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade: () => { upgradesBought++; } } };
+    shrine.gameManager = { getHero: () => hero, getGuiManager: () => ({ addGameMessage() {} }), getGameSoundManager: () => ({ play() {} }), getEventManager: () => ({ notify() {} }) };
+    shrine.entity = { getName: () => 'Agility' }; shrine.archetype = setup().definition;
+    shrine.upgradeLevels = scenario.upgrades; shrine.menuIndexToValidIndex = [0, 1]; shrine.heroLevelMet = [true, false]; shrine.prerequisitesMet = scenario.prerequisites;
+    shrine.evaluateupgradeTypesValidity = shrine.closeRadialMenu = shrine.sendLevelUpBoughtMetric = shrine.sendUpgradeUnlockedMetric = () => {};
+    shrine.openAmberShop = () => { shopOpened++; };
+    let drawn;
+    shrine.doRadialMenuButton({ doButtonFromGuiArchetype: (style, options) => { drawn = { style, options }; return true; } }, hero, [0, 0], scenario.index);
+    assert.equal(amber, scenario.short ? 74 : scenario.boost ? 75 : 150, JSON.stringify(scenario));
+    assert.equal(levelsBought, scenario.boost ? 1 : 0); assert.equal(upgradesBought, scenario.boost || scenario.points ? 1 : 0);
+    assert.equal(shopOpened, scenario.short ? 1 : 0);
+    assert.equal(drawn.style, scenario.boost || scenario.short ? 'heroUpgradeUsingAmber' : scenario.points ? 'heroUpgradeValid' : 'heroUpgradeInvalid');
+    assert.equal(drawn.options.text4, scenario.boost || scenario.short ? '75' : '');
+  }
 });
