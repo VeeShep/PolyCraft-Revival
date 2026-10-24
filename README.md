@@ -2,7 +2,7 @@
 
 An unofficial offline desktop restoration of PolyCraft 1.0.0.25, using its existing game engine and assets inside Electron. No game account, Chrome extension or internet connection is required to play.
 
-The working source is **1.0.0-beta.2 in development**. **Beta 1 (1.0.0-beta.1)** is the existing packaged checkpoint. Build output in `dist/` is deliberately excluded from Git, so cloning this repository does not download a playable package. The [Beta 1 installation guide](BETA_README.txt) is tracked; packaged downloads can be attached separately to a GitHub Release.
+Download **[PolyCraft Offline 1.0.0-beta.2](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** for Apple Silicon or Intel Mac, Windows x64 or ARM64, and Linux x64 (AppImage or tar.gz). Read the attached `START_HERE.txt`; `SHA256SUMS.txt` and `BUILD_INFO.json` provide checksums and build provenance. This is a beta prerelease for offline solo play. Mac builds are not notarized; Windows builds are unsigned. Native platform acceptance remains open. Build output in `dist/` is excluded from Git, so cloning the repository does not download a playable package. The original Beta 1 packages remain unchanged.
 
 Offline solo play is implemented. Permanent cheat history, original hero badge icons and the first runtime readability pass are implemented in the development source. Multiplayer transport and host simulation work are in progress; **playable co-op is not available yet**. Gameplay expansions remain planned.
 
@@ -12,7 +12,7 @@ Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadma
 
 Extract the package for your computer. On Mac, move **PolyCraft Offline.app** to Applications and open it. On Windows, keep the extracted folder together and open **PolyCraft Offline.exe**.
 
-Linux x64 has an **AppImage** (mark it executable, then open it) and a portable **tar.gz** alternative (extract and run `polycraft-offline` inside its folder). Read **START HERE - BETA.txt** before sharing. Use `mac-arm64` for Apple Silicon and `mac-x64` for Intel. No Node.js or separate Electron installation is needed for packaged builds.
+Linux x64 has an **AppImage** (mark it executable, then open it) and a portable **tar.gz** alternative (extract and run `polycraft-offline` inside its folder). Read **START_HERE.txt** from the Beta 2 release before sharing. Use `mac-arm64` for Apple Silicon and `mac-x64` for Intel. No Node.js or separate Electron installation is needed for packaged builds.
 
 Create a named save slot, then click **Play** in the original game menu. Creating a slot replaces the old account step; PolyCraft still handles the island and tutorial itself.
 

@@ -1,10 +1,18 @@
 # PolyCraft restoration: current roadmap and status
 
-Updated 2026-10-22. **Resumable goal: active; resumed by the user.** The goal record belongs to this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). Ask to pause or resume as needed. Do not mark it complete while implementation or required acceptance remains open.
+Updated 2026-10-24. **Resumable goal: active; resumed by the user.** The goal record belongs to this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). Ask to pause or resume as needed. Do not mark it complete while implementation or required acceptance remains open.
 
 Preserve the original appearance and progression while making the game independently playable, maintainable, and shareable. Order: **foundations → multiplayer → gameplay expansion**. The historical appendix below records earlier work; its old instructions and status statements do not override this roadmap.
 
-## Current checkpoint: Beta 1
+## Current packaged checkpoint: Beta 2 — 2026-10-24
+
+**[1.0.0-beta.2 GitHub prerelease](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** packages source `3c19e657225f7a0ae85dbc6fe4df84f8ffbac0f6` from successful [build run 39895412306](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39895412306). Six playable archives cover Mac arm64/x64, Windows x64/ARM64 and Linux x64 AppImage/tar.gz. The release includes `START_HERE.txt`, aggregate `BUILD_INFO.json` and `SHA256SUMS.txt`. The same nine files are preserved locally in ignored `dist/beta-2-release/`. Publication is verified: all nine uploaded asset sizes and GitHub SHA256 digests match local files, and the public prerelease tag resolves to the exact source commit above. Beta 1 distribution files, checksums and its existing GitHub release remain unchanged. Release tags stay pinned to their package source; subsequent documentation commits do not change them.
+
+- Independent checks: all package hashes match CI manifests; ZIP CRC/path checks, Linux tar integrity/path checks and actual executable architectures pass. Both Mac deep/strict ad-hoc signatures pass. Each platform's embedded archive contains 1,863 matching source/asset files; Windows permits only verified CRLF/LF text differences (1,258 files per Windows package), with binary files compared exactly. The Linux AppImage has a matching CI hash and ELF/AI2 x64 header; this release pass did not unpack its full SquashFS or execute it.
+- Source acceptance: 137 passing unit/regression checks, visible disposable Mac solo save/reload acceptance and same-Mac four-player development checks, including movement, state recovery and original totem purchases. These are source/runtime checks; this publishing pass launched no game tests and changed no personal islands.
+- This is the current offline solo beta. Co-op remains development-only with no public Host/Join screen. Native Intel Mac, Windows x64/ARM64, complete Linux gameplay, native icon appearance, cross-platform multiplayer and real-network acceptance remain open. Mac packages are unnotarized; Windows unsigned. The Nvidia tester's successful Beta 2 Z-fighting report does not close broader graphics or gameplay gates.
+
+## Previous packaged checkpoint: Beta 1
 
 Implemented: offline play without accounts/payment services; named islands, autosave, exit saving, backup recovery, import/export and diagnostics; hidden cheats for health, resources, level, XP, hero points and all eight original totem upgrades; original-style in-game demolition; fullscreen quest, WASD, mouse focus and achievement persistence fixes; original-style launcher/header and background option 3. Normal Craft Resource exchanges and building costs remain. Free premium claims require cheats.
 
@@ -53,7 +61,7 @@ Recorded verification: 28 passing unit checks; Apple Silicon packaged gameplay, 
 
 ## Milestone 1: foundations — implementation checkpoint
 
-**Working source: 1.0.0-beta.2 (development, not a shared release).** Cheat history and platform icon wiring are implemented. The complete runtime has its initial formatting and verified naming pass; save/network boundary extraction remains next. Personal saves and the personal game session were not opened or changed by automated work. `dist/beta-1` was rechecked against its original manifest: all six entries pass.
+**Foundation implementation checkpoint (historical evidence; current packaged release is documented above): 1.0.0-beta.2.** Cheat history and platform icon wiring are implemented. The complete runtime has its initial formatting and verified naming pass; save/network boundary extraction remains next. Personal saves and the personal game session were not opened or changed by automated work. `dist/beta-1` was rechecked against its original manifest: all six entries pass.
 
 Current evidence:
 
