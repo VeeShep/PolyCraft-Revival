@@ -51,3 +51,25 @@ test('ending co-op refuses to destroy held construction or change ownership when
   assert.throws(() => CoopPlayers.prototype.close.call(players), /Finish placing/);
   assert.equal(captured, false); assert.equal(players.active.size, 1); assert.equal(players.closed, undefined);
 });
+
+test('co-op capture preflights every hero before snapshots or persistence, protecting held purchases and in-flight construction', () => {
+  for (const blocked of ['held', 'throwing', 'purchase', null]) {
+    let snapshots = 0, writes = 0;
+    const players = Object.create(CoopPlayers.prototype);
+    players.game = { globals: { gamePurchaseManager: { consumeBuildingInProgress: blocked === 'purchase' } } };
+    const hero = busy => ({ getEC: () => ({ isBuilding: () => busy && blocked === 'held', isThrowing: () => busy && blocked === 'throwing' }) });
+    players.active = new Map([['host', { hero: hero(false) }], ['guest', { hero: hero(true) }]]);
+    const records = new Map([['host', { location: [1, 2, 3] }], ['guest', { location: [4, 5, 6] }]]);
+    players.registry = { player: id => records.get(id), persist: () => { writes++; } };
+    players.captureHero = () => { snapshots++; return { location: [9, 9, 9] }; };
+    const before = JSON.stringify([...records]);
+    if (blocked) {
+      assert.throws(() => players.capture(), /Finish placing/);
+      assert.equal(snapshots, 0, 'Even an earlier idle hero must not be captured before every builder is safe');
+      assert.equal(writes, 0); assert.equal(JSON.stringify([...records]), before);
+    } else {
+      players.capture(); assert.equal(snapshots, 2); assert.equal(writes, 1);
+      assert.deepEqual(records.get('guest').location, [9, 9, 9]);
+    }
+  }
+});

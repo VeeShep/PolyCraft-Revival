@@ -166,3 +166,14 @@ Native window focus is delivered through the existing guarded Electron IPC bound
 5. Test two and four real game clients on disposable islands, then pursue the native OS and real-network acceptance matrix in RESTORATION_STATUS.md.
 
 No legacy multiplayer code was activated during this audit. No personal saves were used.
+
+
+### Held construction save boundary — 2026-10-24
+
+`ECPlayerBuilder` has no original `saveSerialize` implementation. `CoopPlayers.captureHero()` currently records position/health/weapons/carried resources but not a held building. `requireIdle()` already guarded hero removal/session exit; coordinated checkpoints now preflight every active hero too, before capturing any hero or calling the world save. This prevents a successful checkpoint from silently dropping a paid item. It is a temporary safety gate, not completed held-building persistence.
+
+The next implementation must preserve and validate the complete held-item state at a coherent boundary: archetype, quantity, instant-build flavour, infinite placement, new-building flag, cannot-cancel flag, pay-on-placement mode, parent-building and move-source identities, and last line-placement location. Resolve references and installed building definitions before replacing live heroes. An in-flight throw must finish through the existing reservation/scaffold callback before capture; do not save or replay an unfinished tween as another purchase.
+
+Original cancellation is not a safe generic shortcut: prepaid quantities and per-placement blueprints have different refund rules, moved structures retain identity/storage state, and `clearInHand()` emits `EmptyHanded`, which can trigger premium consume callbacks. Destruction/restoration must avoid charging, refunding, consuming or placing a held purchase twice. Preserve original non-cancellable/critical structures. Saved held inventory needs a new co-op schema/envelope with exact pre-migration backups and actual older-reader rejection tests. Keep solo isolation and cheat history unchanged. Test save/reload, disconnect/reconnect, rank replacement and host exit with prepaid items, blueprints, moves and delayed throws before removing the idle-save restriction or exposing Host/Join.
+
+The user requested code-only work and deferred visible game tests on 2026-10-24. Keep graphical acceptance open; do not start another visible test until the user resumes that testing.

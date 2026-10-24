@@ -43,7 +43,7 @@
     }
     requireIdle(hero) {
       const builder = hero.getEC('ECPlayerBuilder');
-      if (builder.isBuilding() || builder.isThrowing() || this.game.globals.gamePurchaseManager.consumeBuildingInProgress) throw new Error('Finish placing the held building and wait for shop requests before switching heroes or ending co-op.');
+      if (builder.isBuilding() || builder.isThrowing() || this.game.globals.gamePurchaseManager.consumeBuildingInProgress) throw new Error('Finish placing the held building and wait for shop requests before saving, switching heroes or ending co-op.');
     }
     captureHero(hero) {
       const carrier = hero.getEC('ECResourceCarrier');
@@ -110,6 +110,8 @@
       return hero;
     }
     capture() {
+      // shortcut: require idle builders until held construction has versioned save/restore support.
+      for (const { hero } of this.active.values()) this.requireIdle(hero);
       for (const [id, { hero }] of this.active) Object.assign(this.registry.player(id), this.captureHero(hero));
       this.registry.persist();
     }
