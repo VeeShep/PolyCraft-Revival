@@ -50471,7 +50471,7 @@
           text4: i,
           buttonType: Z.BUTTON_ROUND,
           svg1: this.archetype.svgPath
-        }, f = "ecHeroShrine" + this.entity.getName() + "Upgrade Unavailable" + d, a.doButtonFromGuiArchetype(n, c, f) && !j && k && !e && (this.canAffordHeroLevelUp(b, 75) ? (this.payForLevelUp(b, 75), this.levelUpHero(b), this.sendLevelUpBoughtMetric(), this.unlockUpgrade(b, d), this.sendUpgradeUnlockedMetric(this.getupgradeType(d))) : this.openAmberShop(), this.closeRadialMenu()));
+        }, f = "ecHeroShrine" + this.entity.getName() + "Upgrade Unavailable" + d, a.doButtonFromGuiArchetype(n, c, f) && !j && k && !e && (this.canAffordHeroLevelUp(b, 75) ? (this.payForLevelUp(b, 75), b = this.levelUpHero(b), this.sendLevelUpBoughtMetric(), this.unlockUpgrade(b, d), this.sendUpgradeUnlockedMetric(this.getupgradeType(d))) : this.openAmberShop(), this.closeRadialMenu()));
       }
     },
     sendLevelUpBoughtMetric: function () {
@@ -50490,6 +50490,7 @@
     },
     levelUpHero: function (a) {
       (a = a.getEC("ECPlayerData")) && a.levelUp();
+      return this.gameManager.getHero();
     },
     openAmberShop: function () {
       var a = this.gameManager,
@@ -82090,8 +82091,6 @@
         minimumHeroLevel: 5,
         prerequisiteText: "Spirit of Heart",
         prerequisites: [{
-          levelText: "Base Level"
-        }, {
           upgradeType: "maxHealth",
           level: 1
         }],

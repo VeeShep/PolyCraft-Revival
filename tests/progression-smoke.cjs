@@ -10,6 +10,7 @@ const assert = require('node:assert/strict');
   try {
     application = await electron.launch({ args: ['.'], env: { ...process.env, POLYCRAFT_TEST_DATA: directory } });
     const page = await application.firstWindow();
+    await application.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('The temporary progression test must be visible'); window.setTitle('PolyCraft temporary island — progression and totem test'); });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.locator('#new-name').fill('Progression check');
@@ -94,6 +95,43 @@ const assert = require('node:assert/strict');
       }), value === 5 ? 1.2 : 1);
     }
     await page.locator('#close-cheats').click();
+    for (const online of [false, true]) {
+      const result = await page.evaluate(async online => {
+        const controls = window.polycraft.controls, game = controls.manager();
+        game.runScripts = false; game.setScriptLocked(false);
+        let world;
+        if (online) {
+          const session = new window.PolycraftMultiplayer.HostSession();
+          world = await window.PolycraftOnlineWorld.startHostingWorld(controls, session);
+          await world.enablePlayers(window.polycraft.bridge);
+        }
+        try {
+          controls.setTotemUpgrades(Object.fromEntries(controls.totemUpgrades().map(item => [item.type, item.type === 'movementSpeed' ? 1 : 0])));
+          controls.setProgression(1, 0, 0);
+          game.getHero().getEC('ECPlayerData').adjustSoftCurrency(150 - game.getHero().getEC('ECPlayerData').getSoftCurrency());
+          const purchase = () => {
+            const shrine = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECHeroShrine')).find(entity => entity.getEC('ECHeroShrine').getupgradeType(0) === 'movementSpeed').getEC('ECHeroShrine');
+            shrine.evaluateupgradeTypesValidity();
+            const old = game.getHero();
+            shrine.doRadialMenuButton({ doButtonFromGuiArchetype: style => { if (style !== 'heroUpgradeUsingAmber') throw new Error('Expected the original paid-boost button'); return true; } }, old, [300, 300], 0);
+            const hero = game.getHero(), upgrades = hero.getEC('ECHeroUpgrades');
+            return { replaced: hero !== old, level: hero.getEC('ECPlayerData').getLevel(), points: hero.getEC('ECPlayerData').getUpgradePoints(), tier: upgrades.getHeroUpgrade('movementSpeed'), factor: hero.getEC('ECLocomotion').fastSpeedFactor, expectedFactor: upgrades.archetype.movementSpeedFactors[2], amber: hero.getEC('ECPlayerData').getSoftCurrency() };
+          };
+          const result = world ? await world.atBoundary(purchase) : purchase();
+          await window.polycraft.checkpoint();
+          return result;
+        } finally { if (world) await world.close(); }
+      }, online);
+      assert.equal(result.replaced, true); assert.equal(result.level, 2); assert.equal(result.points, 0);
+      assert.equal(result.tier, 2); assert.equal(result.factor, result.expectedFactor); assert.equal(result.amber, 75);
+      console.log('Original paid-totem flow upgrades the live replacement hero:', online ? 'co-op host' : 'solo', result);
+    }
+    await page.evaluate(async () => {
+      const controls = window.polycraft.controls;
+      controls.setTotemUpgrades(Object.fromEntries(controls.totemUpgrades().map(item => [item.type, 5])));
+      controls.setProgression(10, 123, 49);
+      await window.polycraft.checkpoint();
+    });
     await page.evaluate(() => window.polycraft.checkpoint());
     await page.evaluate(() => sessionStorage.setItem('polycraft-slot', window.polycraft.slot().id));
     await page.reload(); await ready();

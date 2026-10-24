@@ -327,6 +327,9 @@ const assert = require('node:assert/strict');
       }, totem.source);
     }
     async function clickTotem() {
+      await focus(1);
+      if (!await pages[1].evaluate(() => window.guestWorld.totem.menu)) await openTotem();
+      await pages[1].waitForFunction(() => window.guestWorld.movement.nativeFocused && window.guestWorld.totem.menu && !window.guestWorld.totem.pending);
       const button = await pages[1].evaluate(source => {
         window.guestWorld.totem.lastResult = null;
         const world = window.guestWorld, button = window.totemButtons['guest-totem-' + source + '-0'], bounds = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect();
@@ -652,7 +655,7 @@ const assert = require('node:assert/strict');
     for (let index = 0; index < pages.length; index++) try {
       console.log('Failure state', index, JSON.stringify(await pages[index].evaluate(() => ({ totemClicks: window.totemClicks, totemButtons: window.totemButtons, combatTrace: window.combatTrace, hostErrors: window.hostErrors, connectionErrors: window.connectionErrors,
         connection: window.connection && { closed: window.connection.closed, state: window.connection.state }, focused: document.hasFocus(),
-        startup: window.polycraft?.controls && { ready: window.polycraft.controls.ready(), loaded: window.polycraft.controls.manager()?.hasLoadedLevel, loading: window.polycraft.controls.manager()?.getLoading(), hero: !!window.polycraft.controls.manager()?.getHero(), state: window.polycraft.controls.manager()?.activeGameState?.name },
+        startup: window.polycraft?.controls && { ready: window.polycraft.controls.ready(), loaded: window.polycraft.controls.manager()?.hasLoadedLevel, loading: window.polycraft.controls.manager()?.getLoading(), hero: !!window.polycraft.controls.manager()?.getHero(), state: window.polycraft.controls.manager()?.activeGameState?.name, play: Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)), canvas: document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect().toJSON() },
         movement: window.guestWorld?.movement && { keys: [...window.guestWorld.movement.keys], available: window.guestWorld.movement.available(), nativeFocused: window.guestWorld.movement.nativeFocused },
         identity: window.guestWorld?.identity, tick: window.guestWorld?.scene.tick,
         action: window.guestWorld && { sequence: window.guestWorld.targetSequence, selection: window.guestWorld.selectionRequest, result: window.guestWorld.lastTargetResult, totem: window.guestWorld.totem?.menu, menu: window.guestWorld.construction?.menu, placement: window.guestWorld.construction?.placement, preview: window.guestWorld.construction?.preview },

@@ -105,3 +105,49 @@ test('guest totem radial menus retain space for the lower label at the canvas ed
   assert.equal(drawn[0].options.v2ScreenLocation[1], 561);
   for (const button of drawn) assert.ok(button.options.v2ScreenLocation[1] <= world.controls.app.globals.graphicsDevice.height - 120);
 });
+
+test('original solo and host paid-totem buttons apply the upgrade to the replacement hero', () => {
+  for (const online of [false, true]) {
+    const shrine = runtime.component('ECHeroShrine', { Z: { BUTTON_ROUND: 'round' } });
+    let level = 1, amber = 150, upgraded = 1, staleWrites = 0, freshWrites = 0;
+    const old = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade() { staleWrites++; } } };
+    const fresh = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade(type, value) { assert.equal(type, 'movementSpeed'); upgraded = value; freshWrites++; } } };
+    let hero = old;
+    const data = { getLevel: () => level, canUpgrade: () => false, getSoftCurrency: () => amber, adjustSoftCurrency: amount => { amber += amount; }, levelUp() { level++; hero = fresh; } };
+    shrine.gameManager = { getHero: () => hero, getGuiManager: () => ({ addGameMessage() {} }), getGameSoundManager: () => ({ play() {} }), getEventManager: () => ({ notify() {} }) };
+    if (online) shrine.gameManager.desktopPlayers = {};
+    shrine.entity = { getName: () => 'Agility' };
+    shrine.archetype = setup().definition;
+    shrine.upgradeLevels = [upgraded, 0]; shrine.menuIndexToValidIndex = [0, 1]; shrine.heroLevelMet = [true, false]; shrine.prerequisitesMet = [true, true];
+    shrine.evaluateupgradeTypesValidity = () => {}; shrine.closeRadialMenu = () => {}; shrine.sendLevelUpBoughtMetric = shrine.sendUpgradeUnlockedMetric = () => {};
+    shrine.doRadialMenuButton({ doButtonFromGuiArchetype: () => true }, old, [0, 0], 0);
+    assert.equal(amber, 75); assert.equal(level, 2); assert.equal(upgraded, 2);
+    assert.equal(staleWrites, 0); assert.equal(freshWrites, 1);
+  }
+});
+
+test('every original totem prerequisite names a real upgrade and a valid tier', () => {
+  const names = ['a_b_heroShrineOfAgility', 'a_b_heroShrineOfPower', 'a_b_heroShrineOfProtection', 'a_b_heroShrineOfTechnology'];
+  const definitions = names.flatMap(name => runtime.assignedObject(name, { e: { EC_DEFAULT: {} } }).ECHeroShrine.upgradeTypes);
+  assert.equal(definitions.length, 8);
+  for (const definition of definitions) for (const prerequisite of definition.prerequisites) {
+    const required = definitions.find(item => item.upgradeType === prerequisite.upgradeType);
+    assert.ok(required, definition.upgradeType + ' has an invalid prerequisite');
+    assert.ok(Number.isInteger(prerequisite.level) && prerequisite.level >= 0 && prerequisite.level < required.levels.length);
+  }
+});
+
+test('all eight original upgrades can be bought with guest points through their real prerequisites', () => {
+  const f = setup(); f.guest.level = 20;
+  const before = JSON.stringify(f.host);
+  for (const name of ['a_b_heroShrineOfAgility', 'a_b_heroShrineOfPower', 'a_b_heroShrineOfProtection', 'a_b_heroShrineOfTechnology']) {
+    f.shrine.archetype = runtime.assignedObject(name, { e: { EC_DEFAULT: {} } }).ECHeroShrine;
+    for (const [index, definition] of f.shrine.archetype.upgradeTypes.entries()) {
+      assert.equal(totemMenu(f.hero(), f.source, f.controls).products[index].available, true, definition.upgradeType);
+      const result = upgradeTotem(f.game, f.hero(), f.players, f.source, { index, level: 0, amber: false }, f.controls);
+      assert.equal(result.save, true); assert.equal(f.guest.upgrades[definition.upgradeType], 1);
+    }
+  }
+  assert.equal(Object.keys(f.guest.upgrades).length, 8); assert.equal(f.hero().getEC('ECPlayerData').getUpgradePoints(), 12);
+  assert.equal(f.economy.amber, 150); assert.equal(JSON.stringify(f.host), before);
+});

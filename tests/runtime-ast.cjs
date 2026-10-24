@@ -28,13 +28,16 @@ function method(name, context) {
 function prototypeWith(name, context) {
   return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === name)), `prototype containing ${name}`).right, context);
 }
-function component(name) {
-  return evaluate(one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === name)), name));
+function component(name, context) {
+  return evaluate(one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === name)), name), context);
 }
 function objectWith(name) {
   return evaluate(one(objects.filter(o => o.properties.some(p => key(p) === name)), `object containing ${name}`));
 }
+function assignedObject(name, context) {
+  return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name && a.right.type === 'ObjectExpression'), name).right, context);
+}
 function staticMethod(owner, name, context) {
   return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.name === owner && a.left.property.name === name && a.right.type === 'FunctionExpression'), `${owner}.${name}`).right, context);
 }
-module.exports = { method, prototypeWith, component, objectWith, staticMethod };
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod };
