@@ -5,6 +5,7 @@
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   const { GuestConstruction } = typeof module !== 'undefined' ? require('./guest-construction.js') : root.PolycraftGuestConstruction;
+  const { GuestHud } = typeof module !== 'undefined' ? require('./hud.js') : root.PolycraftHud;
 
   const same = (a, b) => a === b || !!(a && b && a.length === b.length && a.every((value, index) => value === b[index]));
   function transformParts(math, transform) {
@@ -205,7 +206,7 @@
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
       this.guiInput = { down: false, pendingDown: false, position: [0, 0], getGuiDown() { return this.down; }, getv2ScreenCoord() { return this.position; } };
-      this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this);
+      this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this); this.hud = new GuestHud(this);
       game.imgui.controller = this.guiInput;
       game.draw = () => {};
       game.draw2D = () => { game.imgui.draw2D(); game.updateInterfaceTweens(); game.getGuiManager().completeDraw(); globals.simpleFontRenderer.render(); };
@@ -240,8 +241,9 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud'].filter(key => Object.hasOwn(value, key));
+          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (value.type === 'life' && Object.hasOwn(value, 'life') !== Object.hasOwn(value, 'hud')) throw new Error('Incomplete hero status.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
           if (['upgradeBuilding', 'cancelUpgrade'].includes(value.type) && value.sequence === this.upgradeRequest) this.upgradeRequest = null;
@@ -254,6 +256,7 @@
           if (value.totem && !['target', 'upgrade'].includes(value.type)) throw new Error('Invalid totem result.');
           this.totem.receive(value, selected);
           this.construction.receive(value, selected);
+          this.hud.receive(value, this.lifeRequest);
           this.receiveLife(value);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
           if (!['held', 'life'].includes(value.type)) {
@@ -431,6 +434,7 @@
         torch.setDisabled(!this.scene.torch?.visible);
       }
       this.hasFrame = true;
+      this.hud.draw();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       if (!this.pauseMenu) this.updateMenu();
     }

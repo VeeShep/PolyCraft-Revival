@@ -251,7 +251,15 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   connection.onMessage({ kind: 'result', payload: { type: 'cancelBuild', sequence: 3, message: 'Saved.', held: null } });
   assert.equal(world.construction.placement, null); assert.equal(world.construction.pending, null);
   world.targetSequence = 4; world.lifeRequest = 4;
-  connection.onMessage({ kind: 'result', payload: { type: 'life', sequence: 4, message: 'Hero life state.', life: { phase: 'waiting', remaining: 10, episode: 1, option: 'lumber', affordable: true } } });
+  const ast = require('./runtime-ast.cjs'), hudRanks = ast.objectWith('xpTable');
+  controls.xpTable = hudRanks.xpTable; controls.playerDataMethods = ast.component('ECPlayerData', { kd: hudRanks });
+  const hud = { resources: [100, 50], caps: [500, 1000], amber: 10, xp: 600, points: 1, flags: { resources: true, amber: true, rank: true } }, feedback = world.lastTargetResult;
+  const heroStatus = { type: 'life', sequence: 4, message: 'Hero life state.', life: { phase: 'waiting', remaining: 10, episode: 1, option: 'lumber', affordable: true }, hud };
+  connection.onMessage({ kind: 'result', payload: heroStatus });
+  assert.deepEqual(world.hud.state, hud); assert.equal(world.lastTargetResult, feedback);
+  const { hud: omitted, ...incomplete } = heroStatus;
+  assert.throws(() => connection.onMessage({ kind: 'result', payload: incomplete }), /Incomplete hero status/);
+  assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...heroStatus, hud: { ...hud, amber: NaN } } }), /Invalid guest HUD/);
   assert.equal(world.lifeState.phase, 'waiting'); assert.equal(world.lifeRequest, null); assert.equal(world.lastTargetResult.type, 'cancelBuild');
   world.targetSequence = 5; world.reviveRequest = 5;
   connection.onMessage({ kind: 'result', payload: { type: 'revive', sequence: 5, message: 'Saved.', life: { phase: 'waiting', remaining: 0.2, episode: 1, option: null, affordable: false } } });

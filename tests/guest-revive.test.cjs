@@ -5,12 +5,12 @@ const { HostActions } = require('../desktop/coop-actions.js');
 const { GuestWorld } = require('../desktop/guest-world.js');
 const original = require('./runtime-ast.cjs').component('ECPlayerLife', { H: { LUMBER: 0 } });
 function host() {
-  const funds = { amber: 30, lumber: 100 }, data = { getResource: () => funds.lumber, getSoftCurrency: () => funds.amber,
+  const funds = { amber: 30, lumber: 100 }, data = { getResource: () => funds.lumber, getResourceCap: () => 500, getXP: () => 0, getUpgradePoints: () => 0, getSoftCurrency: () => funds.amber,
     adjustResource: (_type, amount) => { funds.lumber += amount; }, adjustSoftCurrency: amount => { funds.amber += amount; } };
   const life = Object.assign(Object.create(original), { state: original.states.RESPAWNING, respawnTime: 130, deathTime: 99, archetype: { respawnHighCostDelay: 10 },
     globals: { gameCurrentTime: 100, mathDevice: { v3Copy: value => [...value] } }, getEntityEC: () => data, getv3Location: () => [3, 0, 4] });
-  const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECPlayerLife' ? life : {} };
-  const game = { getGameEntityByName: id => id === 'owned' ? actor : { shouldBeDestroyed: () => false }, isScriptLocked: () => false };
+  const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECPlayerLife' ? life : name === 'ECPlayerData' ? data : {} };
+  const game = { getGameEntityByName: id => id === 'owned' ? actor : { shouldBeDestroyed: () => false }, isScriptLocked: () => false, getPlayFlags: () => ({ displayResource: true, displayRank: true, displaySoftCurrency: true }) };
   const actions = new HostActions();
   return { funds, life, actor, game, actions, run: (type, details = {}, id = 'owned') => actions.execute(game, actor, {}, id, null, type, details) };
 }

@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
   const { totemMenu, upgradeTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
+  const { captureHud } = typeof module !== 'undefined' ? require('./hud.js') : root.PolycraftHud;
   function lifeStatus(life) {
     const phase = life.respawnTime !== undefined ? 'waiting' : life.state === life.states.DYING ? 'dying' : 'normal';
     const remaining = phase === 'waiting' ? Math.max(0, life.getTimeToRespawn()) : phase === 'dying' ? Math.max(0, life.getDeathAnimationDuration() - (life.globals.gameCurrentTime - life.deathTime)) : 0;
@@ -40,7 +41,7 @@
       if (type === 'life' || type === 'revive') {
         if (target !== hero || !life) return 'Only your own hero can be revived.';
         const status = lifeStatus(life);
-        if (type === 'life') return { message: 'Hero life state.', life: status };
+        if (type === 'life') return { message: 'Hero life state.', life: status, hud: captureHud(game, hero) };
         if (game.isScriptLocked() || !status.option || action.episode !== status.episode || action.amber !== (status.option === 'amber') || !status.affordable) return 'Revive choice changed or resources are unavailable. Wait for a refresh.';
         if (!life.payToRevive(action.amber ? 10 : 0, action.amber ? 0 : 50, action.amber)) return 'Revival is already in progress or unavailable.';
         return { message: 'Revive purchased and saved.', save: true, life: lifeStatus(life) };

@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest building upgrades — Beta 16, 2026-10-25
+## Current guest resource/progression HUD — Beta 17, 2026-10-25
+
+The own-hero life response also carries shared resource/cap/amber balances and personal XP/hero points, using original ECPlayerData getters. It adds no polling/request. The guest validates the paired envelope and bounded HUD values, accepts only its pending status, and draws original resource/rank/totem-note artwork through a presentation-only original-method adapter. Visible-number animations preserve continuity and identical packets do not reset them; downward XP corrections snap because original XP animation assumes increases. Host display flags and resync suppression apply. Neither solo data nor host state is mutated by drawing; spending remains independently revalidated on the host.
+
+249 checks pass; evidence is in RESTORATION_STATUS.md. No game window/personal island was used. This covers resource/progression HUD source, not world health/HQ/invasion/quest/camera parity or rendered/native/network acceptance. Save schema/envelope remain 4/6, runtime advances to coop-15 for paired status metadata, signaling stays protocol 2.
+
+## Previous guest building upgrades — Beta 16, 2026-10-25
 
 Individual upgrade and cancellation intents bind the expected next archetype, with cancellation also bound to a session-only upgrade episode; purchase also binds the displayed lumber/stone quote. Host checks current ownership/faction, actor life/input, original radial/research/repair flags, claims, prerequisites, scaffold cap and shared affordability. Original purchase/start/cancel methods retain worker assignment, manager registration, progress serialization and one half-resource refund. Duplicate/stale requests refuse before spending. Native restarts allocate new episodes, preventing an old cancellation from refunding a later restart of the same target without adding save fields. Native single/batch/free-upgrade/cancel entry points protect reserved move/parent references too.
 

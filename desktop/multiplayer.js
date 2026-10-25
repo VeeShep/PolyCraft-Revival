@@ -1,7 +1,7 @@
 'use strict';
 (function (root) {
   const PROTOCOL = 1;
-  const RUNTIME = 'polycraft-1.0.0.25-coop-14';
+  const RUNTIME = 'polycraft-1.0.0.25-coop-15';
   const PREFIX = 'polycraft1.';
   const INVITE_LIFETIME = 30 * 60 * 1000;
   const CHUNK_BYTES = 8192;
