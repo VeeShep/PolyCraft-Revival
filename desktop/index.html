@@ -63,6 +63,8 @@
       <div id="direct-settings" hidden>
         <p>No relay or account needed. Allow the chosen TCP port through the host firewall. For internet guests, forward it to this computer's local IPv4 address in your router. CGNAT/double NAT may prevent connections; use WebRTC with TURN instead.</p>
         <label>Address guests will connect to<input id="direct-address" maxlength="253" placeholder="Public IPv4/hostname; local IPv4 for LAN" autocomplete="off"></label>
+        <button id="detect-direct-address" type="button">Detect public IP with STUN</button>
+        <p>Uses the first UDP STUN URL below, or Google's default. Discovery fills only the IP; keep the TCP port you forwarded. Finding an address does not prove the port is reachable.</p>
         <label>TCP port<input id="direct-port" type="number" min="1024" max="65535" value="37841"></label>
         <label class="toggle"><input id="direct-upnp" type="checkbox"> Ask my router to open this port using UPnP</label>
         <p>UPnP is optional and opens only this TCP port while hosting. Leave the address blank to use the address reported by the router. Share invitations privately: each contains access to its assigned guest hero. End hosting removes the automatic mapping; crashes may leave it until the lease expires.</p>

@@ -110,6 +110,7 @@ test('the real panel waits for the development disclaimer, supports cancellation
   f.controls.paused = false; f.controls.pause = value => { f.controls.paused = value; };
   f.runtime.polycraft.bridge.state = { cheats: { enabled: false } }; f.runtime.polycraft.runAction = callback => callback();
   const context = { ...f.runtime, document: { getElementById: get, createElement: () => new Element(), querySelector: () => null }, setInterval() {}, navigator: {} };
+  f.runtime.desktop.direct = async (operation, options) => { f.calls.push(['direct-operation', operation, options]); return { address: '203.0.113.7' }; };
   vm.runInNewContext(fs.readFileSync('desktop/session-panel.js', 'utf8'), context);
   await get('multiplayer').fire('click'); assert.equal(f.controls.paused, true);
   let attempt = get('host-island').fire('click'); await Promise.resolve();
@@ -134,6 +135,11 @@ test('the real panel waits for the development disclaimer, supports cancellation
   assert.equal(f.controls.paused, true, 'Leaving with the dialog open must keep the restored solo game paused');
   await get('close-multiplayer').fire('click'); assert.equal(f.controls.paused, false);
 
+  get('direct-port').value = '37841'; get('stun-urls').value = 'stun:custom.example:3478';
+  await get('detect-direct-address').fire('click');
+  assert.equal(f.calls.at(-1)[0], 'direct-operation'); assert.equal(f.calls.at(-1)[1], 'discover'); assert.equal(f.calls.at(-1)[2].server, 'stun:custom.example:3478');
+  assert.equal(get('direct-address').value, '203.0.113.7'); assert.equal(get('direct-port').value, '37841');
+  get('stun-urls').value = '';
   context.PolycraftRoomProtocol = require('../desktop/room-protocol.js');
   context.PolycraftRooms = { RoomSession: class {
     constructor(session) { this.session = session; this.requests = new Map(); }

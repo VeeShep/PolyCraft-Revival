@@ -185,6 +185,13 @@
     }));
     $('host-island').addEventListener('click', () => run(() => connect('host')));
     $('connection-method').addEventListener('change', render);
+    $('detect-direct-address').addEventListener('click', () => run(async () => {
+      const server = $('stun-urls').value.split(/\r?\n/).map(value => value.trim()).find(value => /^stun:/.test(value));
+      if ($('stun-urls').value.trim() && !server) throw new Error('Native IP discovery needs a UDP stun: server. Enter one below or supply the public IPv4 manually.');
+      const result = await root.desktop.direct('discover', server ? { server } : {});
+      $('direct-address').value = result.address;
+      session.notify('Detected IP ' + result.address + '. TCP port is unchanged; verify your forwarding/firewall before inviting guests.');
+    }));
     $('join-island').addEventListener('click', () => run(() => connect('guest')));
     $('host-room').addEventListener('click', () => run(() => connectRoom('host')));
     $('join-room').addEventListener('click', () => run(() => connectRoom('guest')));

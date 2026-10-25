@@ -2,6 +2,7 @@
 const tls = require('node:tls');
 const { randomBytes, X509Certificate, timingSafeEqual } = require('node:crypto');
 const { MAX_FRAME } = require('./multiplayer.js');
+const { discover } = require('./stun.cjs');
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const HEX = /^[a-f0-9]{64}$/;
 function check(value, message) { if (!value) throw new Error(message); }
@@ -157,6 +158,7 @@ class DirectNetwork {
     this.emit({ id: peer, type: 'closed', reason: 'Direct connection ended. Check the host, firewall or forwarding before reconnecting.' });
   }
   async stop() {
+    this.discovery?.abort();
     for (const peer of [...this.links.keys()]) this.close(peer);
     for (const socket of this.sockets) socket.destroy();
     this.sockets.clear();
@@ -167,6 +169,12 @@ class DirectNetwork {
   }
   async request(operation, options) {
     switch (operation) {
+      case 'discover': {
+        check(!this.discovery, 'Address discovery is already running.');
+        const controller = this.discovery = new AbortController();
+        try { return await discover({ server: options?.server, signal: controller.signal }); }
+        finally { if (this.discovery === controller) this.discovery = null; }
+      }
       case 'start': return this.start(options);
       case 'reserve': return this.reserve(options);
       case 'join': return this.join(options);

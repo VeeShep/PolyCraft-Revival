@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current room-name/password implementation — Beta 6, 2026-10-25
+## Current native address discovery — Beta 7, 2026-10-25
+
+`desktop/stun.cjs` now provides bounded IPv4 UDP Binding discovery through the trusted `direct('discover')` IPC operation and a direct-settings button. It uses the configured first UDP STUN URL or Google default, checks transactions/cookies/attributes/fingerprints and socket source, and returns only an IP candidate. Its UDP-mapped port is never used for native TCP. The existing direct invitation's configured TCP port and TLS pin/token remain authoritative. Shutdown cancels discovery; it does not open a listener or change the router.
+
+The loopback/RFC-vector/DOM evidence and remaining public-network gates are in RESTORATION_STATUS.md. This prepares address discovery for the ordered route coordinator; it does not implement automatic native room admission, UPnP/STUN/TURN fallback or relay-to-direct handoff. User overrides remain necessary for some VPN/multi-uplink/CGNAT arrangements. See [RFC 8489](https://www.rfc-editor.org/rfc/rfc8489) and the [RFC 5769 test vector](https://www.rfc-editor.org/rfc/rfc5769#section-2.2).
+
+## Previous room-name/password implementation — Beta 6, 2026-10-25
 
 `server/rooms.cjs` now provides the bounded, in-memory room service; `room-socket.cjs` handles native WSS IPC and `rooms.js` coordinates the existing session/world APIs. Custom room names/passwords replace manual offer/reply copying in room mode. Host approval still owns saved-hero assignment. `PeerLink`/`HostSession` add optional trickle ICE with bounded early-candidate queues; manual invitation gathering remains unchanged. Default room STUN is `stun:stun.l.google.com:19302`, overridden by the user's STUN URL fields.
 

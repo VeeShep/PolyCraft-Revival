@@ -16,9 +16,9 @@ Work follows **foundations → multiplayer → gameplay expansion**. Playtester 
 
 Download **[PolyCraft Offline 1.0.0-beta.2](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** for Apple Silicon or Intel Mac, Windows x64 or ARM64, and Linux x64 (AppImage or tar.gz). Read the attached `START_HERE.txt`; `SHA256SUMS.txt` and `BUILD_INFO.json` provide checksums and build provenance. This is a beta prerelease for offline solo play. Mac builds are not notarized; Windows builds are unsigned. Native platform acceptance remains open. Build output in `dist/` is excluded from Git, so cloning the repository does not download a playable package. The original Beta 1 packages remain unchanged.
 
-The working source is **1.0.0-beta.6 in development**, adding room-name/password joining alongside manual WebRTC and direct TCP/TLS hosting; the published release downloads above remain Beta 2. Each new packaged update increments the beta number. Existing release files and tags stay pinned to their original source.
+The working source is **1.0.0-beta.7 in development**, adding STUN-based native public-IP detection to room-name/password joining, manual WebRTC and direct TCP/TLS hosting; the published release downloads above remain Beta 2. Each new packaged update increments the beta number. Existing release files and tags stay pinned to their original source.
 
-**Beta 4 multiplayer test packages:** open [build run 40154089920](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40154089920) and download your platform under **Artifacts** (GitHub sign-in required). All six native package jobs passed. These are early test builds; use disposable islands and follow the menu guide below.
+**Beta 6 multiplayer test packages:** open [build run 40210304990](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40210304990) and download your platform under **Artifacts** (GitHub sign-in required; seven-day retention). All 181 checks and six native package jobs passed, with eight platform/format artifacts. These include room-name/password joining but not Beta 7's native IP-detection button. Use disposable islands and follow the menu guide below. This is packaging evidence, not physical-network/native gameplay acceptance.
 
 Offline solo play is implemented. Permanent cheat history, original hero badge icons and the first runtime readability pass are implemented in the development source. Development builds include an **experimental Multiplayer menu** for early co-op tests. It is incomplete and has not passed internet/cross-platform gameplay acceptance. Gameplay expansions remain planned.
 
@@ -60,7 +60,7 @@ If setup fails, keep the exact error shown in the panel. Match builds, use a fre
 ### Direct hosting with port forwarding or UPnP · Beta 5
 
 1. The host opens **Multiplayer → Hosting connection → Direct · TCP forwarding or UPnP**. Enter the address guests will reach: your **public IPv4 address or DNS hostname** for internet play, or this computer's **local IPv4 address** for LAN.
-2. Choose a TCP port (default **37841**). Allow that port through the host computer's firewall. For internet play, forward the same **external TCP port to the same TCP port on this computer's local IPv4** in the router. Reserving the computer's LAN address prevents the forward from breaking when DHCP changes it. Guests need no incoming forward.
+2. In Beta 7, **Detect public IP with STUN** can fill the address field using the first UDP `stun:` URL in Internet connection settings, or `stun:stun.l.google.com:19302` when blank. Discovery leaves the TCP port unchanged. It only supplies an address candidate: VPNs, multiple uplinks and CGNAT can make it unsuitable. You can edit the address manually; for LAN use the computer's local IPv4. Then choose a TCP port (default **37841**). Allow that port through the host computer's firewall. For internet play, forward the same **external TCP port to the same TCP port on this computer's local IPv4** in the router. Reserving the computer's LAN address prevents the forward from breaking when DHCP changes it. Guests need no incoming forward.
 3. Alternatively, explicitly enable **Ask my router to open this port using UPnP**. Only TCP is mapped, NAT-PMP and permanent-lease fallback are disabled, and the address may be left blank to use the router-reported external address. Mapping failure is shown; use manual forwarding instead. No router settings are changed merely by opening the menu or choosing Direct.
 4. Start hosting, accept the development warning, add/select a saved guest hero and create its invitation. Send it privately. The guest pastes it into **Host invitation**, clicks **Join invitation** and accepts the warning. The invitation selects the transport automatically. **No guest reply is needed.** Repeat with a different hero/invitation for each guest.
 5. End the session normally to save and close the listener and automatic mapping. Reconnection needs a fresh invitation for the same saved hero. Remove manual forwards yourself when no longer needed. A crash or failed router cleanup may leave a temporary UPnP mapping until its lease expires (20 minutes after its last renewal).
@@ -75,7 +75,7 @@ Beta 6 adds **Host room / Join room**. Both players configure the same room-serv
 
 A room service must be running; **no public project service has been deployed**. Hosting instructions and the complete player guide are in [server/README.md](server/README.md). The app remembers only the server URL, not passwords. The service exchanges bounded signaling metadata and stores expiring rooms/password verifiers in memory; gameplay and saves bypass it. Existing game connections survive loss of signaling. Manual invitation/direct modes remain available.
 
-The automatic **forwarded direct → opt-in UPnP → STUN-direct → TURN fallback** coordinator remains planned. Beta 6 room buttons currently start WebRTC directly, and explicitly configured TURN is included in that ICE attempt. Native TCP public-IP discovery, provider credential issuance and staged fallback are not implemented by the room UI yet. See [the current requirements](RESTORATION_STATUS.md#approved-next-networking-milestone-room-codes-and-direct-first-connections--2026-10-24).
+The automatic **forwarded direct → opt-in UPnP → STUN-direct → TURN fallback** coordinator remains planned. Beta 6 room buttons currently start WebRTC directly, and explicitly configured TURN is included in that ICE attempt. Beta 7 adds a manual native IP-discovery button; automatic room-native discovery, provider credential issuance and staged fallback are not implemented by the room UI yet. See [the current requirements](RESTORATION_STATUS.md#approved-next-networking-milestone-room-codes-and-direct-first-connections--2026-10-24).
 
 ### Optional relay provider
 
@@ -184,7 +184,7 @@ Linux Beta 1 testers reported severe terrain/decal/shadow flickering and camera 
 
 ### Run from source
 
-Use Node.js 22 or newer compatible with the locked dependencies; Node.js 22 was used for development. From the repository root:
+Use Node.js 22.18+ within the 22.x line, or Node.js 24.11+, compatible with the locked dependencies. Development checks here use Node.js 22.18. From the repository root:
 
 ```sh
 npm ci

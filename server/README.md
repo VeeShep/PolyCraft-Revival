@@ -4,7 +4,7 @@ This small Node service lets Beta 6 players join by **room name and password**, 
 
 ## Local development
 
-Use Node.js 22 or newer, from the repository root:
+Use Node.js 22.18+ within the 22.x line, or Node.js 24.11+, from the repository root:
 
 ```sh
 npm ci
@@ -29,7 +29,7 @@ For a local two-window test, configure both games with `ws://127.0.0.1:37842/sig
 
 ## Internet hosting
 
-Use a server you control with Node.js 22+, a domain pointing to that server, and an HTTPS/WebSocket reverse proxy. The Node process deliberately listens only on `127.0.0.1`; keep port 37842 private. Players connect through a publicly trusted TLS certificate on port 443. Remote `ws://`, URL passwords and query-string credentials are rejected by the app.
+Use a server you control with a supported Node.js version above, a domain pointing to that server, and an HTTPS/WebSocket reverse proxy. The Node process deliberately listens only on `127.0.0.1`; keep port 37842 private. Players connect through a publicly trusted TLS certificate on port 443. Remote `ws://`, URL passwords and query-string credentials are rejected by the app.
 
 From a checked-out copy of this repository, production dependencies and the server can be started with:
 
@@ -72,4 +72,4 @@ Room mode defaults to `stun:stun.l.google.com:19302`. Override it under **Intern
 - The service sees connection metadata and handles the password transiently during authentication. It keeps a salted verifier, not plaintext password storage. WSS protects the client-to-service connection; this is not end-to-end-encrypted signaling against the service operator. Trust your room-service operator.
 - Current evidence is local non-GUI transport/controller tests. Public TLS deployment, physical two/four-player joining, actual browser/Electron ICE behavior, native-platform gameplay, load/cost measurements and automatic forwarding/UPnP/TURN fallback remain open. No bandwidth or memory-capacity guarantee is made from these configured limits.
 
-STUN can discover a public IP to try with a **separately configured external TCP port**; a successful STUN reply does not prove a forward is reachable. STUN's mapped UDP port is not the native TCP listener's port. Automatic native TCP address discovery and the ordered transport coordinator are still future integration work.
+STUN can discover a public IP to try with a **separately configured external TCP port**; a successful STUN reply does not prove a forward is reachable. STUN's mapped UDP port is not the native TCP listener's port. Beta 7 adds a manual native address-discovery button using the chosen UDP STUN server (Google by default), with a three-second deadline and no TCP-port changes. Automatic native room discovery and the ordered transport coordinator are still future integration work.
