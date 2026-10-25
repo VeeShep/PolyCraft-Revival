@@ -150,6 +150,8 @@ npm run build:linux
 
 Builds go to `dist/` by default. macOS targets Apple Silicon and Intel ZIPs; Windows targets separate x64 and ARM64 ZIPs; Linux targets separate x64 and ARM64 AppImage and tar.gz archives. Choose `linux-arm64` for ARM64 Linux computers and `linux-x64` for Intel/AMD. Linux ARM64 is a development build target pending native gameplay acceptance; published Beta 2 has Linux x64 only. Choose `win-arm64` for Windows on Arm, or `win-x64` for Intel/AMD computers. Cross-building may require additional platform tools or downloads. Build completion does not establish native gameplay compatibility.
 
+The application includes Electron's browser engine, so most download size comes from the runtime rather than the game. A measured Beta 2 Intel Mac ZIP contains about 120 MiB of Electron, 33 MiB of game/app assets and 2 MiB of other shell files. Development packaging keeps only English Electron UI locale packs and excludes duplicate platform icon source files from `app.asar`; the required runtime PNG, platform application icons and all original game content remain. The local Apple Silicon package measured 142.35 MiB versus Beta 2's 148.58 MiB (different source revisions, same runtime version). This is a modest reduction, not a new runtime or a playable Beta 3 release.
+
 Keep existing `dist/beta-1` files and checksums unchanged. New shared releases need a new version and output folder. Publish packages and their checksums as release attachments, rather than committing executables to the source repository.
 
 Mac builds are ad-hoc signed, without notarization or a paid developer certificate. Windows builds are unsigned. Windows and Linux gameplay need testing on those operating systems; archive checks do not establish runtime acceptance.

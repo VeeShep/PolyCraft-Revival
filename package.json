@@ -26,6 +26,7 @@
   "build": {
     "appId": "local.polycraft.offline",
     "asar": true,
+    "electronLanguages": ["en", "en-US", "en-GB"],
     "artifactName": "PolyCraft-Offline-${version}-${os}-${arch}.${ext}",
     "afterPack": "desktop/after-pack.cjs",
     "files": [
@@ -34,6 +35,9 @@
       "mapping_table.json",
       "staticmax/**/*",
       "assets/**/*",
+      "!assets/offline-ui/icons/icon.icns",
+      "!assets/offline-ui/icons/icon.ico",
+      "!assets/offline-ui/icons/png/{16x16,24x24,32x32,48x48,64x64,128x128,256x256,1024x1024}.png",
       "img/**/*",
       "128.png",
       "badges.json",
