@@ -241,8 +241,9 @@
         else if (message.kind === 'result') {
           const value = message.payload;
           const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
+          if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
           const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
             const building = value.building;
@@ -290,6 +291,12 @@
     requestMove(target) {
       if (this.moveRequest) return;
       this.cancelLocalMenu(); this.moveRequest = this.sendTarget('move', target);
+    }
+    requestRepair(target, costs) {
+      if (this.repairRequest) return;
+      this.cancelLocalMenu();
+      this.repairRequest = ++this.targetSequence;
+      this.connection.send('action', { type: 'repair', sequence: this.repairRequest, target, costs: [...costs] }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
     }
     sendBuild(target, index, location, archetype) {
       return this.sendPlacement('build', target, index, location, archetype);

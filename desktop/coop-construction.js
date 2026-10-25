@@ -80,11 +80,26 @@
       if (hero.getEC('ECPlayerBuilder').getMoveFromEntity() !== source) return 'The building could not be picked up.';
       return { message: 'Building picked up and saved. Choose a placement.', save: true, held: this.heldStatus(hero) };
     }
-    menu(hero, source) {
-      const dispenser = this.dispenser(hero, source);
-      if (!dispenser?.contents.length) return null;
+    repairInfo(hero, source) {
+      const repair = source.getEC('ECRepairable'), radial = source.getEC('ECRadialMenu');
+      if (!this.owns(hero.getEC('ECPlayerBuilder')) || !repair || source.shouldBeDestroyed() || !source.isFriendlyWith(hero) || source.getEC('ECFaction')?.getFactionName() !== this.game.getFactionManager().getHeroFactionName() || !radial?.isRadialMenuEnabled() || !(radial.isRepairButtonExclusive() || radial.isRepairButtonValid()) || this.claimed(source)) return null;
+      const costs = [repair.getPrimaryResourceRepairCost(), repair.getSecondaryResourceRepairCost()];
+      return { costs, affordable: !!repair.canEntityAffordRepair(hero, ...costs) };
+    }
+    repair(hero, source, expectedCosts) {
+      const info = this.repairInfo(hero, source);
+      if (!info || !info.affordable || !info.costs.every((cost, index) => cost === expectedCosts[index])) return 'Repair is unavailable or costs/resources have changed. Select it again.';
+      source.getEC('ECRepairable').purchaseRepair(hero, ...info.costs);
+      return { message: 'Building repaired and saved.', save: true };
+    }
+    menu(hero, source, controls) {
+      const repair = this.repairInfo(hero, source), move = this.canMove(hero, source);
+      const info = controls?.demolitionInfo(source);
+      const demolition = info?.reason === '' ? { id: info.id, name: info.name, reason: '' } : null;
+      const dispenser = source.getEC('ECRadialMenu')?.isRepairButtonExclusive() ? null : this.dispenser(hero, source);
+      if (!dispenser?.contents.length) return repair ? { source: source.getName(), move, repair, demolition, products: [] } : null;
       dispenser.evaluateProductInfo();
-      return { source: source.getName(), move: this.canMove(hero, source), products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
+      return { source: source.getName(), move, repair, demolition, products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
         if (dispenser.archetype.showUnavailableDueToPrerequisites === false && !dispenser.arePrerequisitesMet(index)) return [];
         if (dispenser.getQuantityPerPurchase(index) !== 1 || !this.game.getEntityFactory().getECArchetype(product.dispensedArchetypeName, 'ECBuilding')) return [];
         return [{ index, name: dispenser.getDispenseName(index), archetype: product.dispensedArchetypeName,

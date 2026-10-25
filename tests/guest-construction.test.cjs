@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { GuestConstruction } = require('../desktop/guest-construction.js');
 const product = () => ({ index: 0, name: 'Wall', archetype: 'wall', costs: [0, 100, 0], valid: true, affordable: true, time: 10, repeat: true });
-const menu = () => ({ type: 'target', sequence: 1, construction: { source: 'Workshop', move: false, products: [product()] } });
+const menu = () => ({ type: 'target', sequence: 1, construction: { source: 'Workshop', move: false, repair: null, demolition: null, products: [product()] } });
 function setup() {
   const sent = [], drawn = [], sprites = []; let sequence = 1, clicked;
   const builder = { formatTimeToString: String, getv4ValidBuildPositionTextureColor: () => [0, 1, 0, 1], getv4InvalidBuildPositionTextureColor: () => [1, 0, 0, 1], getBuildingGuidelineTexture: () => 'textures/block.dds' };
@@ -108,4 +108,25 @@ test('the dispenser radial includes original Move artwork without changing produ
   ui.receive({ type: 'move', sequence: world.moveRequest, held: { archetype: 'wall', quantity: 1, cancelable: true } }, false);
   assert.equal(world.moveRequest, null); assert.equal(ui.placement.source, 'owned'); assert.equal(ui.placement.held, true);
   ui.cancel(); ui.receive({ type: 'move', sequence: 999, held: { archetype: 'wall', quantity: 1, cancelable: true } }, false); assert.equal(ui.placement, null);
+});
+
+test('guest repair uses original affordable/unavailable artwork and sends the displayed fractional quote', () => {
+  for (const affordable of [true, false]) {
+    const { ui, world, drawn, click } = setup(); let request;
+    const value = menu(); value.construction.products = []; value.construction.repair = { costs: [12.5, 23.5], affordable };
+    world.requestRepair = (source, costs) => { request = { source, costs }; world.cancelLocalMenu(); };
+    ui.receive(value, true); click('guest-repair-Workshop'); ui.update();
+    assert.equal(drawn[0].guiArchetype, affordable ? 'repairStone' : 'repairInvalidStone'); assert.equal(drawn[0].text2, '12.5');
+    assert.deepEqual(request, affordable ? { source: 'Workshop', costs: [12.5, 23.5] } : undefined);
+  }
+});
+test('repair menus retain eligible demolition through the existing confirmation, and reject malformed repair/demolition metadata', () => {
+  const { ui, world, click } = setup(), gui = world.game.getIMGui();
+  gui.getRadialCentre = point => point; gui.addRadialOffset = point => point; world.game.getGuiManager = () => ({ addDrawGui() {} });
+  const value = menu(); value.construction.repair = { costs: [10, 0], affordable: true };
+  value.construction.demolition = { id: 'Workshop', name: 'Storage', reason: '' };
+  ui.receive(value, true); click('guest-demolish-Workshop'); ui.update();
+  assert.deepEqual(world.demolition, value.construction.demolition); assert.equal(ui.menu, null);
+  for (const repair of [{ costs: [-1, 0], affordable: true }, { costs: Array(2), affordable: true }, { costs: [NaN, 0], affordable: true }, { costs: [0, 0], affordable: 'yes' }, { costs: [0, 0], affordable: true, free: true }]) assert.throws(() => ui.receive({ ...value, construction: { ...value.construction, repair } }, true), /Invalid repair/);
+  assert.throws(() => ui.receive({ ...value, construction: { ...value.construction, demolition: { id: 'another', name: 'Another', reason: '' } } }, true), /Invalid building demolition/);
 });

@@ -54821,6 +54821,7 @@
       return d;
     },
     purchaseRepair: function (a, b, c) {
+      if (this.gameManager.desktopConstruction && this.gameManager.desktopConstruction.claimed(this.entity)) return;
       if (a = a.getEC("ECPlayerData")) a.adjustResource(H.LUMBER, -b), a.adjustResource(H.STONE, -c), this.isBroken() ? this.repairBuilding() : this.healBuilding(), this.updateBrokenStatus();
     },
     getPrimaryResourceRepairCostFromDamage: function (a) {

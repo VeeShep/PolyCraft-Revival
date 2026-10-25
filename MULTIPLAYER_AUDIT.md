@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest building moves — Beta 14, 2026-10-25
+## Current guest building repairs — Beta 15, 2026-10-25
+
+Bounded/sequenced repair intents carry an expected quote. The host recomputes original damage costs and shared affordability, refuses changed quotes or ineligible/reserved sources, and invokes original ECRepairable.purchaseRepair before coherent save/ack. Two queues cannot charge the same now-healthy building twice. Guest metadata and fractional costs are validated; one pending repair is allowed. Original affordable/unavailable repair artwork is used; broken dispensers suppress products/movement, and eligible demolition remains available through the existing confirmation. Native host repair callbacks also refuse claimed move sources. No save change: schema/envelope 4/6, game runtime coop-13, signaling protocol 2.
+
+236 checks pass; details are in RESTORATION_STATUS.md. No graphical game or personal island was opened. Visible repair/broken/contents/spending/save/native and physical-network acceptance remain open. Group repairers, building upgrades and broader original gameplay parity are still unfinished.
+
+## Previous guest building moves — Beta 14, 2026-10-25
 
 Sequenced pickup intents reuse original ECBuilding.move and original radial eligibility with the assigned hero. Both guest construction/product and standalone building menus expose original Move artwork. The host validates faction/lifecycle/held state and source claims before mutation; active, offline saved and in-flight references block duplicate move/demolition, including native host callbacks. Existing coherent save-before-ack and held placement/cancel paths handle accepted pickups. No new save schema: schema/envelope 4/6, game runtime coop-12, signaling protocol 2.
 

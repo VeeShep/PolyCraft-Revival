@@ -29,7 +29,9 @@
       if (value.type === 'held' && this.heldRequest === value.sequence) this.heldRequest = null;
       if (value.construction) {
         const menu = value.construction, indices = new Set(), factory = this.world.game.getEntityFactory();
-        if (value.type !== 'target' || !keys(menu, ['source', 'products', 'move']) || typeof menu.move !== 'boolean' || !text(menu.source) || !Array.isArray(menu.products) || (!menu.products.length && !menu.move) || menu.products.length > 32) throw new Error('Invalid construction menu.');
+        if (value.type !== 'target' || !keys(menu, ['source', 'products', 'move', 'repair', 'demolition']) || typeof menu.move !== 'boolean' || !text(menu.source) || !Array.isArray(menu.products) || (!menu.products.length && !menu.move && !menu.repair) || menu.products.length > 32) throw new Error('Invalid construction menu.');
+        if (menu.demolition !== null && (!keys(menu.demolition, ['id', 'name', 'reason']) || menu.demolition.id !== menu.source || !text(menu.demolition.name) || menu.demolition.reason !== '')) throw new Error('Invalid building demolition choice.');
+        if (menu.repair !== null && (!keys(menu.repair, ['costs', 'affordable']) || !Array.isArray(menu.repair.costs) || menu.repair.costs.length !== 2 || ![0, 1].every(index => typeof menu.repair.costs[index] === 'number' && Number.isFinite(menu.repair.costs[index]) && menu.repair.costs[index] >= 0 && menu.repair.costs[index] <= 2147483647) || typeof menu.repair.affordable !== 'boolean')) throw new Error('Invalid repair choice.');
         for (const product of menu.products) {
           if (!keys(product, ['index', 'name', 'archetype', 'costs', 'valid', 'affordable', 'time', 'repeat']) || !Number.isInteger(product.index) || product.index < 0 || product.index >= 32 || indices.has(product.index) || !text(product.name) || !text(product.archetype) || !factory.getECArchetype(product.archetype, 'ECBuilding') || !Array.isArray(product.costs) || product.costs.length !== 3 || ![0, 1, 2].every(index => Number.isSafeInteger(product.costs[index]) && product.costs[index] >= 0 && product.costs[index] <= 2147483647) || !['valid', 'affordable', 'repeat'].every(key => typeof product[key] === 'boolean') || typeof product.time !== 'number' || !Number.isFinite(product.time) || product.time < 0 || product.time > 1e9) throw new Error('Invalid construction product.');
           indices.add(product.index);
@@ -89,7 +91,7 @@
       if (!record || world.controls.paused || !world.movement.nativeFocused) { world.cancelLocalMenu(); return; }
       if (this.menu) {
         if (performance.now() - this.menuUpdated > 1000 && !world.selectionRequest) world.selectionRequest = world.sendTarget('target', source);
-        const products = this.menu.products, count = products.length + (this.menu.move ? 1 : 0), scale = gui.getRadialScaleFactor(count);
+        const products = this.menu.products, count = products.length + (this.menu.move ? 1 : 0) + (this.menu.repair ? 1 : 0) + (this.menu.demolition ? 1 : 0), scale = gui.getRadialScaleFactor(count);
         const point = globals.camera.worldToScreen(entry.displayLocation || record.location);
         if (!point) return;
         const center = count > 1 ? gui.getRadialCentre(point, scale) : point;
@@ -103,7 +105,14 @@
             this.placement = { source, product }; this.menu = null; this.preview = this.request = null; this.world.selectionRequest = null; this.lastQuery = -Infinity; break;
           }
         }
-        if (this.menu?.move && gui.doButton({ id: 'guest-move-' + source, text: 'Move', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, products.length, count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'move' })) world.requestMove(source);
+        if (this.menu?.move && gui.doButton({ id: 'guest-move-' + source, text: 'Move', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, products.length, count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'move' })) { world.requestMove(source); return; }
+        if (this.menu?.repair) {
+          const repair = this.menu.repair;
+          if (gui.doButton({ id: 'guest-repair-' + source, text1: 'Repair', text2: String(repair.costs[0]), text3: String(repair.costs[1]), text4: '', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, products.length + (this.menu.move ? 1 : 0), count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: (repair.affordable ? 'repair' : 'repairInvalid') + (repair.costs[1] > 0 ? 'Stone' : 'Lumber') }) && repair.affordable) { world.requestRepair(source, repair.costs); return; }
+        }
+        if (this.menu?.demolition && gui.doButton({ id: 'guest-demolish-' + source, text: 'Demolish', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, count - 1, count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'demolish' })) {
+          const demolition = this.menu.demolition; world.cancelLocalMenu(); world.demolition = demolition;
+        }
         return;
       }
       const location = this.cursor(), now = performance.now();

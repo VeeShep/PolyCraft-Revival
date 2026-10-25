@@ -259,6 +259,11 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   world.targetSequence = 6; world.moveRequest = 6;
   connection.onMessage({ kind: 'result', payload: { type: 'move', sequence: 6, message: 'Saved.', held: { archetype: 'wall', quantity: 1, cancelable: true } } });
   assert.equal(world.moveRequest, null); assert.equal(world.construction.placement.held, true);
+  world.requestRepair('storage', [12.5, 23.5]); world.requestRepair('storage', [12.5, 23.5]);
+  assert.deepEqual(requests.at(-1), { kind: 'action', payload: { type: 'repair', sequence: 7, target: 'storage', costs: [12.5, 23.5] } });
+  assert.equal(world.targetSequence, 7);
+  connection.onMessage({ kind: 'result', payload: { type: 'repair', sequence: 7, message: 'Saved.' } });
+  assert.equal(world.repairRequest, null); assert.equal(world.lastTargetResult.type, 'repair');
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);

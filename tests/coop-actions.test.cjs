@@ -30,7 +30,7 @@ function setup() {
 }
 test('target menus and previews use the assigned hero and current host construction metadata without requesting a save', () => {
   const { game, hero, resource, players, state } = setup(), actions = new HostActions();
-  const construction = { source: 'tree', move: false, products: [{}] }, preview = { valid: false };
+  const construction = { source: 'tree', move: false, repair: null, demolition: null, products: [{}] }, preview = { valid: false };
   game.desktopConstruction = {
     menu(actor, source) { assert.equal(actor, hero); assert.equal(source, resource); return construction; },
     preview(actor, source, index, location) {
