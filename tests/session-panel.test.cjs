@@ -105,6 +105,12 @@ test('the real panel waits for the development disclaimer, supports cancellation
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(f.controls.paused, false); assert.equal(get('slots').disabled, false); assert.equal(get('save-now').disabled, false);
   assert.match(get('multiplayer-status').textContent, /host left/);
+  await get('multiplayer').fire('click'); get('join-invitation').value = 'another-offer';
+  attempt = get('join-island').fire('click'); await Promise.resolve(); await get('multiplayer-warning').close('continue'); await attempt;
+  await get('end-session').fire('click');
+  assert.equal(f.controls.paused, true, 'Leaving with the dialog open must keep the restored solo game paused');
+  await get('close-multiplayer').fire('click'); assert.equal(f.controls.paused, false);
+
   f.runtime.polycraft.runAction = async () => { throw new Error('Wait for the current save'); };
   await get('multiplayer').fire('click'); assert.equal(get('multiplayer-dialog').open, false); assert.equal(f.controls.paused, false);
 });

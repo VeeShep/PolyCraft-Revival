@@ -114,6 +114,7 @@
         $('add-guest').disabled = busy || session.world.players.registry.data.players.length >= 4;
       }
       if (root.polycraft) {
+        if (dialog.open && !root.polycraft.controls.paused) root.polycraft.controls.pause(true);
         $('cheats').hidden = session.role === 'guest' || !root.polycraft.bridge.state.cheats.enabled;
         $('slots').disabled = !!session.world; $('save-now').disabled = session.role === 'guest';
       }
