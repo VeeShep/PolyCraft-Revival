@@ -1,8 +1,31 @@
 # PolyCraft restoration: current roadmap and status
 
-Updated 2026-10-24. **Resumable goal: active; resumed by the user.** The goal record belongs to this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). Ask to pause or resume as needed. Do not mark it complete while implementation or required acceptance remains open.
+Updated 2026-10-24. **Restoration work is authorized to continue; the roadmap below is the durable goal specification.** The app goal record belongs to this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). Checked on 2026-10-24: its stored state still reports **paused**, and its older objective defers room codes. The available goal tools cannot edit an existing objective or resume its status. The newly approved connection requirements below supersede that older wording; resume the app goal through the app when available. Do not mark restoration complete while required implementation or acceptance remains open.
 
 Preserve the original appearance and progression while making the game independently playable, maintainable, and shareable. Order: **foundations → multiplayer → gameplay expansion**. The historical appendix below records earlier work; its old instructions and status statements do not override this roadmap.
+
+## Approved next networking milestone: room codes and direct-first connections — 2026-10-24
+
+The user now requests a small, long-term signaling/credential service and room-code joining, preferring minimal server information/load and avoiding TURN gameplay charges whenever a working direct route exists. **This promotes room codes from the deferred backlog into the next networking milestone.** Current Beta 5 still uses manual invitations; the automatic service/fallback policy is requirements work, not an implemented connection mode.
+
+Required connection preference for each host–guest pair:
+
+1. **Existing manual port forward / known direct endpoint**, including a suitable LAN address: try the encrypted native TCP/TLS path first. Do not scan ports, assume an unverified public endpoint works, or require a relay for this route.
+2. **UPnP**, only with the host's explicit opt-in: map the host's selected TCP port and try that direct endpoint. Clean up mappings and failed/cancelled attempts. Skip promptly when disabled/unsupported; it cannot bypass every upstream NAT or replace firewall permission.
+3. **Direct WebRTC using STUN/ICE NAT traversal**, including trickled candidates and appropriate LAN candidates. Start with no TURN URLs/allocations so a quick relay candidate cannot defeat the direct-first policy.
+4. **TURN as fallback**, using authenticated, short-lived provider credentials only when earlier methods fail or exhaust a measured, bounded direct-attempt budget. Allow either host or guest to require a relay independently. Keep a visible path/status; report when no configured relay is available.
+
+Speed is a requirement alongside low relay use: prepare the host listener and signaling state before guests join; use short bounded probes, immediate explicit-failure handling, trickle ICE and one overall deadline. Avoid waiting through the current 90-second WebRTC deadline for each method. Preparatory work may overlap, while route admission follows the preference above. Do not leave users waiting indefinitely to avoid a small relay charge. Exact stage/overall deadlines must be chosen from measured median/tail setup times rather than promised now. Port forwarding describes reachability, not a guarantee of lower latency than direct UDP/WebRTC.
+
+Use a small HTTPS/WebSocket signaling service with expiring in-memory rooms as the initial design. Host creates a room, shares a cryptographically generated short code, and approves each guest's assigned island hero; guests enter the code. The server forwards only bounded connection messages (direct endpoint/pin/access details, offers/answers/trickled ICE), room membership/heartbeats and temporary TURN credentials. It does not run AI, forward game actions/snapshots/chat, store islands or receive saves. It necessarily sees connection metadata such as participant network addresses; minimize retention and redact secrets/SDP/candidates from logs. Preserve manual invitations and service-free LAN/direct operation if the service is unavailable.
+
+Require private host/control and reconnect capabilities separate from the human-readable code, room expiry, join/credential rate limits, message/room/member caps, protocol compatibility and cleanup. A short code alone must not grant control of an existing saved hero. Keep permanent provider API secrets server-side; issue bounded temporary credentials to approved session participants. Measure service traffic, relay egress and actual selected paths separately. Do not force relay-only ICE. On signaling loss, already established gameplay connections keep running; room discovery/rejoin may remain unavailable until signaling recovers.
+
+A relay-to-direct upgrade may be attempted after conditions improve, but must use a deliberate ICE restart or authenticated transport replacement with a coherent resync/action-sequence handoff. Never attach two live links to the same hero, replay actions, discard progression or repeatedly interrupt play to chase a direct route. Automatic mid-session transport switching is a separate acceptance gate; do not promise that TURN can always be discarded after setup.
+
+Reference audit: [FlimLick/flimssite/tools/stun](https://github.com/FlimLick/flimssite/tree/0dc90bdf05beb855ebc686bd57afd9b41e05f819/tools/stun), inspected at commit `0dc90bdf05beb855ebc686bd57afd9b41e05f819`. Its MQTT room signaling and trickle ICE demonstrate the requested discovery pattern; the source also uses public broker/relay settings and has no manual-forward/UPnP ladder. No code copied or reference service contacted. Detailed findings and implementation boundaries are in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md#room-service-and-connection-policy-reference-review--2026-10-24).
+
+Next implementation order: bounded signaling/room protocol and server with deployment instructions → authenticated room-code host/join adapter → direct-first route coordinator and staged WebRTC/TURN → network timing/bandwidth instrumentation and disposable acceptance. Continue preserving existing multiplayer/save/gameplay gates; no backend deployment, provider account setup or automatic router mappings occurred in this requirements pass. App version stays Beta 5 because this checkpoint changes documentation only.
 
 ## Current packaged checkpoint: Beta 2 — 2026-10-24
 
@@ -335,7 +358,7 @@ Hosting offers PvP, off by default and fixed for that session: hero-versus-hero 
 
 Use Electron's built-in WebRTC data channels. The host owns AI, combat, resources, construction, quests and saves; guests send validated actions. Audit existing serializers/network hooks before reuse. Use a full initial snapshot followed by state updates; validate protocol/session versions, sizes and messages, reject repeated actions and prevent duplicated resources. Preserve guest progress across disconnect/reconnect. Snapshot saves at coherent simulation boundaries without stopping the online world.
 
-Join with a separate copy/paste invitation and reply for each guest. LAN must work without outside services. Internet may use STUN and optionally configured TURN credentials; no hosted relay is assumed. Show direct/relayed connection status and useful failure explanations. Connection information still needs exchange; see the [WebRTC connection model](https://webrtc.org/getting-started/peer-connections). Defer short room codes until a signaling service is available; keep invitation handling separate.
+Current builds join through per-guest manual invitations (WebRTC requires a reply; native direct TCP/TLS does not). The approved next milestone above adds a small signaling/credential service, room codes and the ordered manual-forward → opt-in UPnP → direct STUN/ICE → TURN fallback policy. Keep manual invitations and service-free LAN/direct operation. Show the actual selected route and useful errors. No relay/provider service is provisioned yet; see the [WebRTC connection model](https://webrtc.org/getting-started/peer-connections) and the current reference review in MULTIPLAYER_AUDIT.md. Room codes are now required work, superseding their earlier deferral.
 
 ### Dedicated moving-player synchronization check — 2026-10-22
 
@@ -355,8 +378,8 @@ Backlog: late-game resource abundance/regrowth and environment upgrades; larger 
 - Test cheat-history migration, permanent marking, unknown legacy history, recovery and export/import; verify original backups and newer-format rejection.
 - Verify packaged icons on each operating system. Native Intel Mac, Windows x64/ARM64 and Linux gameplay/desktop acceptance stays open until tested there; a native CI build is separate evidence.
 - Test two and four players across Mac/Windows/Linux: late join, reconnect, host exit, shared spending, construction, combat, PvP and saved restoration. Confirm every online menu leaves AI/simulation running.
-- Exercise LAN, direct internet, relay, incompatible invitations, malformed messages and interrupted transfers.
-- Keep this current section updated with completed work, evidence and the next step. Preserve superseded records as history. README links here. The goal remains active until explicitly paused or actually complete.
+- Exercise LAN, manual forwarding, opt-in/disabled/failed UPnP, STUN-direct NAT traversal, mixed direct/relayed guests, CGNAT/double NAT and authenticated TURN fallback. Verify route preference, bounded setup/cancellation times, zero TURN allocations before fallback, trickle candidate ordering, signaling outage without established-gameplay loss, expired/unknown/full rooms, join floods, stale/cross-room messages, protocol mismatch, guest identity/reconnect protection and no duplicated actions during any route switch. Measure real bytes/relay fraction and setup latency; test malformed messages and interrupted transfers. Keep physical-router, internet and native-platform acceptance open until exercised.
+- Keep this current section updated with completed work, evidence and the next step. Preserve superseded records as history. README links here. Restoration remains unfinished; preserve the checked app-goal state and current user authorization described at the top.
 
 ---
 

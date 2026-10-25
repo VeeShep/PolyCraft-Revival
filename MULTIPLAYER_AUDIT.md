@@ -1,6 +1,32 @@
 # Multiplayer boundary audit: initial findings
 
-Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. The goal remains active.
+Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
+
+## Room service and connection policy reference review — 2026-10-24
+
+**Approved requirements, not implemented automatic joining.** Read the direct-first milestone in RESTORATION_STATUS.md before continuing: manual-forward/native direct → opt-in UPnP/native direct → STUN/ICE direct WebRTC → temporary-credential TURN fallback. Room codes are now in scope; earlier deferral is superseded. Prefer prompt successful connections using measured bounded stage budgets, trickle ICE and overlapping preparation, while preventing premature relay allocations. Current manual WebRTC still waits for ICE gathering and has a 90-second connection deadline; it is not this automatic flow.
+
+### FlimLick reference: verified source findings
+
+Inspected `tools/stun/app.js` (1,965 lines), its HTML loader and repository tree/metadata at [commit 0dc90bdf05beb855ebc686bd57afd9b41e05f819](https://github.com/FlimLick/flimssite/blob/0dc90bdf05beb855ebc686bd57afd9b41e05f819/tools/stun/app.js). This was source inspection through GitHub, not execution or testing against the author's services.
+
+- Lines 30–33 and 224–330: MQTT over secure WebSockets to `broker.emqx.io`, with a topic derived from SHA-256(room code + password). Join/leave, offer/answer and targeted ICE candidates go over the broker. The room code/password hash is a topic selector, not encrypted signaling or broker-enforced access control; the JSON includes room/sender metadata.
+- Lines 131–141: six-character room codes generated with `Math.random()`. For our hosted service use cryptographic generation, collision handling and server-enforced expiry/limits, with separate high-entropy host/reconnect capabilities. A convenient code must not authorize arbitrary saved-hero claims.
+- Lines 469–537 and 1551–1561: host maintains a separate RTCPeerConnection per guest, forwards candidates immediately and queues them until remote descriptions exist. This trickle ICE pattern is useful for faster joining than our current complete-gathering invitations. Bound candidate queues and correlate every offer/answer/candidate with the exact room/session/attempt/assigned peer.
+- Lines 388–393, 574–626 and 1826: chat/file traffic runs through RTC data channels; the host can fan it out to authenticated peers. This supports a small signaling-service model, but chat forwarding is not a game simulation/authority implementation. Preserve our HostWorld/GuestWorld, progression, snapshots/deltas, resync and validation.
+- Lines 435–447 and 574–599: an application-level password/nonce hash challenge gates chat after connection. Do not adopt it as a replacement for host approval, room permissions, connection identity or our invitation pin/token validation.
+- Lines 1424–1439: STUN and public TURN addresses/credentials are all configured together. The source does not implement the requested port-forward → UPnP → STUN → TURN stages, temporary provider credentials, relay allocation avoidance or selected-candidate route/billing measurements. The displayed ICE connection state alone does not prove direct versus relay routing.
+- No port-forwarding or UPnP implementation/server appears in this directory; it is a browser client using outside infrastructure. Repository metadata reports no declared license. No source code was copied; establish applicable permission/license before reusing portions verbatim.
+
+### Minimal service and integration boundary
+
+Recommend a dedicated HTTPS/WebSocket service rather than a new MQTT broker just for PolyCraft. MQTT can implement signaling if an owned broker is later preferred, but it does not remove the need for STUN/TURN and is not the gameplay transport. Use in-memory expiring rooms and bounded messages; no database or player account system is required for the initial service.
+
+The service owns room lookup, authenticated host control, approved member routing, short-lived TURN credential issuance and cleanup. It sees network/connection metadata and must avoid persistent SDP/candidate/token logging. Gameplay and saves bypass it. Existing links survive signaling outages; new joins/reconnect discovery may not. Keep manual invitations and LAN/direct operation available independently of the service.
+
+Adapters must preserve the current per-guest saved identity, four-player cap, fixed PvP/host-only cheats, sticky cheat history, host authority and coherent saving. Introduce a versioned signaling envelope, bounded candidate queues and attempt IDs before enabling automatic retries. Cancel losing attempts/listeners/maps and reject late messages so only one transport can control each hero. A later relay-to-direct handoff needs explicit action-sequence fencing and resync; connecting two transports simultaneously to the same hero is unacceptable.
+
+Acceptance must cover each route, mixed routes in one island, no TURN allocation before fallback, disabled/failed UPnP, NAT/firewall failure, stale room/attempt data, rate limits and credential expiry, signaling loss, two/four players, setup time distributions and real transmitted/billed bytes. Provider API keys stay server-side. Do not infer a direct route from a STUN response or a successful UPnP mapping. No account, hosted service, router or game window was changed during this audit.
 
 ## Current direct connection option — Beta 5, 2026-10-24
 
