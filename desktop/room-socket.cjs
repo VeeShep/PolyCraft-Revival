@@ -9,12 +9,14 @@ class RoomSocket {
     const url = protocol.serverUrl(options?.url), room = protocol.roomName(options?.room), password = protocol.password(options?.password);
     if (!['create', 'join'].includes(options.type) || typeof options.runtime !== 'string' || options.runtime.length > 80 || (options.type === 'join' && (typeof options.name !== 'string' || !options.name.trim() || options.name.length > 80))) throw new Error('Invalid room connection settings.');
     const id = this.id = randomUUID(), socket = this.socket = new WebSocket(url, { handshakeTimeout: 8000, maxPayload: protocol.MAX_MESSAGE, perMessageDeflate: false });
+    const traffic = this.traffic = { started: performance.now(), sentBytes: 0, receivedBytes: 0, sentMessages: 0, receivedMessages: 0 };
     return new Promise((resolve, reject) => {
       let ready = false;
       const timer = setTimeout(() => { reject(new Error('Room server timed out. Check its address and try again.')); this.close(); }, 10000);
-      socket.on('open', () => { socket.send(JSON.stringify({ v: protocol.VERSION, type: options.type, room, password, runtime: options.runtime, ...(options.type === 'join' ? { name: options.name, relay: options.relay === true } : {}) })); });
+      socket.on('open', () => { this.write(JSON.stringify({ v: protocol.VERSION, type: options.type, room, password, runtime: options.runtime, ...(options.type === 'join' ? { name: options.name, relay: options.relay === true } : {}) })).catch(error => { reject(error); this.close(); }); });
       socket.on('error', () => { if (!ready) { reject(new Error('Cannot reach the room server. Check its address, connection and TLS certificate.')); this.close(); } });
       socket.on('message', (bytes, binary) => {
+        traffic.receivedBytes += bytes.length; traffic.receivedMessages++;
         try {
           const message = JSON.parse(bytes.toString());
           if (binary || !message || message.v !== protocol.VERSION || !['created', 'joined', 'request', 'signal', 'left', 'room-ended', 'error'].includes(message.type)) throw new Error('Invalid room server reply.');
@@ -27,6 +29,7 @@ class RoomSocket {
         } catch (error) { if (!ready) reject(error); else this.emit({ connectionId: id, type: 'error', message: error.message }); this.close(); }
       });
       socket.on('close', () => {
+        traffic.ended ??= performance.now();
         clearTimeout(timer); if (this.socket === socket) this.socket = null;
         if (!ready) reject(new Error('Room connection ended before joining.'));
         this.emit({ connectionId: id, type: 'closed' });
@@ -38,13 +41,25 @@ class RoomSocket {
     protocol.signal(options);
     const message = JSON.stringify({ v: protocol.VERSION, type: 'signal', kind: options.kind, data: options.data, ...(options.to ? { to: options.to } : {}) });
     if (Buffer.byteLength(message) > protocol.MAX_MESSAGE || this.socket.bufferedAmount > 512 * 1024) throw new Error('Room connection is too busy.');
-    return new Promise((resolve, reject) => this.socket.send(message, error => error ? reject(error) : resolve()));
+    return this.write(message);
   }
-  close() { const socket = this.socket; this.socket = null; socket?.terminate(); }
+  write(message) {
+    const traffic = this.traffic;
+    return new Promise((resolve, reject) => this.socket.send(message, error => {
+      if (error) { reject(error); return; }
+      traffic.sentBytes += Buffer.byteLength(message); traffic.sentMessages++; resolve();
+    }));
+  }
+  stats() {
+    const t = this.traffic;
+    return t ? { sentBytes: t.sentBytes, receivedBytes: t.receivedBytes, sentMessages: t.sentMessages, receivedMessages: t.receivedMessages, durationMs: Math.max(0, Math.round((t.ended ?? performance.now()) - t.started)) } : { sentBytes: 0, receivedBytes: 0, sentMessages: 0, receivedMessages: 0, durationMs: 0 };
+  }
+  close() { const socket = this.socket; this.socket = null; if (this.traffic) this.traffic.ended ??= performance.now(); socket?.terminate(); }
   request(operation, options) {
     if (operation === 'open') return this.open(options);
     if (operation === 'send') return this.send(options);
     if (operation === 'close') return this.close();
+    if (operation === 'stats') return this.stats();
     throw new Error('Invalid room socket operation.');
   }
 }

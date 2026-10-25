@@ -101,6 +101,9 @@
     <button id="copy-connection">Copy invitation / reply</button>
     </div>
     <p id="connection-summary" aria-live="polite"></p>
+    <button id="copy-network-report">Copy connection report</button>
+    <p>The report includes connection timings and framed game-data totals. It excludes passwords, addresses, invitations and island data. Totals exclude network overhead and are not relay billing measurements.</p>
+    <textarea id="network-report" aria-label="Connection report" rows="8" readonly hidden spellcheck="false"></textarea>
     <button id="end-session" disabled>End / leave session</button><button id="close-multiplayer">Return to game</button>
   </dialog>
   <dialog id="multiplayer-warning" aria-labelledby="multiplayer-warning-title">

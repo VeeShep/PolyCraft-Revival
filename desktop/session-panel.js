@@ -99,6 +99,17 @@
         return { name: id ? this.world.players.registry.player(id).name : 'Guest', link };
       });
     }
+    async report() {
+      const appVersion = await this.runtime.desktop.version?.().catch(() => null);
+      const peers = await Promise.all(this.peers().map(async ({ link }) => {
+        let info;
+        try { info = await link.diagnostics(); } catch { info = { path: 'unknown', rttMs: null, bufferedBytes: 0 }; }
+        return { state: link.state, path: info.path, rttMs: info.rttMs, bufferedBytes: info.bufferedBytes,
+          setup: link.setup ? { stage: link.setup.stage, outcome: link.setup.outcome, durationMs: link.setup.durationMs } : null, traffic: link.traffic?.() || null };
+      }));
+      const roomTraffic = this.room ? await this.runtime.desktop.room?.('stats').catch(() => null) : null;
+      return { version: 1, appVersion: appVersion || null, role: this.role || null, room: this.room?.diagnostics?.() || null, roomTraffic: roomTraffic || null, peers };
+    }
   }
   function iceSettings(stun, turn, username, credential, validate) {
     const urls = value => value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
@@ -221,6 +232,12 @@
       try { await root.navigator.clipboard.writeText(session.outgoing); }
       catch { $('connection-outgoing').focus(); $('connection-outgoing').select(); session.notify('Select and copy the invitation / reply text manually.'); }
     }));
+    $('copy-network-report').addEventListener('click', () => run(async () => {
+      const text = JSON.stringify(await session.report(), null, 2), field = $('network-report');
+      field.value = text; field.hidden = false;
+      try { await root.navigator.clipboard.writeText(text); session.notify('Connection report copied.'); }
+      catch { field.focus(); field.select(); session.notify('Select and copy the connection report below.'); }
+    }));
     $('end-session').addEventListener('click', () => run(async () => {
       await session.end(); $('connection-outgoing').value = ''; $('guest-reply').value = ''; $('turn-user').value = ''; $('turn-password').value = '';
     }));
@@ -233,7 +250,10 @@
       try {
         const lines = await Promise.all(session.peers().map(async ({ name, link }) => {
           const info = await link.diagnostics();
-          return name + ': ' + link.state + ' · ' + info.path + ' · RTT ' + (info.rttMs === null ? 'unavailable' : info.rttMs + ' ms') + ' · queued ' + info.bufferedBytes + ' bytes';
+          const traffic = link.traffic?.(), setup = link.setup;
+          return name + ': ' + link.state + ' · ' + info.path + ' · RTT ' + (info.rttMs === null ? 'unavailable' : info.rttMs + ' ms') + ' · queued ' + info.bufferedBytes + ' bytes' +
+            (setup ? ' · ' + setup.stage + ' attempt ' + (setup.durationMs / 1000).toFixed(1) + ' s' : '') +
+            (traffic ? ' · game data sent/received ' + Math.round(traffic.sentBytes / 1024) + '/' + Math.round(traffic.receivedBytes / 1024) + ' KiB' : '');
         }));
         $('connection-summary').textContent = lines.join('\n') || 'No peer connections.';
       } catch { $('connection-summary').textContent = 'Connection statistics unavailable.'; }

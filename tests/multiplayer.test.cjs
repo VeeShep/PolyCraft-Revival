@@ -221,3 +221,18 @@ test('room trickle ICE skips gather waits, queues early candidates until the rep
   await assert.rejects(joined.connection.addCandidate({ candidate: 'bad' }), /Invalid/);
   joined.connection.close(); assert.deepEqual(joined.connection.candidates, []);
 });
+
+test('traffic counters measure encoded frames across Unicode/chunking, reject invalid sends and freeze elapsed time at close', async t => {
+  mock(t);
+  const host = link(t), guest = link(t, 'guest');
+  assert.deepEqual(host.traffic(), { sentBytes: 0, receivedBytes: 0, sentFrames: 0, receivedFrames: 0, durationMs: 0 });
+  await host.send('snapshot', { text: '🌲'.repeat(CHUNK_BYTES) });
+  const bytes = host.channel.sent.reduce((total, frame) => total + Buffer.byteLength(frame), 0);
+  assert.ok(host.channel.sent.length > 1);
+  for (const frame of host.channel.sent) guest.receive(frame);
+  assert.equal(host.traffic().sentBytes, bytes); assert.equal(guest.traffic().receivedBytes, bytes);
+  assert.equal(host.traffic().sentFrames, host.channel.sent.length); assert.equal(guest.traffic().receivedFrames, host.channel.sent.length);
+  await assert.rejects(guest.send('snapshot', {}), /cannot send/); assert.equal(guest.traffic().sentBytes, 0);
+  assert.throws(() => guest.receive('x'.repeat(MAX_FRAME + 1)), /oversized/); assert.equal(guest.traffic().receivedBytes, bytes);
+  host.close(); const frozen = host.traffic(); await new Promise(resolve => setTimeout(resolve, 5)); assert.deepEqual(host.traffic(), frozen);
+});

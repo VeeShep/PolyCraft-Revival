@@ -94,3 +94,16 @@ test('admission failure after commit never switches routes and closes the select
   await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running; await until(() => f.guest.session.connection?.closed);
   assert.deepEqual(f.order, ['forward', 'attach']); assert.equal(f.hostTransport.peers.size, 0); assert.match(f.host.session.message, /save failed/);
 });
+
+test('setup history records bounded redacted outcomes, copies defensively and preserves selected-route timings', async t => {
+  const f = await fixture(t, { upnp: true }); await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  const report = f.host.diagnostics();
+  assert.deepEqual(report.attempts.map(value => value.stage), ['forward', 'mapping', 'upnp', 'stun']);
+  assert.deepEqual(report.attempts.map(value => value.outcome), ['timed out', 'ready', 'timed out', 'connected']);
+  assert.ok(report.attempts.every(value => Number.isInteger(value.durationMs) && value.durationMs >= 0));
+  assert.equal(f.entry.route.link.setup.stage, 'stun'); assert.equal(f.guest.diagnostics().attempts.at(-1).outcome, 'selected');
+  assert.equal(JSON.stringify(report).includes('giggle shits'), false); assert.equal(JSON.stringify(report).includes('127.0.0.1'), false);
+  report.attempts[0].outcome = 'modified'; assert.equal(f.host.diagnostics().attempts[0].outcome, 'timed out');
+  for (let i = 0; i < 70; i++) { const attempt = { stage: 'stun', started: performance.now() }; f.host.record(attempt, 'failed'); f.host.record(attempt, 'duplicate'); }
+  assert.equal(f.host.diagnostics().attempts.length, 64); assert.ok(f.host.diagnostics().attempts.every(value => value.outcome === 'failed'));
+});

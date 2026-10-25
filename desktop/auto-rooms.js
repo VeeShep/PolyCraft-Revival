@@ -5,7 +5,15 @@
   const rules = typeof module !== 'undefined' ? require('./room-protocol.js') : root.PolycraftRoomProtocol;
   const BUDGETS = { forward: 3000, upnp: 3000, stun: 6000, turn: 10000, admission: 8000, total: 30000 };
   class AutoRoomSession extends RoomSession {
-    constructor(session, runtime = root, budgets = BUDGETS) { super(session, runtime); this.budgets = budgets; }
+    constructor(session, runtime = root, budgets = BUDGETS) { super(session, runtime); this.budgets = budgets; this.history = []; }
+    record(attempt, outcome) {
+      if (attempt.recorded) return;
+      attempt.recorded = true;
+      const result = { role: this.role, stage: attempt.stage, outcome, durationMs: Math.max(0, Math.round(performance.now() - attempt.started)) };
+      this.history.push(result); if (this.history.length > 64) this.history.shift();
+      return result;
+    }
+    diagnostics() { return { role: this.role, attempts: this.history.map(value => ({ ...value })) }; }
     route(entry, attempt, type, value) {
       const data = { attempt: attempt.id, stage: attempt.stage, type, ...(value === undefined ? {} : { value }) };
       return this.send('route', data, entry?.id);
@@ -44,7 +52,7 @@
     async reject(id) {
       const entry = this.requests.get(id); if (!entry) throw new Error('Choose a guest request.');
       this.requests.delete(id);
-      entry.route?.finish(new Error('The host cancelled joining.'));
+      entry.route?.finish(new Error('The host cancelled joining.'), 'cancelled');
       this.session.transport.peers.get(entry.peer)?.close('The host removed this guest.');
       if (this.connected) await this.send('reject', 'The host declined this join request.', id);
       this.session.changed();
@@ -60,7 +68,9 @@
       };
       if (transport.forwardEndpoint?.host && await attempt('forward')) return;
       if (transport.nativeOptions?.upnp && transport.nativeReady) {
-        try { await transport.map(); } catch { /* No mapping or a slow router must not prevent WebRTC. */ }
+        const mapping = { stage: 'mapping', started: performance.now() };
+        try { await transport.map(); this.record(mapping, 'ready'); }
+        catch { this.record(mapping, 'failed'); /* No mapping or a slow router must not prevent WebRTC. */ }
         if (transport.endpoint?.mapped && await attempt('upnp')) return;
       }
       if (await attempt('stun')) return;
@@ -68,13 +78,17 @@
       throw new Error('Direct routes failed' + (hasTurn(transport.iceServers) || entry.relay ? ' and TURN could not connect.' : '; no TURN relay is configured.'));
     }
     async attemptHost(entry, stage) {
-      const transport = this.session.transport, a = entry.route = { id: crypto.randomUUID(), stage, locked: false };
+      const transport = this.session.transport, a = entry.route = { id: crypto.randomUUID(), stage, locked: false, started: performance.now() };
       let resolve, reject;
       const waiting = new Promise((yes, no) => { resolve = yes; reject = no; }); waiting.catch(() => {});
-      a.finish = error => { if (a.done) return; a.done = true; clearTimeout(a.timer); error ? reject(error) : resolve(); };
+      a.finish = (error, outcome = error ? 'failed' : 'connected') => {
+        if (a.done) return; a.done = true; clearTimeout(a.timer);
+        const report = this.record(a, outcome); if (a.admitted) a.link.setup = report;
+        error ? reject(error) : resolve();
+      };
       const deadline = a.deadline = amount => {
         clearTimeout(a.timer);
-        a.timer = setTimeout(() => a.finish(new Error(stage + ' connection timed out.')), Math.max(1, Math.min(amount, entry.deadline - Date.now())));
+        a.timer = setTimeout(() => a.finish(new Error(stage + ' connection timed out.'), 'timed out'), Math.max(1, Math.min(amount, entry.deadline - Date.now())));
       };
       deadline(this.budgets[stage]);
       try {
@@ -149,7 +163,7 @@
         if (old?.selected || old?.locked) throw new Error('A game route is already selected.');
         if (old && rules.STAGES.indexOf(r.stage) <= rules.STAGES.indexOf(old.stage)) return;
         if (old) this.cancelGuest(old);
-        const a = this.guestAttempt = { id: r.attempt, stage: r.stage, local: [], remote: [] };
+        const a = this.guestAttempt = { id: r.attempt, stage: r.stage, local: [], remote: [], started: performance.now() };
         this.startGuest(a, r.value).catch(error => this.failGuest(a, error)); return;
       }
       const a = this.guestAttempt;
@@ -164,7 +178,8 @@
         this.runtime.polycraft.runAction(async () => {
           if (a.cancelled || this.closed) throw new Error('Join cancelled.');
           await this.session.attachGuest(a.link); a.selected = true; this.onJoined?.();
-          await this.route(null, a, 'ack'); this.session.notify('Connection selected: ' + a.stage + '. Waiting for the island.');
+          await this.route(null, a, 'ack'); a.link.setup = this.record(a, 'selected');
+          this.session.notify('Connection selected: ' + a.stage + '. Waiting for the island.');
         }).catch(error => this.failGuest(a, error));
       }
     }
@@ -191,12 +206,13 @@
     }
     failGuest(a, error) {
       if (a.failed || a.cancelled) return; a.failed = true;
+      this.record(a, 'failed');
       if (this.connected && !this.closed) this.route(null, a, 'failed', error.message.slice(0, 256)).catch(() => {});
       this.session.notify('Route ' + a.stage + ': ' + error.message);
       if (!a.selected) { a.cancelled = true; a.link?.close('Route failed.'); }
       else a.link?.close('Selected route failed during admission.');
     }
-    cancelGuest(a) { a.cancelled = true; a.local = []; a.remote = []; a.link?.close('Route attempt cancelled.'); }
+    cancelGuest(a) { this.record(a, 'cancelled'); a.cancelled = true; a.local = []; a.remote = []; a.link?.close('Route attempt cancelled.'); }
     close() {
       for (const entry of this.requests.values()) if (entry.route && !entry.route.admitted) entry.route.finish(new Error('Room closed.'));
       if (this.guestAttempt && !this.guestAttempt.selected) this.cancelGuest(this.guestAttempt);

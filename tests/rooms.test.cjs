@@ -166,3 +166,20 @@ test('route service fences attempts, ignores stale controls, locks selection and
   await until(() => g2.events.some(event => event.type === 'error'));
   assert.equal(h2.events.some(event => event.kind === 'route'), false);
 });
+
+test('native signaling traffic counts only JSON bytes, stays redacted and freezes timing when closed', async t => {
+  const s = await service(t), h = client(t), g = client(t);
+  assert.deepEqual(h.native.request('stats'), { sentBytes: 0, receivedBytes: 0, sentMessages: 0, receivedMessages: 0, durationMs: 0 });
+  const host = await h.native.open({ ...settings(s.url), type: 'create' });
+  await g.native.open({ ...settings(s.url), type: 'join', name: 'Guest' }); await until(() => h.events.some(event => event.type === 'request'));
+  const to = h.events.find(event => event.type === 'request').id, previous = h.native.stats();
+  const message = { v: rules.VERSION, type: 'signal', kind: 'offer', data: '🌲'.repeat(100), to };
+  await h.native.send({ id: host.id, ...message });
+  assert.equal(h.native.stats().sentBytes - previous.sentBytes, Buffer.byteLength(JSON.stringify(message)));
+  assert.equal(h.native.stats().sentMessages - previous.sentMessages, 1);
+  await until(() => g.events.some(event => event.type === 'signal'));
+  assert.ok(g.native.stats().receivedBytes > 400); assert.ok(g.native.stats().receivedMessages >= 2);
+  assert.equal(JSON.stringify(h.native.stats()).includes('giggle shits'), false);
+  h.native.close(); await until(() => h.events.some(event => event.type === 'closed'));
+  const frozen = h.native.stats(); await new Promise(resolve => setTimeout(resolve, 5)); assert.deepEqual(h.native.stats(), frozen);
+});

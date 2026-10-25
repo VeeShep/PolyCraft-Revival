@@ -2,7 +2,11 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current route coordination — Beta 8, 2026-10-25
+## Current measurement support — Beta 9, 2026-10-25
+
+Bounded local route history and a copyable report provide playtest setup timings and selected-path/RTT/queue statistics, alongside separate game-frame and signaling-JSON counters. Reports omit identifying session information, credentials, addresses and message bodies. Transport overhead/provider egress remain unmeasured; do not derive relay billing directly from these counters. Monotonic stage durations describe local attempt completion, not total user wait. See RESTORATION_STATUS.md for the 200-check evidence and remaining physical/native acceptance gates. No game, save or signaling protocol changed.
+
+## Previous route coordination — Beta 8, 2026-10-25
 
 `desktop/auto-transport.js` combines the existing native TCP/TLS and WebRTC sessions; `desktop/auto-rooms.js` coordinates known/forwarded endpoint → opt-in UPnP → STUN-only WebRTC → configured TURN. Room signaling protocol 2 fences attempt IDs/stages and host/guest control directions. Both service and clients must upgrade together. Candidate relay capability is a boolean, not a credential exchange. No gameplay or save state crosses the room service.
 

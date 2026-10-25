@@ -45,6 +45,8 @@ test('encrypted loopback transfers use shared framing, wait for guest activation
   await assert.rejects(connection.send('snapshot', { cheated: true }), /cannot send/);
   assert.deepEqual(await connection.diagnostics(), { path: 'direct TCP/TLS', rttMs: null, bufferedBytes: 0 });
   const hostLink = transport.peers.get(offer.peer);
+  assert.equal(hostLink.traffic().sentBytes, connection.traffic().receivedBytes);
+  assert.equal(hostLink.traffic().receivedBytes, connection.traffic().sentBytes);
   // An authenticated but malicious guest must still pass the existing game-envelope checks.
   await g.native.send(offer.peer, JSON.stringify({ session: packet.session, peer: packet.peer, sequence: 1, kind: 'snapshot' }));
   await until(() => hostLink.closed && connection.closed);

@@ -87,6 +87,7 @@
       this.abort = new AbortController();
       this.sentSequence = this.receivedSequence = this.sentTransfer = this.receivedTransfer = 0;
       this.pendingSends = 0;
+      this.sentBytes = this.receivedBytes = this.sentFrames = this.receivedFrames = 0;
       this.queue = Promise.resolve();
       if (direct) return; // Direct TLS links reuse the same bounded, validated game framing.
       this.trickle = trickle; this.candidates = []; this.candidateCount = 0;
@@ -144,6 +145,10 @@
       if (!this.closed && this.channel?.readyState === 'open' && this.pc.connectionState !== 'disconnected') this.emit('connected', { path });
     }
     async connectionPath() { return (await this.diagnostics()).path; }
+    traffic() {
+      return { sentBytes: this.sentBytes, receivedBytes: this.receivedBytes, sentFrames: this.sentFrames, receivedFrames: this.receivedFrames,
+        durationMs: this.trafficStarted === undefined ? 0 : Math.max(0, Math.round((this.trafficEnded ?? performance.now()) - this.trafficStarted)) };
+    }
     async diagnostics() {
       const result = { path: 'unknown', rttMs: null, bufferedBytes: this.channel?.bufferedAmount || 0 };
       try {
@@ -265,6 +270,7 @@
             const text = JSON.stringify(frame);
             requireValue(Number.isSafeInteger(frame.sequence) && Number.isSafeInteger(transfer) && text.length <= MAX_FRAME, 'Invalid outgoing game frame.');
             this.channel.send(text);
+            this.trafficStarted ??= performance.now(); this.sentBytes += encoder.encode(text).length; this.sentFrames++;
           }
         });
         this.queue = operation.catch(error => { this.fail(error); });
@@ -273,7 +279,9 @@
     }
     receive(text) {
       requireValue(!this.closed && typeof text === 'string' && text.length <= MAX_FRAME, 'Invalid or oversized game frame.');
-      requireValue(encoder.encode(text).length <= MAX_FRAME, 'Oversized game frame.');
+      const frameBytes = encoder.encode(text).length;
+      requireValue(frameBytes <= MAX_FRAME, 'Oversized game frame.');
+      this.trafficStarted ??= performance.now(); this.receivedBytes += frameBytes; this.receivedFrames++;
       let frame;
       try { frame = JSON.parse(text); } catch { throw new Error('Invalid game frame JSON.'); }
       requireValue(exactKeys(frame, ['session', 'peer', 'sequence', 'transfer', 'kind', 'index', 'chunks', 'bytes', 'data']), 'Invalid game frame fields.');
@@ -308,6 +316,7 @@
     close(reason = 'Connection closed.') {
       if (this.closed) return;
       this.closed = true;
+      this.trafficEnded = performance.now();
       for (const timer of [this.connectionTimer, this.expiryTimer, this.disconnectTimer, this.transferTimer]) clearTimeout(timer);
       this.incoming = null;
       this.candidates?.splice(0);

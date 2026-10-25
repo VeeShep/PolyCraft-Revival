@@ -104,7 +104,7 @@ test('the real panel waits for the development disclaimer, supports cancellation
     addEventListener(name, callback, options) { const entries = this.listeners.get(name) || []; entries.push({ callback, once: options?.once }); this.listeners.set(name, entries); }
     fire(name, event = {}) { const entries = [...(this.listeners.get(name) || [])]; return Promise.all(entries.map(entry => { if (entry.once) this.listeners.set(name, this.listeners.get(name).filter(item => item !== entry)); return entry.callback(event); })); }
     querySelectorAll() { return []; } replaceChildren(...values) { this.children = values; } get options() { return this.children; }
-    focus() {} showModal() { this.open = true; } close(value) { this.returnValue = value; this.open = false; return this.fire('close'); }
+    focus() {} select() { this.selected = true; } showModal() { this.open = true; } close(value) { this.returnValue = value; this.open = false; return this.fire('close'); }
   }
   const f = fixture(), elements = new Map(), get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
   f.controls.paused = false; f.controls.pause = value => { f.controls.paused = value; };
@@ -118,6 +118,8 @@ test('the real panel waits for the development disclaimer, supports cancellation
   await get('multiplayer-warning').close('cancel'); await attempt; assert.deepEqual(f.calls, []);
   attempt = get('host-island').fire('click'); await Promise.resolve(); await get('multiplayer-warning').close('continue'); await attempt;
   assert.equal(f.calls.some(call => call[0] === 'host'), true); assert.equal(get('connection-settings').disabled, true);
+  await get('copy-network-report').fire('click');
+  assert.equal(JSON.parse(get('network-report').value).version, 1); assert.equal(get('network-report').hidden, false); assert.equal(get('network-report').selected, true);
   await get('close-multiplayer').fire('click'); assert.equal(f.controls.paused, false);
   await get('end-session').fire('click');
   await get('multiplayer').fire('click'); get('join-invitation').value = 'offer';
@@ -172,4 +174,21 @@ test('the real panel waits for the development disclaimer, supports cancellation
 
   f.runtime.polycraft.runAction = async () => { throw new Error('Wait for the current save'); };
   await get('multiplayer').fire('click'); assert.equal(get('multiplayer-dialog').open, false); assert.equal(f.controls.paused, false);
+});
+
+test('connection reports contain only diagnostics, excluding names, saved identities, endpoint details and secrets', async () => {
+  const f = fixture(); f.runtime.desktop.version = async () => '1.0.0-beta.9';
+  await f.session.connect('host', { iceServers: [] }, '', true);
+  const privateValue = 'do-not-export';
+  const link = { state: 'connected', host: privateValue, token: privateValue, invitation: privateValue,
+    setup: { role: 'host', stage: 'stun', outcome: 'connected', durationMs: 25, token: privateValue },
+    async diagnostics() { return { path: 'direct', rttMs: 12, bufferedBytes: 0, password: privateValue }; },
+    traffic() { return { sentBytes: 123, receivedBytes: 456, sentFrames: 2, receivedFrames: 3, durationMs: 2000 }; } };
+  f.session.transport.peers.set('peer', link);
+  f.session.room = { roomName: privateValue, password: privateValue, diagnostics: () => ({ role: 'host', attempts: [{ stage: 'stun', outcome: 'connected', durationMs: 25 }] }) };
+  const report = await f.session.report();
+  assert.equal(report.appVersion, '1.0.0-beta.9'); assert.equal(report.peers[0].traffic.sentBytes, 123); assert.equal(report.peers[0].setup.durationMs, 25);
+  assert.equal(JSON.stringify(report).includes(privateValue), false); assert.equal(Object.hasOwn(report.peers[0], 'name'), false);
+  link.diagnostics = async () => { throw new Error(privateValue); };
+  assert.equal((await f.session.report()).peers[0].path, 'unknown');
 });
