@@ -12,6 +12,8 @@
   <script defer src="retro-ui.js"></script>
   <script defer src="multiplayer.js"></script>
   <script defer src="direct-transport.js"></script>
+  <script defer src="room-protocol.js"></script>
+  <script defer src="rooms.js"></script>
   <script defer src="world-state.js"></script>
   <script defer src="coop-data.js"></script>
   <script defer src="coop-players.js"></script>
@@ -47,6 +49,16 @@
     <p>Use a disposable test island. The host saves shared progress; guest solo islands stay separate. Menus do not pause an online island.</p>
     <p id="multiplayer-status" role="status">Not connected.</p>
     <fieldset id="connection-settings">
+      <div id="room-settings">
+        <h3>Join by room name</h3>
+        <label>Room server<input id="room-server" type="url" maxlength="2048" placeholder="wss://rooms.your-domain.example/signaling" autocomplete="off"></label>
+        <label>Room name<input id="room-name" maxlength="48" placeholder="poopedpants123" autocomplete="off" spellcheck="false"></label>
+        <label>Room password<input id="room-password" type="password" minlength="8" maxlength="128" autocomplete="off"></label>
+        <label>Your guest name<input id="room-guest-name" maxlength="80" placeholder="Player"></label>
+        <button id="host-room">Host room</button><button id="join-room">Join room</button>
+        <p>Both players use the same room server, name and password. The host approves each guest. Password spaces and capitals count. Room mode defaults to stun:stun.l.google.com:19302; change the STUN URLs below to use your own server. TURN is used only if you explicitly configure it. No hosted room service or relay is supplied.</p>
+      </div>
+      <h3>Manual connection settings</h3>
       <label>Hosting connection<select id="connection-method"><option value="webrtc">WebRTC · LAN or STUN/TURN</option><option value="direct">Direct · TCP forwarding or UPnP</option></select></label>
       <div id="direct-settings" hidden>
         <p>No relay or account needed. Allow the chosen TCP port through the host firewall. For internet guests, forward it to this computer's local IPv4 address in your router. CGNAT/double NAT may prevent connections; use WebRTC with TURN instead.</p>
@@ -57,7 +69,7 @@
       </div>
       <details id="webrtc-settings"><summary>Internet connection settings</summary>
         <p>Blank settings try LAN only. For internet play, enter your STUN server and optional TURN relay on both computers. No relay is provided. Credentials stay in memory for this session.</p>
-        <label>STUN URLs · one per line<textarea id="stun-urls" rows="2" maxlength="16000" placeholder="stun:your-server:3478"></textarea></label>
+        <label>STUN URLs · one per line<textarea id="stun-urls" rows="2" maxlength="16000" placeholder="stun:stun.l.google.com:19302"></textarea></label>
         <label>TURN URLs · one per line<textarea id="turn-urls" rows="2" maxlength="16000" placeholder="turns:your-relay:5349?transport=tcp"></textarea></label>
         <label>TURN username<input id="turn-user" maxlength="256" autocomplete="off"></label>
         <label>TURN password<input id="turn-password" type="password" maxlength="1024" autocomplete="off"></label>
@@ -67,6 +79,12 @@
       <label>Host invitation<textarea id="join-invitation" rows="3" maxlength="131072" spellcheck="false"></textarea></label>
       <button id="join-island">Join invitation</button>
     </fieldset>
+    <fieldset id="room-requests" hidden>
+      <label>Room guest<select id="room-request"></select></label>
+      <label>Assign island hero<select id="room-hero"></select></label>
+      <button id="approve-room-guest">Approve guest</button><button id="reject-room-guest">Decline / disconnect guest</button>
+    </fieldset>
+    <div id="manual-invite-tools">
     <fieldset id="host-connections" hidden>
       <label>Guest hero<select id="guest-hero"></select></label>
       <label>New guest name<input id="guest-name" maxlength="80" placeholder="Player 2"></label>
@@ -76,6 +94,7 @@
     </fieldset>
     <label id="outgoing-label">Invitation or reply to send<textarea id="connection-outgoing" rows="3" readonly spellcheck="false"></textarea></label>
     <button id="copy-connection">Copy invitation / reply</button>
+    </div>
     <p id="connection-summary" aria-live="polite"></p>
     <button id="end-session" disabled>End / leave session</button><button id="close-multiplayer">Return to game</button>
   </dialog>

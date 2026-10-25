@@ -134,6 +134,28 @@ test('the real panel waits for the development disclaimer, supports cancellation
   assert.equal(f.controls.paused, true, 'Leaving with the dialog open must keep the restored solo game paused');
   await get('close-multiplayer').fire('click'); assert.equal(f.controls.paused, false);
 
+  context.PolycraftRoomProtocol = require('../desktop/room-protocol.js');
+  context.PolycraftRooms = { RoomSession: class {
+    constructor(session) { this.session = session; this.requests = new Map(); }
+    async open(role, settings) { this.role = role; this.connected = true; f.calls.push(['room-open', role, settings, this.options]); }
+    close() { f.calls.push(['room-close']); }
+  } };
+  get('room-server').value = 'wss://rooms.example/signaling'; get('room-name').value = 'poopedpants123'; get('room-password').value = 'giggle shits';
+  attempt = get('host-room').fire('click'); await Promise.resolve(); await get('multiplayer-warning').close('cancel'); await attempt;
+  assert.equal(f.calls.some(call => call[0] === 'room-open'), false);
+  attempt = get('host-room').fire('click'); await Promise.resolve(); await get('multiplayer-warning').close('continue'); await attempt;
+  const roomOpen = f.calls.find(call => call[0] === 'room-open'); assert.equal(roomOpen[2].room, 'poopedpants123'); assert.equal(roomOpen[2].password, 'giggle shits');
+  const transportOptions = f.calls.filter(call => call[0] === 'transport').at(-1)[1];
+  assert.equal(transportOptions.iceServers[0].urls[0], 'stun:stun.l.google.com:19302'); assert.equal(transportOptions.trickle, true);
+  assert.equal(get('room-password').value, ''); assert.equal(get('manual-invite-tools').hidden, true);
+  await get('end-session').fire('click'); assert.deepEqual(f.calls.at(-1), ['room-close']);
+  get('room-password').value = 'giggle shits'; get('stun-urls').value = 'stun:custom.example:3478';
+  attempt = get('join-room').fire('click'); await Promise.resolve(); await get('multiplayer-warning').close('continue'); await attempt;
+  assert.equal(f.calls.at(-1)[3].iceServers[0].urls[0], 'stun:custom.example:3478');
+  assert.equal(get('end-session').disabled, false, 'A pending room join can be cancelled before creating GuestWorld');
+  assert.equal(get('slots').disabled, true); assert.equal(get('room-password').value, '');
+  await get('end-session').fire('click'); assert.equal(get('slots').disabled, false);
+
   f.runtime.polycraft.runAction = async () => { throw new Error('Wait for the current save'); };
   await get('multiplayer').fire('click'); assert.equal(get('multiplayer-dialog').open, false); assert.equal(f.controls.paused, false);
 });

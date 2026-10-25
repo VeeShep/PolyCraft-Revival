@@ -32,7 +32,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
     dialog: {}, Menu: { buildFromTemplate: value => value, setApplicationMenu() {} }
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../desktop/main.cjs'), 'utf8'), {
-    require: name => name === 'electron' ? electron : name === './saves.cjs' ? { Saves: class {} } : name === './logging.cjs' ? { createLogger: () => () => {} } : name === './direct-network.cjs' ? require('../desktop/direct-network.cjs') : require(name),
+    require: name => name === 'electron' ? electron : name === './saves.cjs' ? { Saves: class {} } : name === './logging.cjs' ? { createLogger: () => () => {} } : name === './direct-network.cjs' ? require('../desktop/direct-network.cjs') : name === './room-socket.cjs' ? require('../desktop/room-socket.cjs') : require(name),
     __dirname: path.join(__dirname, '../desktop'), process: { env: {}, platform: 'darwin', versions: {}, on() {} }, URL, Response
   });
   await new Promise(resolve => setImmediate(resolve));
@@ -49,6 +49,8 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
   const event = { sender: contents, senderFrame: contents.mainFrame };
   await assert.rejects(handlers['polycraft:direct']({ sender: null, senderFrame: contents.mainFrame }, 'start', {}), /Invalid caller/);
   await assert.rejects(handlers['polycraft:direct'](event, 'unexpected', {}), /Invalid direct network operation/);
+  await assert.rejects(handlers['polycraft:room']({ sender: null, senderFrame: contents.mainFrame }, 'open', {}), /Invalid caller/);
+  assert.throws(() => require('../desktop/room-protocol.js').serverUrl('ws://example.com/signaling'));
   assert.equal(await handlers['polycraft:version'](event), 'test');
   await handlers['polycraft:reportGraphics'](event, JSON.stringify({ defaultDepthBits: 24, floatPolicy: 'highp' }));
   for (const value of [null, '{}'.repeat(5000), '[]', 'null', 'broken']) await assert.rejects(handlers['polycraft:reportGraphics'](event, value));

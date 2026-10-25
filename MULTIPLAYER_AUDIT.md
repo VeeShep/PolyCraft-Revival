@@ -2,6 +2,14 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
+## Current room-name/password implementation — Beta 6, 2026-10-25
+
+`server/rooms.cjs` now provides the bounded, in-memory room service; `room-socket.cjs` handles native WSS IPC and `rooms.js` coordinates the existing session/world APIs. Custom room names/passwords replace manual offer/reply copying in room mode. Host approval still owns saved-hero assignment. `PeerLink`/`HostSession` add optional trickle ICE with bounded early-candidate queues; manual invitation gathering remains unchanged. Default room STUN is `stun:stun.l.google.com:19302`, overridden by the user's STUN URL fields.
+
+The service retains only salted password verifiers and ephemeral signaling/member state, with heartbeat/expiry, connection/authentication/message limits and WSS required away from loopback. Host control is bound to the creating authenticated socket. It does not process gameplay or saves. Signaling failure cancels pending attempts while preserving established game links; public service deployment and physical gameplay acceptance remain open. See [server/README.md](server/README.md) for launch/proxy/player instructions and exact limits.
+
+This is **not yet** the full automatic port-forward/UPnP/STUN/TURN coordinator. The room UI starts WebRTC, and explicit TURN settings participate in that attempt; no default TURN service, automatic provider credentials, native TCP IP discovery or later transport handoff is claimed. Existing manual modes remain available. Latest validation is recorded in RESTORATION_STATUS.md. No friend's source was copied and no public broker was adopted.
+
 ## Room service and connection policy reference review — 2026-10-24
 
 **Approved requirements, not implemented automatic joining.** Read the direct-first milestone in RESTORATION_STATUS.md before continuing: manual-forward/native direct → opt-in UPnP/native direct → STUN/ICE direct WebRTC → temporary-credential TURN fallback. Room codes are now in scope; earlier deferral is superseded. Prefer prompt successful connections using measured bounded stage budgets, trickle ICE and overlapping preparation, while preventing premature relay allocations. Current manual WebRTC still waits for ICE gathering and has a 90-second connection deadline; it is not this automatic flow.

@@ -71,7 +71,7 @@
   }
 
   class PeerLink {
-    constructor({ role, session, peer, nonce, pvp, expires, iceServers = [], onMessage, onState, onError, direct = false }) {
+    constructor({ role, session, peer, nonce, pvp, expires, iceServers = [], onMessage, onState, onError, direct = false, trickle = false, onCandidate }) {
       requireValue(['host', 'guest'].includes(role) && [session, peer, nonce].every(id => typeof id === 'string' && UUID.test(id)) && typeof pvp === 'boolean', 'Invalid peer settings.');
       this.role = role;
       this.session = session;
@@ -89,7 +89,12 @@
       this.pendingSends = 0;
       this.queue = Promise.resolve();
       if (direct) return; // Direct TLS links reuse the same bounded, validated game framing.
+      this.trickle = trickle; this.candidates = []; this.candidateCount = 0;
       this.pc = new RTCPeerConnection({ iceServers: validateIceServers(iceServers) });
+      if (trickle) this.pc.onicecandidate = event => {
+        if (!event.candidate || this.closed) return;
+        onCandidate?.(event.candidate.toJSON(), this);
+      };
       this.pc.onconnectionstatechange = () => {
         if (this.closed) return;
         if (this.pc.connectionState === 'failed') this.fail(new Error('Connection failed. Check that both players are on the same LAN, or configure STUN/TURN for internet play.'));
@@ -175,12 +180,21 @@
       const { type, sdp } = this.pc.localDescription;
       return { protocol: PROTOCOL, runtime: RUNTIME, kind, session: this.session, peer: this.peer, nonce: this.nonce, pvp: this.pvp, expires: this.expires, description: { type, sdp } };
     }
+    async addCandidate(candidate) {
+      requireValue(!this.closed && this.trickle && candidate && typeof candidate.candidate === 'string' && candidate.candidate.length <= 2048 && candidate.candidate.startsWith('candidate:') && ++this.candidateCount <= 128, 'Invalid or excessive ICE candidates.');
+      if (!this.remoteReady) { this.candidates.push(candidate); return; }
+      await this.pc.addIceCandidate(candidate);
+    }
+    async remoteDescription(description) {
+      await this.pc.setRemoteDescription(description); this.remoteReady = true;
+      for (const candidate of this.candidates.splice(0)) await this.pc.addIceCandidate(candidate);
+    }
     async makeInvitation() {
       requireValue(this.role === 'host' && this.state === 'new' && !this.closed, 'This connection already has an invitation.');
       try {
         this.attach(this.pc.createDataChannel('polycraft-v1', { ordered: true }));
         await this.pc.setLocalDescription(await this.pc.createOffer());
-        await this.gather();
+        if (!this.trickle) await this.gather();
         requireValue(!this.closed, 'Connection cancelled.');
         const invitation = encodeInvitation(this.packet('offer'));
         this.emit('waiting');
@@ -199,16 +213,16 @@
       requireValue(packet.session === this.session && packet.peer === this.peer && packet.nonce === this.nonce && packet.pvp === this.pvp && packet.expires === this.expires, 'This reply belongs to a different invitation.');
       try {
         this.startConnectionDeadline();
-        await this.pc.setRemoteDescription(packet.description);
+        await this.remoteDescription(packet.description);
       } catch (error) { this.close(error.message); throw error; }
     }
     static async join(text, options = {}) {
       const packet = decodeInvitation(text, 'offer');
       const connection = new PeerLink({ ...options, role: 'guest', session: packet.session, peer: packet.peer, nonce: packet.nonce, pvp: packet.pvp, expires: packet.expires });
       try {
-        await connection.pc.setRemoteDescription(packet.description);
+        await connection.remoteDescription(packet.description);
         await connection.pc.setLocalDescription(await connection.pc.createAnswer());
-        await connection.gather();
+        if (!connection.trickle) await connection.gather();
         const reply = encodeInvitation(connection.packet('answer'));
         connection.startConnectionDeadline();
         return { connection, reply };
@@ -295,6 +309,7 @@
       this.closed = true;
       for (const timer of [this.connectionTimer, this.expiryTimer, this.disconnectTimer, this.transferTimer]) clearTimeout(timer);
       this.incoming = null;
+      this.candidates?.splice(0);
       this.abort.abort();
       this.channel?.close();
       this.pc?.close();
@@ -303,7 +318,7 @@
   }
 
   class HostSession {
-    constructor({ pvp = false, iceServers = [], onMessage, onState, onError } = {}) {
+    constructor({ pvp = false, iceServers = [], onMessage, onState, onError, trickle = false, onCandidate } = {}) {
       requireValue(typeof pvp === 'boolean', 'Choose whether PvP is enabled before hosting.');
       this.session = crypto.randomUUID();
       Object.defineProperty(this, 'pvp', { value: pvp, enumerable: true });
@@ -311,6 +326,7 @@
       this.onMessage = onMessage;
       this.onState = onState;
       this.onError = onError;
+      this.trickle = trickle; this.onCandidate = onCandidate;
       this.peers = new Map();
       this.closed = false;
     }
@@ -319,6 +335,7 @@
       const peer = crypto.randomUUID();
       const connection = new PeerLink({
         role: 'host', session: this.session, peer, nonce: crypto.randomUUID(), pvp: this.pvp, expires: Date.now() + INVITE_LIFETIME, iceServers: this.iceServers,
+        trickle: this.trickle, onCandidate: (candidate, link) => this.onCandidate?.(candidate, link),
         onMessage: (message, link) => this.onMessage?.(message, link),
         onState: (state, details) => { if (state === 'closed') this.peers.delete(peer); this.onState?.(peer, state, details); },
         onError: error => this.onError?.(peer, error)

@@ -16,7 +16,7 @@ Work follows **foundations → multiplayer → gameplay expansion**. Playtester 
 
 Download **[PolyCraft Offline 1.0.0-beta.2](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** for Apple Silicon or Intel Mac, Windows x64 or ARM64, and Linux x64 (AppImage or tar.gz). Read the attached `START_HERE.txt`; `SHA256SUMS.txt` and `BUILD_INFO.json` provide checksums and build provenance. This is a beta prerelease for offline solo play. Mac builds are not notarized; Windows builds are unsigned. Native platform acceptance remains open. Build output in `dist/` is excluded from Git, so cloning the repository does not download a playable package. The original Beta 1 packages remain unchanged.
 
-The working source is **1.0.0-beta.5 in development**, adding direct TCP/TLS hosting with manual forwarding or opt-in UPnP; the published release downloads above remain Beta 2. Each new packaged update increments the beta number. Existing release files and tags stay pinned to their original source.
+The working source is **1.0.0-beta.6 in development**, adding room-name/password joining alongside manual WebRTC and direct TCP/TLS hosting; the published release downloads above remain Beta 2. Each new packaged update increments the beta number. Existing release files and tags stay pinned to their original source.
 
 **Beta 4 multiplayer test packages:** open [build run 40154089920](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40154089920) and download your platform under **Artifacts** (GitHub sign-in required). All six native package jobs passed. These are early test builds; use disposable islands and follow the menu guide below.
 
@@ -69,9 +69,13 @@ Direct invitations expire after 30 minutes and are single-use. They include the 
 
 This first direct option is **IPv4 only**. UPnP does not open the computer's firewall or guarantee reachability through double NAT or carrier-grade NAT. LAN guests should use a local address; reaching your public address from the same LAN can fail on routers without NAT loopback. Use WebRTC with TURN if inbound hosting is unavailable. Real routers, physical LAN/internet and native cross-platform gameplay remain unverified.
 
-### Planned automatic room-code joining
+### Join by room name and password · Beta 6
 
-The next networking milestone adds a small signaling service and room codes. It will try **an existing forwarded direct connection → optional UPnP → direct WebRTC/STUN → TURN fallback**, independently for each guest. The aim is fast setup with minimal relay use: short measured attempt budgets and trickled connection candidates, rather than long serial timeouts. Our service would handle only room/connection information and temporary relay credentials; gameplay and island saves stay with the players. Existing invitations remain a fallback. This is **planned**, not an automatic mode available in Beta 5. See [the current requirements](RESTORATION_STATUS.md#approved-next-networking-milestone-room-codes-and-direct-first-connections--2026-10-24) and [the reference-code review](MULTIPLAYER_AUDIT.md#room-service-and-connection-policy-reference-review--2026-10-24).
+Beta 6 adds **Host room / Join room**. Both players configure the same room-server URL once, then use a room name such as `poopedpants123` and a password such as `giggle shits`. The host approves each guest and assigns a new or existing saved island hero. Offers, replies and ICE candidates exchange automatically; no invitation text needs copying. Password spaces/capitals count, and room names are case-insensitive. Room mode defaults to **`stun:stun.l.google.com:19302`**; enter a different address under **Internet connection settings → STUN URLs** to override it.
+
+A room service must be running; **no public project service has been deployed**. Hosting instructions and the complete player guide are in [server/README.md](server/README.md). The app remembers only the server URL, not passwords. The service exchanges bounded signaling metadata and stores expiring rooms/password verifiers in memory; gameplay and saves bypass it. Existing game connections survive loss of signaling. Manual invitation/direct modes remain available.
+
+The automatic **forwarded direct → opt-in UPnP → STUN-direct → TURN fallback** coordinator remains planned. Beta 6 room buttons currently start WebRTC directly, and explicitly configured TURN is included in that ICE attempt. Native TCP public-IP discovery, provider credential issuance and staged fallback are not implemented by the room UI yet. See [the current requirements](RESTORATION_STATUS.md#approved-next-networking-milestone-room-codes-and-direct-first-connections--2026-10-24).
 
 ### Optional relay provider
 

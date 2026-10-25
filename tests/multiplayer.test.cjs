@@ -23,6 +23,7 @@ class Peer extends EventTarget {
   async createAnswer() { return { type: 'answer', sdp: 'v=0\r\n' }; }
   async setLocalDescription(description) { this.localDescription = description; }
   async setRemoteDescription(description) { this.remoteDescription = description; }
+  async addIceCandidate(candidate) { (this.candidates ||= []).push(candidate); }
   async getStats() { return this.stats || new Map(); }
   close() { this.connectionState = 'closed'; }
 }
@@ -200,4 +201,23 @@ test('connection diagnostics expose selected-path RTT and queue size without lea
   assert.deepEqual(await connection.diagnostics(), { path: 'relayed', rttMs: 123, bufferedBytes: 8192 });
   connection.pc.getStats = async () => { throw new Error('stats unavailable'); };
   assert.deepEqual(await connection.diagnostics(), { path: 'unknown', rttMs: null, bufferedBytes: 8192 });
+});
+
+test('room trickle ICE skips gather waits, queues early candidates until the reply and retains candidate bounds', async t => {
+  mock(t);
+  const produced = [], host = new HostSession({ trickle: true, onCandidate: (candidate, link) => produced.push({ candidate, peer: link.peer }) });
+  t.after(() => host.close());
+  const creating = host.createInvitation(), connection = [...host.peers.values()][0];
+  connection.pc.iceGatheringState = 'gathering';
+  const offer = await creating;
+  const candidate = { candidate: 'candidate:1 1 udp 1234 203.0.113.1 54321 typ srflx', sdpMid: '0', sdpMLineIndex: 0 };
+  connection.pc.onicecandidate({ candidate: { toJSON: () => candidate } });
+  assert.deepEqual(produced, [{ candidate, peer: offer.peer }]);
+  await connection.addCandidate(candidate); assert.equal(connection.pc.candidates, undefined);
+  const joined = await PeerLink.join(offer.invitation, { trickle: true }); t.after(() => joined.connection.close());
+  await host.acceptReply(joined.reply); assert.deepEqual(connection.pc.candidates, [candidate]);
+  for (let i = 1; i < 128; i++) await connection.addCandidate(candidate);
+  await assert.rejects(connection.addCandidate(candidate), /excessive/);
+  await assert.rejects(joined.connection.addCandidate({ candidate: 'bad' }), /Invalid/);
+  joined.connection.close(); assert.deepEqual(joined.connection.candidates, []);
 });

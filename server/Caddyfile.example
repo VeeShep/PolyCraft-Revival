@@ -1,0 +1,4 @@
+# Replace this domain and point its DNS to the server before use.
+rooms.your-domain.example {
+    reverse_proxy 127.0.0.1:37842
+}
