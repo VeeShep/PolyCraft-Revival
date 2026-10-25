@@ -40,7 +40,57 @@ The top bar provides **Save now**, **Saves** and **Fullscreen**. Move with **W/A
 
 The planned flow is to host a co-op island and exchange a separate invitation and reply with each guest. The host owns the island save; guests keep separate co-op heroes on that island. Menus stop local input while the online world keeps running. Internet connections may need STUN or an optional TURN relay; a relay-free connection cannot be promised for every network.
 
-For now, contributors can use the disposable development checks described below to exercise co-op. They are automated tests, not a player joining guide. Host/Join UI, remaining gameplay integration and cross-platform/real-network acceptance are still required before public co-op. See [the current roadmap](RESTORATION_STATUS.md) and [multiplayer audit](MULTIPLAYER_AUDIT.md).
+Contributors can use the experimental developer-console procedure below or the disposable automated checks described later. Host/Join UI, remaining gameplay integration and cross-platform/real-network acceptance are still required before public co-op. See [the current roadmap](RESTORATION_STATUS.md) and [multiplayer audit](MULTIPLAYER_AUDIT.md).
+
+### Experimental quick start: two players on the same LAN
+
+This is a developer-only workaround for current **Beta 3 development builds**, not published Beta 2. Matching packages are available under **Artifacts** in [successful build run 40152131783](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40152131783); choose the appropriate package for each computer and follow its included instructions. Both computers should use the **same source revision/build run**, be on the same local network and keep their games open. Cross-computer/platform acceptance is still pending. These commands follow the existing co-op fixture; this manual guide has not been exercised across two computers.
+
+1. **Both players:** create a fresh, disposable named island and enter it through **Play**. Finish the introductory tutorial before starting co-op. Close game menus and finish placing any held building. Avoid personal islands: the host's co-op save migrates to format 5, which older apps cannot open.
+2. **Host:** open **View → Toggle Developer Tools**, select **Console**, and run this once. It starts hosting with PvP off and no outside connection services:
+
+   ```js
+   window.hostSession = new window.PolycraftMultiplayer.HostSession();
+   window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
+   await window.hostWorld.enablePlayers(window.polycraft.bridge);
+   window.coopGuestId = window.hostWorld.players.registry.addPlayer('Player 2').id;
+   window.coopOffer = await window.hostWorld.createPlayerInvitation(window.coopGuestId);
+   window.coopOffer.invitation;
+   ```
+
+   Copy the complete returned string beginning `polycraft1.` and send it to the guest. Copy the string contents without the surrounding console quotes.
+3. **Guest:** open the same developer console. Replace `PASTE_HOST_INVITATION_HERE` with the host's complete invitation, then run:
+
+   ```js
+   window.coopJoined = await window.PolycraftMultiplayer.PeerLink.join('PASTE_HOST_INVITATION_HERE');
+   window.guestWorld = new window.PolycraftGuestWorld.GuestWorld(window.polycraft.controls, window.coopJoined.connection);
+   window.coopJoined.reply;
+   ```
+
+   Copy the returned `polycraft1.` reply without surrounding quotes and send it back to the host promptly.
+4. **Host:** replace the placeholder with the guest's reply and run:
+
+   ```js
+   await window.hostSession.acceptReply('PASTE_GUEST_REPLY_HERE');
+   ```
+
+5. **Both players:** close Developer Tools and click the game canvas. The guest should receive the host's island and their assigned hero. Move with **WASD/arrows** on the guest; the host keeps the original controls. Guest Pause/Resume blocks local input while the shared world runs. Co-op resources are shared, and guest hero progression is saved on the host's island; the guest's solo island is separate.
+6. **End the session:** the host opens Console and runs the following, waits for it to finish, then closes the game normally. Host departure ends the session; there is no host migration.
+
+   ```js
+   await window.hostWorld.close();
+   ```
+
+If you disconnect and want the **same guest hero** back during that hosting session, the host creates a fresh invitation with the existing ID, then repeats steps 3–5:
+
+```js
+window.coopOffer = await window.hostWorld.createPlayerInvitation(window.coopGuestId);
+window.coopOffer.invitation;
+```
+
+Do not rerun the host-start block to reconnect: that creates a new session/guest record. To preserve identities after restarting hosting, the host needs to select the existing saved guest record; that selection UI is unfinished.
+
+**If it fails:** keep the exact console error. An incompatible-version error requires matching builds; damaged/expired invitations or a reply timeout require a fresh invitation and reply. An older app may lack these APIs entirely. Default settings use LAN candidates only, so internet joining may fail without explicitly configured STUN/TURN. Do not disable the firewall wholesale; check whether the app is allowed on your private network. No account, room code or central lobby is involved in these steps.
 
 ## Shop and cheats
 
