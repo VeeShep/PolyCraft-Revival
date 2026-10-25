@@ -2,6 +2,14 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. The goal remains active.
 
+## Current experimental connection menu — Beta 4, 2026-10-24
+
+The user's explicit early-playtest request supersedes the earlier instruction to keep every Host/Join control hidden until the entire gameplay loop is finished. Beta 4 adds an **experimental** header menu with a blocking major-development disclaimer before host/join. It reuses the existing transport/world/registry APIs for saved guest identities, per-guest invitations/replies, connection cancellation, graceful host save/exit and guest restoration. It is not a claim of stable or complete co-op.
+
+Both peers can configure local STUN/TURN settings; default remains LAN-only. Credentials are not persisted or embedded in invitations; the form clears them after setup. Connection diagnostics report the selected direct/relayed path, actual candidate-pair RTT when available and queued bytes, omitting addresses/credentials. No hosted service, automatic room code or relay guarantee has been added. The menu blocks solo-slot switching during sessions and hides guest cheats/saving. Online menus keep the world running; temporary panel pause is restored on close.
+
+166 unit/regression checks pass, including the actual panel event handlers under a fake DOM and session lifecycle/diagnostics boundary checks. Graphical tests remain deferred; physical LAN, direct internet, TURN, cross-platform/native gameplay and full co-op acceptance remain open. Held-item placement/cancel controls, death/respawn, HUD/camera and broader gameplay integration remain required roadmap work. Earlier checkpoints below are historical.
+
 ## What exists and why it cannot simply be enabled
 
 - The manager currently aliased `Ib` has one selected `heroEntity`, plus a `heroList` and add/remove/get helpers (`game.canvas.js` around lines 67467–67575). Multiple hero objects alone do not establish individual progression or player input routing.

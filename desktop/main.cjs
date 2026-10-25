@@ -76,6 +76,7 @@ app.whenReady().then(() => {
     saves.export(id, result.filePath);
     return true;
   });
+  handle('version', () => app.getVersion());
   handle('onlineMode', enabled => {
     if (typeof enabled !== 'boolean') throw new Error('Invalid online mode.');
     window.webContents.setBackgroundThrottling(!enabled);

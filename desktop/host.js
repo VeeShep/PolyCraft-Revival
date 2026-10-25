@@ -2,6 +2,8 @@
 (async function () {
   const $ = id => document.getElementById(id);
   const controls = window.PolycraftControls;
+  const version = window.desktop.version ? await window.desktop.version().catch(() => null) : null;
+  if (version) $('app-version').textContent = version;
   let slot;
   let bridge;
   let saving;
@@ -316,7 +318,7 @@
       if (!busy && controls.ready() && $('launcher').hidden) action(checkpoint);
     }, 30000);
     // These references support reproducible game acceptance checks without privileged access.
-    window.polycraft = { controls, bridge, checkpoint, slot: () => slot };
+    window.polycraft = { controls, bridge, checkpoint, runAction: async callback => { if (busy) throw new Error('Wait for the current save or action to finish, then try again.'); await action(callback); }, slot: () => slot };
   } catch (error) {
     $('launcher').hidden = false;
     await refresh();

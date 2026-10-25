@@ -47,6 +47,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
   assert.equal(ask(contents, 'fullscreen', { ...local, requestingUrl: 'https://example.com' }), false);
   assert.equal(ask(contents, 'media', local), false);
   const event = { sender: contents, senderFrame: contents.mainFrame };
+  assert.equal(await handlers['polycraft:version'](event), 'test');
   await handlers['polycraft:reportGraphics'](event, JSON.stringify({ defaultDepthBits: 24, floatPolicy: 'highp' }));
   for (const value of [null, '{}'.repeat(5000), '[]', 'null', 'broken']) await assert.rejects(handlers['polycraft:reportGraphics'](event, value));
   await handlers['polycraft:onlineMode'](event, true);

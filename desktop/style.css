@@ -50,3 +50,10 @@ fieldset { padding: 0; border: 0; min-width: 0; }
 #totem-cheats summary { cursor: pointer; font-weight: bold; color: #008b94; }
 body:has(#launcher:not([hidden])) header { justify-content: center; min-height: 100px; background: #00a2a7e8; }
 body:has(#launcher:not([hidden])) .brand img { width: 380px; max-width: 65vw; }
+
+textarea, select { font: inherit; color: #244949; background: #fff; border: 2px solid #7bb6b5; padding: 8px; max-width: 100%; min-width: 0; }
+textarea { width: 100%; resize: vertical; }
+#multiplayer-dialog { width: min(760px, 94vw); max-width: 760px; }
+#connection-summary { white-space: pre-line; overflow-wrap: anywhere; }
+#host-connections { margin-top: 20px; border-top: 2px solid #7bb6b5; padding-top: 16px; }
+@media (max-width: 1000px) { header { gap: 8px; padding: 8px; flex-wrap: wrap; } nav { flex-wrap: wrap; } }

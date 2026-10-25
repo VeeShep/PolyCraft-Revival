@@ -16,9 +16,9 @@ Work follows **foundations → multiplayer → gameplay expansion**. Playtester 
 
 Download **[PolyCraft Offline 1.0.0-beta.2](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** for Apple Silicon or Intel Mac, Windows x64 or ARM64, and Linux x64 (AppImage or tar.gz). Read the attached `START_HERE.txt`; `SHA256SUMS.txt` and `BUILD_INFO.json` provide checksums and build provenance. This is a beta prerelease for offline solo play. Mac builds are not notarized; Windows builds are unsigned. Native platform acceptance remains open. Build output in `dist/` is excluded from Git, so cloning the repository does not download a playable package. The original Beta 1 packages remain unchanged.
 
-The working source is **1.0.0-beta.3 in development**; the published downloads above remain Beta 2.
+The working source is **1.0.0-beta.4 in development**, including an experimental multiplayer menu; the published release downloads above remain Beta 2. Each new packaged update increments the beta number. Existing release files and tags stay pinned to their original source.
 
-Offline solo play is implemented. Permanent cheat history, original hero badge icons and the first runtime readability pass are implemented in the development source. Multiplayer transport and host simulation work are in progress; **playable co-op is not available yet**. Gameplay expansions remain planned.
+Offline solo play is implemented. Permanent cheat history, original hero badge icons and the first runtime readability pass are implemented in the development source. Development builds include an **experimental Multiplayer menu** for early co-op tests. It is incomplete and has not passed internet/cross-platform gameplay acceptance. Gameplay expansions remain planned.
 
 Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadmap, verification evidence, remaining acceptance checks and continuation instructions. Earlier entries in its historical appendix describe older checkpoints, not the current release state.
 
@@ -36,11 +36,27 @@ The top bar provides **Save now**, **Saves** and **Fullscreen**. Move with **W/A
 
 ## Multiplayer: can I join a friend's game?
 
-**There is no player-facing Host/Join screen yet.** Published Beta 2 is for offline solo play. Current development builds contain co-op systems and automated development fixtures, but installing one does not give you a supported way to host or join from the launcher. There is no public lobby, room code or multiplayer address to enter.
+**Beta 4 development builds add Multiplayer to the in-game header.** Published Beta 2 remains offline solo. Host and guest must accept a major-development warning before starting a session. Use fresh test islands and matching builds; co-op is not a stable release. There is no public lobby or room code.
 
-The planned flow is to host a co-op island and exchange a separate invitation and reply with each guest. The host owns the island save; guests keep separate co-op heroes on that island. Menus stop local input while the online world keeps running. Internet connections may need STUN or an optional TURN relay; a relay-free connection cannot be promised for every network.
+The connection flow uses a separate copy/paste invitation and reply for each guest. The host owns the island save; guests keep separate co-op heroes on that island. Menus stop local input while the online world keeps running. Internet connections may need STUN or an optional TURN relay; a relay-free connection cannot be promised for every network.
 
-Contributors can use the experimental developer-console procedure below or the disposable automated checks described later. Host/Join UI, remaining gameplay integration and cross-platform/real-network acceptance are still required before public co-op. See [the current roadmap](RESTORATION_STATUS.md) and [multiplayer audit](MULTIPLAYER_AUDIT.md).
+Contributors can use the experimental developer-console procedure below or the disposable automated checks described later. Remaining gameplay integration, visible menu acceptance and cross-platform/real-network testing are still required before stable co-op. See [the current roadmap](RESTORATION_STATUS.md) and [multiplayer audit](MULTIPLAYER_AUDIT.md).
+
+### Quick start with the experimental menu · Beta 4
+
+1. Both players install packages from the **same Beta 4 build run**, create disposable named islands, finish the introduction and enter through **Play**. Finish placing any held building before hosting.
+2. Open **Multiplayer** in the header. For LAN, leave internet settings blank. For internet, both players enter their STUN URLs and optional TURN URLs/username/password under **Internet connection settings**. No service or relay credentials are supplied, and direct connections cannot be guaranteed across every network. TURN credentials remain session-only and are cleared from the form after setup.
+3. The host chooses the fixed session PvP setting, clicks **Host this test island**, and accepts the development warning. Select an existing guest hero or enter a name and click **Add guest hero**. Click **Create invitation**, then copy/send its text to that guest.
+4. The guest pastes that text into **Host invitation**, clicks **Join and create reply**, and accepts the warning. Send the generated reply back to the host; keep the game open.
+5. The host pastes it into **Guest reply** and clicks **Accept guest reply**. Both players return to the game and click the canvas. The host repeats the invitation exchange for each of up to three guests, choosing a separate saved hero for each.
+6. Reopen Multiplayer to inspect each connection's **direct/relayed** path, **RTT** (network round-trip time) and queued bytes. Unavailable statistics are shown honestly rather than reported as zero latency. Use **End / leave session** when finished; the host saves before ending. Save selection is unavailable during a session, and guest saves/cheats are controlled by the host.
+
+After a disconnect, the host selects the **same saved guest hero** and creates a fresh invitation; repeat the reply exchange. **Cancel selected connection** cancels a pending invitation or disconnects that selected guest while retaining their saved hero. The host keeps running while menus are open, and host departure ends the session.
+
+If setup fails, keep the exact error shown in the panel. Match builds, use a fresh complete invitation/reply, and check server settings and private-network firewall permission. Do not assume a successful build proves internet compatibility. Guest held-item placement/cancellation, death/respawn, full HUD/camera and broader gameplay are still unfinished. Manual two-computer playtesting remains an open acceptance gate.
+
+<details>
+<summary>Developer-console fallback for earlier development builds</summary>
 
 ### Experimental quick start: two players on the same LAN
 
@@ -92,6 +108,8 @@ Do not rerun the host-start block to reconnect: that creates a new session/guest
 
 **If it fails:** keep the exact console error. An incompatible-version error requires matching builds; damaged/expired invitations or a reply timeout require a fresh invitation and reply. An older app may lack these APIs entirely. Default settings use LAN candidates only, so internet joining may fail without explicitly configured STUN/TURN. Do not disable the firewall wholesale; check whether the app is allowed on your private network. No account, room code or central lobby is involved in these steps.
 
+</details>
+
 ## Shop and cheats
 
 - Cheats are hidden until enabled. Click the game canvas and type **`moreamberplease`**, all lowercase, without pausing more than three seconds between letters. This opens Cheats and enables cheat mode for that island. A **Cheats** button then stays in the header while cheat mode is enabled, including after reloading that island. Turning cheats off hides it again. Typing in name or number fields does not trigger the code.
@@ -126,7 +144,7 @@ Saves are stored outside the application folder. On Mac they are in `~/Library/A
 
 Ordinary solo saves use format 2. On the first checkpoint of a Beta 1 save, the app keeps the exact original file as `.json.pre-v2` and migrates both the current save and recovery file. Imported Beta 1 files also retain this untouched copy. Beta 1 cannot open migrated saves; keep that original backup if you need to return to Beta 1. The original file can be copied outside the managed folder to a `.json` filename for importing into Beta 1. Deleting an island deletes its managed backups too.
 
-Co-op remains a development feature without a Host/Join screen. The current source uses co-op schema 3 / save format 5 to retain held-building quantities, placement/payment flags, building references and the host's pending placement queue, alongside hero rotation and weapon/ammo state. Only co-op-bearing islands migrate; ordinary solo saves remain format 2. Earlier co-op schemas remain readable and migrate when activated and saved. The first migration preserves exact earlier bytes as `.json.pre-v5`; imported older co-op files retain their original bytes too. Earlier applications, including published Beta 2, reject format 5 and its recovery files. Rename, recovery and export/import preserve the format and cheat history. Export important islands and keep original backups before using development builds. Missing held items or weapon details from older schemas cannot be reconstructed. These post-release changes are not in the published Beta 2 downloads, and visible held-building acceptance is still open.
+Co-op remains an experimental development feature with a Beta 4 connection menu. The current source uses co-op schema 3 / save format 5 to retain held-building quantities, placement/payment flags, building references and the host's pending placement queue, alongside hero rotation and weapon/ammo state. Only co-op-bearing islands migrate; ordinary solo saves remain format 2. Earlier co-op schemas remain readable and migrate when activated and saved. The first migration preserves exact earlier bytes as `.json.pre-v5`; imported older co-op files retain their original bytes too. Earlier applications, including published Beta 2, reject format 5 and its recovery files. Rename, recovery and export/import preserve the format and cheat history. Export important islands and keep original backups before using development builds. Missing held items or weapon details from older schemas cannot be reconstructed. These post-release changes are not in the published Beta 2 downloads, and visible held-building acceptance is still open.
 
 If a write fails, the app reports it. Keep the game open and retry after resolving the disk problem. Normal exit offers a choice if the latest progress cannot be saved. Force-quitting can lose progress since the last successful checkpoint. Export backups of islands you want to keep.
 
@@ -216,7 +234,7 @@ npm run build:mac -- --config.directories.output=/private/tmp/polycraft-build
 
 The development adapters cover host-authoritative simulation, assigned guest heroes, movement, gathering/combat, original-style construction/demolition and totem purchases. Guests render interpolated world updates between full snapshots every five seconds, with automatic full recovery after a baseline mismatch. Guest Pause/Resume is local; online menus do not pause the host world. Only the host controls cheats, and the session's PvP setting permits hero-versus-hero damage while protecting friendly workers/buildings.
 
-Co-op progress is saved separately from solo progression on the host island. Current schema 3 / save format 5 includes held construction; in-flight throws and pending consumption must settle before capture. Guest controls for restored held items, death/respawn, full HUD/camera, Host/Join and complete gameplay integration remain open. Use matching development invitations; older invitations must be recreated. Cloud saves and original-account migration are not implemented.
+Co-op progress is saved separately from solo progression on the host island. Current schema 3 / save format 5 includes held construction; in-flight throws and pending consumption must settle before capture. Guest controls for restored held items, death/respawn, full HUD/camera, visible connection-menu acceptance and complete gameplay integration remain open. Use matching development invitations; older invitations must be recreated. Cloud saves and original-account migration are not implemented.
 
 Same-machine checks are evidence for those tested paths, not complete co-op acceptance. The latest all-totem/four-player regression remains incomplete after focus-related failures, and visible tests are currently deferred at the user's request. Consult [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the exact source/checkpoint and [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md) for technical details.
 

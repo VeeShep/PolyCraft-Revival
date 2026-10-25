@@ -188,3 +188,16 @@ test('cancelling an invitation during its asynchronous creation does not resurre
   assert.equal(host.peers.size, 0);
   assert.equal(connection.expiryTimer, undefined);
 });
+
+test('connection diagnostics expose selected-path RTT and queue size without leaking candidate addresses or credentials', async t => {
+  mock(t); const connection = link(t);
+  connection.channel.bufferedAmount = 8192;
+  connection.pc.stats = new Map([
+    ['transport', { type: 'transport', selectedCandidatePairId: 'pair' }],
+    ['pair', { localCandidateId: 'local', remoteCandidateId: 'remote', currentRoundTripTime: 0.1234 }],
+    ['local', { candidateType: 'relay', address: 'private-ip', credential: 'secret' }], ['remote', { candidateType: 'host' }]
+  ]);
+  assert.deepEqual(await connection.diagnostics(), { path: 'relayed', rttMs: 123, bufferedBytes: 8192 });
+  connection.pc.getStats = async () => { throw new Error('stats unavailable'); };
+  assert.deepEqual(await connection.diagnostics(), { path: 'unknown', rttMs: null, bufferedBytes: 8192 });
+});

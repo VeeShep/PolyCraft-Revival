@@ -22,13 +22,14 @@
   <script defer src="online-world.js"></script>
   <script defer src="guest-world.js"></script>
   <script defer src="host.js"></script>
+  <script defer src="session-panel.js"></script>
 </head>
 <body>
   <header>
-    <div class="brand"><img src="/assets/offline-ui/polycraft-logo.svg" alt="PolyCraft"><small>Offline</small></div>
+    <div class="brand"><img src="/assets/offline-ui/polycraft-logo.svg" alt="PolyCraft"><small id="app-version">Offline</small></div>
     <span id="slot-name"></span>
     <nav id="game-actions" hidden aria-label="Game controls">
-      <button id="save-now">Save now</button><button id="cheats" hidden>Cheats</button><button id="slots">Saves</button><button id="fullscreen">Fullscreen</button>
+      <button id="multiplayer">Multiplayer</button><button id="save-now">Save now</button><button id="cheats" hidden>Cheats</button><button id="slots">Saves</button><button id="fullscreen">Fullscreen</button>
     </nav>
   </header>
   <p id="status" role="status">Loading local saves…</p>
@@ -40,6 +41,41 @@
     <button id="import">Import backup</button>
     <div id="save-list"></div>
   </section>
+  <dialog id="multiplayer-dialog" aria-labelledby="multiplayer-title">
+    <h2 id="multiplayer-title">Multiplayer · experimental</h2>
+    <p>Use a disposable test island. The host saves shared progress; guest solo islands stay separate. Menus do not pause an online island.</p>
+    <p id="multiplayer-status" role="status">Not connected.</p>
+    <fieldset id="connection-settings">
+      <details><summary>Internet connection settings</summary>
+        <p>Blank settings try LAN only. For internet play, enter your STUN server and optional TURN relay on both computers. No relay is provided. Credentials stay in memory for this session.</p>
+        <label>STUN URLs · one per line<textarea id="stun-urls" rows="2" maxlength="16000" placeholder="stun:your-server:3478"></textarea></label>
+        <label>TURN URLs · one per line<textarea id="turn-urls" rows="2" maxlength="16000" placeholder="turns:your-relay:5349?transport=tcp"></textarea></label>
+        <label>TURN username<input id="turn-user" maxlength="256" autocomplete="off"></label>
+        <label>TURN password<input id="turn-password" type="password" maxlength="1024" autocomplete="off"></label>
+      </details>
+      <label class="toggle"><input id="session-pvp" type="checkbox"> Enable hero PvP when hosting · fixed for the session</label>
+      <button id="host-island">Host this test island</button>
+      <label>Host invitation<textarea id="join-invitation" rows="3" maxlength="131072" spellcheck="false"></textarea></label>
+      <button id="join-island">Join and create reply</button>
+    </fieldset>
+    <fieldset id="host-connections" hidden>
+      <label>Guest hero<select id="guest-hero"></select></label>
+      <label>New guest name<input id="guest-name" maxlength="80" placeholder="Player 2"></label>
+      <button id="add-guest">Add guest hero</button><button id="create-invitation">Create invitation</button><button id="cancel-invitation">Cancel selected connection</button>
+      <label>Guest reply<textarea id="guest-reply" rows="3" maxlength="131072" spellcheck="false"></textarea></label>
+      <button id="accept-reply">Accept guest reply</button>
+    </fieldset>
+    <label id="outgoing-label">Invitation or reply to send<textarea id="connection-outgoing" rows="3" readonly spellcheck="false"></textarea></label>
+    <button id="copy-connection">Copy invitation / reply</button>
+    <p id="connection-summary" aria-live="polite"></p>
+    <button id="end-session" disabled>End / leave session</button><button id="close-multiplayer">Return to game</button>
+  </dialog>
+  <dialog id="multiplayer-warning" aria-labelledby="multiplayer-warning-title">
+    <h2 id="multiplayer-warning-title">Multiplayer is in major development</h2>
+    <p>This is an early test, not a finished co-op release. Connections may fail, controls and graphics are incomplete, and progress may be lost. Death/respawn and held-building controls still need work.</p>
+    <p>Use a fresh test island and export any important saves first. Hosting upgrades co-op saves to a format older builds cannot open. Host departure ends the session.</p>
+    <form method="dialog"><button value="continue">Continue with test connection</button><button value="cancel">Cancel</button></form>
+  </dialog>
   <dialog id="cheat-dialog" aria-labelledby="cheat-title">
     <h2 id="cheat-title">Cheats</h2><p id="cheat-pause">Game paused. Changes apply to this island.</p>
     <label class="toggle"><input id="cheats-enabled" type="checkbox"> Cheats enabled · unlock free premium items</label>

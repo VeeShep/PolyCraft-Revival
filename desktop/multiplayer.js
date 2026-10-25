@@ -137,16 +137,19 @@
       this.notifyingConnection = false;
       if (!this.closed && this.channel?.readyState === 'open' && this.pc.connectionState !== 'disconnected') this.emit('connected', { path });
     }
-    async connectionPath() {
+    async connectionPath() { return (await this.diagnostics()).path; }
+    async diagnostics() {
+      const result = { path: 'unknown', rttMs: null, bufferedBytes: this.channel?.bufferedAmount || 0 };
       try {
         const stats = await this.pc.getStats();
         const transport = [...stats.values()].find(stat => stat.type === 'transport' && stat.selectedCandidatePairId);
         const pair = transport ? stats.get(transport.selectedCandidatePairId) : [...stats.values()].find(stat => stat.type === 'candidate-pair' && stat.nominated && stat.state === 'succeeded');
-        if (!pair) return 'unknown';
+        if (!pair) return result;
         const local = stats.get(pair.localCandidateId), remote = stats.get(pair.remoteCandidateId);
-        if (!local || !remote) return 'unknown';
-        return local.candidateType === 'relay' || remote.candidateType === 'relay' ? 'relayed' : 'direct';
-      } catch { return 'unknown'; }
+        if (local && remote) result.path = local.candidateType === 'relay' || remote.candidateType === 'relay' ? 'relayed' : 'direct';
+        if (Number.isFinite(pair.currentRoundTripTime) && pair.currentRoundTripTime >= 0) result.rttMs = Math.round(pair.currentRoundTripTime * 1000);
+      } catch { /* Missing browser statistics must not break a session. */ }
+      return result;
     }
     async gather() {
       requireValue(!this.closed, 'Connection cancelled.');
