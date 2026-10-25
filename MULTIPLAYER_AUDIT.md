@@ -2,7 +2,11 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current measurement support — Beta 9, 2026-10-25
+## Current held-building controls — Beta 10, 2026-10-25
+
+The host exposes a bounded own-hero held-state query, actual-builder preview/place and original-rule cancellation through sequenced actions. Guest UI reuses placement guidelines and the original cancel button. Local hiding/focus loss retains canonical held state. Shared runtime cancellation preserves original refunds and protected-item/move behavior; remote builders cannot click the host's button. Each co-op line segment rechecks shared capacity before charging. Saves remain schema 3/format 5; the game invitation runtime advances to coop-10 to reject incompatible peers. Room service protocol 2 remains unchanged. See RESTORATION_STATUS.md for checks and the still-open visible held-item/move/line and gameplay acceptance gates.
+
+## Previous measurement support — Beta 9, 2026-10-25
 
 Bounded local route history and a copyable report provide playtest setup timings and selected-path/RTT/queue statistics, alongside separate game-frame and signaling-JSON counters. Reports omit identifying session information, credentials, addresses and message bodies. Transport overhead/provider egress remain unmeasured; do not derive relay billing directly from these counters. Monotonic stage durations describe local attempt completion, not total user wait. See RESTORATION_STATUS.md for the 200-check evidence and remaining physical/native acceptance gates. No game, save or signaling protocol changed.
 

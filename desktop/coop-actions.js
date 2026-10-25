@@ -5,7 +5,9 @@
     constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); }
     receive(value) {
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade';
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : 3) || !['target', 'demolish', 'build', 'preview', 'upgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      const held = value?.archetype !== undefined;
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (value.type === 'cancelBuild' && !held || held && (!(placement || value.type === 'cancelBuild') || typeof value.archetype !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.archetype))) throw new Error('Invalid held building selection.');
       if (placement && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 32 || !Array.isArray(value.location) || value.location.length !== 3 || ![0, 1, 2].every(index => typeof value.location[index] === 'number' && Number.isFinite(value.location[index]) && Math.abs(value.location[index]) <= 1e6))) throw new Error('Invalid building placement.');
       if (upgrade && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 2 || !Number.isInteger(value.level) || value.level < 0 || value.level >= 5 || typeof value.amber !== 'boolean')) throw new Error('Invalid totem upgrade.');
       const now = this.now();
@@ -23,6 +25,16 @@
       const target = game.getGameEntityByName(id);
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
+      if (['held', 'cancelBuild'].includes(type) || target === hero && ['build', 'preview'].includes(type)) {
+        if (target !== hero) return 'Only your own held building can be controlled.';
+        if (type === 'held') return { message: 'Held building state.', held: game.desktopConstruction?.heldStatus(hero) || null };
+        if (game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isThrowing()) return 'Finish the current action first.';
+        if (!builder.isBuilding() || action?.archetype !== builder.getHeldObjectName()) return 'The held building changed. Wait for a fresh selection.';
+        if (type === 'cancelBuild') return game.desktopConstruction?.cancelHeld(hero) || 'Construction is not ready.';
+        if (action.index !== 0) return 'Invalid held building selection.';
+        return game.desktopConstruction?.[type === 'preview' ? 'heldPreview' : 'placeHeld'](hero, action.location) || 'Construction is not ready.';
+      }
+      if (action?.archetype !== undefined) return 'Only your own held building can be controlled.';
       if (game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
       if (type === 'upgrade') return upgradeTotem(game, hero, players, target, action, controls);

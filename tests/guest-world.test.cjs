@@ -242,6 +242,14 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, building: { ...selection.building, reason: 5 } } }), /Invalid demolition/);
   assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, type: 'demolish' } }), /Invalid demolition/);
   connection.onMessage({ kind: 'result', payload: selection }); assert.deepEqual(world.selectedBuilding, selection.building);
+  game.getEntityFactory = () => ({ getECArchetype: name => name === 'wall' ? { buildingName: 'Wall' } : null });
+  world.targetSequence = 2; world.construction.heldRequest = 2;
+  connection.onMessage({ kind: 'result', payload: { type: 'held', sequence: 2, message: 'Held building state.', held: { archetype: 'wall', quantity: 1, cancelable: true } } });
+  assert.equal(world.construction.placement.held, true); assert.equal(world.construction.placement.source, ranked.hero);
+  assert.equal(world.lastTargetResult.type, 'target', 'Background held-state queries do not replace player action feedback');
+  world.targetSequence = 3; world.construction.pending = 3;
+  connection.onMessage({ kind: 'result', payload: { type: 'cancelBuild', sequence: 3, message: 'Saved.', held: null } });
+  assert.equal(world.construction.placement, null); assert.equal(world.construction.pending, null);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);

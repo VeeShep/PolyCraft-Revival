@@ -239,9 +239,9 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          const extras = value && ['building', 'construction', 'preview', 'totem'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
-          if (extras.length && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
+          const extras = value && ['building', 'construction', 'preview', 'totem', 'held'].filter(key => Object.hasOwn(value, key));
+          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
             const building = value.building;
@@ -252,9 +252,11 @@
           this.totem.receive(value, selected);
           this.construction.receive(value, selected);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
-          this.lastTargetResult = { ...value };
-          const status = root.document?.getElementById?.('status');
-          if (status) status.textContent = value.message;
+          if (value.type !== 'held') {
+            this.lastTargetResult = { ...value };
+            const status = root.document?.getElementById?.('status');
+            if (status) status.textContent = value.message;
+          }
         }
         this.original.onMessage?.(message, link);
       };
@@ -278,17 +280,17 @@
       if (!target) return;
       this.selectionRequest = this.sendTarget('target', target);
     }
-    sendTarget(type, target) {
+    sendTarget(type, target, archetype) {
       const sequence = ++this.targetSequence;
-      this.connection.send('action', { type, sequence, target }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      this.connection.send('action', { type, sequence, target, ...(archetype === undefined ? {} : { archetype }) }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
-    sendBuild(target, index, location) {
-      return this.sendPlacement('build', target, index, location);
+    sendBuild(target, index, location, archetype) {
+      return this.sendPlacement('build', target, index, location, archetype);
     }
-    sendPlacement(type, target, index, location) {
+    sendPlacement(type, target, index, location, archetype) {
       const sequence = ++this.targetSequence;
-      this.connection.send('action', { type, sequence, target, index, location }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      this.connection.send('action', { type, sequence, target, index, location, ...(archetype === undefined ? {} : { archetype }) }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
     sendUpgrade(target, index, level, amber) {

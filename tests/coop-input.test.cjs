@@ -77,5 +77,8 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   nativeFocus(true); input.keys.add('KeyW'); assert.equal(input.available(), false);
   listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} });
   assert.equal(cancelled, 1); assert.equal(input.keys.size, 0);
+  let heldCancellations = 0; world.construction = { placement: { held: true }, cancelHeld() { heldCancellations++; } };
+  listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} });
+  assert.equal(heldCancellations, 1); assert.equal(cancelled, 1, 'Escape must request authoritative held cancellation rather than silently hide it');
   input.close(); assert.equal(listeners.size, 0); assert.equal(removed, true);
 });

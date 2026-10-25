@@ -80,6 +80,29 @@
         preview: { source: source.getName(), index, location: [...location], position: Array.from(this.game.placeOnGround(snapped, 0.1)),
           extents: [builder.v3HeldObjectExtents[0], builder.v3HeldObjectExtents[2]], buffer: builder.heldObjectFootplateBuffer, valid } };
     }
+    heldStatus(hero) {
+      const builder = hero.getEC('ECPlayerBuilder');
+      return builder.isBuilding() ? { archetype: builder.getHeldObjectName(), quantity: builder.getHeldItemQuantity(), cancelable: builder.canCancelHeldBuilding() } : null;
+    }
+    heldPreview(hero, location) {
+      const builder = hero.getEC('ECPlayerBuilder');
+      if (!builder.isBuilding() || builder.isThrowing()) return 'No settled building is held.';
+      const position = builder.getv3BuildLocation(location), extents = builder.getv3HeldObjectExtents();
+      const valid = !!(this.canPlace(builder) && builder.canBuildAtPosition(position) && builder.canAffordToPlaceBuilding() && (!builder.shouldPayWhenPlacingBuildings || builder.areBuildingPrerequisitesMet(builder.getHeldObjectName())));
+      return { message: valid ? 'Click to place the held building.' : 'Cannot place the held building here.',
+        preview: { source: hero.getName(), index: 0, location: [...location], position: Array.from(this.game.placeOnGround(position, 0.1)), extents: [extents[0], extents[2]], buffer: builder.heldObjectFootplateBuffer, valid } };
+    }
+    placeHeld(hero, location) {
+      const builder = hero.getEC('ECPlayerBuilder');
+      if (!builder.isBuilding() || builder.isThrowing()) return 'No settled building is held.';
+      if (!builder.attemptToPlaceBuilding(location)) return 'That held building cannot be placed here.';
+      return { message: 'Held building placed and saved.', save: true, held: this.heldStatus(hero) };
+    }
+    cancelHeld(hero) {
+      const builder = hero.getEC('ECPlayerBuilder');
+      if (builder.isThrowing() || !builder.cancelHeldBuilding()) return 'That held building cannot be cancelled.';
+      return { message: 'Held building cancelled and saved.', save: true, held: null };
+    }
     build(hero, source, index, location) {
       const dispenser = this.dispenser(hero, source), builder = hero.getEC('ECPlayerBuilder');
       if (!dispenser || dispenser.getQuantityPerPurchase(index) !== 1) return 'This is not an available building dispenser.';

@@ -4,9 +4,28 @@
   const text = value => typeof value === 'string' && value.length > 0 && value.length <= 256;
   const vector = (value, size) => Array.isArray(value) && value.length === size && Array.from({ length: size }, (_, index) => value[index]).every(number => typeof number === 'number' && Number.isFinite(number) && Math.abs(number) <= 1e6);
   class GuestConstruction {
-    constructor(world) { this.world = world; this.lastQuery = -Infinity; }
-    cancel() { this.menu = this.placement = this.preview = this.request = this.pending = null; this.click = false; }
+    constructor(world) { this.world = world; this.lastQuery = this.lastHeldQuery = -Infinity; }
+    cancel() { this.menu = this.placement = this.preview = this.request = this.pending = this.heldRequest = null; this.click = false; }
+    cancelHeld() {
+      if (!this.placement?.held || !this.placement.cancelable || this.pending) return;
+      this.pending = this.world.sendTarget('cancelBuild', this.placement.source, this.placement.product.archetype);
+    }
+    setHeld(held) {
+      if (!held) { if (this.placement?.held) this.cancel(); return; }
+      const definition = this.world.game.getEntityFactory().getECArchetype(held.archetype, 'ECBuilding');
+      if (!this.placement?.held || this.placement.product.archetype !== held.archetype) { this.preview = this.request = null; this.click = false; this.lastQuery = -Infinity; }
+      this.menu = null;
+      this.placement = { source: this.world.identity.entity, held: true, cancelable: held.cancelable,
+        product: { index: 0, archetype: held.archetype, name: definition.buildingName || definition.buildingType || 'Building', repeat: true }, quantity: held.quantity };
+    }
     receive(value, selected) {
+      const buildResult = value.type === 'build' && this.pending === value.sequence;
+      if (Object.hasOwn(value, 'held')) {
+        const held = value.held;
+        if (!['held', 'build', 'cancelBuild'].includes(value.type) || held !== null && (!keys(held, ['archetype', 'quantity', 'cancelable']) || !text(held.archetype) || !this.world.game.getEntityFactory().getECArchetype(held.archetype, 'ECBuilding') || !Number.isSafeInteger(held.quantity) || held.quantity < 1 || held.quantity > 2147483647 || typeof held.cancelable !== 'boolean')) throw new Error('Invalid held building state.');
+        if (value.type === 'held' ? this.heldRequest === value.sequence : this.pending === value.sequence) this.setHeld(held);
+      }
+      if (value.type === 'held' && this.heldRequest === value.sequence) this.heldRequest = null;
       if (value.construction) {
         const menu = value.construction, indices = new Set(), factory = this.world.game.getEntityFactory();
         if (value.type !== 'target' || !keys(menu, ['source', 'products']) || !text(menu.source) || !Array.isArray(menu.products) || !menu.products.length || menu.products.length > 32) throw new Error('Invalid construction menu.');
@@ -24,10 +43,11 @@
         if (value.preview && (value.preview.source !== this.placement?.source || value.preview.index !== this.placement?.product.index)) throw new Error('Preview selects another product.');
         this.preview = value.preview ? structuredClone(value.preview) : null; this.request = null;
       }
-      if (value.type === 'build' && this.pending === value.sequence) {
+      if (buildResult) {
         this.lastBuildResult = { ...value }; this.pending = null; this.preview = null; this.lastQuery = performance.now();
         if (!this.placement?.product.repeat) this.cancel();
       }
+      if (value.type === 'cancelBuild' && this.pending === value.sequence) { this.pending = null; this.preview = null; this.lastHeldQuery = -Infinity; }
     }
     cursor() {
       const world = this.world, globals = world.controls.app.globals, math = globals.mathDevice, camera = globals.camera;
@@ -51,13 +71,16 @@
       if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.click = !captured;
       if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) {
         if (this.click && !captured && this.preview?.valid && this.matches(this.preview.location)) {
-          this.lastBuildResult = null; this.pending = this.world.sendBuild(this.placement.source, this.placement.product.index, this.preview.location);
+          this.lastBuildResult = null; this.pending = this.world.sendBuild(this.placement.source, this.placement.product.index, this.preview.location, this.placement.held ? this.placement.product.archetype : undefined);
         }
         this.click = false;
       }
     }
     update() {
       const world = this.world, globals = world.controls.app.globals;
+      if (world.identity && world.scene.snapshot && !world.resyncing && !world.controls.paused && world.movement.nativeFocused && !world.localMenu?.() && !this.pending && !this.heldRequest && !this.menu && (!this.placement || this.placement.held) && performance.now() - this.lastHeldQuery >= 1000) {
+        this.lastHeldQuery = performance.now(); this.heldRequest = world.sendTarget('held', world.identity.entity);
+      }
       const source = this.menu?.source || this.placement?.source;
       if (!source) return;
       const gui = world.game.getIMGui();
@@ -84,7 +107,7 @@
       const location = this.cursor(), now = performance.now();
       if (location && !this.pending && !this.request && now - this.lastQuery >= 200 && (!this.preview || !this.matches(this.preview.location) || now - this.lastQuery >= 1000)) {
         this.lastQuery = now;
-        this.request = { sequence: world.sendPlacement('preview', source, this.placement.product.index, location) };
+        this.request = { sequence: world.sendPlacement('preview', source, this.placement.product.index, location, this.placement.held ? this.placement.product.archetype : undefined) };
       }
       if (this.preview) {
         const builder = world.game.getHero().getEC('ECPlayerBuilder'), valid = this.preview.valid && this.matches(this.preview.location) && !this.pending;
@@ -92,7 +115,9 @@
         for (const buffer of [0, this.preview.buffer]) globals.simpleSpriteRenderer.addSprite({ v3Location: this.preview.position, sizeX: Math.max(0, this.preview.extents[0] - buffer) * 0.5, sizeY: Math.max(0, this.preview.extents[1] - buffer) * 0.5,
           v4color: [color[0], color[1], color[2], color[3] * (buffer ? 1 : 0.5)], texture: builder.getBuildingGuidelineTexture(), out: globals.mathDevice.v3BuildYAxis(), blendStyle: globals.simpleSpriteRenderer.blendStyle.NORMAL_NO_Z });
       }
-      if (gui.doButton({ id: 'guest-build-cancel', text: 'Cancel building', v2ScreenLocation: gui.getv2ScreenBarLocation(), buttonType: world.controls.guiTypes.BUTTON_WIDE, guiArchetype: 'buttonWide' })) world.cancelLocalMenu();
+      if ((!this.placement.held || this.placement.cancelable) && gui.doButton({ id: 'guest-build-cancel', text: 'Cancel building', v2ScreenLocation: gui.getv2ScreenBarLocation(), buttonType: world.controls.guiTypes.BUTTON_WIDE, guiArchetype: 'buttonWide' })) {
+        if (this.placement.held) this.cancelHeld(); else world.cancelLocalMenu();
+      }
     }
   }
   if (typeof module !== 'undefined') module.exports = { GuestConstruction };

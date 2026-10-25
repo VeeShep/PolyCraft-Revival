@@ -56646,6 +56646,7 @@
     },
     placeBuilding: function (a, b, c, d) {
       if (this.isBuilding()) {
+        if (this.gameManager.desktopConstruction && !this.gameManager.desktopConstruction.canPlace(this)) return !1;
         var f = this.getMoveFromEntity(),
           a = this.gameManager.placeOnGround(a, 0.5, f);
         this.throwHeldObjectToDestinationAndBuild(a, this.heldObjectName, c, d);
@@ -56706,24 +56707,32 @@
         }).start()) : f.setScale(0.25));
       }
     },
+    canCancelHeldBuilding: function () {
+      var factory = this.gameManager.getEntityFactory(), moving = this.getMoveFromEntity();
+      return !!(this.isBuilding() && !this.cannotCancel &&
+        (!("a_b_amberwell" === this.heldObjectName || "a_b_amberchest" === this.heldObjectName) || moving) &&
+        (!factory.getECArchetype(this.heldObjectName, "ECGameCritical") || moving) &&
+        factory.getECArchetype(this.heldObjectName, "ECBuilding"));
+    },
+    cancelHeldBuilding: function () {
+      if (!this.canCancelHeldBuilding()) return !1;
+      if (!this.getMoveFromEntity() && !this.shouldPayWhenPlacingBuildings) this.refundCost();
+      this.playSound("buildingCancel");
+      var leader = this.getEntityEC("ECWildlingLeader");
+      if (leader) leader.onCancelBuilding(this.getHeldObjectScaffoldType());
+      this.clearInHand();
+      return !0;
+    },
     update: function () {
       this._super();
-      var a = this.gameManager,
-        b = a.getEntityFactory(),
-        a = a.getIMGui(),
-        c = this.shouldPayWhenPlacingBuildings;
-      if (this.isBuilding() && (!("a_b_amberwell" === this.heldObjectName || "a_b_amberchest" === this.heldObjectName) || this.getMoveFromEntity()) && (!b.getECArchetype(this.heldObjectName, "ECGameCritical") || this.getMoveFromEntity()) && !this.cannotCancel) if (b = b.getECArchetype(this.heldObjectName, "ECBuilding")) if (b = this.getMoveFromEntity() ? "Cancel Move" : this.infinitePlacement ? this.globals.currentLanguage.GAME_HUD_FINISH_BUILDING : this.globals.currentLanguage.GAME_HUD_CANCEL_BUILDING, a.doButton({
+      var a = this.gameManager.getIMGui(), b;
+      if (this.canCancelHeldBuilding()) if (b = this.getMoveFromEntity() ? "Cancel Move" : this.infinitePlacement ? this.globals.currentLanguage.GAME_HUD_FINISH_BUILDING : this.globals.currentLanguage.GAME_HUD_CANCEL_BUILDING, (!this.gameManager.desktopPlayers || this.entity === this.gameManager.getHero()) && a.doButton({
         id: "ecPlayerBuilder Cancel",
         text: b,
         v2ScreenLocation: a.getv2ScreenBarLocation(),
         buttonType: Z.BUTTON_WIDE,
         guiArchetype: "buttonWide"
-      }) || c && !this.areBuildingPrerequisitesMet(this.heldObjectName)) {
-        !this.getMoveFromEntity() && !c && this.refundCost();
-        this.playSound("buildingCancel");
-        if (a = this.getEntityEC("ECWildlingLeader")) a.onCancelBuilding(this.getHeldObjectScaffoldType());
-        this.clearInHand();
-      }
+      }) || this.shouldPayWhenPlacingBuildings && !this.areBuildingPrerequisitesMet(this.heldObjectName)) this.cancelHeldBuilding();
     },
     draw: function () {
       this.drawHeldItemQuantity();

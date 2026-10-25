@@ -11,8 +11,8 @@ function setup() {
   const world = { controls: { guiTypes: { BUTTON_ROUND: {}, BUTTON_WIDE: {} }, app: { globals: { camera: { worldToScreen: () => [100, 100] }, mathDevice: { v3BuildYAxis: () => [0, 1, 0] }, simpleSpriteRenderer: { blendStyle: { NORMAL_NO_Z: 1 }, addSprite: value => sprites.push(value) } } } },
     movement: { nativeFocused: true }, scene: { entities: new Map([['Workshop', { record: { location: [0, 0, 0] } }]]) },
     game: { getIMGui: () => gui, getEntityFactory: () => ({ getECArchetype: name => name === 'wall' ? {} : null }), getHero: () => ({ getEC: () => builder }) },
-    sendPlacement(type, source, index, location) { sent.push({ type, source, index, location }); return ++sequence; },
-    sendBuild(source, index, location) { return this.sendPlacement('build', source, index, location); } };
+    sendPlacement(type, source, index, location, archetype) { sent.push({ type, source, index, location, ...(archetype === undefined ? {} : { archetype }) }); return ++sequence; },
+    sendBuild(source, index, location, archetype) { return this.sendPlacement('build', source, index, location, archetype); } };
   const ui = new GuestConstruction(world); world.cancelLocalMenu = () => ui.cancel(); ui.cursor = () => [1, 0, 2];
   return { ui, world, sent, drawn, sprites, click: value => { clicked = value; }, preview: valid => ({ type: 'preview', sequence, preview: { source: 'Workshop', index: 0, location: [1, 0, 2], position: [1, 0.1, 2], extents: [2, 2], buffer: 0.2, valid } }) };
 }
@@ -62,4 +62,37 @@ test('a stale valid outline cannot place at an old cursor location; blur and van
   assert.equal(sent.some(value => value.type === 'build'), false);
   world.movement.nativeFocused = false; ui.update(); assert.equal(ui.placement, null);
   world.movement.nativeFocused = true; ui.receive(menu(), true); world.scene.entities.clear(); ui.update(); assert.equal(ui.menu, null);
+});
+
+test('restored held state resumes host-checked previews, places without a dispenser and sends one authoritative cancellation', () => {
+  const { ui, world, sent, click } = setup();
+  world.identity = { entity: 'owned' }; world.scene.snapshot = {};
+  world.scene.entities.set('owned', { record: { location: [0, 0, 0] } });
+  world.sendTarget = (type, source, archetype) => world.sendPlacement(type, source, 0, undefined, archetype);
+  ui.update(); assert.equal(sent.at(-1).type, 'held'); const sequence = ui.heldRequest;
+  ui.receive({ type: 'held', sequence, held: { archetype: 'wall', quantity: 2, cancelable: true } }, false);
+  assert.equal(ui.placement.held, true); assert.equal(ui.placement.source, 'owned'); assert.equal(ui.placement.quantity, 2);
+  ui.update(); assert.equal(sent.at(-1).type, 'preview');
+  ui.receive({ type: 'preview', sequence: ui.request.sequence, preview: { source: 'owned', index: 0, location: [1, 0, 2], position: [1, 0.1, 2], extents: [2, 2], buffer: 0.2, valid: true } }, false);
+  ui.pointer('mousedown', { button: 0 }); ui.pointer('mouseup', { button: 0 }); assert.equal(sent.at(-1).type, 'build'); assert.equal(sent.at(-1).source, 'owned'); assert.equal(sent.at(-1).archetype, 'wall');
+  ui.receive({ type: 'build', sequence: ui.pending, held: { archetype: 'wall', quantity: 1, cancelable: true } }, false);
+  assert.equal(ui.placement.quantity, 1); assert.equal(ui.pending, null);
+  click('guest-build-cancel'); ui.update(); const cancellation = ui.pending;
+  ui.update(); ui.cancelHeld(); assert.equal(sent.filter(value => value.type === 'cancelBuild').length, 1);
+  ui.receive({ type: 'cancelBuild', sequence: cancellation, held: null }, false); assert.equal(ui.placement, null); assert.equal(ui.pending, null);
+  ui.setHeld({ archetype: 'wall', quantity: 1, cancelable: true }); ui.pending = 99;
+  ui.receive({ type: 'build', sequence: 99, held: null }, false);
+  assert.equal(ui.lastBuildResult.type, 'build'); assert.equal(ui.placement, null);
+});
+test('protected held objects cannot be cancelled; local focus/menu hiding never spends, refunds or cancels host construction', () => {
+  const { ui, world, sent, click, drawn } = setup();
+  world.identity = { entity: 'owned' }; world.scene.snapshot = {}; world.scene.entities.set('owned', { record: { location: [0, 0, 0] } });
+  world.sendTarget = (type, source, archetype) => world.sendPlacement(type, source, 0, undefined, archetype);
+  ui.update(); ui.receive({ type: 'held', sequence: ui.heldRequest, held: { archetype: 'wall', quantity: 1, cancelable: false } }, false);
+  click('guest-build-cancel'); ui.update(); ui.cancelHeld();
+  assert.equal(sent.some(value => value.type === 'cancelBuild'), false); assert.equal(drawn.some(value => value.id === 'guest-build-cancel'), false);
+  world.movement.nativeFocused = false; ui.update(); assert.equal(ui.placement, null); assert.equal(sent.some(value => value.type === 'cancelBuild'), false);
+  const previous = sent.length; ui.cancel(); ui.receive({ type: 'held', sequence: 999, held: { archetype: 'wall', quantity: 1, cancelable: true } }, false);
+  assert.equal(ui.placement, null); assert.equal(sent.length, previous);
+  for (const held of [{ archetype: 'unknown', quantity: 1, cancelable: true }, { archetype: 'wall', quantity: 0, cancelable: true }, { archetype: 'wall', quantity: 1, cancelable: true, cost: 0 }]) assert.throws(() => ui.receive({ type: 'held', sequence: 1, held }, false), /Invalid held/);
 });
