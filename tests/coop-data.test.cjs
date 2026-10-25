@@ -48,14 +48,14 @@ test('co-op validation rejects incompatible records, duplicate identities, inval
   assert.throws(() => validateCoop(future), error => error.code === 'UNSUPPORTED_SAVE');
   assert.throws(() => new CoopData({ userData: { [KEY]: '' } }));
 });
-test('schema 1 migrates on an owned copy and schema 3 retains weapon state and defaults missing held inventory to empty', () => {
+test('schema 1 migrates on an owned copy and schema 4 retains weapon state and defaults missing held inventory to empty', () => {
   const legacy = require('../reference/coop-schema-1/coop-data.js').createCoop();
   legacy.players[0].inventory = { weapon: 'wp_h_pistol', ammo: 3, carried: [7, 8] };
   const state = emptyState(), original = JSON.stringify(legacy);
   state.userData[KEY] = original;
   const registry = new CoopData(state), hero = registry.data.players[0];
   assert.equal(state.userData[KEY], original, 'Reading alone never replaces the original record');
-  assert.equal(registry.data.version, 3); assert.equal(hero.construction, null); assert.equal(hero.rotation, 0);
+  assert.equal(registry.data.version, 4); assert.equal(hero.construction, null); assert.equal(hero.rotation, 0);
   assert.deepEqual(hero.inventory, { weapon: 'wp_h_pistol', mainWeapon: 'wp_h_pistol', ammo: 3, temporaryAmmo: 0, carried: [7, 8] });
   hero.rotation = -0.8;
   hero.inventory = { weapon: 'wp_h_bombs', mainWeapon: 'wp_h_pistol', ammo: 2, temporaryAmmo: 13, carried: [7, 8] };

@@ -21,7 +21,8 @@
       this.move = value.move.map(number => number / length);
     }
     apply(hero) {
-      const move = this.now() - this.receivedAt <= 600 && hero.getEC('ECHealth').getHealth() > 0 ? this.move : [0, 0];
+      const life = hero.getEC('ECPlayerLife'), incapacitated = life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL);
+      const move = this.now() - this.receivedAt <= 600 && hero.getEC('ECHealth').getHealth() > 0 && !incapacitated ? this.move : [0, 0];
       if (move[0] || move[1]) {
         const location = hero.getv3Location();
         hero.getEC('ECLocomotion').setDestination([location[0] + move[0] * 5, location[1], location[2] + move[1] * 5]);

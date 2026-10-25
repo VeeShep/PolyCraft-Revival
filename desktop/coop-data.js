@@ -1,7 +1,7 @@
 'use strict';
 (function (root) {
   const KEY = 'desktopCoop';
-  const VERSION = 3;
+  const VERSION = 4;
   const UPGRADES = ['movementSpeed', 'carrySpeed', 'shotgunDamage', 'reloadSpeed', 'maxHealth', 'explosionDamage', 'carryCapacity', 'chopEffectiveness'];
   const STATS = ['playerScore', 'totalCampaignsWon', 'totalWallsBuilt', 'totalTreesChopped', 'totalRocksDestroyed', 'totalEnemiesKilled', 'totalTimePlayed', 'softCurrencyFound'];
   const PERSONAL = ['progress', 'heroUpgrades', 'gameStats', 'numberOfGamesPlayed', 'shareData'];
@@ -27,7 +27,13 @@
   function newPlayer(name) {
     return { id: crypto.randomUUID(), name: playerName(name), progress: { xp: 0 }, heroUpgrades: {},
       gameStats: Object.fromEntries(STATS.map(key => [key, 0])), numberOfGamesPlayed: { count: 0 }, shareData: {},
-      location: null, rotation: 0, health: null, construction: null, inventory: { weapon: null, mainWeapon: null, ammo: 0, temporaryAmmo: 0, carried: [0, 0] } };
+      location: null, rotation: 0, health: null, construction: null, life: null, inventory: { weapon: null, mainWeapon: null, ammo: 0, temporaryAmmo: 0, carried: [0, 0] } };
+  }
+  function validateLife(value) {
+    if (value === null) return value;
+    requireValue(keys(value, ['phase', 'remaining', 'location', 'lives', 'infiniteLives']) && ['normal', 'dying', 'waiting'].includes(value.phase) && finite(value.remaining) && value.remaining >= 0 && Number.isSafeInteger(value.lives) && Math.abs(value.lives) <= 2147483647 && typeof value.infiniteLives === 'boolean', 'invalid death lifecycle.');
+    requireValue(value.phase === 'normal' ? value.remaining === 0 && value.location === null : vector(value.location, 3), 'invalid respawn timing or location.');
+    return value;
   }
   function createCoop(name = 'Host') {
     const host = newPlayer(name);
@@ -37,11 +43,11 @@
     if (plain(value) && Number.isInteger(value.version) && value.version > VERSION) {
       const error = new Error('This co-op island needs a newer PolyCraft version.'); error.code = 'UNSUPPORTED_SAVE'; throw error;
     }
-    requireValue(keys(value, ['version', 'host', 'players', 'economy']) && [1, 2, VERSION].includes(value.version), 'unsupported structure or version.');
+    requireValue(keys(value, ['version', 'host', 'players', 'economy']) && [1, 2, 3, VERSION].includes(value.version), 'unsupported structure or version.');
     requireValue(Array.isArray(value.players) && value.players.length >= 1 && value.players.length <= 4, 'an island has one host and at most three guest heroes.');
     const ids = new Set(), moves = new Set();
     for (const player of value.players) {
-      requireValue(keys(player, ['id', 'name', ...PERSONAL, 'location', ...(value.version >= 2 ? ['rotation'] : []), ...(value.version >= 3 ? ['construction'] : []), 'health', 'inventory']) && typeof player.id === 'string' && UUID.test(player.id) && !ids.has(player.id), 'invalid or repeated hero identity.');
+      requireValue(keys(player, ['id', 'name', ...PERSONAL, 'location', ...(value.version >= 2 ? ['rotation'] : []), ...(value.version >= 3 ? ['construction'] : []), ...(value.version >= 4 ? ['life'] : []), 'health', 'inventory']) && typeof player.id === 'string' && UUID.test(player.id) && !ids.has(player.id), 'invalid or repeated hero identity.');
       ids.add(player.id); playerName(player.name);
       requireValue(plain(player.progress) && Object.keys(player.progress).every(key => ['xp', 'desktopUpgradePoints'].includes(key)) && integer(player.progress.xp) && (player.progress.desktopUpgradePoints === undefined || (Number.isSafeInteger(player.progress.desktopUpgradePoints) && Math.abs(player.progress.desktopUpgradePoints) <= 2147483647)), 'invalid hero progression.');
       requireValue(plain(player.heroUpgrades) && Object.entries(player.heroUpgrades).every(([key, level]) => [...UPGRADES, 'total'].includes(key) && integer(level) && level <= (key === 'total' ? 40 : 5)), 'invalid totem upgrades.');
@@ -53,6 +59,7 @@
       requireValue(player.location === null || vector(player.location, 3), 'invalid hero position.');
       if (value.version >= 2) requireValue(finite(player.rotation), 'invalid hero rotation.');
       requireValue(player.health === null || (keys(player.health, ['current', 'maximum']) && finite(player.health.current) && finite(player.health.maximum) && player.health.current >= 0 && player.health.maximum > 0 && player.health.current <= player.health.maximum), 'invalid hero health.');
+      if (value.version >= 4) requireValue(!validateLife(player.life) || player.location !== null && player.health !== null, 'death lifecycle needs saved position and health.');
       if (value.version >= 3) {
         const held = validateConstruction(player.construction);
         requireValue(!held || player.location !== null, 'held construction needs a saved hero location.');
@@ -85,8 +92,9 @@
       if (this.data.version === 2) {
         for (const player of this.data.players) player.construction = null;
         this.data.economy.pendingPlacements = false;
-        this.data.version = VERSION;
+        this.data.version = 3;
       }
+      if (this.data.version === 3) { for (const player of this.data.players) player.life = null; this.data.version = VERSION; }
     }
     persist() { this.state.userData[KEY] = JSON.stringify(validateCoop(this.data)); }
     addPlayer(name) {
@@ -122,7 +130,7 @@
       return model;
     }
   }
-  const api = { KEY, VERSION, createCoop, validateCoop, validateConstruction, CoopData };
+  const api = { KEY, VERSION, createCoop, validateCoop, validateConstruction, validateLife, CoopData };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftCoopData = api;
 })(globalThis);

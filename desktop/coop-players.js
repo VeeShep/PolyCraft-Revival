@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const { CoopData, validateConstruction } = typeof module !== 'undefined' ? require('./coop-data.js') : root.PolycraftCoopData;
+  const { CoopData, validateConstruction, validateLife } = typeof module !== 'undefined' ? require('./coop-data.js') : root.PolycraftCoopData;
   class CoopPlayers {
     constructor(game, bridge) {
       if (game.desktopPlayers || bridge.coopEconomy || !game.getHero()) throw new Error('This island already has co-op heroes or has no solo hero.');
@@ -96,10 +96,35 @@
       // Complete in-flight deliveries before removing their carrier, so they cannot be lost or paid twice.
       if (carrier.hasAnyFlyingResource()) for (const tween of [...carrier.flyingTweens]) tween.complete();
       const health = hero.getEC('ECHealth'), firearm = hero.getEC('ECFirearm'), inventory = hero.getEC('ECInventory');
-      return { construction, location: Array.from(hero.getv3Location()), rotation: Number(hero.getRotationY()),
+      return { construction, life: this.captureLife(hero), location: Array.from(hero.getv3Location()), rotation: Number(hero.getRotationY()),
         health: { current: Math.max(0, Math.min(health.getHealth(), health.getMaxHealth())), maximum: health.getMaxHealth() },
         inventory: { weapon: inventory.getHeldWeapon(), mainWeapon: firearm.mainWeaponName || null,
           ammo: firearm.getAmmo(), temporaryAmmo: firearm.temporaryWeaponAmmo || 0, carried: [carrier.getResource(0), carrier.getResource(1)] } };
+    }
+    captureLife(hero) {
+      const life = hero.getEC('ECPlayerLife');
+      if (!life) return null;
+      const now = this.game.globals.gameCurrentTime;
+      const phase = life.respawnTime !== undefined ? 'waiting' : life.state === life.states.DYING ? 'dying' : 'normal';
+      return validateLife({ phase, remaining: phase === 'waiting' ? Math.max(0, life.respawnTime - now) : phase === 'dying' ? Math.max(0, life.getDeathAnimationDuration() - (now - life.deathTime)) : 0,
+        location: phase === 'normal' ? null : Array.from(life.getV3RespawnLocation()), lives: life.lives, infiniteLives: !!life.infiniteLives });
+    }
+    restoreLife(hero, saved, health) {
+      validateLife(saved);
+      const life = hero.getEC('ECPlayerLife');
+      if (!saved || saved.phase === 'normal') {
+        if (saved) { life.lives = saved.lives; life.infiniteLives = saved.infiniteLives; }
+        if (health?.current !== 0) return;
+        saved = validateLife({ phase: 'waiting', remaining: life.getRespawnDelay(), location: Array.from(this.game.getHeroRespawnPosition()), lives: life.lives, infiniteLives: !!life.infiniteLives });
+      }
+      life.lives = saved.lives; life.infiniteLives = saved.infiniteLives;
+      if (saved.phase === 'dying') {
+        life.respawnLocation = [...saved.location]; life.beginRespawn();
+        life.deathTime = this.game.globals.gameCurrentTime - life.getDeathAnimationDuration() + saved.remaining;
+      } else {
+        life.scheduleRespawn(saved.location, saved.remaining); life.state = life.states.RESPAWNING;
+        const component = hero.getEC('ECHealth'); component.setInvulnerable(true); component.setDisableHealthBar(true);
+      }
     }
     restoreHero(hero, record) {
       if (record.location === null) return;
@@ -122,8 +147,8 @@
         const health = hero.getEC('ECHealth');
         health.health = health.getMaxHealth() * record.health.current / record.health.maximum;
         health.onHealthChange();
-        if (record.health.current === 0) hero.getEC('ECPlayerLife').scheduleRespawn(this.game.getHeroRespawnPosition(), 0);
       }
+      this.restoreLife(hero, record.life ?? null, record.health);
     }
     spawn(record, model, name, archetype) {
       this.checkWeapons(record); this.checkConstruction(record.construction);

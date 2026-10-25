@@ -37,9 +37,9 @@ const Beta2Saves = require('../reference/beta-2-save-reader/saves.cjs').Saves;
     });
     assert.deepEqual(expected.after, expected.before, 'Real engine solo progress and inventory remain unchanged');
     const migrated = JSON.parse(fs.readFileSync(file));
-    assert.equal(migrated.version, 5); assert.equal(migrated.state.cheats.everEnabled, false);
+    assert.equal(migrated.version, 6); assert.equal(migrated.state.cheats.everEnabled, false);
     assert.deepEqual(JSON.parse(migrated.state.userData.desktopCoop), expected.data);
-    assert.deepEqual(fs.readFileSync(file + '.pre-v5'), before, 'First co-op checkpoint keeps the exact original version 2 save');
+    assert.deepEqual(fs.readFileSync(file + '.pre-v6'), before, 'First co-op checkpoint keeps the exact original version 2 save');
     const old = new Beta2Saves(savesDirectory);
     assert.throws(() => old.load(expected.id), /Unsupported/);
     await page.evaluate(() => sessionStorage.setItem('polycraft-slot', window.polycraft.slot().id));
@@ -54,7 +54,7 @@ const Beta2Saves = require('../reference/beta-2-save-reader/saves.cjs').Saves;
     assert.deepEqual(reloaded.data, expected.data); assert.deepEqual(reloaded.xp, [30, 55]);
     assert.equal(reloaded.upgrades, 2); assert.deepEqual(reloaded.currency, [30, 30]); assert.deepEqual(reloaded.solo, expected.before);
     assert.deepEqual(errors, []);
-    console.log('PASS: visible real engine player-data instances retain independent co-op XP/upgrades, share only the co-op economy, preserve solo amounts/progress, migrate only this slot to format 5 with exact pre-v5 bytes, reject the actual older reader and survive full game reload.');
+    console.log('PASS: visible real engine player-data instances retain independent co-op XP/upgrades, share only the co-op economy, preserve solo amounts/progress, migrate only this slot to format 6 with exact pre-v5 bytes, reject the actual older reader and survive full game reload.');
     console.log('This checks the data/persistence boundary, not separate controlled hero entities or playable co-op.');
   } catch (error) {
     if (application) try { const page = await application.firstWindow(); fs.mkdirSync('test-results', { recursive: true }); await page.screenshot({ path: 'test-results/coop-data-failure.png' }); } catch {}

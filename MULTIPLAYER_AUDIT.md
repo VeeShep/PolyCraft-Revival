@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current death-path audit — Beta 11, 2026-10-25
+## Current lifecycle persistence — Beta 12, 2026-10-25
+
+Co-op schema 4 / envelope 6 stores phase, fractional remaining simulation time, respawn destination and lives/infinite-lives. Restore offsets timing to the new simulation clock without replaying death events, and disconnected/offline time is frozen. Unknown legacy lifecycle is explicit null; zero-health legacy records restart a full original wait. Movement and action validation block incapacitated heroes even with positive health. Schema-3 reader copies/hashes prove older-app refusal; exact pre-v6 backups and retry/recovery/import checks preserve prior files. Solo envelope remains 2; game/signaling wire formats are unchanged.
+
+Guest revive/countdown presentation, real lifecycle save/reconnect/exit/PvP and native/physical-network acceptance remain open. See RESTORATION_STATUS.md for the 218-check scope and migration policy.
+
+## Previous death-path audit — Beta 11, 2026-10-25
 
 Original ECPlayerLife keeps simulation for every hero but gates local revive controls/legacy kill-cheat consumption to the host hero in co-op. Missing-attacker faction/metric accesses are guarded, and the kill cheat avoids starting a second death after lethal damage already did so. Actual AST-extracted methods have regression coverage; graphical/physical/native acceptance remains open.
 

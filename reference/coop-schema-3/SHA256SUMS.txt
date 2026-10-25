@@ -1,0 +1,2 @@
+48e593acd1f8c119715085e1b265f94dde33750b0b3348571844ba6713423284  reference/coop-schema-3/saves.cjs
+793c1cd7bc35aed6210e07d1fbdc3ebf885ca8482625c83a8345b7afd6f0d826  reference/coop-schema-3/coop-data.js

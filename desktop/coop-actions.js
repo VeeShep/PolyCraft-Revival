@@ -25,17 +25,18 @@
       const target = game.getGameEntityByName(id);
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
+      const life = hero.getEC('ECPlayerLife'), incapacitated = life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL);
       if (['held', 'cancelBuild'].includes(type) || target === hero && ['build', 'preview'].includes(type)) {
         if (target !== hero) return 'Only your own held building can be controlled.';
         if (type === 'held') return { message: 'Held building state.', held: game.desktopConstruction?.heldStatus(hero) || null };
-        if (game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isThrowing()) return 'Finish the current action first.';
+        if (incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isThrowing()) return 'Finish the current action first.';
         if (!builder.isBuilding() || action?.archetype !== builder.getHeldObjectName()) return 'The held building changed. Wait for a fresh selection.';
         if (type === 'cancelBuild') return game.desktopConstruction?.cancelHeld(hero) || 'Construction is not ready.';
         if (action.index !== 0) return 'Invalid held building selection.';
         return game.desktopConstruction?.[type === 'preview' ? 'heldPreview' : 'placeHeld'](hero, action.location) || 'Construction is not ready.';
       }
       if (action?.archetype !== undefined) return 'Only your own held building can be controlled.';
-      if (game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
+      if (incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
       if (type === 'upgrade') return upgradeTotem(game, hero, players, target, action, controls);
       const totem = type === 'target' ? totemMenu(hero, target, controls) : null;
