@@ -2,6 +2,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('desktop', {
   version: () => ipcRenderer.invoke('polycraft:version'),
+  direct: (operation, options) => ipcRenderer.invoke('polycraft:direct', operation, options),
+  onDirect: callback => {
+    const listener = (_event, value) => callback(value);
+    ipcRenderer.on('polycraft:direct-event', listener);
+    return () => ipcRenderer.removeListener('polycraft:direct-event', listener);
+  },
   reportError: (message, stack) => ipcRenderer.invoke('polycraft:reportError', message, stack),
   reportGraphics: json => ipcRenderer.invoke('polycraft:reportGraphics', json),
   list: () => ipcRenderer.invoke('polycraft:list'),

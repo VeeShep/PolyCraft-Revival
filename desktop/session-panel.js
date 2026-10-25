@@ -10,7 +10,8 @@
       if (controls.manager().getActiveGameState().name !== 'GamestatePlaying') throw new Error('Return to the island with Play before connecting.');
       const iceServers = r.PolycraftMultiplayer.validateIceServers(options.iceServers);
       if (role === 'host') {
-        const transport = new r.PolycraftMultiplayer.HostSession({ pvp: options.pvp, iceServers,
+        const Transport = options.direct ? r.PolycraftDirect.DirectHostSession : r.PolycraftMultiplayer.HostSession;
+        const transport = new Transport({ pvp: options.pvp, iceServers, desktop: r.desktop,
           onState: (peer, state, details) => {
             if (state === 'closed') for (const [id, offer] of this.offers) if (offer.peer === peer) { this.offers.delete(id); if (this.outgoing === offer.invitation) this.outgoing = ''; }
             this.notify('Guest connection: ' + state + (details.path ? ' · ' + details.path : '') + (details.reason ? ' · ' + details.reason : ''));
@@ -18,16 +19,18 @@
           onError: (_peer, error) => this.notify(error.message) });
         let world;
         try {
+          if (options.direct) await transport.listen(options.direct);
           world = await r.PolycraftOnlineWorld.startHostingWorld(controls, transport);
           await world.enablePlayers(r.polycraft.bridge);
           this.transport = transport; this.world = world; this.role = role;
-          this.notify('Hosting this test island. Add or select a guest hero, then create an invitation. PvP ' + (transport.pvp ? 'on.' : 'off.'));
-        } catch (error) { if (world) await world.close(); else transport.close(); throw error; }
+          this.notify('Hosting this test island. Add or select a guest hero, then create an invitation. PvP ' + (transport.pvp ? 'on.' : 'off.') + (transport.endpoint ? ' Direct TCP ' + transport.endpoint.port + '. ' + (transport.endpoint.mapped ? 'UPnP mapping created. ' : '') + transport.endpoint.warning : ''));
+        } catch (error) { if (world) await world.close(); else transport.close(); await transport.stopped; throw error; }
       } else {
         let joined;
         try {
           await r.desktop.onlineMode(true);
-          joined = await r.PolycraftMultiplayer.PeerLink.join(invitation, { iceServers,
+          const Peer = invitation.trim().startsWith('polycraft-direct1.') ? r.PolycraftDirect.DirectPeer : r.PolycraftMultiplayer.PeerLink;
+          joined = await Peer.join(invitation.trim(), { iceServers, desktop: r.desktop,
             onError: error => this.notify(error.message),
             onState: (state, details) => {
               this.notify('Host connection: ' + state + (details.path ? ' · ' + details.path : '') + (details.reason ? ' · ' + details.reason : ''));
@@ -35,7 +38,8 @@
             } });
           this.world = new r.PolycraftGuestWorld.GuestWorld(controls, joined.connection);
           this.connection = joined.connection; this.outgoing = joined.reply; this.role = role;
-          this.notify('Send this reply to the host. Keep this game open while the host accepts it. PvP ' + (joined.connection.pvp ? 'on.' : 'off.'));
+          joined.connection.activate?.();
+          this.notify((joined.reply ? 'Send this reply to the host. Keep this game open while the host accepts it.' : 'Direct connection established. No reply is needed; return to game.') + ' PvP ' + (joined.connection.pvp ? 'on.' : 'off.'));
         } catch (error) { joined?.connection.close(); await r.desktop.onlineMode(false); throw error; }
       }
       return true;
@@ -48,7 +52,7 @@
     async invite(id) {
       if (this.role !== 'host') throw new Error('Start hosting first.');
       const offer = await this.world.createPlayerInvitation(id); this.offers.set(id, offer); this.outgoing = offer.invitation;
-      this.notify('Send this invitation to its guest. Paste their reply below when it arrives.');
+      this.notify(this.transport.kind === 'direct' ? 'Send this private invitation to its guest. They connect automatically; no reply is needed.' : 'Send this invitation to its guest. Paste their reply below when it arrives.');
     }
     selectGuest(id) { this.outgoing = this.offers.get(id)?.invitation || ''; this.changed(); }
     async accept(reply) {
@@ -64,7 +68,7 @@
       if (!this.world || this.stopping) return;
       this.stopping = true;
       try {
-        if (this.role === 'host') await this.world.close();
+        if (this.role === 'host') { await this.world.close(); await this.transport.stopped; }
         else { this.world.close(); await this.runtime.desktop.onlineMode(false); }
         this.world = this.connection = this.transport = this.role = null; this.outgoing = ''; this.offers.clear();
         this.notify('Session ended. Returned to the solo island.');
@@ -104,6 +108,9 @@
       $('end-session').disabled = busy || !session.world;
       $('connection-outgoing').value = session.outgoing || '';
       $('copy-connection').disabled = busy || !session.outgoing;
+      $('direct-settings').hidden = $('connection-method').value !== 'direct';
+      $('webrtc-settings').hidden = $('connection-method').value === 'direct';
+      $('reply-controls').hidden = session.transport?.kind === 'direct';
       if (session.role === 'host') {
         const selected = $('guest-hero').value;
         $('guest-hero').replaceChildren(...session.world.players.registry.data.players.filter(player => player.id !== session.world.players.registry.data.host).map(player => {
@@ -132,7 +139,9 @@
     }
     async function connect(role) {
       if (!await disclaimer()) return;
-      const options = { pvp: $('session-pvp').checked, iceServers: iceSettings($('stun-urls').value, $('turn-urls').value, $('turn-user').value, $('turn-password').value, root.PolycraftMultiplayer.validateIceServers) };
+      const direct = role === 'host' ? $('connection-method').value === 'direct' : $('join-invitation').value.trim().startsWith('polycraft-direct1.');
+      const options = { pvp: $('session-pvp').checked, iceServers: direct ? [] : iceSettings($('stun-urls').value, $('turn-urls').value, $('turn-user').value, $('turn-password').value, root.PolycraftMultiplayer.validateIceServers),
+        ...(direct ? { direct: { address: $('direct-address').value.trim(), port: Number($('direct-port').value), upnp: $('direct-upnp').checked } } : {}) };
       await session.connect(role, options, $('join-invitation').value, true);
       if (session.role === 'guest') session.world.original.paused = returnPause;
       $('join-invitation').value = ''; $('turn-user').value = ''; $('turn-password').value = '';
@@ -142,6 +151,7 @@
       returnPause = root.polycraft.controls.paused; root.polycraft.controls.pause(true); render(); dialog.showModal();
     }));
     $('host-island').addEventListener('click', () => run(() => connect('host')));
+    $('connection-method').addEventListener('change', render);
     $('join-island').addEventListener('click', () => run(() => connect('guest')));
     $('add-guest').addEventListener('click', () => run(() => { $('guest-hero').value = session.addGuest($('guest-name').value); session.selectGuest($('guest-hero').value); $('guest-name').value = ''; }));
     $('guest-hero').addEventListener('change', () => session.selectGuest($('guest-hero').value));

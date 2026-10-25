@@ -70,6 +70,29 @@ test('guest join supplies local ICE settings, installs the renderer before retur
   assert.deepEqual(f.calls[1][2].iceServers, servers);
   await f.session.end(); assert.equal(f.session.role, null); assert.deepEqual(f.calls.at(-1), ['online', false]);
 });
+test('direct menu hosting waits for its listener, uses no reply and activates guests only after installing their world', async () => {
+  const f = fixture();
+  f.runtime.PolycraftDirect = { DirectHostSession: class extends f.runtime.PolycraftMultiplayer.HostSession {
+    constructor(options) { super(options); this.kind = 'direct'; }
+    async listen(options) { f.calls.push(['listen', options]); this.endpoint = { port: options.port, mapped: true, warning: '' }; }
+    close() { super.close(); this.stopped = Promise.resolve(); }
+  }, DirectPeer: { async join(text) {
+    f.calls.push(['direct-join', text]);
+    return { connection: { pvp: false, close() {}, activate() { assert.equal(f.calls.at(-1)[0], 'guest-world'); f.calls.push(['activate']); } }, reply: '' };
+  } } };
+  const direct = { address: '203.0.113.1', port: 37841, upnp: true };
+  await f.session.connect('host', { direct, iceServers: [], pvp: false }, '', true);
+  assert.deepEqual(f.calls.map(call => call[0]), ['transport', 'listen', 'host', 'enable']);
+  assert.match(f.session.message, /UPnP mapping created/);
+  const id = f.session.addGuest('One'); await f.session.invite(id); assert.match(f.session.message, /no reply/);
+  await f.session.end();
+  await f.session.connect('guest', { iceServers: [] }, 'polycraft-direct1.offer', true);
+  assert.equal(f.session.outgoing, ''); assert.match(f.session.message, /No reply is needed/);
+  await f.session.end();
+  const failure = fixture(); failure.runtime.PolycraftDirect = { DirectHostSession: class extends failure.runtime.PolycraftMultiplayer.HostSession { async listen() { throw new Error('port already in use'); } } };
+  await assert.rejects(failure.session.connect('host', { direct, iceServers: [] }, '', true), /port already/);
+  assert.deepEqual(failure.calls.map(call => call[0]), ['transport', 'transport-close']);
+});
 test('menu cannot start a session from an original game menu or an existing externally started session', async () => {
   for (const setup of [f => { f.controls.onlineWorld = {}; }, f => { f.controls.ready = () => false; }, f => { f.controls.manager = () => ({ getActiveGameState: () => ({ name: 'GamestatePaused' }) }); }]) {
     const f = fixture(); setup(f); await assert.rejects(f.session.connect('host', { iceServers: [] }, '', true)); assert.deepEqual(f.calls, []);

@@ -32,7 +32,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
     dialog: {}, Menu: { buildFromTemplate: value => value, setApplicationMenu() {} }
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../desktop/main.cjs'), 'utf8'), {
-    require: name => name === 'electron' ? electron : name === './saves.cjs' ? { Saves: class {} } : name === './logging.cjs' ? { createLogger: () => () => {} } : require(name),
+    require: name => name === 'electron' ? electron : name === './saves.cjs' ? { Saves: class {} } : name === './logging.cjs' ? { createLogger: () => () => {} } : name === './direct-network.cjs' ? require('../desktop/direct-network.cjs') : require(name),
     __dirname: path.join(__dirname, '../desktop'), process: { env: {}, platform: 'darwin', versions: {}, on() {} }, URL, Response
   });
   await new Promise(resolve => setImmediate(resolve));
@@ -47,6 +47,8 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
   assert.equal(ask(contents, 'fullscreen', { ...local, requestingUrl: 'https://example.com' }), false);
   assert.equal(ask(contents, 'media', local), false);
   const event = { sender: contents, senderFrame: contents.mainFrame };
+  await assert.rejects(handlers['polycraft:direct']({ sender: null, senderFrame: contents.mainFrame }, 'start', {}), /Invalid caller/);
+  await assert.rejects(handlers['polycraft:direct'](event, 'unexpected', {}), /Invalid direct network operation/);
   assert.equal(await handlers['polycraft:version'](event), 'test');
   await handlers['polycraft:reportGraphics'](event, JSON.stringify({ defaultDepthBits: 24, floatPolicy: 'highp' }));
   for (const value of [null, '{}'.repeat(5000), '[]', 'null', 'broken']) await assert.rejects(handlers['polycraft:reportGraphics'](event, value));

@@ -4,6 +4,7 @@ const path = require('node:path');
 const { readFile } = require('node:fs/promises');
 const { Saves } = require('./saves.cjs');
 const { createLogger } = require('./logging.cjs');
+const { DirectNetwork } = require('./direct-network.cjs');
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'polycraft', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }]);
 // Test runs use an isolated directory and never touch a player's saves.
@@ -11,6 +12,7 @@ if (process.env.POLYCRAFT_TEST_DATA) app.setPath('userData', path.resolve(proces
 let window;
 let closing = false;
 let saves;
+let direct;
 let log = () => {};
 process.on('uncaughtExceptionMonitor', error => log('main-exception', { message: error.message, stack: error.stack }));
 process.on('unhandledRejection', error => log('main-rejection', { message: String(error), stack: error?.stack }));
@@ -77,6 +79,7 @@ app.whenReady().then(() => {
     return true;
   });
   handle('version', () => app.getVersion());
+  handle('direct', (operation, options) => direct.request(operation, options));
   handle('onlineMode', enabled => {
     if (typeof enabled !== 'boolean') throw new Error('Invalid online mode.');
     window.webContents.setBackgroundThrottling(!enabled);
@@ -84,10 +87,10 @@ app.whenReady().then(() => {
   });
   handle('fullscreen', () => window.setFullScreen(!window.isFullScreen()));
   handle('windowFocused', () => window.isFocused());
-  handle('closeReady', () => { closing = true; window.close(); });
+  handle('closeReady', async () => { await direct.stop(); closing = true; window.close(); });
   handle('closeFailed', async message => {
     const result = await dialog.showMessageBox(window, { type: 'error', message: 'The latest progress could not be saved.', detail: String(message) + '\nYour last successful checkpoint is still available.', buttons: ['Keep playing', 'Quit without saving'], defaultId: 0, cancelId: 0 });
-    if (result.response === 1) { closing = true; window.close(); }
+    if (result.response === 1) { await direct.stop(); closing = true; window.close(); }
   });
   log('startup-phase', { phase: 'dock-icon-start' });
   if (process.platform === 'darwin') app.dock?.setIcon(path.join(root, 'assets/offline-ui/icons/png/512x512.png'));
@@ -98,6 +101,8 @@ app.whenReady().then(() => {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   log('startup-phase', { phase: 'window-created' });
+  direct = new DirectNetwork(event => { if (!window.webContents.isDestroyed()) window.webContents.send('polycraft:direct-event', event); });
+  window.on('closed', () => { direct.stop().catch(error => log('direct-cleanup-failed', { message: error.message })); });
   window.on('enter-full-screen', () => window.webContents.send('polycraft:fullscreen-changed', true));
   window.on('leave-full-screen', () => window.webContents.send('polycraft:fullscreen-changed', false));
   window.on('focus', () => window.webContents.send('polycraft:focus-changed', true));

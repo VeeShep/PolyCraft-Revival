@@ -71,7 +71,7 @@
   }
 
   class PeerLink {
-    constructor({ role, session, peer, nonce, pvp, expires, iceServers = [], onMessage, onState, onError }) {
+    constructor({ role, session, peer, nonce, pvp, expires, iceServers = [], onMessage, onState, onError, direct = false }) {
       requireValue(['host', 'guest'].includes(role) && [session, peer, nonce].every(id => typeof id === 'string' && UUID.test(id)) && typeof pvp === 'boolean', 'Invalid peer settings.');
       this.role = role;
       this.session = session;
@@ -88,6 +88,7 @@
       this.sentSequence = this.receivedSequence = this.sentTransfer = this.receivedTransfer = 0;
       this.pendingSends = 0;
       this.queue = Promise.resolve();
+      if (direct) return; // Direct TLS links reuse the same bounded, validated game framing.
       this.pc = new RTCPeerConnection({ iceServers: validateIceServers(iceServers) });
       this.pc.onconnectionstatechange = () => {
         if (this.closed) return;
@@ -296,7 +297,7 @@
       this.incoming = null;
       this.abort.abort();
       this.channel?.close();
-      this.pc.close();
+      this.pc?.close();
       this.emit('closed', { reason });
     }
   }

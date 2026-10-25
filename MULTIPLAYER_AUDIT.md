@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. The goal remains active.
 
-## Current experimental connection menu — Beta 4, 2026-10-24
+## Current direct connection option — Beta 5, 2026-10-24
+
+The experimental panel now supports **IPv4 TCP/TLS direct hosting** alongside WebRTC. `direct-network.cjs` owns native TLS sockets, fixed-port listening, pinned-certificate checks, single-use expiring tokens, bounded framing/IPC receive backpressure and opt-in UPnP cleanup. `direct-transport.js` adapts it to the existing PeerLink framing and HostSession lifecycle; HostWorld/GuestWorld, saved hero assignment, action validation and resync remain shared. Native host access is authenticated before gameplay dispatch. Guest data remains blocked until its world installs receive handlers.
+
+Direct uses TCP 37841 by default. Only the host forwards/allows inbound TCP; optional UPnP attempts only a renewable temporary TCP lease, with NAT-PMP/permanent leases disabled. No discovered address or mapping establishes actual external reachability. No automatic firewall changes, NAT traversal guarantee or IPv6 support is claimed. Manual forwarding/UPnP need physical-network acceptance; Cloudflare TURN remains a researched, unconfigured WebRTC fallback. See current validation and open gates in RESTORATION_STATUS.md.
+
+## Previous experimental connection menu — Beta 4, 2026-10-24
 
 The user's explicit early-playtest request supersedes the earlier instruction to keep every Host/Join control hidden until the entire gameplay loop is finished. Beta 4 adds an **experimental** header menu with a blocking major-development disclaimer before host/join. It reuses the existing transport/world/registry APIs for saved guest identities, per-guest invitations/replies, connection cancellation, graceful host save/exit and guest restoration. It is not a claim of stable or complete co-op.
 

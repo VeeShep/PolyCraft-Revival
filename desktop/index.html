@@ -11,6 +11,7 @@
   <script defer src="graphics.js"></script>
   <script defer src="retro-ui.js"></script>
   <script defer src="multiplayer.js"></script>
+  <script defer src="direct-transport.js"></script>
   <script defer src="world-state.js"></script>
   <script defer src="coop-data.js"></script>
   <script defer src="coop-players.js"></script>
@@ -46,7 +47,15 @@
     <p>Use a disposable test island. The host saves shared progress; guest solo islands stay separate. Menus do not pause an online island.</p>
     <p id="multiplayer-status" role="status">Not connected.</p>
     <fieldset id="connection-settings">
-      <details><summary>Internet connection settings</summary>
+      <label>Hosting connection<select id="connection-method"><option value="webrtc">WebRTC · LAN or STUN/TURN</option><option value="direct">Direct · TCP forwarding or UPnP</option></select></label>
+      <div id="direct-settings" hidden>
+        <p>No relay or account needed. Allow the chosen TCP port through the host firewall. For internet guests, forward it to this computer's local IPv4 address in your router. CGNAT/double NAT may prevent connections; use WebRTC with TURN instead.</p>
+        <label>Address guests will connect to<input id="direct-address" maxlength="253" placeholder="Public IPv4/hostname; local IPv4 for LAN" autocomplete="off"></label>
+        <label>TCP port<input id="direct-port" type="number" min="1024" max="65535" value="37841"></label>
+        <label class="toggle"><input id="direct-upnp" type="checkbox"> Ask my router to open this port using UPnP</label>
+        <p>UPnP is optional and opens only this TCP port while hosting. Leave the address blank to use the address reported by the router. Share invitations privately: each contains access to its assigned guest hero. End hosting removes the automatic mapping; crashes may leave it until the lease expires.</p>
+      </div>
+      <details id="webrtc-settings"><summary>Internet connection settings</summary>
         <p>Blank settings try LAN only. For internet play, enter your STUN server and optional TURN relay on both computers. No relay is provided. Credentials stay in memory for this session.</p>
         <label>STUN URLs · one per line<textarea id="stun-urls" rows="2" maxlength="16000" placeholder="stun:your-server:3478"></textarea></label>
         <label>TURN URLs · one per line<textarea id="turn-urls" rows="2" maxlength="16000" placeholder="turns:your-relay:5349?transport=tcp"></textarea></label>
@@ -56,14 +65,14 @@
       <label class="toggle"><input id="session-pvp" type="checkbox"> Enable hero PvP when hosting · fixed for the session</label>
       <button id="host-island">Host this test island</button>
       <label>Host invitation<textarea id="join-invitation" rows="3" maxlength="131072" spellcheck="false"></textarea></label>
-      <button id="join-island">Join and create reply</button>
+      <button id="join-island">Join invitation</button>
     </fieldset>
     <fieldset id="host-connections" hidden>
       <label>Guest hero<select id="guest-hero"></select></label>
       <label>New guest name<input id="guest-name" maxlength="80" placeholder="Player 2"></label>
       <button id="add-guest">Add guest hero</button><button id="create-invitation">Create invitation</button><button id="cancel-invitation">Cancel selected connection</button>
-      <label>Guest reply<textarea id="guest-reply" rows="3" maxlength="131072" spellcheck="false"></textarea></label>
-      <button id="accept-reply">Accept guest reply</button>
+      <div id="reply-controls"><label>Guest reply<textarea id="guest-reply" rows="3" maxlength="131072" spellcheck="false"></textarea></label>
+      <button id="accept-reply">Accept guest reply</button></div>
     </fieldset>
     <label id="outgoing-label">Invitation or reply to send<textarea id="connection-outgoing" rows="3" readonly spellcheck="false"></textarea></label>
     <button id="copy-connection">Copy invitation / reply</button>
