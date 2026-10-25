@@ -1,6 +1,18 @@
-# PolyCraft Offline
+# PolyCraft Revival
 
-An unofficial offline desktop restoration of PolyCraft 1.0.0.25, using its existing game engine and assets inside Electron. No game account, Chrome extension or internet connection is required to play.
+An unofficial, community-driven restoration of PolyCraft 1.0.0.25. The aim is to keep the original game playable after its online services disappeared, preserve its distinctive art and progression, and give players control over their islands. It uses the original game engine and assets inside a desktop app.
+
+## Why this project exists
+
+- **Preserve the original experience.** Keep the artwork, menus, mechanics and progression recognizable while repairing bugs and making the recovered code maintainable.
+- **Make the game independent.** Solo play needs no account, payment service, Chrome extension or internet connection. There are no paid purchases; premium claims are available only as optional cheats, while normal crafting and building costs remain.
+- **Keep saves in players' hands.** Named local islands, autosave, recovery backups and import/export let players keep their progress without a hosted account.
+- **Bring friends back to the island.** Build two-to-four-player co-op around one host-owned island, with shared resources and individual hero progression. Multiplayer is still in development.
+- **Expand after restoration is stable.** Extra totem upgrades, sprint, armor and concept-art-inspired content belong after the original game and multiplayer pass acceptance.
+
+Work follows **foundations → multiplayer → gameplay expansion**. Playtester reports help determine what is ready; producing a package alone does not establish that a platform plays correctly.
+
+## Current downloads and status
 
 Download **[PolyCraft Offline 1.0.0-beta.2](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** for Apple Silicon or Intel Mac, Windows x64 or ARM64, and Linux x64 (AppImage or tar.gz). Read the attached `START_HERE.txt`; `SHA256SUMS.txt` and `BUILD_INFO.json` provide checksums and build provenance. This is a beta prerelease for offline solo play. Mac builds are not notarized; Windows builds are unsigned. Native platform acceptance remains open. Build output in `dist/` is excluded from Git, so cloning the repository does not download a playable package. The original Beta 1 packages remain unchanged.
 
@@ -12,6 +24,8 @@ Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadma
 
 ## Play
 
+The project is **PolyCraft Revival**; current packages and save folders use the application name **PolyCraft Offline**.
+
 Extract the package for your computer. On Mac, move **PolyCraft Offline.app** to Applications and open it. On Windows, keep the extracted folder together and open **PolyCraft Offline.exe**.
 
 Linux x64 has an **AppImage** (mark it executable, then open it) and a portable **tar.gz** alternative (extract and run `polycraft-offline` inside its folder). Read **START_HERE.txt** from the Beta 2 release before sharing. Use `mac-arm64` for Apple Silicon and `mac-x64` for Intel. No Node.js or separate Electron installation is needed for packaged builds.
@@ -19,6 +33,14 @@ Linux x64 has an **AppImage** (mark it executable, then open it) and a portable 
 Create a named save slot, then click **Play** in the original game menu. Creating a slot replaces the old account step; PolyCraft still handles the island and tutorial itself.
 
 The top bar provides **Save now**, **Saves** and **Fullscreen**. Move with **W/A/S/D** or click-to-move; **left/right arrows** rotate the camera. The original controls remain available, including **P** to pause and **F** for the game's fullscreen view.
+
+## Multiplayer: can I join a friend's game?
+
+**There is no player-facing Host/Join screen yet.** Published Beta 2 is for offline solo play. Current development builds contain co-op systems and automated development fixtures, but installing one does not give you a supported way to host or join from the launcher. There is no public lobby, room code or multiplayer address to enter.
+
+The planned flow is to host a co-op island and exchange a separate invitation and reply with each guest. The host owns the island save; guests keep separate co-op heroes on that island. Menus stop local input while the online world keeps running. Internet connections may need STUN or an optional TURN relay; a relay-free connection cannot be promised for every network.
+
+For now, contributors can use the disposable development checks described below to exercise co-op. They are automated tests, not a player joining guide. Host/Join UI, remaining gameplay integration and cross-platform/real-network acceptance are still required before public co-op. See [the current roadmap](RESTORATION_STATUS.md) and [multiplayer audit](MULTIPLAYER_AUDIT.md).
 
 ## Shop and cheats
 
@@ -36,7 +58,7 @@ The top bar provides **Save now**, **Saves** and **Fullscreen**. Move with **W/A
 
 Select a player-built building on the island and choose **Demolish** in its existing action wheel, alongside Move and Upgrade. The confirmation matches the original **Not enough resources** screen, with its turquoise frame and wide orange action button inside. Choose the **X** or press **Escape** to keep the building; choose **Demolish** to remove it. The game pauses during confirmation and saves the removal immediately. There is no resource refund; removing storage lowers capacity and discards resources above the remaining capacity.
 
-The action is unavailable on original map structures, HQs/territory anchors, unfinished or moving structures, and buildings with structures above them. Remove stacked buildings from the top down. The game’s normal cleanup updates building limits, worker housing and storage.
+The action is unavailable on original map structures, HQs/territory anchors, unfinished or moving structures, and buildings with structures above them. Remove stacked buildings from the top down. The game’s normal cleanup updates building limits, worker housing and storage. In the Beta 3 development source, workshops and critical structures are also protected, with additional HQ/workshop archetype checks at every tier.
 
 ## Hidden loading-tip viewer
 
@@ -138,7 +160,13 @@ If macOS adds Finder metadata to bundles while building inside Documents or a sy
 npm run build:mac -- --config.directories.output=/private/tmp/polycraft-build
 ```
 
-Playable multiplayer remains in development; it is not available in the launcher yet. Transport, host simulation, guest rendering/streaming, host-selected invitation identities and separate saved models bound to live co-op heroes are implemented for development checks. Guests can move their assigned hero using WASD or arrows in the focused canvas; menu/focus loss stops movement. Left-clicking a nearby resource or an eligible weapon target sends a host-validated action using the original gathering/weapon code. Selecting an eligible owned building shows the original Demolish button and confirmation artwork; Escape cancels local menus. The host rechecks protection and saves removal before confirming success. Guest menus block local movement while the shared world continues. A development build API now validates original dispenser ownership, current costs/prerequisites/caps and real placement, reserves in-flight capacity and saves after the original throw creates its scaffold. Guests can select original building products, inspect host-validated red/green footprints, click to place, repeat eligible blueprints and cancel with Escape or the original Cancel button. Previewing spends nothing; placement still rechecks original rules and costs. Gathering requires walking into reach; line placement, special dispensers/upgrades, charged attacks, camera-control parity, full HUD and the co-op progression loop remain unfinished. Guest totem menus use the original definitions and artwork. The host validates earned-point purchases and eligible 75-Amber boosts for the assigned hero, rechecks stale offers and saves before confirming. Upgrade levels stay personal; Amber is shared. Agility speed purchases and restored effects after reconnect have visible acceptance; the other effects and broader progression still need playtesting. Guests smooth received position, rotation, scale and animation poses over 100–250 ms, with camera/menu/picking coordinates following the displayed positions. Teleports, model/visibility changes and long update gaps snap instead. This adds a short visual delay; local movement prediction and real-network performance remain unfinished. World transfers start with a full snapshot, send changed fields between five-second full refreshes, and request an immediate full refresh if an update has the wrong baseline. Recovery briefly blocks that guest’s input while retaining its last valid world; the host and other players continue. An unanswered recovery ends with a rejoin error after 15 seconds. Invitations require matching development runtime `polycraft-1.0.0.25-coop-9`; saves are unchanged. The fixed session PvP rule permits only registered heroes to damage allied heroes; friendly workers and buildings remain protected. The live adapter preserves solo progression/inventory while hosting, targets level-ups and reward statistics to the earning hero, and saves/restores co-op inventory. Held construction must finish before removing heroes or ending the current development session. Older development invitations must be recreated. Details and remaining acceptance gates are tracked in [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md). Cloud saves, online leaderboards and migration from the original account system are not implemented. Original assets and third-party notices remain in the source.
+### Co-op development status
+
+The development adapters cover host-authoritative simulation, assigned guest heroes, movement, gathering/combat, original-style construction/demolition and totem purchases. Guests render interpolated world updates between full snapshots every five seconds, with automatic full recovery after a baseline mismatch. Guest Pause/Resume is local; online menus do not pause the host world. Only the host controls cheats, and the session's PvP setting permits hero-versus-hero damage while protecting friendly workers/buildings.
+
+Co-op progress is saved separately from solo progression on the host island. Current schema 3 / save format 5 includes held construction; in-flight throws and pending consumption must settle before capture. Guest controls for restored held items, death/respawn, full HUD/camera, Host/Join and complete gameplay integration remain open. Use matching development invitations; older invitations must be recreated. Cloud saves and original-account migration are not implemented.
+
+Same-machine checks are evidence for those tested paths, not complete co-op acceptance. The latest all-totem/four-player regression remains incomplete after focus-related failures, and visible tests are currently deferred at the user's request. Consult [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the exact source/checkpoint and [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md) for technical details.
 
 ### Builds on GitHub
 

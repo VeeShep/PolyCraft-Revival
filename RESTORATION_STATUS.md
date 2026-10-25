@@ -12,6 +12,11 @@ Preserve the original appearance and progression while making the game independe
 - Source acceptance: 137 passing unit/regression checks, visible disposable Mac solo save/reload acceptance and same-Mac four-player development checks, including movement, state recovery and original totem purchases. These are source/runtime checks; this publishing pass launched no game tests and changed no personal islands.
 - This is the current offline solo beta. Co-op remains development-only with no public Host/Join screen. Native Intel Mac, Windows x64/ARM64, complete Linux gameplay, native icon appearance, cross-platform multiplayer and real-network acceptance remain open. Mac packages are unnotarized; Windows unsigned. The Nvidia tester's successful Beta 2 Z-fighting report does not close broader graphics or gameplay gates.
 
+### Project identity and joining guidance — 2026-10-24
+
+- README now identifies the project as **PolyCraft Revival** and explains its preservation, independent offline play, optional cheats, player-owned saves, co-op and later expansion goals. Packaged app names, save paths, release assets and metadata remain PolyCraft Offline; this is a documentation update, not an application/save-folder rename.
+- Added a clear player-facing joining-status section: published Beta 2 is solo, development builds do not yet expose Host/Join, and the disposable co-op fixtures are not a supported player joining workflow. Condensed development details and corrected the obsolete blanket held-item shutdown restriction for schema 3. Existing acceptance limits and original notices remain.
+
 ### Current source: pause menus, protected buildings and Linux ARM64 — 2026-10-24
 
 - Guest presentation now draws the original Pause icon and a local Resume menu using original background/logo/button artwork. P opens/toggles it; Escape closes it. Movement stops while open; snapshots and shared host simulation continue. The guest menu currently provides Resume only; the complete solo settings menu is not exposed to guests. Solo/host pause transitions now follow the active menu state rather than a clock flag, so an already-paused simulation does not turn a Pause click into Play.
