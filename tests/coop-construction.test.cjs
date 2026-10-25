@@ -12,7 +12,7 @@ function setup() {
   const actor = () => {
     const state = { resource: [100, 100], amber: 100, held: false, throwing: false, valid: true };
     const data = { adjustResource: (index, amount) => { state.resource[index] += amount; }, playerData: { adjustSoftCurrency: amount => { state.amber += amount; } } };
-    const hero = { getEC: name => name === 'ECPlayerBuilder' ? builder : data };
+    const hero = { getEC: name => name === 'ECPlayerBuilder' ? builder : name === 'ECHealth' ? { getHealth: () => 10 } : name === 'ECPlayerData' ? data : undefined };
     const builder = { entity: hero, getHeldObjectName: () => 'wall', getMoveFromEntity: () => null, getv3BuildLocation: location => location,
       canBuildAtPosition: () => state.valid, placeInHand: () => { state.held = true; builder.heldEntity = {}; }, isBuilding: () => state.held, isThrowing: () => state.throwing, clearInHand: () => { state.held = false; builder.heldEntity = null; },
       attemptToPlaceBuilding: () => { state.throwing = true; state.held = false; state.reservation = construction.reserve(builder, 'wall'); return true; } };

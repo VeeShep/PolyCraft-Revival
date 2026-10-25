@@ -12,7 +12,7 @@
     receive(value) {
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
       const held = value?.archetype !== undefined;
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
       if (revive && (typeof value.amber !== 'boolean' || typeof value.episode !== 'number' || !Number.isFinite(value.episode) || Math.abs(value.episode) > 1e9)) throw new Error('Invalid revive choice.');
       if (value.type === 'cancelBuild' && !held || held && (!(placement || value.type === 'cancelBuild') || typeof value.archetype !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.archetype))) throw new Error('Invalid held building selection.');
       if (placement && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 32 || !Array.isArray(value.location) || value.location.length !== 3 || ![0, 1, 2].every(index => typeof value.location[index] === 'number' && Number.isFinite(value.location[index]) && Math.abs(value.location[index]) <= 1e6))) throw new Error('Invalid building placement.');
@@ -52,19 +52,20 @@
       }
       if (action?.archetype !== undefined) return 'Only your own held building can be controlled.';
       if (incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
+      if (type === 'move') return game.desktopConstruction?.move(hero, target) || 'Construction is not ready.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
       if (type === 'upgrade') return upgradeTotem(game, hero, players, target, action, controls);
       const totem = type === 'target' ? totemMenu(hero, target, controls) : null;
       if (totem) return { message: 'Choose a hero upgrade. Escape cancels.', totem };
       const construction = type === 'target' ? game.desktopConstruction?.menu(hero, target) : null;
-      if (construction?.products.length) return { message: 'Choose a building. Escape cancels.', construction };
+      if (construction && (construction.products.length || construction.move)) return { message: 'Choose a building action. Escape cancels.', construction };
       const building = controls?.demolitionInfo(target);
       if (type === 'demolish') {
         if (!building || building.reason) return building?.reason || 'This building cannot be demolished.';
         controls.demolishBuilding(id);
         return { message: 'Building demolished and saved.', save: true };
       }
-      if (building) return { message: building.reason || 'Building selected.', building: { id: building.id, name: building.name, reason: building.reason } };
+      if (building) return { message: building.reason || 'Building selected.', building: { id: building.id, name: building.name, reason: building.reason, movable: !!game.desktopConstruction?.canMove(hero, target) } };
       const resource = target.getEC('ECResourceDispenser');
       if (resource) {
         const interaction = target.getEC('ECInteractable');

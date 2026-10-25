@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { GuestConstruction } = require('../desktop/guest-construction.js');
 const product = () => ({ index: 0, name: 'Wall', archetype: 'wall', costs: [0, 100, 0], valid: true, affordable: true, time: 10, repeat: true });
-const menu = () => ({ type: 'target', sequence: 1, construction: { source: 'Workshop', products: [product()] } });
+const menu = () => ({ type: 'target', sequence: 1, construction: { source: 'Workshop', move: false, products: [product()] } });
 function setup() {
   const sent = [], drawn = [], sprites = []; let sequence = 1, clicked;
   const builder = { formatTimeToString: String, getv4ValidBuildPositionTextureColor: () => [0, 1, 0, 1], getv4InvalidBuildPositionTextureColor: () => [1, 0, 0, 1], getBuildingGuidelineTexture: () => 'textures/block.dds' };
@@ -95,4 +95,17 @@ test('protected held objects cannot be cancelled; local focus/menu hiding never 
   const previous = sent.length; ui.cancel(); ui.receive({ type: 'held', sequence: 999, held: { archetype: 'wall', quantity: 1, cancelable: true } }, false);
   assert.equal(ui.placement, null); assert.equal(sent.length, previous);
   for (const held of [{ archetype: 'unknown', quantity: 1, cancelable: true }, { archetype: 'wall', quantity: 0, cancelable: true }, { archetype: 'wall', quantity: 1, cancelable: true, cost: 0 }]) assert.throws(() => ui.receive({ type: 'held', sequence: 1, held }, false), /Invalid held/);
+});
+
+test('the dispenser radial includes original Move artwork without changing product indices, then installs only the acknowledged held item', () => {
+  const { ui, world, sent, drawn, click } = setup(), gui = world.game.getIMGui();
+  gui.getRadialCentre = point => point; gui.addRadialOffset = (center, index, count) => [center[0] + index * 20, count];
+  world.game.getGuiManager = () => ({ addDrawGui() {} }); world.identity = { entity: 'owned' };
+  world.requestMove = source => { ui.cancel(); world.moveRequest = world.sendPlacement('move', source, 0); };
+  const value = menu(); value.construction.move = true; ui.receive(value, true);
+  click('guest-move-Workshop'); ui.update(); assert.equal(sent.at(-1).type, 'move'); assert.equal(sent.at(-1).source, 'Workshop');
+  assert.equal(drawn.find(button => button.guiArchetype === 'move').text, 'Move');
+  ui.receive({ type: 'move', sequence: world.moveRequest, held: { archetype: 'wall', quantity: 1, cancelable: true } }, false);
+  assert.equal(world.moveRequest, null); assert.equal(ui.placement.source, 'owned'); assert.equal(ui.placement.held, true);
+  ui.cancel(); ui.receive({ type: 'move', sequence: 999, held: { archetype: 'wall', quantity: 1, cancelable: true } }, false); assert.equal(ui.placement, null);
 });

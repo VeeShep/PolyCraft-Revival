@@ -8,10 +8,10 @@ test('guest original-style demolition menus use presentation input only, support
   const calls = [], world = Object.create(GuestWorld.prototype);
   let choice = null, radial = false;
   world.guiInput = { down: false, pendingDown: false }; world.movement = { keys: new Set(), nativeFocused: true };
-  world.selectedBuilding = { id: 'storage', name: 'Storage', reason: '' };
+  world.selectedBuilding = { id: 'storage', name: 'Storage', reason: '', movable: false };
   world.scene = { entities: new Map([['storage', { record: { location: [1, 0, 2] } }]]) };
   world.controls = { guiTypes: { BUTTON_ROUND: {} }, drawDemolitionPrompt: building => { assert.equal(building.id, 'storage'); return choice; }, app: { globals: { camera: { worldToScreen: () => [100, 100] } } } };
-  world.game = { getIMGui: () => ({ doButton: options => { assert.equal(options.guiArchetype, 'demolish'); return radial; } }) };
+  world.game = { getIMGui: () => ({ getRadialScaleFactor: () => 1, doButton: options => { assert.equal(options.guiArchetype, 'demolish'); return radial; } }) };
   world.sendTarget = (type, id) => calls.push({ type, id });
   world.updateMenu(); assert.equal(world.localMenu(), true); assert.equal(world.demolition, undefined);
   radial = true; world.updateMenu(); assert.equal(world.demolition.id, 'storage'); assert.equal(world.selectedBuilding, null);
@@ -238,7 +238,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(world.identity.playerId, welcome.playerId); assert.equal(connection.closed, undefined);
   world.targetSequence = 1;
   world.selectionRequest = 1;
-  const selection = { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'storage', name: 'Storage', reason: '' } };
+  const selection = { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'storage', name: 'Storage', reason: '', movable: false } };
   assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, building: { ...selection.building, reason: 5 } } }), /Invalid demolition/);
   assert.throws(() => connection.onMessage({ kind: 'result', payload: { ...selection, type: 'demolish' } }), /Invalid demolition/);
   connection.onMessage({ kind: 'result', payload: selection }); assert.deepEqual(world.selectedBuilding, selection.building);
@@ -256,6 +256,9 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   world.targetSequence = 5; world.reviveRequest = 5;
   connection.onMessage({ kind: 'result', payload: { type: 'revive', sequence: 5, message: 'Saved.', life: { phase: 'waiting', remaining: 0.2, episode: 1, option: null, affordable: false } } });
   assert.equal(world.reviveRequest, null); assert.equal(world.lastTargetResult.type, 'revive');
+  world.targetSequence = 6; world.moveRequest = 6;
+  connection.onMessage({ kind: 'result', payload: { type: 'move', sequence: 6, message: 'Saved.', held: { archetype: 'wall', quantity: 1, cancelable: true } } });
+  assert.equal(world.moveRequest, null); assert.equal(world.construction.placement.held, true);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
@@ -292,4 +295,17 @@ test('guest Pause and Resume use original artwork and block local actions withou
   clicked = ''; world.drawPauseMenu(); assert.deepEqual(draws, ['bgPattern', 'polycraftLogo']);
   assert.equal(buttons.at(-1).guiArchetype, 'buttonStart');
   clicked = 'guest-resume'; world.drawPauseMenu(); assert.equal(world.localMenu(), false);
+});
+
+test('a building selection uses original radial Move artwork and sends only one pending pickup intent', () => {
+  const sent = [], drawn = [], world = Object.create(GuestWorld.prototype);
+  world.guiInput = {}; world.movement = { nativeFocused: true, keys: new Set() };
+  world.selectedBuilding = { id: 'storage', name: 'Storage', reason: '', movable: true };
+  world.scene = { entities: new Map([['storage', { record: { location: [0, 0, 0] } }]]) };
+  world.controls = { guiTypes: { BUTTON_ROUND: 1 }, app: { globals: { camera: { worldToScreen: () => [100, 100] } } } };
+  world.game = { getGuiManager: () => ({ addDrawGui() {} }), getIMGui: () => ({ getRadialScaleFactor: () => 1, getRadialCentre: value => value, addRadialOffset: (center, index) => [center[0] + index * 20, center[1]], doButton(value) { drawn.push(value); return value.id === 'guest-move-storage'; } }) };
+  world.sendTarget = (type, target) => { sent.push({ type, target }); return sent.length; };
+  world.updateMenu(); world.requestMove('storage');
+  assert.deepEqual(sent, [{ type: 'move', target: 'storage' }]); assert.equal(world.moveRequest, 1); assert.equal(world.selectedBuilding, null);
+  assert.equal(drawn[0].guiArchetype, 'move');
 });

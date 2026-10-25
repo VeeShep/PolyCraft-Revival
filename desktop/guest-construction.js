@@ -22,13 +22,14 @@
       const buildResult = value.type === 'build' && this.pending === value.sequence;
       if (Object.hasOwn(value, 'held')) {
         const held = value.held;
-        if (!['held', 'build', 'cancelBuild'].includes(value.type) || held !== null && (!keys(held, ['archetype', 'quantity', 'cancelable']) || !text(held.archetype) || !this.world.game.getEntityFactory().getECArchetype(held.archetype, 'ECBuilding') || !Number.isSafeInteger(held.quantity) || held.quantity < 1 || held.quantity > 2147483647 || typeof held.cancelable !== 'boolean')) throw new Error('Invalid held building state.');
-        if (value.type === 'held' ? this.heldRequest === value.sequence : this.pending === value.sequence) this.setHeld(held);
+        if (!['held', 'build', 'cancelBuild', 'move'].includes(value.type) || held !== null && (!keys(held, ['archetype', 'quantity', 'cancelable']) || !text(held.archetype) || !this.world.game.getEntityFactory().getECArchetype(held.archetype, 'ECBuilding') || !Number.isSafeInteger(held.quantity) || held.quantity < 1 || held.quantity > 2147483647 || typeof held.cancelable !== 'boolean')) throw new Error('Invalid held building state.');
+        if (value.type === 'held' ? this.heldRequest === value.sequence : value.type === 'move' ? this.world.moveRequest === value.sequence : this.pending === value.sequence) this.setHeld(held);
       }
+      if (value.type === 'move' && value.sequence === this.world.moveRequest) this.world.moveRequest = null;
       if (value.type === 'held' && this.heldRequest === value.sequence) this.heldRequest = null;
       if (value.construction) {
         const menu = value.construction, indices = new Set(), factory = this.world.game.getEntityFactory();
-        if (value.type !== 'target' || !keys(menu, ['source', 'products']) || !text(menu.source) || !Array.isArray(menu.products) || !menu.products.length || menu.products.length > 32) throw new Error('Invalid construction menu.');
+        if (value.type !== 'target' || !keys(menu, ['source', 'products', 'move']) || typeof menu.move !== 'boolean' || !text(menu.source) || !Array.isArray(menu.products) || (!menu.products.length && !menu.move) || menu.products.length > 32) throw new Error('Invalid construction menu.');
         for (const product of menu.products) {
           if (!keys(product, ['index', 'name', 'archetype', 'costs', 'valid', 'affordable', 'time', 'repeat']) || !Number.isInteger(product.index) || product.index < 0 || product.index >= 32 || indices.has(product.index) || !text(product.name) || !text(product.archetype) || !factory.getECArchetype(product.archetype, 'ECBuilding') || !Array.isArray(product.costs) || product.costs.length !== 3 || ![0, 1, 2].every(index => Number.isSafeInteger(product.costs[index]) && product.costs[index] >= 0 && product.costs[index] <= 2147483647) || !['valid', 'affordable', 'repeat'].every(key => typeof product[key] === 'boolean') || typeof product.time !== 'number' || !Number.isFinite(product.time) || product.time < 0 || product.time > 1e9) throw new Error('Invalid construction product.');
           indices.add(product.index);
@@ -88,20 +89,21 @@
       if (!record || world.controls.paused || !world.movement.nativeFocused) { world.cancelLocalMenu(); return; }
       if (this.menu) {
         if (performance.now() - this.menuUpdated > 1000 && !world.selectionRequest) world.selectionRequest = world.sendTarget('target', source);
-        const products = this.menu.products, scale = gui.getRadialScaleFactor(products.length);
+        const products = this.menu.products, count = products.length + (this.menu.move ? 1 : 0), scale = gui.getRadialScaleFactor(count);
         const point = globals.camera.worldToScreen(entry.displayLocation || record.location);
         if (!point) return;
-        const center = products.length > 1 ? gui.getRadialCentre(point, scale) : point;
-        if (products.length > 1) world.game.getGuiManager().addDrawGui('radialFrame', { v2ScreenLocation: center, scale }, 'guest-build-frame');
+        const center = count > 1 ? gui.getRadialCentre(point, scale) : point;
+        if (count > 1) world.game.getGuiManager().addDrawGui('radialFrame', { v2ScreenLocation: center, scale }, 'guest-build-frame');
         for (let index = 0; index < products.length; index++) {
           const product = products[index], kind = product.costs[1] > 0 ? 'Stone' : product.costs[2] > 0 ? 'Amber' : 'Lumber';
           const archetype = product.valid ? (product.affordable ? 'build' + kind : 'buildInvalid' + kind + 'CantAfford') : 'buildInvalid' + kind;
           if (gui.doButton({ id: 'guest-build-' + source + '-' + product.index, text1: 'Build ' + product.name, text2: String(product.costs[0]), text3: String(product.costs[1]), text4: String(product.costs[2]), text5: world.game.getHero().getEC('ECPlayerBuilder').formatTimeToString(product.time, true),
-            v2ScreenLocation: products.length > 1 ? gui.addRadialOffset(center, index, products.length, scale) : center,
+            v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, index, count, scale) : center,
             buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: archetype }) && product.valid && product.affordable) {
             this.placement = { source, product }; this.menu = null; this.preview = this.request = null; this.world.selectionRequest = null; this.lastQuery = -Infinity; break;
           }
         }
+        if (this.menu?.move && gui.doButton({ id: 'guest-move-' + source, text: 'Move', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, products.length, count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'move' })) world.requestMove(source);
         return;
       }
       const location = this.cursor(), now = performance.now();

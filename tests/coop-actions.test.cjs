@@ -30,7 +30,7 @@ function setup() {
 }
 test('target menus and previews use the assigned hero and current host construction metadata without requesting a save', () => {
   const { game, hero, resource, players, state } = setup(), actions = new HostActions();
-  const construction = { source: 'tree', products: [{}] }, preview = { valid: false };
+  const construction = { source: 'tree', move: false, products: [{}] }, preview = { valid: false };
   game.desktopConstruction = {
     menu(actor, source) { assert.equal(actor, hero); assert.equal(source, resource); return construction; },
     preview(actor, source, index, location) {
@@ -85,7 +85,7 @@ test('demolition selects host metadata, rechecks protection at execution and req
   const controls = { demolitionInfo: () => available ? { id: 'enemy', name: 'Storage', reason } : null,
     demolishBuilding: id => { assert.equal(id, 'enemy'); removed++; } };
   const send = (type, sequence) => actions.receive({ type, sequence, target: 'enemy' });
-  send('target', 1); assert.deepEqual(actions.apply(game, hero, players, controls), { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'enemy', name: 'Storage', reason: '' } });
+  send('target', 1); assert.deepEqual(actions.apply(game, hero, players, controls), { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'enemy', name: 'Storage', reason: '', movable: false } });
   send('demolish', 2); reason = 'Remove the buildings above this one first';
   assert.equal(actions.apply(game, hero, players, controls).message, reason); assert.equal(removed, 0);
   reason = ''; send('demolish', 3);

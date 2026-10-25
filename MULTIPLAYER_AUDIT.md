@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest revival — Beta 13, 2026-10-25
+## Current guest building moves — Beta 14, 2026-10-25
+
+Sequenced pickup intents reuse original ECBuilding.move and original radial eligibility with the assigned hero. Both guest construction/product and standalone building menus expose original Move artwork. The host validates faction/lifecycle/held state and source claims before mutation; active, offline saved and in-flight references block duplicate move/demolition, including native host callbacks. Existing coherent save-before-ack and held placement/cancel paths handle accepted pickups. No new save schema: schema/envelope 4/6, game runtime coop-12, signaling protocol 2.
+
+Capture clears settled active/offline move previews when combat destroys their source, without refund/resurrection; unavailable originals cannot become free placements. Guest removal reconciles only its own active hero. Startup still rejects invalid imported references. Original in-flight destruction behavior is retained and unverified. The 229-check scope is in RESTORATION_STATUS.md. Visible two/four-player move/contents/cancel/territory/capacity/throw/disconnect and native/physical-network acceptance remain open; no game windows or personal islands were used.
+
+## Previous guest revival — Beta 13, 2026-10-25
 
 Own-hero life queries and sequenced revive intents expose original countdown/buttons while keeping prices, eligibility, shared spending, destination and persistence on the host. Choices bind the death episode and current tier; a delay crossing the threshold refuses rather than silently charging another price. Original payToRevive rechecks affordability and rejects the already-starting 0.2-second revival interval, preventing duplicate charges. The guest waits for authoritative recovery and suppresses purchases from stale state. Save schema/envelope remain 4/6; game runtime advances to coop-11 for new action/result types; room signaling stays protocol 2.
 

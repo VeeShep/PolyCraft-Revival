@@ -46645,6 +46645,7 @@
       }
     },
     move: function (a) {
+      if (this.gameManager.desktopConstruction && !this.gameManager.desktopConstruction.canMove(a, this.entity)) return;
       if (this.archetype.canBeMoved) {
         var b = a.getEC("ECPlayerBuilder"),
           c = a.getEC("ECLocomotion"),

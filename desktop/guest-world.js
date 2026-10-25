@@ -241,13 +241,13 @@
         else if (message.kind === 'result') {
           const value = message.payload;
           const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
             const building = value.building;
-            if (value.type !== 'target' || Object.keys(building).length !== 3 || !['id', 'name', 'reason'].every(key => typeof building[key] === 'string' && building[key].length <= 256) || !building.id || !building.name) throw new Error('Invalid demolition selection.');
-            if (selected) this.selectedBuilding = building.reason ? null : { ...building };
+            if (value.type !== 'target' || Object.keys(building).length !== 4 || typeof building.movable !== 'boolean' || !['id', 'name', 'reason'].every(key => typeof building[key] === 'string' && building[key].length <= 256) || !building.id || !building.name) throw new Error('Invalid demolition selection.');
+            if (selected) this.selectedBuilding = building.reason && !building.movable ? null : { ...building };
           }
           if (value.totem && !['target', 'upgrade'].includes(value.type)) throw new Error('Invalid totem result.');
           this.totem.receive(value, selected);
@@ -286,6 +286,10 @@
       const sequence = ++this.targetSequence;
       this.connection.send('action', { type, sequence, target, ...(archetype === undefined ? {} : { archetype }) }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
+    }
+    requestMove(target) {
+      if (this.moveRequest) return;
+      this.cancelLocalMenu(); this.moveRequest = this.sendTarget('move', target);
     }
     sendBuild(target, index, location, archetype) {
       return this.sendPlacement('build', target, index, location, archetype);
@@ -382,7 +386,11 @@
       }
       const point = this.controls.app.globals.camera.worldToScreen(entry.displayLocation || record.location), gui = this.game.getIMGui();
       if (!point) { this.cancelLocalMenu(); return; }
-      if (gui.doButton({ id: 'guest-demolish-' + building.id, text: 'Demolish', v2ScreenLocation: point, buttonType: this.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'demolish' })) {
+      const count = (building.reason ? 0 : 1) + (building.movable ? 1 : 0), scale = gui.getRadialScaleFactor(count);
+      const center = count > 1 ? gui.getRadialCentre(point, scale) : point;
+      if (count > 1) this.game.getGuiManager().addDrawGui('radialFrame', { v2ScreenLocation: center, scale }, 'guest-building-frame');
+      if (building.movable && gui.doButton({ id: 'guest-move-' + building.id, text: 'Move', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, 0, count, scale) : center, buttonType: this.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'move' })) { this.requestMove(building.id); return; }
+      if (!building.reason && gui.doButton({ id: 'guest-demolish-' + building.id, text: 'Demolish', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, count - 1, count, scale) : center, buttonType: this.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'demolish' })) {
         this.demolition = building; this.selectedBuilding = null;
       }
     }

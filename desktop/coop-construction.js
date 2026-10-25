@@ -17,6 +17,7 @@
     canPlace(builder) {
       if (!this.owns(builder)) return true;
       if (this.failure) return false;
+      if (builder.spMoveFromEntity && (!builder.getMoveFromEntity() || builder.getMoveFromEntity().shouldBeDestroyed())) return false;
       if (builder.getMoveFromEntity()) return true;
       const definition = this.game.getEntityFactory().getECArchetype(builder.getHeldObjectName(), 'ECBuilding');
       if (!definition) return false;
@@ -24,7 +25,7 @@
     }
     reserve(builder, archetype) {
       if (!this.owns(builder)) return null;
-      const item = { builder, definition: this.game.getEntityFactory().getECArchetype(archetype, 'ECBuilding'), parent: builder.spBuildingParentEntity?.get(), move: !!builder.getMoveFromEntity() };
+      const item = { builder, definition: this.game.getEntityFactory().getECArchetype(archetype, 'ECBuilding'), parent: builder.spBuildingParentEntity?.get(), from: builder.getMoveFromEntity(), move: !!builder.getMoveFromEntity() };
       item.done = new Promise(resolve => { item.resolve = resolve; });
       this.pending.add(item); return item;
     }
@@ -47,11 +48,43 @@
       const owner = source.getEC('ECAttach')?.getBaseEntity() || source;
       return dispenser && !dispenser.archetype.destroySelfOnDispense && !owner.shouldBeDestroyed?.() && !(owner.getEC('ECHealth')?.getHealth() <= 0) && owner.isFriendlyWith(hero) ? dispenser : null;
     }
+    reconcileMoves(onlyHero) {
+      const players = this.game.desktopPlayers;
+      for (const { hero } of players.active.values()) {
+        if (onlyHero && hero !== onlyHero) continue;
+        const builder = hero.getEC('ECPlayerBuilder');
+        if (builder.isBuilding() && !builder.isThrowing() && builder.spMoveFromEntity) {
+          const source = builder.getMoveFromEntity();
+          // A destroyed original is lost, not a refundable purchase or a new building.
+          if (!source || source.shouldBeDestroyed()) builder.clearInHand();
+        }
+      }
+      for (const record of players.registry.data.players) if (!players.active.has(record.id) && record.construction?.moveFrom) {
+        const source = this.game.getGameEntityByName(record.construction.moveFrom);
+        if (!source || source.shouldBeDestroyed()) record.construction = null;
+      }
+    }
+    claimed(source) {
+      const players = this.game.desktopPlayers;
+      return [...this.pending].some(item => item.from === source || item.parent === source) || [...(players?.active.values() || [])].some(entry => { const builder = entry.hero.getEC('ECPlayerBuilder'); return builder.getMoveFromEntity() === source || builder.spBuildingParentEntity?.get() === source; }) ||
+        (players?.registry?.data.players || []).some(record => !players.active.has(record.id) && [record.construction?.moveFrom, record.construction?.parent].includes(source.getName()));
+    }
+    canMove(hero, source) {
+      const builder = hero.getEC('ECPlayerBuilder'), radial = source.getEC('ECRadialMenu'), life = hero.getEC('ECPlayerLife');
+      const incapacitated = life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL);
+      return !!(this.owns(builder) && !incapacitated && hero.getEC('ECHealth').getHealth() > 0 && !builder.isBuilding() && !builder.isThrowing() && !source.shouldBeDestroyed?.() && source.isFriendlyWith(hero) && !(source.getEC('ECHealth')?.getHealth() <= 0) && source.getEC('ECBuilding') && source.getEC('ECFaction')?.getFactionName() === this.game.getFactionManager().getHeroFactionName() && radial?.isRadialMenuEnabled() && !radial.isRepairButtonExclusive() && radial.isMoveButtonValid() && !this.claimed(source));
+    }
+    move(hero, source) {
+      if (!this.canMove(hero, source)) return 'This building cannot be moved or is already claimed.';
+      source.getEC('ECBuilding').move(hero);
+      if (hero.getEC('ECPlayerBuilder').getMoveFromEntity() !== source) return 'The building could not be picked up.';
+      return { message: 'Building picked up and saved. Choose a placement.', save: true, held: this.heldStatus(hero) };
+    }
     menu(hero, source) {
       const dispenser = this.dispenser(hero, source);
       if (!dispenser?.contents.length) return null;
       dispenser.evaluateProductInfo();
-      return { source: source.getName(), products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
+      return { source: source.getName(), move: this.canMove(hero, source), products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
         if (dispenser.archetype.showUnavailableDueToPrerequisites === false && !dispenser.arePrerequisitesMet(index)) return [];
         if (dispenser.getQuantityPerPurchase(index) !== 1 || !this.game.getEntityFactory().getECArchetype(product.dispensedArchetypeName, 'ECBuilding')) return [];
         return [{ index, name: dispenser.getDispenseName(index), archetype: product.dispensedArchetypeName,

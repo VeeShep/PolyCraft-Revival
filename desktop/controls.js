@@ -135,7 +135,8 @@
       const building = entity?.getEC('ECBuilding');
       if (!building || entity.shouldBeDestroyed() || entity.getEC('ECFaction')?.getFactionName() !== faction) return null;
       let reason = '';
-      if (entity.shouldLevelSave || !entity.shouldPlayerSave || entity.getEC('ECHeroShrine')) reason = 'Original map structure';
+      if (game.desktopConstruction?.claimed(entity)) reason = 'Building reserved by a saved hero';
+      else if (entity.shouldLevelSave || !entity.shouldPlayerSave || entity.getEC('ECHeroShrine')) reason = 'Original map structure';
       else if (entity.getEC('ECGameCritical') || ['HQ', 'Workshop'].includes(building.getBuildingType()) || /^a_b_(hq|workshop)(?:_level_\d+)?$/.test(entity.getArchetypeName?.() || '') || entity.getEC('ECPlacedBuildingTracker')) reason = 'HQ, workshop or territory anchor';
       else if (entity.getEC('ECScaffold')) reason = 'Construction or moving in progress';
       else if (building.getBuildingsAbove().length) reason = 'Remove the buildings above this one first';

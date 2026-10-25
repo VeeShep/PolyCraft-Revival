@@ -190,6 +190,7 @@
     }
     capture() {
       for (const { hero } of this.active.values()) this.requireSettled(hero);
+      this.game.desktopConstruction?.reconcileMoves();
       const snapshots = [...this.active].map(([id, { hero }]) => [id, this.captureHero(hero)]);
       for (const [id, snapshot] of snapshots) Object.assign(this.registry.player(id), snapshot);
       this.registry.data.economy.pendingPlacements = !!this.game.globals.gamePurchaseManager.onEmptyHandedCallback;
@@ -200,6 +201,7 @@
       const entry = this.active.get(id);
       if (!entry) return;
       this.requireSettled(entry.hero);
+      this.game.desktopConstruction?.reconcileMoves(entry.hero);
       Object.assign(this.registry.player(id), this.captureHero(entry.hero)); this.registry.persist();
       this.destroy(entry.hero); this.active.delete(id); this.pendingRefresh.delete(id);
     }
