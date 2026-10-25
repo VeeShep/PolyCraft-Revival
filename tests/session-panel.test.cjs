@@ -141,7 +141,8 @@ test('the real panel waits for the development disclaimer, supports cancellation
   assert.equal(get('direct-address').value, '203.0.113.7'); assert.equal(get('direct-port').value, '37841');
   get('stun-urls').value = '';
   context.PolycraftRoomProtocol = require('../desktop/room-protocol.js');
-  context.PolycraftRooms = { RoomSession: class {
+  context.PolycraftAutoTransport = { AutoHostSession: class extends f.runtime.PolycraftMultiplayer.HostSession { async listen(options) { f.calls.push(['auto-listen', options]); } } };
+  context.PolycraftAutoRooms = { AutoRoomSession: class {
     constructor(session) { this.session = session; this.requests = new Map(); }
     async open(role, settings) { this.role = role; this.connected = true; f.calls.push(['room-open', role, settings, this.options]); }
     close() { f.calls.push(['room-close']); }
@@ -161,6 +162,13 @@ test('the real panel waits for the development disclaimer, supports cancellation
   assert.equal(get('end-session').disabled, false, 'A pending room join can be cancelled before creating GuestWorld');
   assert.equal(get('slots').disabled, true); assert.equal(get('room-password').value, '');
   await get('end-session').fire('click'); assert.equal(get('slots').disabled, false);
+
+  get('room-password').value = 'giggle shits'; get('stun-urls').value = ''; get('turn-urls').value = 'turn:relay.example:3478'; get('turn-user').value = 'user'; get('turn-password').value = 'temporary-secret';
+  attempt = get('join-room').fire('click'); await Promise.resolve(); await get('multiplayer-warning').close('continue'); await attempt;
+  const relaySettings = f.calls.at(-1)[3].iceServers;
+  assert.equal(relaySettings[0].urls[0], 'stun:stun.l.google.com:19302', 'TURN-only settings retain the editable default STUN server');
+  assert.equal(relaySettings[1].urls[0], 'turn:relay.example:3478'); assert.equal(get('turn-password').value, '');
+  await get('end-session').fire('click');
 
   f.runtime.polycraft.runAction = async () => { throw new Error('Wait for the current save'); };
   await get('multiplayer').fire('click'); assert.equal(get('multiplayer-dialog').open, false); assert.equal(f.controls.paused, false);

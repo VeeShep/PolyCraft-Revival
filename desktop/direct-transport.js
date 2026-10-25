@@ -49,6 +49,7 @@
       const packet = invitation(text);
       const connection = new DirectPeer({ ...options, ...packet, role: 'guest' });
       try {
+        options.onCreated?.(connection);
         await options.desktop.direct('join', { id: packet.peer, host: packet.host, port: packet.port, fingerprint: packet.fingerprint, token: packet.token });
         if (connection.closed) throw new Error('The direct connection ended while joining.');
         return { connection, reply: '' };
@@ -58,7 +59,7 @@
   class DirectHostSession extends network.HostSession {
     constructor(options) { super(options); this.desktop = options.desktop; this.kind = 'direct'; }
     async listen(options) { this.endpoint = await this.desktop.direct('start', options); return this.endpoint; }
-    async createInvitation() {
+    async createInvitation({ onCreated } = {}) {
       if (this.closed || this.peers.size >= 3) throw new Error('This session has ended or already has four players.');
       const peer = crypto.randomUUID(), nonce = crypto.randomUUID(), expires = Date.now() + 30 * 60000;
       const endpoint = await this.desktop.direct('reserve', { id: peer, expires });
@@ -68,6 +69,7 @@
         onState: (state, details) => { if (state === 'closed') this.peers.delete(peer); this.onState?.(peer, state, details); },
         onError: error => this.onError?.(peer, error) });
       this.peers.set(peer, connection); connection.emit('waiting');
+      try { onCreated?.(connection); } catch (error) { connection.close(); throw error; }
       const value = { protocol: network.PROTOCOL, runtime: network.RUNTIME, session: this.session, peer, nonce, pvp: this.pvp, expires, ...endpoint };
       return { peer, invitation: PREFIX + btoa(JSON.stringify(value)) };
     }

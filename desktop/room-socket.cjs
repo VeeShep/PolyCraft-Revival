@@ -12,12 +12,12 @@ class RoomSocket {
     return new Promise((resolve, reject) => {
       let ready = false;
       const timer = setTimeout(() => { reject(new Error('Room server timed out. Check its address and try again.')); this.close(); }, 10000);
-      socket.on('open', () => { socket.send(JSON.stringify({ v: 1, type: options.type, room, password, runtime: options.runtime, ...(options.type === 'join' ? { name: options.name } : {}) })); });
+      socket.on('open', () => { socket.send(JSON.stringify({ v: protocol.VERSION, type: options.type, room, password, runtime: options.runtime, ...(options.type === 'join' ? { name: options.name, relay: options.relay === true } : {}) })); });
       socket.on('error', () => { if (!ready) { reject(new Error('Cannot reach the room server. Check its address, connection and TLS certificate.')); this.close(); } });
       socket.on('message', (bytes, binary) => {
         try {
           const message = JSON.parse(bytes.toString());
-          if (binary || !message || message.v !== 1 || !['created', 'joined', 'request', 'signal', 'left', 'room-ended', 'error'].includes(message.type)) throw new Error('Invalid room server reply.');
+          if (binary || !message || message.v !== protocol.VERSION || !['created', 'joined', 'request', 'signal', 'left', 'room-ended', 'error'].includes(message.type)) throw new Error('Invalid room server reply.');
           if (message.type === 'signal') protocol.signal(message);
           if (message.type === 'error') throw new Error(typeof message.message === 'string' ? message.message.slice(0, 256) : 'Room server rejected the request.');
           if (!ready) {
@@ -36,7 +36,7 @@ class RoomSocket {
   send(options) {
     if (!this.socket || options?.id !== this.id || this.socket.readyState !== 1) throw new Error('The room server is disconnected.');
     protocol.signal(options);
-    const message = JSON.stringify({ v: 1, type: 'signal', kind: options.kind, data: options.data, ...(options.to ? { to: options.to } : {}) });
+    const message = JSON.stringify({ v: protocol.VERSION, type: 'signal', kind: options.kind, data: options.data, ...(options.to ? { to: options.to } : {}) });
     if (Buffer.byteLength(message) > protocol.MAX_MESSAGE || this.socket.bufferedAmount > 512 * 1024) throw new Error('Room connection is too busy.');
     return new Promise((resolve, reject) => this.socket.send(message, error => error ? reject(error) : resolve()));
   }

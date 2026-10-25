@@ -68,23 +68,42 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
               check(typeof msg.name === 'string' && msg.name.trim().length > 0 && msg.name.length <= 80, 'Enter a guest name.');
               room = existing; role = 'guest'; guestId = randomUUID(); room.guests.set(guestId, socket);
               send(socket, { type: 'joined', room: name, id: guestId });
-              send(room.host, { type: 'request', id: guestId, name: msg.name.trim() });
+              send(room.host, { type: 'request', id: guestId, name: msg.name.trim(), relay: msg.relay === true });
             }
             clearTimeout(timer);
           } finally { authenticating--; signingIn = false; }
         } else {
           check(msg.type === 'signal' && rooms.get(room.name) === room && room.expires > Date.now(), 'Room is no longer available.');
           protocol.signal(msg);
+          if (msg.kind === 'route') {
+            const guest = role === 'host' ? room.guests.get(msg.to) : socket, r = msg.data;
+            check(guest, 'This guest has left.');
+            check((role === 'host' ? ['offer', 'candidate', 'commit', 'cancel'] : ['answer', 'candidate', 'ready', 'ack', 'failed']).includes(r.type), 'This player cannot send that route control.');
+            if (role === 'host' && r.type === 'offer') {
+              if (guest.route?.attempt === r.attempt || guest.route && protocol.STAGES.indexOf(r.stage) <= protocol.STAGES.indexOf(guest.route.stage)) return;
+              check(!guest.routeLocked && !guest.offered, 'This guest already has a selected connection.');
+              guest.route = { attempt: r.attempt, stage: r.stage }; guest.routeAnswered = false; guest.routeReady = false; guest.routeAck = false; guest.routeCandidates = 0;
+            } else if (!guest.route || r.attempt !== guest.route.attempt || r.stage !== guest.route.stage) return;
+            if (r.type === 'candidate') check(++guest.routeCandidates <= 256, 'Too many route ICE candidates.');
+            if (r.type === 'answer') { check(!guest.routeAnswered, 'Repeated route answer.'); guest.routeAnswered = true; }
+            if (r.type === 'ready') guest.routeReady = true;
+            if (r.type === 'commit') { check(guest.routeReady && !guest.routeLocked, 'The guest is not ready to commit.'); guest.routeLocked = true; }
+            if (r.type === 'ack') { check(guest.routeLocked && !guest.routeAck, 'Unexpected route acknowledgement.'); guest.routeAck = true; }
+            if (role === 'host') send(guest, { type: 'signal', kind: 'route', data: r });
+            else send(room.host, { type: 'signal', from: guestId, kind: 'route', data: r });
+            return;
+          }
           if (msg.kind === 'candidate') check(++candidates <= 128, 'Too many ICE candidates.');
           if (role === 'host') {
             const guest = room.guests.get(msg.to); check(guest, 'This guest has left.');
+            check(!guest.route || msg.kind === 'reject', 'Use the selected route protocol for this guest.');
             check(msg.kind !== 'answer', 'Hosts cannot send guest replies.');
             if (msg.kind === 'offer') { check(!guest.offered, 'This guest already has an offer.'); guest.offered = true; }
             if (msg.kind === 'candidate') check(guest.offered, 'Send an offer before candidates.');
             send(guest, { type: 'signal', kind: msg.kind, data: msg.data });
             if (msg.kind === 'reject') guest.close(1000, 'Join declined');
           } else {
-            check(socket.offered && ['answer', 'candidate'].includes(msg.kind), 'Wait for the host to approve joining.');
+            check(!socket.route && socket.offered && ['answer', 'candidate'].includes(msg.kind), 'Wait for the host to approve joining.');
             if (msg.kind === 'answer') { check(!socket.answered, 'This guest already replied.'); socket.answered = true; }
             send(room.host, { type: 'signal', from: guestId, kind: msg.kind, data: msg.data });
           }

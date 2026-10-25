@@ -19,14 +19,25 @@ function equal(a, b) { return typeof a === 'string' && typeof b === 'string' && 
 class DirectNetwork {
   constructor(emit, { mapperFactory, certificates } = {}) {
     this.emit = emit; this.links = new Map(); this.sockets = new Set();
-    this.mapperFactory = mapperFactory || (async () => { const { default: NatAPI } = await import('@silentbot1/nat-api'); return new NatAPI({ enableUPNP: true, enablePMP: false, ttl: 1200, autoUpdate: true, upnpPermanentFallback: false, description: 'PolyCraft Revival co-op' }); });
+    this.mapperFactory = mapperFactory || (async () => {
+      const { default: NatAPI } = await import('@silentbot1/nat-api');
+      const client = new NatAPI({ enableUPNP: true, enablePMP: false, ttl: 1200, autoUpdate: true, upnpPermanentFallback: false, description: 'PolyCraft Revival co-op' });
+      client.checkFree = async selectedPort => {
+        // The pinned mapper exposes discovery here; preserve existing manual/router mappings.
+        const { gateway } = await client._upnpClient.findGateway();
+        try { await gateway.run('GetSpecificPortMappingEntry', [['NewRemoteHost', ''], ['NewExternalPort', selectedPort], ['NewProtocol', 'TCP']]); return false; }
+        catch (error) { if (error.message === 'The specified value does not exist in the array') return true; throw error; }
+      };
+      return client;
+    });
     this.certificates = certificates || (() => require('selfsigned').generate([{ name: 'commonName', value: 'PolyCraft direct session' }], { keySize: 2048, algorithm: 'sha256' }));
   }
   async start(options) {
     check(!this.server && !this.starting && this.links.size === 0, 'End the current direct session first.');
     const listenPort = port(options?.port), address = options?.address ? host(options.address) : '';
-    check(typeof options?.upnp === 'boolean' && (address || options.upnp), 'Enter the address guests will connect to, or choose UPnP.');
+    check(typeof options?.upnp === 'boolean' && (address || options.upnp || options.prepare === true), 'Enter the address guests will connect to, or choose UPnP.');
     this.starting = true;
+    this.allowMapping = options.upnp || options.allowUpnp === true;
     try {
       const keys = await this.certificates();
       this.pin = fingerprint(keys.cert);
@@ -40,6 +51,7 @@ class DirectNetwork {
       if (options.upnp) {
         this.mapper = await this.mapperFactory();
         try {
+          check(!this.mapper.checkFree || await this.mapper.checkFree(listenPort), 'An existing port mapping must be preserved.');
           check(await this.mapper.map({ publicPort: listenPort, privatePort: listenPort, protocol: 'TCP' }), 'The router did not accept the mapping.');
           mapped = true;
           if (!externalAddress) externalAddress = host(await this.mapper.externalIp());
@@ -56,6 +68,7 @@ class DirectNetwork {
   }
   reserve(options) {
     check(this.server?.listening && this.links.size < 3, 'Direct hosting is unavailable or already has three guests.');
+    host(this.endpoint.host);
     const peer = id(options?.id); check(!this.links.has(peer), 'This guest already has an invitation.');
     check(Number.isSafeInteger(options.expires) && options.expires > Date.now() && options.expires <= Date.now() + 31 * 60000, 'Invalid invitation expiry.');
     const link = { id: peer, token: randomBytes(32).toString('hex'), expires: options.expires, active: false };
@@ -158,7 +171,9 @@ class DirectNetwork {
     this.emit({ id: peer, type: 'closed', reason: 'Direct connection ended. Check the host, firewall or forwarding before reconnecting.' });
   }
   async stop() {
+    this.allowMapping = false;
     this.discovery?.abort();
+    this.mapAbort?.abort();
     for (const peer of [...this.links.keys()]) this.close(peer);
     for (const socket of this.sockets) socket.destroy();
     this.sockets.clear();
@@ -169,6 +184,7 @@ class DirectNetwork {
   }
   async request(operation, options) {
     switch (operation) {
+      case 'map': return this.mapPort();
       case 'discover': {
         check(!this.discovery, 'Address discovery is already running.');
         const controller = this.discovery = new AbortController();
@@ -185,6 +201,37 @@ class DirectNetwork {
       case 'stop': return this.stop();
       default: throw new Error('Invalid direct network operation.');
     }
+  }
+  async mapPort() {
+    check(this.allowMapping, 'UPnP was not enabled by the host.');
+    check(this.server?.listening, 'Start the native listener before mapping its port.');
+    if (this.mapper) return { ...this.endpoint, mapped: true };
+    if (this.mapping) return this.mapping;
+    check(!this.mapTask, 'A previous UPnP request is still settling; continue with WebRTC.');
+    const server = this.server, endpoint = this.endpoint, selectedPort = server.address().port, controller = this.mapAbort = new AbortController();
+    let timer;
+    const task = (async () => {
+      const mapper = await this.mapperFactory();
+      try {
+        check(mapper.checkFree && await mapper.checkFree(selectedPort), 'The TCP port has an existing mapping or could not be checked.');
+        check(!controller.signal.aborted, 'UPnP cancelled.');
+        check(await mapper.map({ publicPort: selectedPort, privatePort: selectedPort, protocol: 'TCP' }), 'UPnP mapping failed.');
+        const address = host(await mapper.externalIp());
+        check(!controller.signal.aborted && this.server === server, 'UPnP cancelled.');
+        this.mapper = mapper; this.endpoint = { ...endpoint, host: address };
+        return { ...this.endpoint, mapped: true };
+      } catch (error) { await mapper.destroy().catch(() => {}); throw error; }
+    })();
+    this.mapTask = task;
+    task.finally(() => { if (this.mapTask === task) this.mapTask = null; }).catch(() => {});
+    // shortcut: the mapper cannot abort HTTP; clean late results and keep the finite lease as crash recovery.
+    this.mapping = Promise.race([task, new Promise((_, reject) => {
+      const cancel = () => reject(new Error('UPnP timed out or was cancelled.'));
+      controller.signal.addEventListener('abort', cancel, { once: true });
+      timer = setTimeout(() => controller.abort(), 3000);
+    })]);
+    try { return await this.mapping; }
+    finally { clearTimeout(timer); this.mapping = null; if (this.mapAbort === controller) this.mapAbort = null; }
   }
 }
 module.exports = { DirectNetwork, host, port };

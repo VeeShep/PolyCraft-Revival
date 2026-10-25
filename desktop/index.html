@@ -12,8 +12,10 @@
   <script defer src="retro-ui.js"></script>
   <script defer src="multiplayer.js"></script>
   <script defer src="direct-transport.js"></script>
+  <script defer src="auto-transport.js"></script>
   <script defer src="room-protocol.js"></script>
   <script defer src="rooms.js"></script>
+  <script defer src="auto-rooms.js"></script>
   <script defer src="world-state.js"></script>
   <script defer src="coop-data.js"></script>
   <script defer src="coop-players.js"></script>
@@ -58,9 +60,10 @@
         <button id="host-room">Host room</button><button id="join-room">Join room</button>
         <p>Both players use the same room server, name and password. The host approves each guest. Password spaces and capitals count. Room mode defaults to stun:stun.l.google.com:19302; change the STUN URLs below to use your own server. TURN is used only if you explicitly configure it. No hosted room service or relay is supplied.</p>
       </div>
-      <h3>Manual connection settings</h3>
-      <label>Hosting connection<select id="connection-method"><option value="webrtc">WebRTC · LAN or STUN/TURN</option><option value="direct">Direct · TCP forwarding or UPnP</option></select></label>
-      <div id="direct-settings" hidden>
+      <h3>Connection settings</h3>
+      <label>Manual hosting connection<select id="connection-method"><option value="webrtc">WebRTC · LAN or STUN/TURN</option><option value="direct">Direct · TCP forwarding or UPnP</option></select></label>
+      <details id="direct-settings"><summary>Direct connection and router settings</summary>
+        <p>Room hosting tries this address first (or discovers a public IP with STUN when blank), then optional UPnP, direct WebRTC and finally your configured TURN relay. Manual invitations use the hosting connection selected above.</p>
         <p>No relay or account needed. Allow the chosen TCP port through the host firewall. For internet guests, forward it to this computer's local IPv4 address in your router. CGNAT/double NAT may prevent connections; use WebRTC with TURN instead.</p>
         <label>Address guests will connect to<input id="direct-address" maxlength="253" placeholder="Public IPv4/hostname; local IPv4 for LAN" autocomplete="off"></label>
         <button id="detect-direct-address" type="button">Detect public IP with STUN</button>
@@ -68,9 +71,9 @@
         <label>TCP port<input id="direct-port" type="number" min="1024" max="65535" value="37841"></label>
         <label class="toggle"><input id="direct-upnp" type="checkbox"> Ask my router to open this port using UPnP</label>
         <p>UPnP is optional and opens only this TCP port while hosting. Leave the address blank to use the address reported by the router. Share invitations privately: each contains access to its assigned guest hero. End hosting removes the automatic mapping; crashes may leave it until the lease expires.</p>
-      </div>
+      </details>
       <details id="webrtc-settings"><summary>Internet connection settings</summary>
-        <p>Blank settings try LAN only. For internet play, enter your STUN server and optional TURN relay on both computers. No relay is provided. Credentials stay in memory for this session.</p>
+        <p>Rooms default to Google's STUN server when no STUN URL is entered. Manual WebRTC invitations with blank settings try LAN only. Enter your own STUN server here to override it, and optional TURN settings for a fallback relay. No relay is provided. Credentials stay in memory for this session.</p>
         <label>STUN URLs · one per line<textarea id="stun-urls" rows="2" maxlength="16000" placeholder="stun:stun.l.google.com:19302"></textarea></label>
         <label>TURN URLs · one per line<textarea id="turn-urls" rows="2" maxlength="16000" placeholder="turns:your-relay:5349?transport=tcp"></textarea></label>
         <label>TURN username<input id="turn-user" maxlength="256" autocomplete="off"></label>

@@ -135,3 +135,34 @@ test('native room sockets reject untrusted public-style TLS certificates before 
   await assert.rejects(c.native.open({ ...settings('wss://127.0.0.1:' + server.address().port + '/signaling'), type: 'create' }), /TLS certificate/);
   assert.equal(upgrades, 0);
 });
+
+test('route service fences attempts, ignores stale controls, locks selection and denies guest host controls', async t => {
+  const s = await service(t), h = client(t), g = client(t);
+  const host = await h.native.open({ ...settings(s.url), type: 'create' }), guest = await g.native.open({ ...settings(s.url), type: 'join', name: 'Guest' });
+  await until(() => h.events.some(event => event.type === 'request'));
+  const to = h.events.find(event => event.type === 'request').id, first = crypto.randomUUID(), next = crypto.randomUUID();
+  const hostRoute = data => h.native.send({ id: host.id, to, kind: 'route', data });
+  const guestRoute = data => g.native.send({ id: guest.id, kind: 'route', data });
+  await hostRoute({ attempt: first, stage: 'forward', type: 'offer', value: 'native-offer' });
+  await hostRoute({ attempt: first, stage: 'forward', type: 'cancel' });
+  await hostRoute({ attempt: next, stage: 'stun', type: 'offer', value: 'rtc-offer' });
+  await until(() => g.events.filter(event => event.kind === 'route').length === 3);
+  await guestRoute({ attempt: first, stage: 'forward', type: 'ack' });
+  await guestRoute({ attempt: next, stage: 'stun', type: 'answer', value: 'rtc-answer' });
+  await guestRoute({ attempt: next, stage: 'stun', type: 'ready' });
+  await until(() => h.events.filter(event => event.kind === 'route').length === 2);
+  assert.equal(h.events.some(event => event.data?.attempt === first), false);
+  await hostRoute({ attempt: next, stage: 'stun', type: 'commit' });
+  await until(() => g.events.some(event => event.data?.type === 'commit'));
+  await guestRoute({ attempt: next, stage: 'stun', type: 'ack' });
+  await until(() => h.events.some(event => event.data?.type === 'ack'));
+  await hostRoute({ attempt: crypto.randomUUID(), stage: 'turn', type: 'offer', value: 'second-selected-link' });
+  await until(() => h.events.some(event => event.type === 'error'));
+  assert.equal(g.events.some(event => event.data?.value === 'second-selected-link'), false);
+  const separate = await service(t), h2 = client(t), g2 = client(t);
+  await h2.native.open({ ...settings(separate.url), type: 'create' });
+  const guest2 = await g2.native.open({ ...settings(separate.url), type: 'join', name: 'Guest' });
+  await g2.native.send({ id: guest2.id, kind: 'route', data: { attempt: crypto.randomUUID(), stage: 'stun', type: 'commit' } });
+  await until(() => g2.events.some(event => event.type === 'error'));
+  assert.equal(h2.events.some(event => event.kind === 'route'), false);
+});

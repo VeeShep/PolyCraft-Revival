@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
-  const VERSION = 1, MAX_MESSAGE = 192 * 1024;
+  const VERSION = 2, MAX_MESSAGE = 192 * 1024;
+  const STAGES = ['forward', 'upnp', 'stun', 'turn'];
   function roomName(value) {
     if (typeof value !== 'string') throw new Error('Enter a room name.');
     const name = value.trim().toLowerCase();
@@ -19,7 +20,14 @@
     return url.href;
   }
   function signal(value) {
-    if (!value || typeof value !== 'object' || Array.isArray(value) || !['offer', 'answer', 'candidate', 'reject'].includes(value.kind)) throw new Error('Invalid room connection message.');
+    if (!value || typeof value !== 'object' || Array.isArray(value) || !['offer', 'answer', 'candidate', 'reject', 'route'].includes(value.kind)) throw new Error('Invalid room connection message.');
+    if (value.kind === 'route') {
+      const r = value.data;
+      if (!r || typeof r !== 'object' || Array.isArray(r) || Object.keys(r).some(key => !['attempt', 'stage', 'type', 'value'].includes(key)) || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.attempt) || !STAGES.includes(r.stage) || !['offer', 'answer', 'candidate', 'ready', 'commit', 'ack', 'failed', 'cancel'].includes(r.type)) throw new Error('Invalid route attempt.');
+      if (['offer', 'answer', 'candidate'].includes(r.type)) signal({ kind: r.type, data: r.value });
+      else if (r.value !== undefined && (typeof r.value !== 'string' || r.value.length > 256 || !['failed', 'cancel'].includes(r.type))) throw new Error('Invalid route control message.');
+      return value;
+    }
     if (value.kind === 'candidate') {
       const c = value.data;
       if (!c || typeof c !== 'object' || Array.isArray(c) || Object.keys(c).some(k => !['candidate', 'sdpMid', 'sdpMLineIndex', 'usernameFragment'].includes(k)) ||
@@ -30,7 +38,7 @@
     } else if (typeof value.data !== 'string' || !value.data.length || value.data.length > (value.kind === 'reject' ? 256 : 128 * 1024)) throw new Error('Invalid room offer, reply or rejection.');
     return value;
   }
-  const api = { VERSION, MAX_MESSAGE, roomName, password, serverUrl, signal };
+  const api = { VERSION, MAX_MESSAGE, STAGES, roomName, password, serverUrl, signal };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftRoomProtocol = api;
 })(globalThis);

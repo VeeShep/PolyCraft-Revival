@@ -13,7 +13,7 @@
     async open(role, settings) {
       this.role = role;
       try {
-        const connected = await this.runtime.desktop.room('open', { ...settings, room: rules.roomName(settings.room), password: rules.password(settings.password), type: role === 'host' ? 'create' : 'join', runtime: this.runtime.PolycraftMultiplayer.RUNTIME });
+        const connected = await this.runtime.desktop.room('open', { ...settings, room: rules.roomName(settings.room), password: rules.password(settings.password), type: role === 'host' ? 'create' : 'join', relay: (this.options?.iceServers || []).some(server => (Array.isArray(server.urls) ? server.urls : [server.urls]).some(url => /^turns?:/.test(url))), runtime: this.runtime.PolycraftMultiplayer.RUNTIME });
         if (this.closed) throw new Error('Room connection cancelled.');
         this.id = connected.id; this.name = connected.room; this.connected = true;
         this.session.notify(role === 'host' ? 'Room “' + this.name + '” is open. Guests enter its name and password; approve each guest below.' : 'Waiting for the host to approve joining “' + this.name + '”.');
@@ -68,7 +68,7 @@
         this.connected = false;
         for (const [id, entry] of this.requests) {
           const link = this.session.transport?.peers.get(entry.peer);
-          if (!link || link.state !== 'connected') { link?.close('Room signaling ended before connecting.'); this.requests.delete(id); }
+          if (!link || link.state !== 'connected' || link.probing) { link?.close('Room signaling ended before connecting.'); this.requests.delete(id); }
         }
         this.outgoing.clear();
         if (this.role === 'guest' && this.session.connection && this.session.connection.state !== 'connected') this.session.connection.close('Room signaling ended before connecting.');
@@ -77,11 +77,12 @@
       }
       if (event.type === 'request') {
         if (this.role !== 'host' || this.requests.size >= 3 || typeof event.id !== 'string' || !/^[a-f0-9-]{36}$/.test(event.id) || typeof event.name !== 'string' || event.name.length > 80) throw new Error('Invalid guest request.');
-        this.requests.set(event.id, { id: event.id, name: event.name }); this.session.notify(event.name + ' wants to join. Select a guest hero or create a new one, then approve.'); return;
+        this.requests.set(event.id, { id: event.id, name: event.name, relay: event.relay === true }); this.session.notify(event.name + ' wants to join. Select a guest hero or create a new one, then approve.'); return;
       }
       if (event.type === 'left') {
         const entry = this.requests.get(event.id), link = entry && this.session.transport?.peers.get(entry.peer);
-        if (link && link.state !== 'connected') link.close('Guest left the room.');
+        if (link?.state === 'connected' && !link.probing) { entry.signalingEnded = true; this.session.changed(); return; }
+        link?.close('Guest left the room.');
         this.requests.delete(event.id); this.session.changed(); return;
       }
       if (event.type !== 'signal') return;

@@ -10,7 +10,7 @@
       if (controls.manager().getActiveGameState().name !== 'GamestatePlaying') throw new Error('Return to the island with Play before connecting.');
       const iceServers = r.PolycraftMultiplayer.validateIceServers(options.iceServers);
       if (role === 'host') {
-        const Transport = options.direct ? r.PolycraftDirect.DirectHostSession : r.PolycraftMultiplayer.HostSession;
+        const Transport = options.autoNative ? r.PolycraftAutoTransport.AutoHostSession : options.direct ? r.PolycraftDirect.DirectHostSession : r.PolycraftMultiplayer.HostSession;
         const transport = new Transport({ pvp: options.pvp, iceServers, desktop: r.desktop, trickle: options.trickle, onCandidate: options.onCandidate,
           onState: (peer, state, details) => {
             if (state === 'closed') for (const [id, offer] of this.offers) if (offer.peer === peer) { this.offers.delete(id); if (this.outgoing === offer.invitation) this.outgoing = ''; }
@@ -19,7 +19,7 @@
           onError: (_peer, error) => this.notify(error.message) });
         let world;
         try {
-          if (options.direct) await transport.listen(options.direct);
+          if (options.direct || options.autoNative) await transport.listen(options.direct || options.autoNative);
           world = await r.PolycraftOnlineWorld.startHostingWorld(controls, transport);
           await world.enablePlayers(r.polycraft.bridge);
           this.transport = transport; this.world = world; this.role = role;
@@ -43,6 +43,21 @@
         } catch (error) { joined?.connection.close(); await r.desktop.onlineMode(false); throw error; }
       }
       return true;
+    }
+    async attachGuest(connection) {
+      const r = this.runtime, controls = r.polycraft.controls;
+      if (this.world || controls.onlineWorld || controls.guestWorld || !controls.ready() || connection.closed || connection.state !== 'connected' || connection.role !== 'guest') throw new Error('This checked guest connection cannot enter the island.');
+      await r.desktop.onlineMode(true);
+      const earlier = connection.onState;
+      connection.onState = (state, details) => {
+        earlier?.(state, details);
+        this.notify('Host connection: ' + state + (details.reason ? ' · ' + details.reason : ''));
+        if (state === 'closed' && this.role === 'guest' && !this.stopping) this.end().catch(error => this.notify(error.message));
+      };
+      try {
+        this.world = new r.PolycraftGuestWorld.GuestWorld(controls, connection);
+        this.connection = connection; this.role = 'guest'; this.outgoing = ''; connection.probing = false;
+      } catch (error) { connection.onState = earlier; await r.desktop.onlineMode(false); throw error; }
     }
     addGuest(name) {
       if (this.role !== 'host') throw new Error('Start hosting first.');
@@ -110,7 +125,6 @@
       $('end-session').disabled = busy || !(session.world || session.room);
       $('connection-outgoing').value = session.outgoing || '';
       $('copy-connection').disabled = busy || !session.outgoing;
-      $('direct-settings').hidden = $('connection-method').value !== 'direct';
       $('reply-controls').hidden = session.transport?.kind === 'direct' || !!session.room;
       $('room-requests').hidden = session.room?.role !== 'host';
       $('manual-invite-tools').hidden = !!session.room;
@@ -119,7 +133,8 @@
         const option = root.document.createElement('option'); option.value = entry.id; option.textContent = entry.name + (entry.peer ? ' · approved' : ' · waiting'); return option;
       }));
       if ([...$('room-request').options].some(option => option.value === selectedRequest)) $('room-request').value = selectedRequest;
-      $('approve-room-guest').disabled = busy || !$('room-request').value || !!session.room?.requests.get($('room-request').value)?.peer || !session.room?.connected;
+      const request = session.room?.requests.get($('room-request').value);
+      $('approve-room-guest').disabled = busy || !request || !!request.peer || !!request.approving || !session.room?.connected;
       $('reject-room-guest').disabled = busy || !$('room-request').value || !(session.room?.connected || session.room?.requests.get($('room-request').value)?.peer);
       if (session.role === 'host') {
         const selected = $('guest-hero').value;
@@ -167,12 +182,12 @@
       if (!await disclaimer()) return;
       const settings = { url: root.PolycraftRoomProtocol.serverUrl($('room-server').value), room: root.PolycraftRoomProtocol.roomName($('room-name').value), password: root.PolycraftRoomProtocol.password($('room-password').value), name: $('room-guest-name').value.trim() || 'Player' };
       const iceServers = iceSettings($('stun-urls').value, $('turn-urls').value, $('turn-user').value, $('turn-password').value, root.PolycraftMultiplayer.validateIceServers);
-      if (!iceServers.length) iceServers.push({ urls: ['stun:stun.l.google.com:19302'] });
-      const room = session.room = new root.PolycraftRooms.RoomSession(session);
+      if (!iceServers.some(server => server.urls.some(url => /^stuns?:/.test(url)))) iceServers.unshift({ urls: ['stun:stun.l.google.com:19302'] });
+      const room = session.room = new root.PolycraftAutoRooms.AutoRoomSession(session);
       room.options = { iceServers };
       room.onJoined = () => { session.world.original.paused = returnPause; };
       try {
-        if (role === 'host') await session.connect('host', { pvp: $('session-pvp').checked, iceServers, trickle: true, onCandidate: (value, link) => room.candidate(value, link) }, '', true);
+        if (role === 'host') await session.connect('host', { pvp: $('session-pvp').checked, iceServers, autoNative: { address: $('direct-address').value.trim(), port: Number($('direct-port').value), upnp: $('direct-upnp').checked, stun: $('stun-urls').value.split(/\r?\n/).map(value => value.trim()).find(value => /^stun:/.test(value)) }, trickle: true, onCandidate: (value, link) => room.candidate(value, link) }, '', true);
         await room.open(role, settings);
         try { root.localStorage.setItem('polycraft-room-server', settings.url); } catch { /* Server address is a convenience, never store passwords. */ }
       } catch (error) { await session.end(); throw error; }

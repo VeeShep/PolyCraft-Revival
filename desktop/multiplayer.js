@@ -220,6 +220,7 @@
       const packet = decodeInvitation(text, 'offer');
       const connection = new PeerLink({ ...options, role: 'guest', session: packet.session, peer: packet.peer, nonce: packet.nonce, pvp: packet.pvp, expires: packet.expires });
       try {
+        options.onCreated?.(connection);
         await connection.remoteDescription(packet.description);
         await connection.pc.setLocalDescription(await connection.pc.createAnswer());
         if (!connection.trickle) await connection.gather();
@@ -330,18 +331,18 @@
       this.peers = new Map();
       this.closed = false;
     }
-    async createInvitation() {
+    async createInvitation({ iceServers = this.iceServers, probing = false, onCreated } = {}) {
       requireValue(!this.closed && this.peers.size < 3, 'This island already has four players or pending invitations. Cancel an invitation or disconnect a player first.');
       const peer = crypto.randomUUID();
       const connection = new PeerLink({
-        role: 'host', session: this.session, peer, nonce: crypto.randomUUID(), pvp: this.pvp, expires: Date.now() + INVITE_LIFETIME, iceServers: this.iceServers,
+        role: 'host', session: this.session, peer, nonce: crypto.randomUUID(), pvp: this.pvp, expires: Date.now() + INVITE_LIFETIME, iceServers,
         trickle: this.trickle, onCandidate: (candidate, link) => this.onCandidate?.(candidate, link),
         onMessage: (message, link) => this.onMessage?.(message, link),
         onState: (state, details) => { if (state === 'closed') this.peers.delete(peer); this.onState?.(peer, state, details); },
         onError: error => this.onError?.(peer, error)
       });
-      this.peers.set(peer, connection);
-      try { return { peer, invitation: await connection.makeInvitation() }; }
+      connection.probing = probing; this.peers.set(peer, connection);
+      try { onCreated?.(connection); return { peer, invitation: await connection.makeInvitation() }; }
       catch (error) { connection.close(error.message); throw error; }
     }
     async acceptReply(text) {

@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current native address discovery — Beta 7, 2026-10-25
+## Current route coordination — Beta 8, 2026-10-25
+
+`desktop/auto-transport.js` combines the existing native TCP/TLS and WebRTC sessions; `desktop/auto-rooms.js` coordinates known/forwarded endpoint → opt-in UPnP → STUN-only WebRTC → configured TURN. Room signaling protocol 2 fences attempt IDs/stages and host/guest control directions. Both service and clients must upgrade together. Candidate relay capability is a boolean, not a credential exchange. No gameplay or save state crosses the room service.
+
+Connection probes are separate from game admission: readiness → host commit → guest world attachment/ack → host checkpoint and boundary activation. Failed probes close, including children whose asynchronous offer creation has not finished; selection cannot switch after commitment. The existing framing, host authority, saved hero assignment and coherent snapshot paths remain. The guarded guest handler stops rejecting welcome/snapshot data after admission. Existing games survive signaling loss and remain removable by the host.
+
+TURN URLs and credentials are absent from the direct WebRTC attempt. TURN is entered manually for now, on either endpoint. Provider credential issuance, public deployment, measured setup/load/bandwidth, physical router/internet/relay acceptance and all native gameplay gates remain open. Initial attempt budgets and 196-check local evidence are recorded in RESTORATION_STATUS.md. UPnP has an explicit consent gate, occupied-mapping check and bounded waiting; unabortable underlying HTTP may finish later and then be cleaned up. It is not a universal NAT bypass. No mid-session migration is implemented.
+
+## Previous native address discovery — Beta 7, 2026-10-25
 
 `desktop/stun.cjs` now provides bounded IPv4 UDP Binding discovery through the trusted `direct('discover')` IPC operation and a direct-settings button. It uses the configured first UDP STUN URL or Google default, checks transactions/cookies/attributes/fingerprints and socket source, and returns only an IP candidate. Its UDP-mapped port is never used for native TCP. The existing direct invitation's configured TCP port and TLS pin/token remain authoritative. Shutdown cancels discovery; it does not open a listener or change the router.
 

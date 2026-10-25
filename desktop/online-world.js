@@ -111,7 +111,7 @@
       this.original.peerMessage = this.transport.onMessage;
       this.transport.onState = (peer, state, details) => {
         if (!this.closed) {
-          if (state === 'connected') this.connectPlayer(peer).catch(error => this.transport.peers.get(peer)?.fail(error));
+          if (state === 'connected' && !this.transport.peers.get(peer)?.probing) this.connectPlayer(peer).catch(error => this.transport.peers.get(peer)?.fail(error));
           if (state === 'closed') {
             const binding = this.peerPlayers.get(peer);
             if (binding) this.releasePlayer(binding).catch(error => this.transport.onError?.(peer, error));
@@ -159,6 +159,19 @@
       const entry = this.players.active.get(binding.id);
       if (!entry) throw new Error('The assigned hero is not active.');
       return { id: binding.id, ...entry };
+    }
+    async admitConnectedPlayer(id, connection) {
+      if (!this.players || this.closed || this.closing || id === this.players.registry.data.host || this.guestSlots.has(id) || (this.players.active.has(id) && !this.detachedPlayers.has(id)) || !connection.probing || connection.closed || connection.state !== 'connected' || this.transport.peers.get(connection.peer) !== connection || this.peerPlayers.has(connection.peer)) throw new Error('This checked connection cannot claim that guest hero.');
+      this.players.registry.player(id);
+      const binding = { id, peer: connection.peer, connection, input: new HostMovement(), actions: new HostActions() };
+      this.guestSlots.set(id, binding); this.peerPlayers.set(connection.peer, binding);
+      try {
+        await root.polycraft.checkpoint();
+        if (this.closed || this.closing || connection.closed || this.transport.peers.get(connection.peer) !== connection) throw new Error('The selected connection ended before admission.');
+        connection.probing = false;
+        await this.connectPlayer(connection.peer);
+        if (connection.closed || !binding.ready) throw new Error('Guest admission did not complete.');
+      } catch (error) { connection.close('Guest admission failed.'); await this.releasePlayer(binding); throw error; }
     }
     async connectPlayer(peer) {
       const binding = this.peerPlayers.get(peer), connection = this.transport.peers.get(peer);

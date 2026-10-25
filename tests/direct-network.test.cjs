@@ -100,3 +100,88 @@ test('direct invitations reject tampered formats and expiry before opening a soc
   assert.deepEqual(invitation(encode(value)), value);
   for (const patch of [{ protocol: 2 }, { runtime: 'other' }, { expires: Date.now() - 1 }, { host: 'https://example.com' }, { token: 'secret' }, { port: 80 }, { extra: 'ignored?' }]) assert.throws(() => invitation(encode({ ...value, ...patch })));
 });
+
+test('automatic native preparation opens no mapping without consent, shares opt-in mapping and preserves occupied ports', async t => {
+  let mapped = 0, destroyed = 0, available = true;
+  const h = bridge({ mapperFactory: async () => ({ checkFree: async () => available, map: async opts => { assert.equal(opts.protocol, 'TCP'); assert.equal(opts.publicPort, opts.privatePort); mapped++; return true; }, externalIp: async () => '203.0.113.5', destroy: async () => { destroyed++; } }) });
+  t.after(() => h.native.stop());
+  const port = await freePort(); await h.native.start({ address: '', port, upnp: false, prepare: true });
+  await assert.rejects(h.native.request('map'), /not enabled/); assert.equal(mapped, 0);
+  assert.throws(() => h.native.reserve({ id: randomUUID(), expires: Date.now() + 10000 }), /IPv4/);
+  await h.native.stop(); await h.native.start({ address: '', port, upnp: false, prepare: true, allowUpnp: true });
+  const [first, second] = await Promise.all([h.native.request('map'), h.native.request('map')]);
+  assert.deepEqual(first, second); assert.equal(first.mapped, true); assert.equal(mapped, 1);
+  await h.native.stop(); assert.equal(destroyed, 1);
+  available = false; await h.native.start({ address: '', port, upnp: false, prepare: true, allowUpnp: true });
+  await assert.rejects(h.native.request('map'), /existing mapping/); assert.equal(mapped, 1); assert.equal(destroyed, 2);
+});
+
+test('stopping a slow automatic mapping cancels its result and cleans late router success', async t => {
+  let release, destroyed = 0;
+  const started = new Promise(resolve => { release = resolve; });
+  const h = bridge({ mapperFactory: async () => ({ checkFree: async () => true, map: async () => { await started; return true; }, externalIp: async () => '203.0.113.5', destroy: async () => { destroyed++; } }) });
+  t.after(() => h.native.stop());
+  await h.native.start({ address: '', port: await freePort(), upnp: false, prepare: true, allowUpnp: true });
+  const pending = h.native.request('map'), rejected = assert.rejects(pending, /cancelled/);
+  await new Promise(resolve => setImmediate(resolve));
+  const cleanup = h.native.mapTask; await h.native.stop(); await rejected;
+  release(); await assert.rejects(cleanup, /cancelled/);
+  assert.equal(destroyed, 1); assert.equal(h.native.endpoint, null); assert.equal(h.native.mapper, null);
+});
+
+test('automatic host offers use separate STUN-only peers before TURN, skip failed native setup and keep the forwarded address', async t => {
+  const { AutoHostSession } = require('../desktop/auto-transport.js');
+  const previous = global.RTCPeerConnection, configs = [];
+  global.RTCPeerConnection = class extends EventTarget {
+    constructor(config) { super(); configs.push(config); }
+    createDataChannel() { const channel = new EventTarget(); channel.readyState = 'connecting'; channel.close = () => {}; return channel; }
+    async createOffer() { return { type: 'offer', sdp: 'v=0\r\n' }; }
+    async setLocalDescription(description) { this.localDescription = description; }
+    close() {}
+  };
+  t.after(() => { global.RTCPeerConnection = previous; });
+  const h = bridge(), transport = new AutoHostSession({ desktop: h.desktop, iceServers: [{ urls: ['stun:custom:3478'] }, { urls: ['turn:relay:3478'], username: 'u', credential: 'p' }] });
+  t.after(async () => { transport.close(); await transport.stopped; });
+  await transport.listen({ address: '127.0.0.1', port: await freePort(), upnp: false });
+  await assert.rejects(transport.map(), /disabled/);
+  const direct = await transport.offer('forward'); assert.equal(invitation(direct.invitation).host, '127.0.0.1'); assert.equal(transport.peers.get(direct.peer).probing, true); transport.peers.get(direct.peer).close();
+  const stun = await transport.offer('stun'); assert.equal(transport.peers.get(stun.peer).probing, true); assert.deepEqual(configs[0].iceServers, [{ urls: ['stun:custom:3478'] }]); transport.peers.get(stun.peer).close();
+  await transport.offer('turn'); assert.equal(configs[1].iceServers[1].credential, 'p');
+  const failed = new AutoHostSession({ desktop: { direct: async () => { throw new Error('port busy'); } }, iceServers: [{ urls: ['stun:custom:3478'] }] });
+  await failed.listen({ address: '127.0.0.1', port: 37841, upnp: true }); assert.equal(failed.nativeReady, false);
+  const offer = await failed.offer('stun'); assert.equal(failed.peers.has(offer.peer), true); failed.close(); await failed.stopped.catch(() => {});
+});
+
+test('real loopback room signaling selects native TLS and delivers game data only after guest attachment', async t => {
+  const { AutoHostSession } = require('../desktop/auto-transport.js'), { AutoRoomSession } = require('../desktop/auto-rooms.js');
+  const { RoomSocket } = require('../desktop/room-socket.cjs'), { createRoomServer } = require('../server/rooms.cjs');
+  const { PlaytestSession } = require('../desktop/session-panel.js');
+  const s = createRoomServer(); s.server.listen(0, '127.0.0.1'); await once(s.server, 'listening');
+  const h = bridge(), g = bridge(), sockets = [], rooms = [], received = [];
+  const desktop = base => {
+    const handlers = new Set(), socket = new RoomSocket(event => { for (const fn of handlers) fn(event); }); sockets.push(socket);
+    return { ...base, onlineMode: async () => {}, room: async (op, data) => socket.request(op, data), onRoom(fn) { handlers.add(fn); return () => handlers.delete(fn); } };
+  };
+  const hd = desktop(h.desktop), gd = desktop(g.desktop), order = [];
+  const transport = new AutoHostSession({ desktop: hd, iceServers: [], onCandidate: (value, link) => rooms[0].candidate(value, link) });
+  t.after(async () => { for (const room of rooms) room.close(); for (const socket of sockets) socket.close(); transport.close(); await transport.stopped; await g.native.stop(); await s.close(); });
+  await transport.listen({ address: '127.0.0.1', port: await freePort(), upnp: false });
+  const hostSession = { transport, changed() {}, notify(value) { this.message = value; }, world: { async admitConnectedPlayer(id, link) {
+    assert.equal(id, 'saved-hero'); assert.deepEqual(order, ['attached']); order.push('admitted'); link.probing = false;
+    await link.send('welcome', { playerId: id });
+  } } };
+  const common = { PolycraftMultiplayer: require('../desktop/multiplayer.js'), PolycraftDirect: require('../desktop/direct-transport.js'), polycraft: { checkpoint: async () => {}, runAction: fn => fn(), controls: { ready: () => true } } };
+  const guestRuntime = { ...common, desktop: gd, PolycraftGuestWorld: { GuestWorld: class {
+    constructor(_, link) { order.push('attached'); const guard = link.onMessage; link.onMessage = (message, connection) => { guard?.(message, connection); received.push(message); }; }
+  } } };
+  const guestSession = new PlaytestSession(guestRuntime);
+  const host = new AutoRoomSession(hostSession, { ...common, desktop: hd }), guest = new AutoRoomSession(guestSession, guestRuntime); rooms.push(host, guest);
+  host.options = guest.options = { iceServers: [] };
+  const settings = { url: 'ws://127.0.0.1:' + s.server.address().port + '/signaling', room: 'native-route', password: 'loopback test', name: 'Guest' };
+  await host.open('host', settings); await guest.open('guest', settings); await until(() => host.requests.size === 1);
+  const entry = [...host.requests.values()][0]; await host.approve(entry.id, 'saved-hero'); await entry.running;
+  assert.equal(entry.route.admitted, true, hostSession.message); assert.equal(entry.route.stage, 'forward');
+  await until(() => received.length === 1); assert.deepEqual(order, ['attached', 'admitted']); assert.equal(received[0].kind, 'welcome');
+  guest.close(); await until(() => entry.signalingEnded); assert.equal(guestSession.connection.closed, false);
+  await host.reject(entry.id); await until(() => guestSession.connection.closed);
+});
