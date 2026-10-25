@@ -18,6 +18,8 @@ Download **[PolyCraft Offline 1.0.0-beta.2](https://github.com/VeeShep/PolyCraft
 
 The working source is **1.0.0-beta.4 in development**, including an experimental multiplayer menu; the published release downloads above remain Beta 2. Each new packaged update increments the beta number. Existing release files and tags stay pinned to their original source.
 
+**Beta 4 multiplayer test packages:** open [build run 40154089920](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40154089920) and download your platform under **Artifacts** (GitHub sign-in required). All six native package jobs passed. These are early test builds; use disposable islands and follow the menu guide below.
+
 Offline solo play is implemented. Permanent cheat history, original hero badge icons and the first runtime readability pass are implemented in the development source. Development builds include an **experimental Multiplayer menu** for early co-op tests. It is incomplete and has not passed internet/cross-platform gameplay acceptance. Gameplay expansions remain planned.
 
 Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadmap, verification evidence, remaining acceptance checks and continuation instructions. Earlier entries in its historical appendix describe older checkpoints, not the current release state.
