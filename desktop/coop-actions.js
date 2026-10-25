@@ -11,9 +11,12 @@
     constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); }
     receive(value) {
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
+      const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
       const held = value?.archetype !== undefined;
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : value?.type === 'repair' ? 4 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
-      if (value.type === 'repair' && (!Array.isArray(value.costs) || value.costs.length !== 2 || ![0, 1].every(index => typeof value.costs[index] === 'number' && Number.isFinite(value.costs[index]) && value.costs[index] >= 0 && value.costs[index] <= 2147483647))) throw new Error('Invalid repair costs.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' ? 4 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if ((buildingUpgrade || cancelUpgrade) && (typeof value.next !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.next))) throw new Error('Invalid building upgrade.');
+      if (cancelUpgrade && (!Number.isSafeInteger(value.episode) || value.episode < 1)) throw new Error('Invalid upgrade episode.');
+      if ((value.type === 'repair' || buildingUpgrade) && (!Array.isArray(value.costs) || value.costs.length !== 2 || ![0, 1].every(index => typeof value.costs[index] === 'number' && Number.isFinite(value.costs[index]) && value.costs[index] >= 0 && value.costs[index] <= 2147483647))) throw new Error('Invalid resource quote.');
       if (revive && (typeof value.amber !== 'boolean' || typeof value.episode !== 'number' || !Number.isFinite(value.episode) || Math.abs(value.episode) > 1e9)) throw new Error('Invalid revive choice.');
       if (value.type === 'cancelBuild' && !held || held && (!(placement || value.type === 'cancelBuild') || typeof value.archetype !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.archetype))) throw new Error('Invalid held building selection.');
       if (placement && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 32 || !Array.isArray(value.location) || value.location.length !== 3 || ![0, 1, 2].every(index => typeof value.location[index] === 'number' && Number.isFinite(value.location[index]) && Math.abs(value.location[index]) <= 1e6))) throw new Error('Invalid building placement.');
@@ -21,7 +24,7 @@
       const now = this.now();
       this.tokens = Math.min(10, this.tokens + Math.max(0, now - this.tokenTime) * 0.01); this.tokenTime = now;
       if (this.tokens < 1 || this.queue.length >= 4) throw new Error('Too many target actions.');
-      this.tokens--; this.sequence = value.sequence; this.queue.push({ ...value, ...(placement ? { location: [...value.location] } : {}), ...(value.type === 'repair' ? { costs: [...value.costs] } : {}) });
+      this.tokens--; this.sequence = value.sequence; this.queue.push({ ...value, ...(placement ? { location: [...value.location] } : {}), ...(value.type === 'repair' || buildingUpgrade ? { costs: [...value.costs] } : {}) });
     }
     apply(game, hero, players, controls) {
       const action = this.queue.shift();
@@ -53,6 +56,8 @@
       }
       if (action?.archetype !== undefined) return 'Only your own held building can be controlled.';
       if (incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
+      if (type === 'upgradeBuilding') return game.desktopConstruction?.upgradeBuilding(hero, target, action.next, action.costs) || 'Construction is not ready.';
+      if (type === 'cancelUpgrade') return game.desktopConstruction?.cancelUpgrade(hero, target, action.next, action.episode) || 'Construction is not ready.';
       if (type === 'repair') return game.desktopConstruction?.repair(hero, target, action.costs) || 'Construction is not ready.';
       if (type === 'move') return game.desktopConstruction?.move(hero, target) || 'Construction is not ready.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
@@ -60,7 +65,7 @@
       const totem = type === 'target' ? totemMenu(hero, target, controls) : null;
       if (totem) return { message: 'Choose a hero upgrade. Escape cancels.', totem };
       const construction = type === 'target' ? game.desktopConstruction?.menu(hero, target, controls) : null;
-      if (construction && (construction.products.length || construction.move || construction.repair)) return { message: 'Choose a building action. Escape cancels.', construction };
+      if (construction && (construction.products.length || construction.move || construction.repair || construction.upgrade)) return { message: 'Choose a building action. Escape cancels.', construction };
       const building = controls?.demolitionInfo(target);
       if (type === 'demolish') {
         if (!building || building.reason) return building?.reason || 'This building cannot be demolished.';

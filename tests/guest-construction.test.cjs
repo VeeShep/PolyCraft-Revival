@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { GuestConstruction } = require('../desktop/guest-construction.js');
 const product = () => ({ index: 0, name: 'Wall', archetype: 'wall', costs: [0, 100, 0], valid: true, affordable: true, time: 10, repeat: true });
-const menu = () => ({ type: 'target', sequence: 1, construction: { source: 'Workshop', move: false, repair: null, demolition: null, products: [product()] } });
+const menu = () => ({ type: 'target', sequence: 1, construction: { source: 'Workshop', move: false, repair: null, upgrade: null, demolition: null, products: [product()] } });
 function setup() {
   const sent = [], drawn = [], sprites = []; let sequence = 1, clicked;
   const builder = { formatTimeToString: String, getv4ValidBuildPositionTextureColor: () => [0, 1, 0, 1], getv4InvalidBuildPositionTextureColor: () => [1, 0, 0, 1], getBuildingGuidelineTexture: () => 'textures/block.dds' };
@@ -129,4 +129,42 @@ test('repair menus retain eligible demolition through the existing confirmation,
   assert.deepEqual(world.demolition, value.construction.demolition); assert.equal(ui.menu, null);
   for (const repair of [{ costs: [-1, 0], affordable: true }, { costs: Array(2), affordable: true }, { costs: [NaN, 0], affordable: true }, { costs: [0, 0], affordable: 'yes' }, { costs: [0, 0], affordable: true, free: true }]) assert.throws(() => ui.receive({ ...value, construction: { ...value.construction, repair } }, true), /Invalid repair/);
   assert.throws(() => ui.receive({ ...value, construction: { ...value.construction, demolition: { id: 'another', name: 'Another', reason: '' } } }, true), /Invalid building demolition/);
+});
+
+test('guest upgrades reuse the actual original information panel with host resource display and presentation-only confirmation', () => {
+  const ast = require('./runtime-ast.cjs'), { ui, world, drawn, click } = setup(); let request, panelChoice = '', available;
+  const definition = { upgradeArchetypeName: 'wall2', upgradeInfo: 'normal' };
+  world.game.getEntityFactory = () => ({ getECArchetype: (name, key) => name === 'wall' && key === 'ECUpgradable' ? definition : name === 'wall2' && key === 'ECBuilding' ? { level: 2 } : {} });
+  world.scene.entities.get('Workshop').record.archetype = 'wall';
+  world.controls.upgradeMethods = ast.component('ECUpgradable', { vk: { normal: { contentsList: [], buildingNameTextId: 'title', buildingDescriptionTextId: 'desc' } } });
+  const globals = world.controls.app.globals; globals.currentLanguage = { title: 'Wall', desc: 'Original description', INFO_PANEL_UPGRADE_BUTTON: 'Upgrade', INFO_PANEL_TO_LEVEL: 'To level' }; globals.guiRenderer = { getv2RenderLocation: () => [0, 0] };
+  const gui = world.game.getIMGui(); gui.doBackground = () => {}; world.game.getGuiManager = () => ({ addDrawGui() {} });
+  const panels = { removeZeroDifferenceUpgradeComponents: (_info, list) => list, doInfoPanel: () => panelChoice };
+  for (const name of ['addResourceCostInfo', 'addBuildDurationInfo', 'addHealthBoostInfo', 'addNewBuildOptionsInfo', 'addResourceStorageBoostInfo', 'addWildlingBoostInfo']) panels[name] = (_from, _to, _game, _globals, info) => info;
+  const availableInfo = ast.method('addResourceAvailableInfo', { H: { LUMBER: 0, STONE: 1 } });
+  panels.addResourceAvailableInfo = (...args) => { const info = availableInfo(...args); available = [info.primaryResourceAvailable, info.secondaryResourceAvailable]; return info; };
+  world.controls.infoPanels = { doUpgradeInfoPanel: ast.method('doUpgradeInfoPanel', { wa: panels }) };
+  world.requestBuildingUpgrade = (source, upgrade) => { request = { source, next: upgrade.next }; world.cancelLocalMenu(); };
+  const value = menu(); value.construction.products = []; value.construction.upgrade = { from: 'wall', next: 'wall2', name: 'Level 2', costs: [20, 30], resources: [55, 66], time: 10, active: false, valid: true, affordable: true, episode: null };
+  ui.receive(value, true); click('guest-upgrade-Workshop'); ui.update();
+  assert.equal(drawn[0].guiArchetype, 'upgradeLumber'); assert.equal(ui.upgradePanel, true); assert.equal(request, undefined);
+  ui.update(); assert.deepEqual(available, [55, 66]); assert.equal(request, undefined);
+  panelChoice = 'close'; ui.update(); assert.equal(ui.upgradePanel, false); assert.equal(request, undefined);
+  click('guest-upgrade-Workshop'); ui.update(); panelChoice = 'confirm'; ui.update();
+  assert.deepEqual(request, { source: 'Workshop', next: 'wall2' }); assert.equal(ui.menu, null);
+  request = undefined; value.construction.upgrade.affordable = false; ui.receive(value, true); ui.update(); ui.update(); assert.equal(request, undefined);
+  value.construction.upgrade.affordable = true; ui.receive(value, true); ui.update();
+  ui.menuUpdated = performance.now() - 3000; world.selectionRequest = 99; ui.update(); assert.equal(request, undefined, 'A stale panel cannot purchase');
+  ui.receive(value, true); ui.update(); world.scene.entities.get('Workshop').record.archetype = 'wall2'; ui.update();
+  assert.equal(ui.menu, null); assert.equal(request, undefined, 'A replaced source closes the panel');
+});
+
+test('active guest upgrade shows original cancel artwork and upgrade metadata rejects unknown definitions and invalid numbers', () => {
+  const { ui, world, drawn, click } = setup(); let cancelled;
+  world.game.getEntityFactory = () => ({ getECArchetype: (name, key) => name === 'wall' && key === 'ECUpgradable' ? { upgradeArchetypeName: 'wall2' } : name === 'wall2' && key === 'ECBuilding' ? {} : null });
+  const upgrade = { from: 'wall', next: 'wall2', name: 'Level 2', costs: [20, 30], resources: [55, 66], time: 10, active: true, valid: true, affordable: true, episode: 1 };
+  const value = menu(); value.construction.products = []; value.construction.upgrade = upgrade;
+  world.requestBuildingUpgrade = (source, info) => { cancelled = { source, active: info.active }; };
+  ui.receive(value, true); click('guest-upgrade-Workshop'); ui.update(); assert.equal(drawn[0].guiArchetype, 'cancelUpgrade'); assert.deepEqual(cancelled, { source: 'Workshop', active: true });
+  for (const invalid of [{ ...upgrade, next: 'unknown' }, { ...upgrade, costs: [-1, 0] }, { ...upgrade, resources: Array(2) }, { ...upgrade, time: NaN }, { ...upgrade, active: 1 }, { ...upgrade, free: true }]) assert.throws(() => ui.receive({ ...value, construction: { ...value.construction, upgrade: invalid } }, true), /Invalid building upgrade/);
 });

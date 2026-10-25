@@ -264,6 +264,13 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(world.targetSequence, 7);
   connection.onMessage({ kind: 'result', payload: { type: 'repair', sequence: 7, message: 'Saved.' } });
   assert.equal(world.repairRequest, null); assert.equal(world.lastTargetResult.type, 'repair');
+  world.requestBuildingUpgrade('storage', { active: false, next: 'wall2', costs: [20, 30] });
+  world.requestBuildingUpgrade('storage', { active: false, next: 'wall2', costs: [20, 30] });
+  assert.deepEqual(requests.at(-1), { kind: 'action', payload: { type: 'upgradeBuilding', sequence: 8, target: 'storage', next: 'wall2', costs: [20, 30] } });
+  connection.onMessage({ kind: 'result', payload: { type: 'upgradeBuilding', sequence: 8, message: 'Saved.' } }); assert.equal(world.upgradeRequest, null);
+  world.requestBuildingUpgrade('storage', { active: true, next: 'wall2', episode: 1 });
+  assert.deepEqual(requests.at(-1), { kind: 'action', payload: { type: 'cancelUpgrade', sequence: 9, target: 'storage', next: 'wall2', episode: 1 } });
+  connection.onMessage({ kind: 'result', payload: { type: 'cancelUpgrade', sequence: 9, message: 'Saved.' } }); assert.equal(world.upgradeRequest, null);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);

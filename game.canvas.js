@@ -58638,6 +58638,7 @@
       }));
     },
     attemptToPurchaseMultipleUpgrade: function (a, b) {
+      if (this.gameManager.desktopConstruction && this.refineUpgradeList(this.getListOfEntitiesThatICanUpgradeAroundMe(), b).some(entity => this.gameManager.desktopConstruction.claimed(entity))) return;
       var c = this.globals,
         d = this.gameManager,
         f = this;
@@ -58669,6 +58670,7 @@
       return a && b && (a = a.getBuildingManager()) && a.hasReachedScaffoldCap(this.scaffoldType) ? !0 : !1;
     },
     purchaseUpgrade: function (a, b) {
+      if (this.gameManager.desktopConstruction && this.gameManager.desktopConstruction.claimed(this.entity)) return;
       var c,
         d = void 0 !== b ? b : 1;
       if (this.entity && !this.isUpgrading()) {
@@ -58677,11 +58679,13 @@
       }
     },
     beginUpgrade: function (a) {
+      if (this.gameManager.desktopConstruction && this.gameManager.desktopConstruction.claimed(this.entity)) return;
       var b = this.getEntityEC("ECUpgrader");
       b && b.startUpgrading(this.getUpgradeArchetypeName(), this.getUpgradeTime(), this.scaffoldType, a);
       (a = this.getEntityEC("ECSelectable")) && a.setActivated(!1);
     },
     beginUpgradeMultipleBuildings: function (a, b) {
+      if (this.gameManager.desktopConstruction && this.refineUpgradeList(this.getListOfEntitiesThatICanUpgradeAroundMe(), b).some(entity => this.gameManager.desktopConstruction.claimed(entity))) return;
       var c = this.getListOfEntitiesThatICanUpgradeAroundMe(),
         c = this.refineUpgradeList(c, b),
         d = this.entity;
@@ -58796,12 +58800,14 @@
       this.scaffoldMeshEntity && (this.scaffoldMeshEntity.shrinkDisappear(0.5), this.scaffoldMeshEntity = void 0);
     },
     startUpgrading: function (a, b, c, d) {
+      var wasUpgrading = this.isUpgrading();
       var f = this.entity,
         e = this.gameManager;
       if (f && !this.isUpgrading() && a && c && void 0 !== b && (this.gameManager.eventManager.notify("BuildingEvent", {
         reason: "upgradeStarted",
         building: f
       }), this.upgradeTime = b, this.upgradedArchetypeName = a, this.scaffoldType = c, this.startedUpgrading = !0, this.hasOfflineBuilder = !1, this.upgradeComplete = 0, this.builderHasBeenClicked = this.waitingForClick = !1, e && (a = e.getBuildingManager()) && a.upgraderAdded(this, !0), this.setToUpdate(!0), this.setToDraw(!0), d && (d = d.getEC("ECWildlingLeader")))) d.onUpgradeStarted(f);
+      if (!wasUpgrading && this.isUpgrading() && this.gameManager.desktopConstruction) this.gameManager.desktopConstruction.upgradeStarted(this);
       this.createScaffoldMesh();
     },
     isUpgrading: function () {
@@ -58863,6 +58869,7 @@
       this.globals.metricsManager.sendGameMetric("buildingInitiated_" + a);
     },
     cancelUpgrade: function (a) {
+      if (this.gameManager.desktopConstruction && this.gameManager.desktopConstruction.claimed(this.entity)) return;
       var b, c, d;
       d = this.gameManager;
       if (this.isUpgrading()) {
@@ -144999,7 +145006,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z);
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype);
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };

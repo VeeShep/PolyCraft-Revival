@@ -4,6 +4,7 @@
     constructor(game) {
       if (game.desktopConstruction) throw new Error('Construction is already managed.');
       this.game = game; this.pending = new Set(); this.manager = game.getBuildingManager();
+      this.upgradeEpisodes = new WeakMap(); this.upgradeSequence = 0;
       this.original = { remaining: this.manager.getRemainingBuildingsBeforeCap, scaffolds: this.manager.getNumScaffoldsForCap };
       this.manager.getRemainingBuildingsBeforeCap = (type, parent) => {
         const local = parent?.getEC('ECPlacedBuildingTracker')?.getLocalBuildingCap(type);
@@ -92,14 +93,37 @@
       source.getEC('ECRepairable').purchaseRepair(hero, ...info.costs);
       return { message: 'Building repaired and saved.', save: true };
     }
+    upgradeStarted(upgrader) { this.upgradeEpisodes.set(upgrader, ++this.upgradeSequence); }
+    upgradeInfo(hero, source) {
+      const upgrade = source.getEC('ECUpgradable'), upgrader = source.getEC('ECUpgrader'), radial = source.getEC('ECRadialMenu');
+      if (!this.owns(hero.getEC('ECPlayerBuilder')) || !upgrade || !upgrader || source.shouldBeDestroyed() || !source.isFriendlyWith(hero) || source.getEC('ECFaction')?.getFactionName() !== this.game.getFactionManager().getHeroFactionName() || !radial?.isRadialMenuEnabled() || radial.isRepairButtonExclusive() || this.claimed(source)) return null;
+      const active = upgrader.isUpgrading();
+      if (active ? !radial.isCancelUpgradeButtonValid() : !radial.isUpgradeButtonValid() || radial.isSpeedUpResearchButtonValid()) return null;
+      if (active && !this.upgradeEpisodes.has(upgrader)) this.upgradeStarted(upgrader);
+      const data = hero.getEC('ECPlayerData');
+      return { from: source.getArchetypeName(), next: upgrade.getUpgradeArchetypeName(), name: upgrade.getUpgradeName(), costs: [upgrade.getResourceCost(), upgrade.getSecondaryResourceCost()], resources: [data.getResource(0), data.getResource(1)], time: upgrade.getBuildTime(), active, episode: active ? this.upgradeEpisodes.get(upgrader) : null,
+        valid: active || !!(upgrade.arePrerequisitesMet() && !upgrade.hasFailedScaffoldCap()), affordable: active || !!upgrade.canEntityAffordUpgrade(hero) };
+    }
+    upgradeBuilding(hero, source, next, costs) {
+      const info = this.upgradeInfo(hero, source);
+      if (!info || info.active || !info.valid || !info.affordable || next !== info.next || !info.costs.every((cost, index) => cost === costs[index])) return 'Upgrade requirements, price or resources changed. Select it again.';
+      source.getEC('ECUpgradable').purchaseUpgrade(hero);
+      return { message: 'Building upgrade started and saved.', save: true };
+    }
+    cancelUpgrade(hero, source, next, episode) {
+      const info = this.upgradeInfo(hero, source);
+      if (!info?.active || next !== info.next || episode !== info.episode) return 'That upgrade cannot be cancelled.';
+      source.getEC('ECUpgrader').cancelUpgrade(hero);
+      return { message: 'Upgrade cancelled; half the resource cost refunded and saved.', save: true };
+    }
     menu(hero, source, controls) {
-      const repair = this.repairInfo(hero, source), move = this.canMove(hero, source);
+      const repair = this.repairInfo(hero, source), move = this.canMove(hero, source), upgrade = this.upgradeInfo(hero, source);
       const info = controls?.demolitionInfo(source);
       const demolition = info?.reason === '' ? { id: info.id, name: info.name, reason: '' } : null;
       const dispenser = source.getEC('ECRadialMenu')?.isRepairButtonExclusive() ? null : this.dispenser(hero, source);
-      if (!dispenser?.contents.length) return repair ? { source: source.getName(), move, repair, demolition, products: [] } : null;
+      if (!dispenser?.contents.length) return repair || upgrade ? { source: source.getName(), move, repair, upgrade, demolition, products: [] } : null;
       dispenser.evaluateProductInfo();
-      return { source: source.getName(), move, repair, demolition, products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
+      return { source: source.getName(), move, repair, upgrade, demolition, products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
         if (dispenser.archetype.showUnavailableDueToPrerequisites === false && !dispenser.arePrerequisitesMet(index)) return [];
         if (dispenser.getQuantityPerPurchase(index) !== 1 || !this.game.getEntityFactory().getECArchetype(product.dispensedArchetypeName, 'ECBuilding')) return [];
         return [{ index, name: dispenser.getDispenseName(index), archetype: product.dispensedArchetypeName,

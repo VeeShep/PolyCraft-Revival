@@ -5,7 +5,7 @@
   const vector = (value, size) => Array.isArray(value) && value.length === size && Array.from({ length: size }, (_, index) => value[index]).every(number => typeof number === 'number' && Number.isFinite(number) && Math.abs(number) <= 1e6);
   class GuestConstruction {
     constructor(world) { this.world = world; this.lastQuery = this.lastHeldQuery = -Infinity; }
-    cancel() { this.menu = this.placement = this.preview = this.request = this.pending = this.heldRequest = null; this.click = false; }
+    cancel() { this.menu = this.placement = this.preview = this.request = this.pending = this.heldRequest = null; this.click = this.upgradePanel = false; }
     cancelHeld() {
       if (!this.placement?.held || !this.placement.cancelable || this.pending) return;
       this.pending = this.world.sendTarget('cancelBuild', this.placement.source, this.placement.product.archetype);
@@ -29,14 +29,18 @@
       if (value.type === 'held' && this.heldRequest === value.sequence) this.heldRequest = null;
       if (value.construction) {
         const menu = value.construction, indices = new Set(), factory = this.world.game.getEntityFactory();
-        if (value.type !== 'target' || !keys(menu, ['source', 'products', 'move', 'repair', 'demolition']) || typeof menu.move !== 'boolean' || !text(menu.source) || !Array.isArray(menu.products) || (!menu.products.length && !menu.move && !menu.repair) || menu.products.length > 32) throw new Error('Invalid construction menu.');
+        if (value.type !== 'target' || !keys(menu, ['source', 'products', 'move', 'repair', 'upgrade', 'demolition']) || typeof menu.move !== 'boolean' || !text(menu.source) || !Array.isArray(menu.products) || (!menu.products.length && !menu.move && !menu.repair && !menu.upgrade) || menu.products.length > 32) throw new Error('Invalid construction menu.');
         if (menu.demolition !== null && (!keys(menu.demolition, ['id', 'name', 'reason']) || menu.demolition.id !== menu.source || !text(menu.demolition.name) || menu.demolition.reason !== '')) throw new Error('Invalid building demolition choice.');
         if (menu.repair !== null && (!keys(menu.repair, ['costs', 'affordable']) || !Array.isArray(menu.repair.costs) || menu.repair.costs.length !== 2 || ![0, 1].every(index => typeof menu.repair.costs[index] === 'number' && Number.isFinite(menu.repair.costs[index]) && menu.repair.costs[index] >= 0 && menu.repair.costs[index] <= 2147483647) || typeof menu.repair.affordable !== 'boolean')) throw new Error('Invalid repair choice.');
+        if (menu.upgrade !== null) {
+          const upgrade = menu.upgrade;
+          if (!keys(upgrade, ['from', 'next', 'name', 'costs', 'resources', 'time', 'active', 'valid', 'affordable', 'episode']) || !text(upgrade.from) || !text(upgrade.next) || !text(upgrade.name) || !['active', 'valid', 'affordable'].every(key => typeof upgrade[key] === 'boolean') || ![upgrade.costs, upgrade.resources].every(values => Array.isArray(values) && values.length === 2 && [0, 1].every(index => typeof values[index] === 'number' && Number.isFinite(values[index]) && values[index] >= 0 && values[index] <= 2147483647)) || typeof upgrade.time !== 'number' || !Number.isFinite(upgrade.time) || upgrade.time < -1 || upgrade.time > 1e9 || (upgrade.active ? !Number.isSafeInteger(upgrade.episode) || upgrade.episode < 1 : upgrade.episode !== null) || factory.getECArchetype(upgrade.from, 'ECUpgradable')?.upgradeArchetypeName !== upgrade.next || !factory.getECArchetype(upgrade.next, 'ECBuilding')) throw new Error('Invalid building upgrade choice.');
+        }
         for (const product of menu.products) {
           if (!keys(product, ['index', 'name', 'archetype', 'costs', 'valid', 'affordable', 'time', 'repeat']) || !Number.isInteger(product.index) || product.index < 0 || product.index >= 32 || indices.has(product.index) || !text(product.name) || !text(product.archetype) || !factory.getECArchetype(product.archetype, 'ECBuilding') || !Array.isArray(product.costs) || product.costs.length !== 3 || ![0, 1, 2].every(index => Number.isSafeInteger(product.costs[index]) && product.costs[index] >= 0 && product.costs[index] <= 2147483647) || !['valid', 'affordable', 'repeat'].every(key => typeof product[key] === 'boolean') || typeof product.time !== 'number' || !Number.isFinite(product.time) || product.time < 0 || product.time > 1e9) throw new Error('Invalid construction product.');
           indices.add(product.index);
         }
-        if (selected) { this.menu = structuredClone(menu); this.menuUpdated = performance.now(); this.placement = this.preview = this.request = this.pending = null; }
+        if (selected) { if (this.menu?.upgrade?.next !== menu.upgrade?.next || menu.upgrade?.active) this.upgradePanel = false; this.menu = structuredClone(menu); this.menuUpdated = performance.now(); this.placement = this.preview = this.request = this.pending = null; }
       } else if (selected) this.menu = null;
       if (value.preview) {
         const preview = value.preview;
@@ -91,7 +95,21 @@
       if (!record || world.controls.paused || !world.movement.nativeFocused) { world.cancelLocalMenu(); return; }
       if (this.menu) {
         if (performance.now() - this.menuUpdated > 1000 && !world.selectionRequest) world.selectionRequest = world.sendTarget('target', source);
-        const products = this.menu.products, count = products.length + (this.menu.move ? 1 : 0) + (this.menu.repair ? 1 : 0) + (this.menu.demolition ? 1 : 0), scale = gui.getRadialScaleFactor(count);
+        if (this.upgradePanel && this.menu.upgrade) {
+          const upgrade = this.menu.upgrade;
+          if (record.archetype !== upgrade.from) { world.cancelLocalMenu(); return; }
+          const definition = world.game.getEntityFactory().getECArchetype(upgrade.from, 'ECUpgradable');
+          // The original panel may confirm only through this presentation adapter, never a live component.
+          const component = Object.assign(Object.create(world.controls.upgradeMethods), { archetype: definition, attemptToPurchaseUpgrade: () => {
+            if (upgrade.valid && upgrade.affordable && performance.now() - this.menuUpdated < 2000) world.requestBuildingUpgrade(source, upgrade);
+          } });
+          const panelGame = Object.assign(Object.create(world.game), { getHero: () => ({ getEC: () => ({ getResource: index => upgrade.resources[index] }) }) });
+          gui.doBackground();
+          world.game.getGuiManager().addDrawGui('bgPattern', { v2ScreenLocation: globals.guiRenderer.getv2RenderLocation(0, 0) }, 'guest-upgrade-background');
+          if (world.controls.infoPanels.doUpgradeInfoPanel(panelGame, globals, { archetypeName: upgrade.from, getEC: () => component })) this.upgradePanel = false;
+          return;
+        }
+        const products = this.menu.products, count = products.length + (this.menu.move ? 1 : 0) + (this.menu.repair ? 1 : 0) + (this.menu.demolition ? 1 : 0) + (this.menu.upgrade ? 1 : 0), scale = gui.getRadialScaleFactor(count);
         const point = globals.camera.worldToScreen(entry.displayLocation || record.location);
         if (!point) return;
         const center = count > 1 ? gui.getRadialCentre(point, scale) : point;
@@ -109,6 +127,15 @@
         if (this.menu?.repair) {
           const repair = this.menu.repair;
           if (gui.doButton({ id: 'guest-repair-' + source, text1: 'Repair', text2: String(repair.costs[0]), text3: String(repair.costs[1]), text4: '', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, products.length + (this.menu.move ? 1 : 0), count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: (repair.affordable ? 'repair' : 'repairInvalid') + (repair.costs[1] > 0 ? 'Stone' : 'Lumber') }) && repair.affordable) { world.requestRepair(source, repair.costs); return; }
+        }
+        if (this.menu?.upgrade) {
+          const upgrade = this.menu.upgrade, definition = world.game.getEntityFactory().getECArchetype(upgrade.next, 'ECBuilding');
+          const kind = definition.secondaryResourceCost > 0 ? 'Stone' : definition.softCurrencyCost > 0 ? 'Amber' : 'Lumber';
+          const style = upgrade.active ? 'cancelUpgrade' : (upgrade.valid ? (upgrade.affordable ? 'upgrade' : 'upgradeInvalid') : 'upgradeInvalid') + kind + (upgrade.valid && !upgrade.affordable ? 'CantAfford' : '');
+          if (gui.doButton({ id: 'guest-upgrade-' + source, text: upgrade.active ? 'Cancel upgrade' : '', text1: upgrade.active ? '' : 'Upgrade to ' + upgrade.name, text2: String(upgrade.costs[0]), text3: String(upgrade.costs[1]), text4: String(definition.softCurrencyCost || 0), text5: world.game.getHero().getEC('ECPlayerBuilder').formatTimeToString(upgrade.time, true), v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, products.length + (this.menu.move ? 1 : 0) + (this.menu.repair ? 1 : 0), count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: style }) && upgrade.valid) {
+            if (upgrade.active) world.requestBuildingUpgrade(source, upgrade); else this.upgradePanel = true;
+            return;
+          }
         }
         if (this.menu?.demolition && gui.doButton({ id: 'guest-demolish-' + source, text: 'Demolish', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, count - 1, count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'demolish' })) {
           const demolition = this.menu.demolition; world.cancelLocalMenu(); world.demolition = demolition;

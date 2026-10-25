@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest building repairs — Beta 15, 2026-10-25
+## Current guest building upgrades — Beta 16, 2026-10-25
+
+Individual upgrade and cancellation intents bind the expected next archetype, with cancellation also bound to a session-only upgrade episode; purchase also binds the displayed lumber/stone quote. Host checks current ownership/faction, actor life/input, original radial/research/repair flags, claims, prerequisites, scaffold cap and shared affordability. Original purchase/start/cancel methods retain worker assignment, manager registration, progress serialization and one half-resource refund. Duplicate/stale requests refuse before spending. Native restarts allocate new episodes, preventing an old cancellation from refunding a later restart of the same target without adding save fields. Native single/batch/free-upgrade/cancel entry points protect reserved move/parent references too.
+
+Guest menus reuse original upgrade/cancel artwork and the actual original information panel. A presentation component overrides confirmation with a network intent, and a read-only game adapter supplies host resource amounts; the local solo model and live local components are not used for payment or availability. Stale/unaffordable panels cannot purchase and replaced sources close. Online simulation continues without changing game state. Save schema/envelope remain 4/6, runtime advances to coop-14, signaling stays protocol 2.
+
+244 checks pass; scope/evidence are in RESTORATION_STATUS.md. No graphical game/personal island was opened. Worker/timer/completion/contents/cancel/save/reconnect and physical/native acceptance remain open. Guest batch upgrades, premium speedups, group repairers and broader original gameplay/HUD/camera parity are unfinished.
+
+## Previous guest building repairs — Beta 15, 2026-10-25
 
 Bounded/sequenced repair intents carry an expected quote. The host recomputes original damage costs and shared affordability, refuses changed quotes or ineligible/reserved sources, and invokes original ECRepairable.purchaseRepair before coherent save/ack. Two queues cannot charge the same now-healthy building twice. Guest metadata and fractional costs are validated; one pending repair is allowed. Original affordable/unavailable repair artwork is used; broken dispensers suppress products/movement, and eligible demolition remains available through the existing confirmation. Native host repair callbacks also refuse claimed move sources. No save change: schema/envelope 4/6, game runtime coop-13, signaling protocol 2.
 

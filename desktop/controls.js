@@ -15,10 +15,11 @@
     };
   }
   class Controls {
-    attach(app, xpTable, guiTypes) {
+    attach(app, xpTable, guiTypes, infoPanels, upgradeMethods) {
       this.app = app;
       this.xpTable = xpTable;
       this.guiTypes = guiTypes;
+      this.infoPanels = infoPanels; this.upgradeMethods = upgradeMethods;
       const render = app.render;
       if (render) app.render = (...args) => {
         const now = app.globals.appCurrentTime;
