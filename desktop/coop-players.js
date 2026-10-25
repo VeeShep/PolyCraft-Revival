@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const { CoopData } = typeof module !== 'undefined' ? require('./coop-data.js') : root.PolycraftCoopData;
+  const { CoopData, validateConstruction } = typeof module !== 'undefined' ? require('./coop-data.js') : root.PolycraftCoopData;
   class CoopPlayers {
     constructor(game, bridge) {
       if (game.desktopPlayers || bridge.coopEconomy || !game.getHero()) throw new Error('This island already has co-op heroes or has no solo hero.');
@@ -9,7 +9,7 @@
       const soloHero = game.getHero(), globals = game.globals;
       this.requireIdle(soloHero);
       this.weaponDefinition = soloHero.getEC('ECInventory').getWeaponDefinition;
-      for (const record of this.registry.data.players) this.checkWeapons(record);
+      for (const record of this.registry.data.players) { this.checkWeapons(record); this.checkConstruction(record.construction); }
       this.solo = { model: game.playerData, name: soloHero.getName(), archetype: soloHero.getArchetypeName(),
         record: this.captureHero(soloHero), crown: game.amberCrown, owned: globals.gamePurchaseManager.owned,
         items: globals.storeManager.userItems, basket: bridge.basket, onEmptyHanded: globals.gamePurchaseManager.onEmptyHandedCallback };
@@ -31,6 +31,51 @@
         if (name !== null && (!name.startsWith('wp_h_') || !this.weaponDefinition(name))) throw new Error('Unknown saved hero weapon: ' + name);
       }
     }
+    checkConstruction(held) {
+      validateConstruction(held);
+      if (!held) return {};
+      const factory = this.game.getEntityFactory();
+      if (!factory.getECArchetype(held.archetype, 'ECBuilding')) throw new Error('Unknown saved held building: ' + held.archetype);
+      const resolve = name => {
+        if (name === null) return undefined;
+        const entity = this.game.getGameEntityByName(name);
+        if (!entity || entity.shouldBeDestroyed() || (!entity.getEC('ECBuilding') && !entity.getEC('ECScaffold')) || entity.getEC('ECFaction')?.getFactionName() !== this.game.getFactionManager().getHeroFactionName()) throw new Error('Saved held-building reference is unavailable: ' + name);
+        return entity;
+      };
+      return { parent: resolve(held.parent), moveFrom: resolve(held.moveFrom) };
+    }
+    captureConstruction(hero) {
+      const builder = hero.getEC('ECPlayerBuilder');
+      this.requireSettled(hero);
+      if (!builder.isBuilding()) return null;
+      const reference = pointer => {
+        if (!pointer) return null;
+        const entity = pointer.get();
+        if (!entity || entity.shouldBeDestroyed()) throw new Error('A held-building reference disappeared. Finish placement before saving.');
+        return entity.getName();
+      };
+      const held = { archetype: builder.getHeldObjectName(), quantity: builder.getHeldItemQuantity(),
+        instant: !!builder.instantBuildFlavour, infinite: !!builder.infinitePlacement, isNew: !!builder.isNewBuilding,
+        cannotCancel: !!builder.cannotCancel, payWhenPlacing: !!builder.shouldPayWhenPlacingBuildings,
+        parent: reference(builder.spBuildingParentEntity), moveFrom: reference(builder.spMoveFromEntity),
+        lastPlaced: builder.v3LastPlacedLocation ? Array.from(builder.v3LastPlacedLocation) : null };
+      this.checkConstruction(held);
+      return held;
+    }
+    restoreConstruction(hero, held) {
+      const { parent, moveFrom } = this.checkConstruction(held);
+      if (!held) return;
+      const builder = hero.getEC('ECPlayerBuilder');
+      if (moveFrom) builder.placeMoveScaffoldInHand(held.archetype, moveFrom, parent);
+      else builder.placeInHand(held.archetype, held.quantity, held.instant, held.infinite, parent, held.isNew);
+      builder.setHeldItemQuantity(held.quantity);
+      builder.instantBuildFlavour = held.instant; builder.infinitePlacement = held.infinite; builder.isNewBuilding = held.isNew;
+      builder.setCannotCancel(held.cannotCancel); builder.setShouldPayWhenPlacingBuildings(held.payWhenPlacing);
+      builder.v3LastPlacedLocation = held.lastPlaced ? [...held.lastPlaced] : undefined;
+    }
+    requireSettled(hero) {
+      if (hero.getEC('ECPlayerBuilder').isThrowing() || this.game.globals.gamePurchaseManager.consumeBuildingInProgress) throw new Error('Finish placing the thrown building and wait for shop requests before saving, switching heroes or ending co-op.');
+    }
     allowsHeroPvp(entity) {
       return this.game.globals.desktopWorld?.transport.pvp === true && [...this.active.values()].some(entry => entry.hero === entity);
     }
@@ -46,17 +91,19 @@
       if (builder.isBuilding() || builder.isThrowing() || this.game.globals.gamePurchaseManager.consumeBuildingInProgress) throw new Error('Finish placing the held building and wait for shop requests before saving, switching heroes or ending co-op.');
     }
     captureHero(hero) {
+      const construction = this.captureConstruction(hero);
       const carrier = hero.getEC('ECResourceCarrier');
       // Complete in-flight deliveries before removing their carrier, so they cannot be lost or paid twice.
       if (carrier.hasAnyFlyingResource()) for (const tween of [...carrier.flyingTweens]) tween.complete();
       const health = hero.getEC('ECHealth'), firearm = hero.getEC('ECFirearm'), inventory = hero.getEC('ECInventory');
-      return { location: Array.from(hero.getv3Location()), rotation: Number(hero.getRotationY()),
+      return { construction, location: Array.from(hero.getv3Location()), rotation: Number(hero.getRotationY()),
         health: { current: Math.max(0, Math.min(health.getHealth(), health.getMaxHealth())), maximum: health.getMaxHealth() },
         inventory: { weapon: inventory.getHeldWeapon(), mainWeapon: firearm.mainWeaponName || null,
           ammo: firearm.getAmmo(), temporaryAmmo: firearm.temporaryWeaponAmmo || 0, carried: [carrier.getResource(0), carrier.getResource(1)] } };
     }
     restoreHero(hero, record) {
       if (record.location === null) return;
+      this.restoreConstruction(hero, record.construction);
       hero.setRotationY(record.rotation);
       const inventory = hero.getEC('ECInventory'), firearm = hero.getEC('ECFirearm'), saved = record.inventory;
       if (saved.mainWeapon) {
@@ -79,6 +126,7 @@
       }
     }
     spawn(record, model, name, archetype) {
+      this.checkWeapons(record); this.checkConstruction(record.construction);
       const game = this.game, previous = game.playerData, index = game.randomPlayerIndex;
       let hero;
       try {
@@ -97,6 +145,8 @@
         const action = queue[index];
         if (action.actionName === 'ApplyDamageToEntity' && (action.actionArguments.aggressor === hero || action.actionArguments.victim === hero)) queue.splice(index, 1);
       }
+      // Remove the visual only; clearInHand would emit EmptyHanded and could consume another purchase.
+      hero.getEC?.('ECPlayerBuilder')?.removeHeldEntity?.();
       hero.setToBeDestroyed();
       for (const space of this.game.getGameSpaceList()) space.destroyDeadEntities();
     }
@@ -106,22 +156,27 @@
       this.checkWeapons(record);
       const hero = this.spawn(record, model, id === this.registry.data.host ? this.solo.name : 'CoopHero_' + id);
       this.active.set(id, { hero, model });
-      if (id === this.registry.data.host) { this.game.playerData = model; this.game.setHero(hero); }
+      if (id === this.registry.data.host) {
+        this.game.playerData = model; this.game.setHero(hero);
+        const purchase = this.game.globals.gamePurchaseManager;
+        if (this.registry.data.economy.pendingPlacements && !purchase.onEmptyHandedCallback) purchase.requestConsumeOnBuildingPlacement();
+      }
       return hero;
     }
     capture() {
-      // shortcut: require idle builders until held construction has versioned save/restore support.
-      for (const { hero } of this.active.values()) this.requireIdle(hero);
-      for (const [id, { hero }] of this.active) Object.assign(this.registry.player(id), this.captureHero(hero));
+      for (const { hero } of this.active.values()) this.requireSettled(hero);
+      const snapshots = [...this.active].map(([id, { hero }]) => [id, this.captureHero(hero)]);
+      for (const [id, snapshot] of snapshots) Object.assign(this.registry.player(id), snapshot);
+      this.registry.data.economy.pendingPlacements = !!this.game.globals.gamePurchaseManager.onEmptyHandedCallback;
       this.registry.persist();
     }
     remove(id) {
       if (id === this.registry.data.host) throw new Error('The host hero stays until the session ends.');
       const entry = this.active.get(id);
       if (!entry) return;
-      this.requireIdle(entry.hero);
+      this.requireSettled(entry.hero);
       Object.assign(this.registry.player(id), this.captureHero(entry.hero)); this.registry.persist();
-      this.destroy(entry.hero); this.active.delete(id);
+      this.destroy(entry.hero); this.active.delete(id); this.pendingRefresh.delete(id);
     }
     refresh(hero) {
       const entry = [...this.active.entries()].find(([, value]) => value.hero === hero);
@@ -146,7 +201,7 @@
     }
     close() {
       if (this.closed) return;
-      for (const { hero } of this.active.values()) this.requireIdle(hero);
+      for (const { hero } of this.active.values()) this.requireSettled(hero);
       this.capture();
       const game = this.game, globals = game.globals;
       for (const { hero } of this.active.values()) this.destroy(hero);

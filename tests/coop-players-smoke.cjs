@@ -50,15 +50,18 @@ const assert = require('node:assert/strict');
     });
     const result = await page.evaluate(async () => window.coopWorld.atBoundary(() => {
       const { players } = window.coopWorld, game = players.game;
-      const ids = [...players.active.keys()], host = game.getHero(), guestEntry = players.active.get(ids[1]);
+      const ids = [...players.active.keys()], host = game.getHero();
+      let guestEntry = players.active.get(ids[1]);
       const oldGuest = guestEntry.hero, oldLevel = oldGuest.getEC('ECPlayerData').getLevel();
       const builder = oldGuest.getEC('ECPlayerBuilder');
       builder.placeInHand('a_b_amberwell', 1, false, false);
       oldGuest.getEC('ECPlayerData').levelUp();
       const deferred = guestEntry.hero === oldGuest && players.pendingRefresh.has(ids[1]);
-      let removalBlocked = false;
-      try { players.remove(ids[1]); } catch (error) { removalBlocked = /Finish placing/.test(error.message); }
-      builder.clearInHand(); players.flushRefreshes();
+      const heldBefore = players.captureConstruction(oldGuest);
+      players.remove(ids[1]); players.add(ids[1]);
+      guestEntry = players.active.get(ids[1]);
+      const heldAfter = players.captureConstruction(guestEntry.hero);
+      guestEntry.hero.getEC('ECPlayerBuilder').clearInHand(); players.flushRefreshes();
       const guest = guestEntry.hero, health = guest.getEC('ECHealth');
       guest.getEC('ECFirearm').setWeapon('wp_h_bombs', 13);
       guest.getEC('ECInventory').setHeldWeapon('wp_h_bombs'); guest.getEC('ECFirearm').ammo = 2;
@@ -76,7 +79,7 @@ const assert = require('node:assert/strict');
       players.remove(ids[1]); const reconnected = players.add(ids[1]); players.capture();
       const after = structuredClone(players.registry.player(ids[1]));
       return { count: players.active.size, selectedHost: game.getHero() === host, replacedGuest: guest !== oldGuest,
-        deferred, removalBlocked,
+        deferred, heldBefore, heldAfter,
         levelUp: guestEntry.model.getXP() > 0 && data.getLevel() === oldLevel + 1,
         bindings: [...players.active.values()].map(entry => entry.hero.getEC('ECPlayerData').playerData === entry.model && entry.hero.getEC('ECHeroUpgrades').playerData === entry.model),
         soloUntouched: players.solo.model === window.soloModel && window.soloModel.getXP() === window.soloBefore.xp,
@@ -86,7 +89,7 @@ const assert = require('node:assert/strict');
         soloItems: JSON.stringify(window.polycraft.bridge.state.userItems), originalItems: window.soloBefore.items };
     }));
     assert.equal(result.count, 4); assert.equal(result.selectedHost, true); assert.equal(result.replacedGuest, true); assert.equal(result.levelUp, true);
-    assert.equal(result.deferred, true); assert.equal(result.removalBlocked, true);
+    assert.equal(result.deferred, true); assert.deepEqual(result.heldAfter, result.heldBefore);
     assert.deepEqual(result.bindings, [true, true, true, true]); assert.equal(result.soloUntouched, true);
     assert.deepEqual(result.after, result.before); assert.equal(result.soloItems, result.originalItems);
     assert.equal(result.kills.reduce((a, b) => a + b, 0), 1);
@@ -95,7 +98,7 @@ const assert = require('node:assert/strict');
     const savesDirectory = path.join(directory, 'saves');
     const file = path.join(savesDirectory, fs.readdirSync(savesDirectory).find(name => name.endsWith('.json')));
     const saved = JSON.parse(fs.readFileSync(file));
-    assert.equal(saved.version, 4); assert.equal(JSON.parse(saved.state.userData.desktopCoop).players.length, 4);
+    assert.equal(saved.version, 5); assert.equal(JSON.parse(saved.state.userData.desktopCoop).players.length, 4);
     const restored = await page.evaluate(async () => {
       await window.coopWorld.close();
       const { controls, bridge } = window.polycraft, game = controls.manager(), hero = game.getHero();

@@ -264,18 +264,18 @@ test('host full resyncs are periodic, rate-limited, connection-bound and wait fo
   await world.close();
 });
 
-test('online checkpoints refuse unsaved held construction before writing and succeed once placement is finished without pausing the world', async t => {
+test('online checkpoints refuse in-flight construction before writing and succeed after it finishes without pausing the world', async t => {
   const { CoopPlayers } = require('../desktop/coop-players.js');
   const { controls, game, clock, transport } = setup(t);
   const world = await startHostingWorld(controls, transport);
   try {
-    let held = true, writes = 0, snapshots = 0, persisted = 0;
+    let throwing = true, writes = 0, snapshots = 0, persisted = 0;
     game.globals = { gamePurchaseManager: {} };
     const players = Object.create(CoopPlayers.prototype);
     players.game = game;
-    players.active = new Map([['host', { hero: { getEC: () => ({ isBuilding: () => held, isThrowing: () => false }) } }]]);
+    players.active = new Map([['host', { hero: { getEC: () => ({ isBuilding: () => false, isThrowing: () => throwing }) } }]]);
     const record = { location: [1, 2, 3] };
-    players.registry = { player: () => record, persist: () => { persisted++; } };
+    players.registry = { data: { economy: {} }, player: () => record, persist: () => { persisted++; } };
     players.captureHero = () => { snapshots++; return { location: [4, 5, 6] }; };
     world.players = players; world.atBoundary = async read => read();
     const bridge = { state: emptyState() };
@@ -286,7 +286,7 @@ test('online checkpoints refuse unsaved held construction before writing and suc
     assert.equal(writes, 0); assert.equal(snapshots, 0); assert.equal(persisted, 0);
     assert.equal(JSON.stringify(bridge.state), before); assert.deepEqual(record.location, [1, 2, 3]);
     assert.equal(clock.isStopped, false); assert.equal(world.closed, false);
-    held = false;
+    throwing = false;
     const checkpoint = await world.checkpoint(bridge);
     assert.equal(writes, 1); assert.equal(snapshots, 1); assert.equal(persisted, 1);
     assert.equal(checkpoint.userData.progress, '{"xp":10}'); assert.deepEqual(record.location, [4, 5, 6]);

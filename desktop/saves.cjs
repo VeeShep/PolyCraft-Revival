@@ -4,8 +4,9 @@ const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const { KEY: COOP_KEY, validateCoop } = require('./coop-data.js');
 
-const SAVE_VERSION = 4;
-const versionForState = state => Object.hasOwn(state.userData, COOP_KEY) ? JSON.parse(state.userData[COOP_KEY]).version === 1 ? 3 : 4 : 2;
+const SAVE_VERSION = 5;
+// Co-op schemas 1/2/3 use envelopes 3/4/5; ordinary solo saves remain format 2.
+const versionForState = state => Object.hasOwn(state.userData, COOP_KEY) ? JSON.parse(state.userData[COOP_KEY]).version + 2 : 2;
 const MAX_BYTES = 32 * 1024 * 1024;
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 function checkJSON(value, depth = 0) {
@@ -54,7 +55,7 @@ function validateState(state) {
   return state;
 }
 function validate(save) {
-  if (!plain(save) || save.format !== 'polycraft-offline' || ![1, 2, 3, SAVE_VERSION].includes(save.version)) {
+  if (!plain(save) || save.format !== 'polycraft-offline' || ![1, 2, 3, 4, SAVE_VERSION].includes(save.version)) {
     const error = new Error('Unsupported save format or version.');
     if (plain(save) && save.format === 'polycraft-offline' && Number.isInteger(save.version) && save.version > SAVE_VERSION) error.code = 'UNSUPPORTED_SAVE';
     throw error;
@@ -153,6 +154,7 @@ class Saves {
     if (previous.version < 3 && next.version === 3) this.atomic(file + '.pre-v3', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
     const oldCoop = previous.state.userData[COOP_KEY], newCoop = next.state.userData[COOP_KEY];
     if (next.version === 4 && (previous.version < 4 || (oldCoop && newCoop && JSON.parse(oldCoop).version === 1 && JSON.parse(newCoop).version === 2))) this.atomic(file + '.pre-v4', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
+    if (next.version === 5 && (previous.version < 5 || (oldCoop && newCoop && JSON.parse(oldCoop).version < 3 && JSON.parse(newCoop).version === 3))) this.atomic(file + '.pre-v5', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
     // Carry history into recovery so rolling back a checkpoint cannot erase known cheat use.
     const backupState = withHistory(previous.state, next.state.cheats.everEnabled);
     this.atomic(file + '.bak', JSON.stringify({ format: previous.format, version: next.version, name: previous.name, updatedAt: previous.updatedAt, state: backupState }));
@@ -160,7 +162,7 @@ class Saves {
     return this.load(id);
   }
   create(name, state = emptyState(), minimumVersion = 2) {
-    if (![2, 3, 4].includes(minimumVersion)) throw new Error('Unsupported save format or version.');
+    if (![2, 3, 4, 5].includes(minimumVersion)) throw new Error('Unsupported save format or version.');
     const id = randomUUID();
     const save = { format: 'polycraft-offline', version: Math.max(minimumVersion, versionForState(state)), name: validName(name), updatedAt: new Date().toISOString(), state: withHistory(state) };
     const contents = JSON.stringify(save);
@@ -171,15 +173,15 @@ class Saves {
   rename(id, name) { return this.save(id, this.load(id).state, name); }
   remove(id) {
     const file = this.file(id);
-    for (const suffix of ['', '.bak', '.pre-v2', '.pre-v3', '.pre-v4', '.tmp', '.bak.tmp', '.pre-v2.tmp', '.pre-v3.tmp', '.pre-v4.tmp']) if (this.io.existsSync(file + suffix)) this.io.unlinkSync(file + suffix);
+    for (const suffix of ['', '.bak', '.pre-v2', '.pre-v3', '.pre-v4', '.pre-v5', '.tmp', '.bak.tmp', '.pre-v2.tmp', '.pre-v3.tmp', '.pre-v4.tmp', '.pre-v5.tmp']) if (this.io.existsSync(file + suffix)) this.io.unlinkSync(file + suffix);
   }
   import(file) {
     const save = this.read(file);
     const imported = this.create(save.name, save.state, Math.max(2, save.version));
-    if (save.version === 1) {
-      try { this.atomic(this.file(imported.id) + '.pre-v2', this.io.readFileSync(file), true); }
-      catch (error) { this.remove(imported.id); throw error; }
-    }
+    try {
+      if (save.version === 1) this.atomic(this.file(imported.id) + '.pre-v2', this.io.readFileSync(file), true);
+      if (Object.hasOwn(save.state.userData, COOP_KEY) && JSON.parse(save.state.userData[COOP_KEY]).version < 3) this.atomic(this.file(imported.id) + '.pre-v5', this.io.readFileSync(file), true);
+    } catch (error) { this.remove(imported.id); throw error; }
     return imported;
   }
   export(id, file) {

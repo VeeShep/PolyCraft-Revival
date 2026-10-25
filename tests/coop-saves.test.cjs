@@ -12,21 +12,21 @@ function fixture(t, io = fs) {
   t.after(() => fs.rmSync(parent, { recursive: true, force: true }));
   return { parent, saves: new Saves(path.join(parent, 'saves'), io) };
 }
-test('only co-op slots enter format 4, preserving exact original bytes and rejecting the real Beta 2 reader', t => {
+test('only co-op slots enter format 5, preserving exact original bytes and rejecting the real Beta 2 reader', t => {
   const { saves } = fixture(t), slot = saves.create('Co-op host'), solo = saves.create('Solo');
   const file = saves.file(slot.id), original = fs.readFileSync(file);
   const coop = new CoopData(slot.state); const guest = coop.addPlayer('Friend'); guest.progress.xp = 300; coop.persist();
   coop.data.players[0].progress.xp = 2147483647; coop.data.economy.softCurrency = 2147483647; coop.persist();
   const migrated = saves.save(slot.id, slot.state);
-  assert.equal(migrated.version, 4); assert.equal(saves.load(solo.id).version, 2);
-  assert.deepEqual(fs.readFileSync(file + '.pre-v4'), original);
+  assert.equal(migrated.version, 5); assert.equal(saves.load(solo.id).version, 2);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), original);
   assert.equal(migrated.state.cheats.everEnabled, false);
   const old = new Beta2Saves(saves.directory);
   assert.throws(() => old.load(slot.id), /Unsupported/); assert.throws(() => old.save(slot.id, slot.state), /Unsupported/);
-  assert.equal(JSON.parse(fs.readFileSync(file + '.bak')).version, 4, 'Missing-primary recovery also refuses old applications');
-  saves.save(slot.id, migrated.state); assert.deepEqual(fs.readFileSync(file + '.pre-v4'), original);
+  assert.equal(JSON.parse(fs.readFileSync(file + '.bak')).version, 5, 'Missing-primary recovery also refuses old applications');
+  saves.save(slot.id, migrated.state); assert.deepEqual(fs.readFileSync(file + '.pre-v5'), original);
   assert.equal(JSON.parse(saves.load(slot.id).state.userData[KEY]).players[1].progress.xp, 300);
-  saves.remove(slot.id); assert.equal(fs.existsSync(file + '.pre-v4'), false); assert.equal(saves.load(solo.id).version, 2);
+  saves.remove(slot.id); assert.equal(fs.existsSync(file + '.pre-v5'), false); assert.equal(saves.load(solo.id).version, 2);
 });
 test('co-op progress and cheat history survive rename, corruption recovery, export/import and fresh readers', t => {
   const { saves, parent } = fixture(t), slot = saves.create('Friends');
@@ -35,25 +35,25 @@ test('co-op progress and cheat history survive rename, corruption recovery, expo
   const saved = saves.save(slot.id, slot.state); saves.rename(slot.id, 'Renamed');
   assert.equal(saved.state.cheats.everEnabled, true, 'Explicit saved co-op cheat effects also mark permanent history');
   fs.writeFileSync(saves.file(slot.id), '{broken');
-  const recovered = saves.load(slot.id); assert.equal(recovered.recovered, true); assert.equal(recovered.version, 4);
+  const recovered = saves.load(slot.id); assert.equal(recovered.recovered, true); assert.equal(recovered.version, 5);
   assert.equal(JSON.parse(recovered.state.userData[KEY]).players[1].progress.xp, 400);
   const exported = path.join(parent, 'friends.json'); saves.export(slot.id, exported);
   const imported = saves.import(exported), fresh = new Saves(saves.directory).load(imported.id);
-  assert.equal(fresh.version, 4); assert.equal(fresh.state.cheats.everEnabled, true);
+  assert.equal(fresh.version, 5); assert.equal(fresh.state.cheats.everEnabled, true);
   assert.deepEqual(JSON.parse(fresh.state.userData[KEY]), coop.data);
   assert.notEqual(imported.id, slot.id);
 });
-test('failed co-op migration preserves the old primary and untouched pre-v4 backup and can retry', t => {
+test('failed co-op migration preserves the old primary and untouched pre-v5 backup and can retry', t => {
   let fail = false;
   const io = { ...fs, renameSync(source, destination) { if (fail && destination.endsWith('.json')) throw new Error('disk refused'); return fs.renameSync(source, destination); } };
   const { saves } = fixture(t, io), slot = saves.create('Migration');
   const file = saves.file(slot.id), original = fs.readFileSync(file);
   new CoopData(slot.state).persist(); fail = true;
   assert.throws(() => saves.save(slot.id, slot.state), /disk refused/);
-  assert.deepEqual(fs.readFileSync(file), original); assert.deepEqual(fs.readFileSync(file + '.pre-v4'), original);
+  assert.deepEqual(fs.readFileSync(file), original); assert.deepEqual(fs.readFileSync(file + '.pre-v5'), original);
   assert.equal(saves.load(slot.id).version, 2);
-  fail = false; assert.equal(saves.save(slot.id, slot.state).version, 4);
-  assert.deepEqual(fs.readFileSync(file + '.pre-v4'), original);
+  fail = false; assert.equal(saves.save(slot.id, slot.state).version, 5);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), original);
 });
 test('actual format 3 records migrate with exact bytes and cannot be overwritten by their original reader, including recovery', t => {
   const { saves, parent } = fixture(t);
@@ -66,22 +66,22 @@ test('actual format 3 records migrate with exact bytes and cannot be overwritten
   const file = saves.file(slot.id), bytes = fs.readFileSync(file);
   assert.equal(JSON.parse(bytes).version, 3);
   const loaded = saves.load(slot.id), registry = new CoopData(loaded.state);
-  assert.equal(fs.existsSync(file + '.pre-v4'), false);
+  assert.equal(fs.existsSync(file + '.pre-v5'), false);
   registry.persist();
   const saved = saves.save(slot.id, loaded.state);
-  assert.equal(saved.version, 4);
-  assert.deepEqual(fs.readFileSync(file + '.pre-v4'), bytes);
+  assert.equal(saved.version, 5);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), bytes);
   assert.equal(new CoopData(saved.state).player(guest.id).inventory.ammo, 4);
   assert.throws(() => old.load(slot.id), error => error.code === 'UNSUPPORTED_SAVE');
   assert.throws(() => old.save(slot.id, slot.state), /Unsupported/);
   fs.unlinkSync(file);
   assert.throws(() => old.load(slot.id), error => error.code === 'UNSUPPORTED_SAVE');
   const recovered = saves.load(slot.id);
-  assert.equal(recovered.version, 4); assert.equal(recovered.recovered, true);
+  assert.equal(recovered.version, 5); assert.equal(recovered.recovered, true);
   assert.equal(JSON.parse(recovered.state.userData[KEY]).version, 1, 'Recovery retains the previous coherent checkpoint');
   const recoveredRegistry = new CoopData(recovered.state); recoveredRegistry.persist();
   saves.save(slot.id, recovered.state);
-  assert.deepEqual(fs.readFileSync(file + '.pre-v4'), bytes);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), bytes);
   const exported = path.join(parent, 'migrated.json'); saves.export(slot.id, exported);
   assert.deepEqual(new CoopData(saves.import(exported).state).data, recoveredRegistry.data);
 });
@@ -94,14 +94,14 @@ test('unknown co-op formats do not fall back to an older backup or overwrite a n
   assert.throws(() => saves.save(slot.id, slot.state), /newer PolyCraft/);
   assert.equal(fs.readFileSync(file, 'utf8'), bytes);
 });
-test('version 4 remains version 4 even if its prior checkpoint predates co-op data', t => {
+test('version 5 remains version 5 even if its prior checkpoint predates co-op data', t => {
   const { saves, parent } = fixture(t), slot = saves.create('Host'); new CoopData(slot.state).persist(); saves.save(slot.id, slot.state);
   const file = saves.file(slot.id); fs.unlinkSync(file);
   assert.throws(() => new Beta2Saves(saves.directory).load(slot.id), /Unsupported/, 'Older apps also reject recovery when the newer primary is missing');
-  const recovered = saves.load(slot.id); assert.equal(recovered.version, 4); assert.equal(Object.hasOwn(recovered.state.userData, KEY), false);
+  const recovered = saves.load(slot.id); assert.equal(recovered.version, 5); assert.equal(Object.hasOwn(recovered.state.userData, KEY), false);
   const exported = path.join(parent, 'recovered.json'); saves.export(slot.id, exported);
-  assert.equal(JSON.parse(fs.readFileSync(exported)).version, 4); assert.equal(saves.import(exported).version, 4);
-  assert.equal(saves.save(slot.id, recovered.state).version, 4);
+  assert.equal(JSON.parse(fs.readFileSync(exported)).version, 5); assert.equal(saves.import(exported).version, 5);
+  assert.equal(saves.save(slot.id, recovered.state).version, 5);
 });
 test('a Beta 1 slot can enter co-op directly while preserving both original backups and unknown cheat history', t => {
   const { saves } = fixture(t), slot = saves.create('Legacy host'), file = saves.file(slot.id);
@@ -110,7 +110,88 @@ test('a Beta 1 slot can enter co-op directly while preserving both original back
   const loaded = saves.load(slot.id); assert.equal(loaded.state.cheats.everEnabled, null);
   new CoopData(loaded.state).persist();
   const migrated = saves.save(slot.id, loaded.state);
-  assert.equal(migrated.version, 4); assert.equal(migrated.state.cheats.everEnabled, null);
-  assert.equal(fs.readFileSync(file + '.pre-v2', 'utf8'), original); assert.equal(fs.readFileSync(file + '.pre-v4', 'utf8'), original);
+  assert.equal(migrated.version, 5); assert.equal(migrated.state.cheats.everEnabled, null);
+  assert.equal(fs.readFileSync(file + '.pre-v2', 'utf8'), original); assert.equal(fs.readFileSync(file + '.pre-v5', 'utf8'), original);
   assert.throws(() => new Beta2Saves(saves.directory).load(slot.id), /Unsupported/);
+});
+
+test('real format-4 saves migrate held inventory with exact pre-v5 bytes, sticky history, recovery, export/import and older-reader refusal', t => {
+  const { saves, parent } = fixture(t);
+  const OldSaves = require('../reference/coop-schema-2/saves.cjs').Saves;
+  const OldCoopData = require('../reference/coop-schema-2/coop-data.js').CoopData;
+  const old = new OldSaves(saves.directory), slot = old.create('Previous format');
+  new OldCoopData(slot.state).persist(); old.save(slot.id, slot.state);
+  const file = saves.file(slot.id), original = fs.readFileSync(file);
+  assert.equal(JSON.parse(original).version, 4);
+  const loaded = saves.load(slot.id), registry = new CoopData(loaded.state), host = registry.data.players[0];
+  assert.equal(registry.data.version, 3); assert.equal(host.construction, null);
+  assert.throws(() => require('../reference/coop-schema-2/coop-data.js').validateCoop(registry.data), error => error.code === 'UNSUPPORTED_SAVE');
+  assert.equal(fs.existsSync(file + '.pre-v5'), false, 'Reading does not write a migration');
+  host.location = [1, 2, 3];
+  host.construction = { archetype: 'a_b_wall', quantity: 2, instant: false, infinite: false, isNew: true, cannotCancel: true, payWhenPlacing: false, parent: null, moveFrom: null, lastPlaced: [2, 0, 3] };
+  registry.persist(); loaded.state.cheats.enabled = true;
+  const migrated = saves.save(slot.id, loaded.state);
+  assert.equal(migrated.version, 5); assert.equal(migrated.state.cheats.everEnabled, true);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), original);
+  assert.throws(() => old.load(slot.id), error => error.code === 'UNSUPPORTED_SAVE');
+  assert.throws(() => old.save(slot.id, slot.state), /Unsupported/);
+  saves.rename(slot.id, 'Held items');
+  fs.writeFileSync(file, '{broken');
+  const recovered = saves.load(slot.id); assert.equal(recovered.recovered, true);
+  assert.deepEqual(new CoopData(recovered.state).data.players[0].construction, host.construction);
+  const exported = path.join(parent, 'held.json'); saves.export(slot.id, exported);
+  assert.deepEqual(new CoopData(saves.import(exported).state).data, new CoopData(recovered.state).data);
+  fs.unlinkSync(file);
+  assert.throws(() => old.load(slot.id), error => error.code === 'UNSUPPORTED_SAVE');
+  const retry = saves.load(slot.id); retry.state.cheats.enabled = false; saves.save(slot.id, retry.state);
+  assert.equal(saves.load(slot.id).state.cheats.everEnabled, true);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), original);
+});
+
+test('import keeps exact original format-4 file bytes before its first held-state migration', t => {
+  const { saves, parent } = fixture(t);
+  const OldSaves = require('../reference/coop-schema-2/saves.cjs').Saves;
+  const OldCoopData = require('../reference/coop-schema-2/coop-data.js').CoopData;
+  const old = new OldSaves(saves.directory), slot = old.create('Import legacy');
+  new OldCoopData(slot.state).persist(); old.save(slot.id, slot.state);
+  const source = path.join(parent, 'original.json'), bytes = JSON.stringify(old.load(slot.id), null, 3) + '\n';
+  fs.writeFileSync(source, bytes);
+  const imported = saves.import(source), file = saves.file(imported.id);
+  assert.equal(imported.version, 4); assert.equal(new CoopData(imported.state).data.economy.pendingPlacements, false);
+  assert.equal(fs.readFileSync(file + '.pre-v5', 'utf8'), bytes);
+  new CoopData(imported.state).persist(); saves.save(imported.id, imported.state);
+  assert.equal(saves.load(imported.id).version, 5); assert.equal(fs.readFileSync(file + '.pre-v5', 'utf8'), bytes);
+  assert.equal(fs.readFileSync(source, 'utf8'), bytes);
+});
+
+test('schema-2 recovery migration preserves original backup bytes through a failed write and retry', t => {
+  let fail = false;
+  const io = { ...fs, renameSync(source, destination) { if (fail && destination.endsWith('.json')) throw new Error('write refused'); return fs.renameSync(source, destination); } };
+  const { saves } = fixture(t, io);
+  const OldSaves = require('../reference/coop-schema-2/saves.cjs').Saves;
+  const OldCoopData = require('../reference/coop-schema-2/coop-data.js').CoopData;
+  const old = new OldSaves(saves.directory), slot = old.create('Recover old co-op');
+  new OldCoopData(slot.state).persist(); old.save(slot.id, slot.state); old.save(slot.id, slot.state);
+  const file = saves.file(slot.id), bytes = Buffer.from(JSON.stringify(JSON.parse(fs.readFileSync(file + '.bak')), null, 2) + '\n');
+  fs.writeFileSync(file + '.bak', bytes); fs.writeFileSync(file, '{broken');
+  const recovered = saves.load(slot.id); assert.equal(recovered.recovered, true);
+  new CoopData(recovered.state).persist();
+  fail = true; assert.throws(() => saves.save(slot.id, recovered.state), /write refused/);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), bytes);
+  assert.throws(() => old.load(slot.id), error => error.code === 'UNSUPPORTED_SAVE');
+  fail = false; assert.equal(saves.save(slot.id, recovered.state).version, 5);
+  assert.deepEqual(fs.readFileSync(file + '.pre-v5'), bytes);
+});
+
+test('an import that cannot preserve its original co-op bytes leaves no new managed slot', t => {
+  const io = { ...fs, linkSync(source, destination) { if (destination.endsWith('.pre-v5')) throw new Error('backup refused'); return fs.linkSync(source, destination); } };
+  const { saves, parent } = fixture(t, io);
+  const OldSaves = require('../reference/coop-schema-2/saves.cjs').Saves;
+  const OldCoopData = require('../reference/coop-schema-2/coop-data.js').CoopData;
+  const old = new OldSaves(saves.directory), slot = old.create('Original');
+  new OldCoopData(slot.state).persist(); old.save(slot.id, slot.state);
+  const source = path.join(parent, 'unmigrated.json'); fs.copyFileSync(saves.file(slot.id), source);
+  const before = fs.readdirSync(saves.directory).sort();
+  assert.throws(() => saves.import(source), /backup refused/);
+  assert.deepEqual(fs.readdirSync(saves.directory).sort(), before);
 });

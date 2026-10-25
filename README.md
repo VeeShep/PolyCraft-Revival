@@ -4,6 +4,8 @@ An unofficial offline desktop restoration of PolyCraft 1.0.0.25, using its exist
 
 Download **[PolyCraft Offline 1.0.0-beta.2](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** for Apple Silicon or Intel Mac, Windows x64 or ARM64, and Linux x64 (AppImage or tar.gz). Read the attached `START_HERE.txt`; `SHA256SUMS.txt` and `BUILD_INFO.json` provide checksums and build provenance. This is a beta prerelease for offline solo play. Mac builds are not notarized; Windows builds are unsigned. Native platform acceptance remains open. Build output in `dist/` is excluded from Git, so cloning the repository does not download a playable package. The original Beta 1 packages remain unchanged.
 
+The working source is **1.0.0-beta.3 in development**; the published downloads above remain Beta 2.
+
 Offline solo play is implemented. Permanent cheat history, original hero badge icons and the first runtime readability pass are implemented in the development source. Multiplayer transport and host simulation work are in progress; **playable co-op is not available yet**. Gameplay expansions remain planned.
 
 Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadmap, verification evidence, remaining acceptance checks and continuation instructions. Earlier entries in its historical appendix describe older checkpoints, not the current release state.
@@ -52,7 +54,7 @@ Saves are stored outside the application folder. On Mac they are in `~/Library/A
 
 Ordinary solo saves use format 2. On the first checkpoint of a Beta 1 save, the app keeps the exact original file as `.json.pre-v2` and migrates both the current save and recovery file. Imported Beta 1 files also retain this untouched copy. Beta 1 cannot open migrated saves; keep that original backup if you need to return to Beta 1. The original file can be copied outside the managed folder to a `.json` filename for importing into Beta 1. Deleting an island deletes its managed backups too.
 
-Co-op data is still a development feature without a launcher entry. Current co-op records use save format 4, which retains hero rotation, clip ammo, temporary-weapon ammo and the permanent weapon separately. Only islands containing these records migrate; ordinary solo saves remain format 2. The first migration preserves the exact earlier checkpoint as `.json.pre-v4`; earlier development format-3 records are supported and migrate when written. Older apps reject format 4, including recovery files. Rename, recovery and export/import preserve the newer format. Export important islands before using newer builds; keep the untouched pre-conversion copy if you need to return to an older app. Missing historical weapon details cannot be recovered from the earlier schema.
+Co-op remains a development feature without a Host/Join screen. The current source uses co-op schema 3 / save format 5 to retain held-building quantities, placement/payment flags, building references and the host's pending placement queue, alongside hero rotation and weapon/ammo state. Only co-op-bearing islands migrate; ordinary solo saves remain format 2. Earlier co-op schemas remain readable and migrate when activated and saved. The first migration preserves exact earlier bytes as `.json.pre-v5`; imported older co-op files retain their original bytes too. Earlier applications, including published Beta 2, reject format 5 and its recovery files. Rename, recovery and export/import preserve the format and cheat history. Export important islands and keep original backups before using development builds. Missing held items or weapon details from older schemas cannot be reconstructed. These post-release changes are not in the published Beta 2 downloads, and visible held-building acceptance is still open.
 
 If a write fails, the app reports it. Keep the game open and retry after resolving the disk problem. Normal exit offers a choice if the latest progress cannot be saved. Force-quitting can lose progress since the last successful checkpoint. Export backups of islands you want to keep.
 
@@ -88,6 +90,7 @@ The first install needs internet access to download dependencies and Electron. I
 | `reference/beta-1/` | Immutable original runtime/save-reader baseline and hashes; tracked, excluded from app packages |
 | `reference/beta-2-save-reader/` | Preserved format-2 reader and hash used to verify that older apps reject co-op saves; excluded from packages |
 | `reference/coop-schema-1/` | Preserved development format-3 reader and co-op schema used to verify migration and older-reader refusal; excluded from packages |
+| `reference/coop-schema-2/` | Preserved format-4 reader/schema and hashes used to verify refusal of newer held-building saves; excluded from packages |
 | `package.json`, `package-lock.json` | Launch/build commands and pinned dependency graph; track both |
 | `RESTORATION_STATUS.md` | Authoritative roadmap, evidence and historical checkpoints |
 | `MULTIPLAYER_AUDIT.md`, `RUNTIME_READABILITY.md` | Networking audit and source-recovery details |
