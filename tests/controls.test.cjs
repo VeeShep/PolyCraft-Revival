@@ -164,3 +164,43 @@ test('the documented secret code opens Cheats only for focused gameplay and cons
   assert.deepEqual(controls.app.globals.desktopCheats, {});
   controls.settings({ enabled: true, invincible: true }); assert.equal(controls.cheatsEnabled(), true);
 });
+
+test('desktop solo dialogs throttle redundant rendering but online worlds and normal menus retain every frame', () => {
+  const controls = new Controls(); let renders = 0, updates = 0;
+  const app = { globals: { appCurrentTime: 0 }, render() { renders++; }, updateGame() { updates++; } };
+  controls.attach(app); controls.paused = true;
+  for (const time of [0, 0.02, 0.04, 0.11]) { app.globals.appCurrentTime = time; app.updateGame(); app.render(); }
+  assert.equal(renders, 2); assert.equal(updates, 0);
+  controls.onlineWorld = {};
+  for (let i = 0; i < 3; i++) { app.updateGame(); app.render(); }
+  assert.equal(renders, 5); assert.equal(updates, 3);
+  delete controls.onlineWorld; controls.paused = false;
+  app.updateGame(); app.render(); assert.equal(renders, 6); assert.equal(updates, 4);
+});
+
+test('pause transitions follow the visible state even when the simulation is already paused', () => {
+  const runtime = require('./runtime-ast.cjs');
+  const toggle = runtime.prototypeWith('togglePause', {
+    GamestatePlaying: { create: () => ({ name: 'GamestatePlaying' }) },
+    GamestatePaused: { create: () => ({ name: 'GamestatePaused' }) }
+  }).togglePause;
+  const game = { paused: true, activeGameState: { name: 'GamestatePlaying' }, setGameState(state) { this.activeGameState = state; } };
+  toggle.call(game); assert.equal(game.activeGameState.name, 'GamestatePaused');
+  game.paused = false; toggle.call(game); assert.equal(game.activeGameState.name, 'GamestatePlaying');
+  for (const name of ['GamestateShop', 'GamestateTutorial', 'GamestateCredits']) { game.activeGameState = { name }; game.paused = true; toggle.call(game); assert.equal(game.activeGameState.name, 'GamestatePlaying'); }
+});
+
+test('HQ, all workshop tiers and critical structures cannot be demolished even with overridden building metadata', () => {
+  const controls = new Controls();
+  controls.ready = () => true; controls.data = () => ({});
+  let entity, destroyed = false;
+  controls.manager = () => ({ getFactionManager: () => ({ getHeroFactionName: () => 'hero' }), getGameEntityByName: () => entity });
+  for (const family of ['hq', 'workshop']) for (let tier = 1; tier <= 10; tier++) {
+    const archetype = `a_b_${family}` + (tier === 1 ? '' : `_level_${tier}`);
+    entity = { shouldPlayerSave: true, shouldBeDestroyed: () => false, getName: () => 'placed', getArchetypeName: () => archetype,
+      getv3Location: () => [0, 0, 0], setToBeDestroyed() { destroyed = true; },
+      getEC: key => ({ ECBuilding: { getBuildingType: () => 'Storage', getBuildingName: () => family, getLevel: () => tier, getBuildingsAbove: () => [] }, ECFaction: { getFactionName: () => 'hero' } })[key] };
+    assert.equal(controls.canDemolish(entity), false); assert.throws(() => controls.demolishBuilding('placed'), /HQ, workshop/);
+  }
+  assert.equal(destroyed, false);
+});

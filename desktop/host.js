@@ -180,6 +180,7 @@
     if (state?.name === 'GamestateShop') state.setButtonPanal(bridge.state.cheats.enabled ? state.panelName : 'resource');
   }
   function openCheats() { return action(async () => {
+    const firstEnable = !bridge.state.cheats.enabled;
     bridge.state.cheats.enabled = true;
     applyCheatMode();
     $('cheats-enabled').checked = true;
@@ -190,7 +191,7 @@
     controls.pause(true);
     $('invincible').checked = bridge.state.cheats.invincible;
     $('instant-build').checked = bridge.state.cheats.instantBuild;
-    await checkpoint();
+    if (firstEnable) await checkpoint();
     $('cheat-pause').textContent = controls.onlineWorld ? 'The island keeps running while this menu is open.' : 'Game paused. Changes apply to this island.';
     $('cheat-dialog').showModal();
   }); }

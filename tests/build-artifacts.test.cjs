@@ -21,6 +21,7 @@ test('tester bundles include only the expected platform packages, provenance, in
     'mac-x64': [`PolyCraft-Offline-${version}-mac-x64.zip`],
     'win-x64': [`PolyCraft-Offline-${version}-win-x64.zip`],
     'win-arm64': [`PolyCraft-Offline-${version}-win-arm64.zip`],
+    'linux-arm64': [`PolyCraft-Offline-${version}-linux-arm64.AppImage`, `PolyCraft-Offline-${version}-linux-arm64.tar.gz`],
     'linux-x64': [`PolyCraft-Offline-${version}-linux-x86_64.AppImage`, `PolyCraft-Offline-${version}-linux-x64.tar.gz`]
   };
   fs.writeFileSync(path.join(output, 'game.log'), 'Do not upload');

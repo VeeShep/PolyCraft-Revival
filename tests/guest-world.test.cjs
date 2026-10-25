@@ -266,3 +266,16 @@ test('an unanswered guest resync times out without repeatedly requesting snapsho
   t.mock.timers.tick(1); assert.match(failed.message, /resync timed out/);
   assert.deepEqual(world.scene.snapshot, { tick: 17 }); world.closed = true; world.requestResync(); assert.equal(sent.length, 1);
 });
+
+test('guest Pause and Resume use original artwork and block local actions without pausing the shared simulation', () => {
+  const world = Object.create(GuestWorld.prototype), draws = [], buttons = [];
+  let clicked = 'guest-pause', stopped = 0;
+  world.controls = { paused: false, guiTypes: {}, app: { globals: { guiRenderer: { getv2RenderLocation: (x, y) => [x, y] } } } };
+  world.guiInput = {}; world.movement = { keys: new Set(['KeyW']), flush() { stopped++; } };
+  world.game = { getIMGui: () => ({ doBackground() {}, doButton(options) { buttons.push(options); return options.id === clicked; } }), getGuiManager: () => ({ addDrawGui: name => draws.push(name) }) };
+  world.drawPauseMenu(); assert.equal(world.pauseMenu, true); assert.equal(world.localMenu(), true);
+  assert.equal(world.movement.keys.size, 0); assert.equal(stopped, 1); assert.equal(world.controls.paused, false);
+  clicked = ''; world.drawPauseMenu(); assert.deepEqual(draws, ['bgPattern', 'polycraftLogo']);
+  assert.equal(buttons.at(-1).guiArchetype, 'buttonStart');
+  clicked = 'guest-resume'; world.drawPauseMenu(); assert.equal(world.localMenu(), false);
+});

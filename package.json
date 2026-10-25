@@ -13,7 +13,7 @@
     "test:coop-movement": "node tests/coop-identities-smoke.cjs --movement-only",
     "build:mac": "electron-builder --mac zip --arm64 --x64",
     "build:win": "electron-builder --win zip --x64 --arm64",
-    "build:linux": "electron-builder --linux AppImage tar.gz --x64"
+    "build:linux": "electron-builder --linux AppImage tar.gz --x64 --arm64"
   },
   "devDependencies": {
     "@babel/generator": "8.0.6",

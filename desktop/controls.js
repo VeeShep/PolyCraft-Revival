@@ -19,6 +19,14 @@
       this.app = app;
       this.xpTable = xpTable;
       this.guiTypes = guiTypes;
+      const render = app.render;
+      if (render) app.render = (...args) => {
+        const now = app.globals.appCurrentTime;
+        // Desktop solo dialogs freeze simulation; avoid redrawing the same GPU-heavy scene at full rate.
+        if (this.paused && !this.onlineWorld && !this.guestWorld && now - this.lastRenderTime < 0.1) return;
+        this.lastRenderTime = now;
+        return render.apply(app, args);
+      };
       const update = app.updateGame;
       // Freezing the game update preserves an underlying tutorial/shop pause state.
       app.updateGame = (...args) => { if (!this.paused || this.onlineWorld) update.apply(app, args); };
@@ -128,7 +136,7 @@
       if (!building || entity.shouldBeDestroyed() || entity.getEC('ECFaction')?.getFactionName() !== faction) return null;
       let reason = '';
       if (entity.shouldLevelSave || !entity.shouldPlayerSave || entity.getEC('ECHeroShrine')) reason = 'Original map structure';
-      else if (building.getBuildingType() === 'HQ' || entity.getEC('ECPlacedBuildingTracker')) reason = 'HQ or territory anchor';
+      else if (entity.getEC('ECGameCritical') || ['HQ', 'Workshop'].includes(building.getBuildingType()) || /^a_b_(hq|workshop)(?:_level_\d+)?$/.test(entity.getArchetypeName?.() || '') || entity.getEC('ECPlacedBuildingTracker')) reason = 'HQ, workshop or territory anchor';
       else if (entity.getEC('ECScaffold')) reason = 'Construction or moving in progress';
       else if (building.getBuildingsAbove().length) reason = 'Remove the buildings above this one first';
       return { id: entity.getName(), name: building.getBuildingName(), level: building.getLevel(), location: Array.from(entity.getv3Location()).map(n => Math.round(n * 10) / 10), reason };

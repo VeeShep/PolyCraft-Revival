@@ -273,6 +273,7 @@
       this.connection.send('resync', { version: 1, tick: this.scene.tick }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
     }
     clickTarget(event) {
+      if (this.game.getIMGui().isHot('guest-pause')) return;
       const target = pickTarget(this, event);
       if (!target) return;
       this.selectionRequest = this.sendTarget('target', target);
@@ -295,8 +296,26 @@
       this.connection.send('action', { type: 'upgrade', sequence, target, index, level, amber }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
-    localMenu() { return !!(this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu); }
+    localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu); }
+    togglePauseMenu() {
+      const open = !this.pauseMenu;
+      this.cancelLocalMenu();
+      this.pauseMenu = open;
+      this.movement?.flush();
+    }
+    drawPauseMenu() {
+      const gui = this.game.getIMGui(), renderer = this.controls.app.globals.guiRenderer;
+      const location = (x, y, anchor) => renderer.getv2RenderLocation(x, y, anchor);
+      if (this.pauseMenu) {
+        // shortcut: guest pause offers Resume only, expand with the remaining guest HUD/settings work.
+        gui.doBackground();
+        this.game.getGuiManager().addDrawGui('bgPattern', { v2ScreenLocation: location(0, 0) }, 'guest-pause-background');
+        this.game.getGuiManager().addDrawGui('polycraftLogo', { v2ScreenLocation: location(0, -260) }, 'guest-pause-logo');
+        if (gui.doButton({ id: 'guest-resume', text: 'Resume', v2ScreenLocation: location(0, 0), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: 'buttonStart' })) this.cancelLocalMenu();
+      } else if (gui.doButton({ id: 'guest-pause', text: '', v2ScreenLocation: location(116, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: 'pause' })) this.togglePauseMenu();
+    }
     cancelLocalMenu() {
+      this.pauseMenu = false;
       this.selectedBuilding = this.demolition = null;
       this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel();
       this.guiInput.down = this.guiInput.pendingDown = false;
@@ -307,7 +326,7 @@
       this.guiInput.position = [(value.clientX - bounds.left) * device.width / bounds.width, (value.clientY - bounds.top) * device.height / bounds.height];
       this.construction.pointer(event, value);
       if (value.button !== 0) return;
-      if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = this.localMenu() || !!this.construction.placement;
+      if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = !this.controls.paused;
       if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) this.guiInput.pendingDown = false;
     }
     updateMenu() {
@@ -351,7 +370,8 @@
         torch.setDisabled(!this.scene.torch?.visible);
       }
       this.hasFrame = true;
-      this.updateMenu();
+      if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
+      if (!this.pauseMenu) this.updateMenu();
     }
     close() {
       if (this.closed) return;

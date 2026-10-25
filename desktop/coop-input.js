@@ -53,6 +53,7 @@
         if (event.ctrlKey || event.metaKey || event.altKey || root.document.activeElement !== this.canvas) return;
         if (event.code === 'Tab') { this.keys.clear(); this.flush(); return; }
         event.preventDefault(); event.stopImmediatePropagation();
+        if (event.code === 'KeyP') { if (!event.repeat) this.world.togglePauseMenu?.(); this.keys.clear(); this.flush(); return; }
         if (event.code === 'Escape') { this.world.cancelLocalMenu?.(); this.keys.clear(); this.flush(); return; }
         if (this.world.localMenu?.()) { this.keys.clear(); this.flush(); return; }
         if (event.repeat) return;

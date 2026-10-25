@@ -68178,7 +68178,7 @@
     },
     togglePause: function () {
       var a;
-      a = this.paused ? GamestatePlaying.create(this, this.globals) : GamestatePaused.create(this, this.globals);
+      a = this.activeGameState.name === "GamestatePlaying" ? GamestatePaused.create(this, this.globals) : GamestatePlaying.create(this, this.globals);
       this.setGameState(a);
     },
     toggleDebugNav: function () {
