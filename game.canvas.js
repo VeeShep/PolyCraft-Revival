@@ -50086,7 +50086,7 @@
               var j = this.gameManager,
                 a = j.getFactionManager().getHeroFactionName(),
                 b = this.entity.getEC("ECFaction"),
-                k = c.getEC("ECFaction"),
+                k = c && c.getEC("ECFaction"),
                 w,
                 r;
               b && (w = b.getFactionName());
@@ -50116,7 +50116,7 @@
       var b = this.globals.metricsManager,
         c = this.entity.archetypeName,
         d = "enemyDeath_" + c;
-      !a.shouldBeDestroyed() && a.getEC("ECHero") && (d = "enemyDeathFromHero_" + c);
+      a && !a.shouldBeDestroyed() && a.getEC("ECHero") && (d = "enemyDeathFromHero_" + c);
       b.sendGameMetric(d, 1);
     },
     killSelf: function () {
@@ -53954,8 +53954,10 @@
       this._super();
       this.state === a.NORMAL ? this.updateDefault() : this.state === a.DYING && this.updateDeathAnimation();
       this.updateScheduleRespawn();
-      this.updateCheats();
-      if (a = this.getTimeToRespawn()) this.displayRespawnCountdown(a), this.displayRespawnOption(a);
+      if (!this.gameManager.desktopPlayers || this.entity === this.gameManager.getHero()) {
+        this.updateCheats();
+        if (a = this.getTimeToRespawn()) this.displayRespawnCountdown(a), this.displayRespawnOption(a);
+      }
     },
     isDead: function () {
       return void 0 !== this.respawnTime;
@@ -53969,7 +53971,13 @@
     },
     updateCheats: function () {
       var a = this.globals.cheats;
-      a.kill && (a.kill = !1, a = this.getEntityEC("ECHealth"), this.infiniteLives = !1, this.lives = 0, a.takeDamage(1E3), this.loseLife());
+      if (!a.kill) return;
+      a.kill = !1;
+      if (this.state !== this.states.NORMAL) return;
+      this.infiniteLives = !1;
+      this.lives = 0;
+      this.getEntityEC("ECHealth").takeDamage(1E3, !1, this.entity);
+      if (this.state === this.states.NORMAL) this.loseLife(this.entity);
     },
     loseLife: function (a) {
       var b = this.gameManager.getScoreInfo();
@@ -53979,7 +53987,7 @@
       this.beginRespawn();
     },
     sendLoseLifeMetrics: function (a) {
-      this.globals.metricsManager.sendGameMetric("heroDeath_" + a.archetypeName);
+      this.globals.metricsManager.sendGameMetric("heroDeath_" + (a && a.archetypeName || "unknown"));
     },
     onTakeDamage: function () {
       this.gameManager.getScoreInfo();

@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current held-building controls — Beta 10, 2026-10-25
+## Current death-path audit — Beta 11, 2026-10-25
+
+Original ECPlayerLife keeps simulation for every hero but gates local revive controls/legacy kill-cheat consumption to the host hero in co-op. Missing-attacker faction/metric accesses are guarded, and the kill cheat avoids starting a second death after lethal damage already did so. Actual AST-extracted methods have regression coverage; graphical/physical/native acceptance remains open.
+
+Death persistence is still incomplete: CoopPlayers captures health but not lifecycle state or remaining timer, and reload/reconnect currently schedules zero-delay revival for zero health. The next save migration must preserve original backups, retain per-player timing coherently across disconnect/restore and reject newer saves from older apps. Guest paid-revive choices, death visuals/input and PvP consequences need further work. These crash/isolation fixes do not close lifecycle acceptance.
+
+## Previous held-building controls — Beta 10, 2026-10-25
 
 The host exposes a bounded own-hero held-state query, actual-builder preview/place and original-rule cancellation through sequenced actions. Guest UI reuses placement guidelines and the original cancel button. Local hiding/focus loss retains canonical held state. Shared runtime cancellation preserves original refunds and protected-item/move behavior; remote builders cannot click the host's button. Each co-op line segment rechecks shared capacity before charging. Saves remain schema 3/format 5; the game invitation runtime advances to coop-10 to reject incompatible peers. Room service protocol 2 remains unchanged. See RESTORATION_STATUS.md for checks and the still-open visible held-item/move/line and gameplay acceptance gates.
 
