@@ -108,12 +108,37 @@ jobs:
         if: runner.os == 'macOS'
         run: codesign --verify --deep --strict "${{ matrix.app }}"
       - name: Collect packages, instructions and checksums
-        run: node scripts/collect-build.cjs "${{ matrix.id }}" dist/ci "dist/artifacts/${{ matrix.id }}"
+        run: |
+          if [[ "${{ matrix.platform }}" == linux ]]; then
+            node scripts/collect-build.cjs "${{ matrix.id }}-appimage" dist/ci "dist/artifacts/${{ matrix.id }}-appimage"
+            node scripts/collect-build.cjs "${{ matrix.id }}-tar.gz" dist/ci "dist/artifacts/${{ matrix.id }}-tar.gz"
+          else
+            node scripts/collect-build.cjs "${{ matrix.id }}" dist/ci "dist/artifacts/${{ matrix.id }}"
+          fi
       - name: Upload tester download
+        if: matrix.platform != 'linux'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: PolyCraft-${{ matrix.id }}-${{ github.run_number }}.${{ github.run_attempt }}
           path: dist/artifacts/${{ matrix.id }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Upload Linux AppImage download
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: PolyCraft-${{ matrix.id }}-${{ github.run_number }}.${{ github.run_attempt }}.AppImage
+          path: dist/artifacts/${{ matrix.id }}-appimage/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Upload Linux tar.gz download
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: PolyCraft-${{ matrix.id }}-${{ github.run_number }}.${{ github.run_attempt }}.tar.gz
+          path: dist/artifacts/${{ matrix.id }}-tar.gz/
           if-no-files-found: error
           compression-level: 0
           retention-days: 7

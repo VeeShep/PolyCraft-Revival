@@ -21,8 +21,10 @@ test('tester bundles include only the expected platform packages, provenance, in
     'mac-x64': [`PolyCraft-Offline-${version}-mac-x64.zip`],
     'win-x64': [`PolyCraft-Offline-${version}-win-x64.zip`],
     'win-arm64': [`PolyCraft-Offline-${version}-win-arm64.zip`],
-    'linux-arm64': [`PolyCraft-Offline-${version}-linux-arm64.AppImage`, `PolyCraft-Offline-${version}-linux-arm64.tar.gz`],
-    'linux-x64': [`PolyCraft-Offline-${version}-linux-x86_64.AppImage`, `PolyCraft-Offline-${version}-linux-x64.tar.gz`]
+    'linux-arm64-appimage': [`PolyCraft-Offline-${version}-linux-arm64.AppImage`],
+    'linux-arm64-tar.gz': [`PolyCraft-Offline-${version}-linux-arm64.tar.gz`],
+    'linux-x64-appimage': [`PolyCraft-Offline-${version}-linux-x86_64.AppImage`],
+    'linux-x64-tar.gz': [`PolyCraft-Offline-${version}-linux-x64.tar.gz`]
   };
   fs.writeFileSync(path.join(output, 'game.log'), 'Do not upload');
   fs.writeFileSync(path.join(output, 'island.json'), 'Do not upload');
@@ -48,7 +50,7 @@ test('tester bundles include only the expected platform packages, provenance, in
 test('incomplete builds and unsupported platforms cannot produce a tester download', t => {
   const { output, destination } = fixture(t);
   assert.throws(() => collectBuild('constructor', output, destination), /Unknown/);
-  assert.throws(() => collectBuild('linux-x64', output, destination), /ENOENT/);
+  assert.throws(() => collectBuild('linux-x64-appimage', output, destination), /ENOENT/);
   fs.writeFileSync(path.join(output, `PolyCraft-Offline-${version}-mac-arm64.zip`), '');
   assert.throws(() => collectBuild('mac-arm64', output, destination), /empty package/);
   assert.equal(fs.existsSync(destination), false);
