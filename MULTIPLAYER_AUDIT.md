@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current lifecycle persistence — Beta 12, 2026-10-25
+## Current guest revival — Beta 13, 2026-10-25
+
+Own-hero life queries and sequenced revive intents expose original countdown/buttons while keeping prices, eligibility, shared spending, destination and persistence on the host. Choices bind the death episode and current tier; a delay crossing the threshold refuses rather than silently charging another price. Original payToRevive rechecks affordability and rejects the already-starting 0.2-second revival interval, preventing duplicate charges. The guest waits for authoritative recovery and suppresses purchases from stale state. Save schema/envelope remain 4/6; game runtime advances to coop-11 for new action/result types; room signaling stays protocol 2.
+
+The 221-check scope and original artwork/price behavior are in RESTORATION_STATUS.md. Real rendered UI, concurrent paid revives/spending, life/save/reconnect/PvP and physical/native gameplay acceptance remain open.
+
+## Previous lifecycle persistence — Beta 12, 2026-10-25
 
 Co-op schema 4 / envelope 6 stores phase, fractional remaining simulation time, respawn destination and lives/infinite-lives. Restore offsets timing to the new simulation clock without replaying death events, and disconnected/offline time is frozen. Unknown legacy lifecycle is explicit null; zero-health legacy records restart a full original wait. Movement and action validation block incapacitated heroes even with positive health. Schema-3 reader copies/hashes prove older-app refusal; exact pre-v6 backups and retry/recovery/import checks preserve prior files. Solo envelope remains 2; game/signaling wire formats are unchanged.
 

@@ -54090,6 +54090,7 @@
       this.gameManager.getGuiManager().addGameMessage("ecPlayerLife" + this.entity.getName() + "revive", "You have been knocked out", a, 2);
     },
     displayRespawnOption: function (a) {
+      if (a <= 0.200001) return;
       var b = 0,
         c = 0,
         d = this.gameManager.getIMGui(),
@@ -54116,9 +54117,15 @@
       return c && (0 < b && c.getResource(H.LUMBER) < b || 0 < a && c.getSoftCurrency() < a) ? !1 : !0;
     },
     payToRevive: function (a, b, c) {
+      if (this.getTimeToRespawn() <= 0.200001 || !this.canAffordToRevive(a, b)) return !1;
       var d = this.getEntityEC("ECPlayerData"),
         f = this.globals.mathDevice;
-      d && (0 < b && d.adjustResource(H.LUMBER, -b), 0 < a && d.adjustSoftCurrency(-a), this.respawnTime = this.globals.gameCurrentTime + 0.2, c && (this.respawnLocation = f.v3Copy(this.getv3Location(), this.respawnLocation)));
+      if (!d) return !1;
+      0 < b && d.adjustResource(H.LUMBER, -b);
+      0 < a && d.adjustSoftCurrency(-a);
+      this.respawnTime = this.globals.gameCurrentTime + 0.2;
+      if (c) this.respawnLocation = f.v3Copy(this.getv3Location(), this.respawnLocation);
+      return !0;
     },
     scheduleRespawn: function (a, b) {
       var c = this.globals,

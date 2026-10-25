@@ -250,6 +250,12 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   world.targetSequence = 3; world.construction.pending = 3;
   connection.onMessage({ kind: 'result', payload: { type: 'cancelBuild', sequence: 3, message: 'Saved.', held: null } });
   assert.equal(world.construction.placement, null); assert.equal(world.construction.pending, null);
+  world.targetSequence = 4; world.lifeRequest = 4;
+  connection.onMessage({ kind: 'result', payload: { type: 'life', sequence: 4, message: 'Hero life state.', life: { phase: 'waiting', remaining: 10, episode: 1, option: 'lumber', affordable: true } } });
+  assert.equal(world.lifeState.phase, 'waiting'); assert.equal(world.lifeRequest, null); assert.equal(world.lastTargetResult.type, 'cancelBuild');
+  world.targetSequence = 5; world.reviveRequest = 5;
+  connection.onMessage({ kind: 'result', payload: { type: 'revive', sequence: 5, message: 'Saved.', life: { phase: 'waiting', remaining: 0.2, episode: 1, option: null, affordable: false } } });
+  assert.equal(world.reviveRequest, null); assert.equal(world.lastTargetResult.type, 'revive');
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);

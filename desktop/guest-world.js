@@ -184,6 +184,7 @@
       if (!controls.ready() || controls.onlineWorld || controls.guestWorld || connection.role !== 'guest' || connection.closed) throw new Error('Joining needs a loaded renderer and an available guest connection.');
       this.controls = controls; this.connection = connection;
       this.targetSequence = 0;
+      this.lastLifeQuery = -Infinity;
       this.game = controls.manager();
       const game = this.game, app = controls.app, globals = app.globals;
       const math = globals.mathDevice, camera = game.getGameCamera(), location = game.getHero().getv3Location();
@@ -239,8 +240,8 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          const extras = value && ['building', 'construction', 'preview', 'totem', 'held'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life'].filter(key => Object.hasOwn(value, key));
+          if (!value || extras.length > 1 || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
@@ -251,8 +252,9 @@
           if (value.totem && !['target', 'upgrade'].includes(value.type)) throw new Error('Invalid totem result.');
           this.totem.receive(value, selected);
           this.construction.receive(value, selected);
+          this.receiveLife(value);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
-          if (value.type !== 'held') {
+          if (!['held', 'life'].includes(value.type)) {
             this.lastTargetResult = { ...value };
             const status = root.document?.getElementById?.('status');
             if (status) status.textContent = value.message;
@@ -298,6 +300,41 @@
       this.connection.send('action', { type: 'upgrade', sequence, target, index, level, amber }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
+    receiveLife(value) {
+      if (Object.hasOwn(value, 'life')) {
+        const life = value.life;
+        if (!['life', 'revive'].includes(value.type) || !life || Object.keys(life).length !== 5 || !['phase', 'remaining', 'episode', 'option', 'affordable'].every(key => Object.hasOwn(life, key)) || !['normal', 'dying', 'waiting'].includes(life.phase) || typeof life.remaining !== 'number' || !Number.isFinite(life.remaining) || life.remaining < 0 || life.remaining > 1e9 || ![null, 'amber', 'lumber'].includes(life.option) || typeof life.affordable !== 'boolean' || (life.phase !== 'waiting' && life.option !== null) || (life.phase === 'normal' && (life.remaining !== 0 || life.episode !== null)) || (life.phase !== 'normal' && (typeof life.episode !== 'number' || !Number.isFinite(life.episode) || Math.abs(life.episode) > 1e9)) || (life.option === null && life.affordable)) throw new Error('Invalid hero life state.');
+        if (value.type === 'life' && value.sequence === this.lifeRequest || value.type === 'revive' && value.sequence === this.reviveRequest) {
+          if (life.phase !== 'normal' && this.lifeState?.phase !== life.phase && !this.pauseMenu) this.cancelLocalMenu();
+          this.lifeState = { ...life }; this.lifeReceivedAt = performance.now();
+          if (life.phase === 'normal') this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive');
+        }
+      }
+      if (value.type === 'life' && value.sequence === this.lifeRequest) this.lifeRequest = null;
+      if (value.type === 'revive' && value.sequence === this.reviveRequest) {
+        this.reviveRequest = null; this.lastLifeQuery = -Infinity;
+        if (!Object.hasOwn(value, 'life') && this.lifeState) { this.lifeState.option = null; this.lifeState.affordable = false; }
+      }
+    }
+    updateLife() {
+      if (!this.identity || !this.scene.snapshot || this.controls.paused || !this.movement.nativeFocused || this.resyncing) return false;
+      const now = performance.now();
+      if (!this.lifeRequest && !this.reviveRequest && now - this.lastLifeQuery >= 1000) {
+        this.lastLifeQuery = now; this.lifeRequest = this.sendTarget('life', this.identity.entity);
+      }
+      const life = this.lifeState;
+      if (!life || life.phase === 'normal') return false;
+      const age = Math.max(0, (now - this.lifeReceivedAt) / 1000), remaining = Math.max(0, life.remaining - age);
+      this.game.getGuiManager().addGameMessage('guest-revive', 'You have been knocked out', life.phase === 'dying' ? 'Recovering...' : remaining > 0 ? 'Revive in: ' + Math.ceil(remaining) + ' s' : 'Waiting for the host...', 2);
+      if (age <= 2 && remaining > 0.200001 && life.option && life.affordable && !this.reviveRequest) {
+        const amber = life.option === 'amber';
+        if (this.game.getIMGui().doButton({ id: 'guest-revive', text1: 'BUY INSTANT REVIVE', text2: amber ? '10' : '50', v2ScreenLocation: this.controls.app.globals.guiRenderer.getv2RenderLocation(0, -140, 'bottom'), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: amber ? 'respawnButtonAmber' : 'respawnButtonLumber' })) {
+          const sequence = this.reviveRequest = ++this.targetSequence;
+          this.connection.send('action', { type: 'revive', sequence, target: this.identity.entity, amber, episode: life.episode }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+        }
+      }
+      return true;
+    }
     localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu); }
     togglePauseMenu() {
       const open = !this.pauseMenu;
@@ -332,6 +369,7 @@
       if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) this.guiInput.pendingDown = false;
     }
     updateMenu() {
+      if (this.updateLife()) return;
       this.construction?.update(); this.totem?.update();
       const building = this.demolition || this.selectedBuilding;
       if (!building) return;
@@ -378,6 +416,7 @@
     close() {
       if (this.closed) return;
       this.closed = true;
+      this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive');
       clearTimeout(this.resyncTimer); this.resyncing = false;
       this.movement.close();
       this.cancelLocalMenu(); this.game.imgui.controller = this.original.guiController;

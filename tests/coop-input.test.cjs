@@ -60,6 +60,7 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   listeners.get('pointerdown')(click); listeners.get('mousedown')(click);
   assert.equal(clicks, 1, 'Use pointer-down without duplicating its compatibility mouse event');
   input.keys.add('KeyW'); assert.deepEqual(input.direction(), [0, -1]);
+  world.lifeState = { phase: 'waiting' }; assert.equal(input.available(), false); world.lifeState = { phase: 'normal' };
   input.keys.add('ArrowUp'); input.keys.add('KeyS'); assert.deepEqual(input.direction(), [0, 0]);
   input.keys.delete('KeyS'); input.keys.add('KeyD'); assert.ok(Math.abs(Math.hypot(...input.direction()) - 1) < 1e-12);
   await input.flush(); assert.equal(sent[0].kind, 'action'); assert.equal(sent[0].value.sequence, 1);
