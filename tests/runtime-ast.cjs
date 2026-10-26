@@ -40,4 +40,15 @@ function assignedObject(name, context) {
 function staticMethod(owner, name, context) {
   return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.name === owner && a.left.property.name === name && a.right.type === 'FunctionExpression'), `${owner}.${name}`).right, context);
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod };
+function taskManagerFactory({ manager, renderer, groups, badges, tasks, window }) {
+  const prototype = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'awardCompletedTaskList')), 'task manager prototype');
+  const owner = prototype.left.object.name;
+  const factory = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.name === owner && a.left.property.name === 'create' && a.right.type === 'FunctionExpression'), 'task manager factory');
+  const local = assignments.filter(a => a.start > factory.start && a.end < factory.end);
+  const assigned = name => one(local.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name), name);
+  const group = assigned('criticalTaskGroup');
+  // Resolve private namespace names from their public roles so readability renames do not break this fixture.
+  return evaluate(factory.right, { [owner]: manager, [assigned('taskRenderer').right.callee.object.name]: renderer, [group.right.callee.object.name]: groups,
+    [assigned('badgeTaskGroup').right.callee.object.name]: badges, [group.right.arguments[2].object.name]: tasks, window });
+}
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod, taskManagerFactory };

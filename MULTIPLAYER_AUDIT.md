@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest resource/progression HUD — Beta 17, 2026-10-25
+## Current pending quest reward persistence — Beta 18, 2026-10-26
+
+Original completion flags precede acceptance of the final reward card; that card was only in memory. Tracked islands now keep a version-1 `desktopQuests` ledger under envelope 7, with co-op hero schema unchanged at 4. It resolves bounded unique task ID/name records to canonical group/archetype data. Original automatic/final-card reward spawning remains, records are removed once accepted, and save guards latch partial reward exceptions. Known live legacy pending cards can be captured; historical flags alone cannot identify old lost rewards. Tracking reattaches after groups exist, including later solo play on co-op islands. Untracked solo stays format 2.
+
+Exact pre-v7/import/recovery originals, older-reader refusal, sticky history and retry/rename/export/import checks use an immutable Beta 17 / format-6 reader snapshot. New format-7 saves require Beta 18+. Original shared task conditions were checked; missing aggressors no longer crash the hero-kill condition. Game wire stays coop-15 / signaling 2. All 261 checks pass; see RESTORATION_STATUS.md for evidence. No game window or personal island was opened. Guest quest controls are still next; original accepted-drop pickup/lifetime and visible save/reload/concurrent/network/native acceptance remain open.
+
+## Previous guest resource/progression HUD — Beta 17, 2026-10-25
 
 The own-hero life response also carries shared resource/cap/amber balances and personal XP/hero points, using original ECPlayerData getters. It adds no polling/request. The guest validates the paired envelope and bounded HUD values, accepts only its pending status, and draws original resource/rank/totem-note artwork through a presentation-only original-method adapter. Visible-number animations preserve continuity and identical packets do not reset them; downward XP corrections snap because original XP animation assumes increases. Host display flags and resync suppression apply. Neither solo data nor host state is mutated by drawing; spending remains independently revalidated on the host.
 

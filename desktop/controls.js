@@ -1,5 +1,6 @@
 'use strict';
 (function (root) {
+  const { KEY: QUEST_KEY, QuestRewards } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const CHEAT_CODE = 'moreamberplease';
   function createCheatCodeHandler(canType, reveal, code = CHEAT_CODE) {
@@ -34,6 +35,10 @@
       app.updateGame = (...args) => { if (!this.paused || this.onlineWorld) update.apply(app, args); };
     }
     manager() { return this.app?.globals.gameManager; }
+    attachTaskManager(manager, archetypes) {
+      manager.taskArchetypes = archetypes;
+      if (this.bridge && [QUEST_KEY, 'desktopCoop'].some(key => Object.hasOwn(this.bridge.state.userData, key))) new QuestRewards(this.manager(), this.bridge, manager);
+    }
     ready() { const game = this.manager(); return !this.guestWorld && !!(game?.hasLoadedLevel && !game.getLoading() && game.getHero()); }
     pause(value) {
       if (this.paused && !value && !this.onlineWorld && this.manager()?.gameClock) {
@@ -234,6 +239,7 @@
     writeCheckpoint() {
       if (this.guestWorld) throw new Error('The host saves this online island.');
       const game = this.manager();
+      game.desktopQuestRewards?.assertHealthy();
       game.saveLevel(true);
       const data = game.getPlayerData();
       for (const method of ['saveResource', 'saveSoftCurrency', 'saveConsumedSoftCurrency', 'saveHeroUpgrades', 'saveProgress', 'saveGameStats', 'saveSettings', 'saveShared', 'saveNumberOfGamesPlayed', 'saveScriptFlags', 'saveTaskFlags']) data[method]();

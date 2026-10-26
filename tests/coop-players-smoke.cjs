@@ -98,7 +98,8 @@ const assert = require('node:assert/strict');
     const savesDirectory = path.join(directory, 'saves');
     const file = path.join(savesDirectory, fs.readdirSync(savesDirectory).find(name => name.endsWith('.json')));
     const saved = JSON.parse(fs.readFileSync(file));
-    assert.equal(saved.version, 6); assert.equal(JSON.parse(saved.state.userData.desktopCoop).players.length, 4);
+    assert.equal(saved.version, 7); assert.equal(JSON.parse(saved.state.userData.desktopCoop).players.length, 4);
+    assert.equal(JSON.parse(saved.state.userData.desktopQuests).version, 1);
     const restored = await page.evaluate(async () => {
       await window.coopWorld.close();
       const { controls, bridge } = window.polycraft, game = controls.manager(), hero = game.getHero();

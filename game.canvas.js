@@ -40456,6 +40456,7 @@
     d.criticalTaskGroup = Xd.create(a, b, N.criticalTaskList, c, "crit");
     d.fillerTaskGroup = Xd.create(a, b, f, c, "fill");
     d.badgeTaskGroup = qf.create(a, b, "badge");
+    if (window.PolycraftControls) window.PolycraftControls.attachTaskManager(d, N.archetypes);
     return d;
   };
   sf.prototype = {
@@ -40715,7 +40716,7 @@
       var c = a.victim.familyName,
         d = b.familyName,
         f = a.aggressor;
-      return !f.toBeDestroyed && f.getEC("ECHero") && c === d;
+      return !!(f && !f.toBeDestroyed && f.getEC("ECHero") && c === d);
     }
   };
   N.conditions.entitiesDispensed = {

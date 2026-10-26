@@ -6,6 +6,7 @@
   const { HostMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { HostActions } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   const { HostConstruction } = typeof module !== 'undefined' ? require('./coop-construction.js') : root.PolycraftCoopConstruction;
+  const { QuestRewards } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -90,6 +91,7 @@
         await this.construction?.settle();
         state = await this.atBoundary(() => {
           if (this.construction?.pending.size) return null;
+          this.game.desktopQuestRewards?.assertHealthy();
           this.players?.capture();
           this.controls.writeCheckpoint();
           // LocalBridge applies writes synchronously; preserve this exact tick while acknowledgements finish.
@@ -104,8 +106,8 @@
       await root.polycraft.checkpoint();
       this.players = await this.atBoundary(() => {
         const players = new CoopPlayers(this.game, bridge);
-        try { this.construction = new HostConstruction(this.game); return players; }
-        catch (error) { players.close(); throw error; }
+        try { this.construction = new HostConstruction(this.game); if (!this.game.desktopQuestRewards) new QuestRewards(this.game, bridge); return players; }
+        catch (error) { this.construction?.close(); this.construction = null; players.close(); throw error; }
       });
       this.original.peerState = this.transport.onState;
       this.original.peerMessage = this.transport.onMessage;

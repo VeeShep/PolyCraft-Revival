@@ -274,6 +274,7 @@
     const read = async file => { const response = await fetch('/' + file); if (!response.ok) throw new Error('Missing game file: ' + file); return (await response.json()).data; };
     const [store, badges, leaderboards, notifications] = await Promise.all(['storeitems.json', 'badges.json', 'leaderboards.json', 'gamenotifications.json'].map(read));
     bridge = new window.LocalBridge(slot.state, { store, badges, leaderboards, notifications }, report);
+    controls.bridge = bridge;
     window.Turbulenz = { Services: { bridge: bridge.gameBridge }, Data: { mode: 'canvas' } };
     window.gameSlug = 'polycraft';
     window.TurbulenzEngine = {};
