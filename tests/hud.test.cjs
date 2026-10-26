@@ -4,14 +4,15 @@ const assert = require('node:assert/strict');
 const ast = require('./runtime-ast.cjs');
 const ranks = ast.objectWith('xpTable');
 const playerDataMethods = ast.component('ECPlayerData', { kd: ranks });
-const scoreMethods = ast.prototypeWith('drawResourceBar', { Za: [{ barGUI: 'lumber', string: 'Lumber' }, { barGUI: 'stone', string: 'Stone' }] });
+const scoreMethods = ast.prototypeWith('drawResourceBar', { Za: [{ barGUI: 'lumber', string: 'Lumber' }, { barGUI: 'stone', string: 'Stone' }], e: { archetypes: { a_melee: { familyName: 'melee' } } } });
 const { captureHud, GuestHud } = require('../desktop/hud.js');
 const { HostActions } = require('../desktop/coop-actions.js');
-const profile = () => ({ resources: [100, 50], caps: [500, 1000], amber: 10, xp: 0, points: 0, quests: null, flags: { resources: true, amber: true, rank: true } });
+const profile = () => ({ resources: [100, 50], caps: [500, 1000], amber: 10, xp: 0, points: 0, quests: null, island: { hq: null, prepare: null, invasion: null, upcoming: null }, flags: { resources: true, amber: true, rank: true } });
 function guest() {
   const drawn = [], globals = { appCurrentTime: 10, simpleFontRenderer: { numberToCommaString: String }, mathDevice: { lerp: (a, b, t) => a + (b - a) * t, saturate: value => Math.max(0, Math.min(1, value)) } };
+  globals.guiRenderer = { getv2RenderLocation: (x, y) => [x, y] };
   const scores = Object.assign(Object.create(scoreMethods), { globals });
-  const world = { game: { getGuiScores: () => scores, getGuiManager: () => ({ addDrawGui: (name, value, id) => drawn.push({ name, value, id }) }), getHero: () => { throw new Error('The solo hero must not be used'); } }, controls: { xpTable: ranks.xpTable, playerDataMethods, app: { globals } } };
+  const world = { game: { getGuiScores: () => scores, getGuiManager: () => ({ addDrawGui: (name, value, id) => drawn.push({ name, value, id }) }), getHero: () => { throw new Error('The solo hero must not be used'); }, getFactionManager: () => { throw new Error('The solo faction must not be used'); }, getEntityFactory: () => ({ getArchetypeList: () => ['a_melee'] }) }, controls: { xpTable: ranks.xpTable, playerDataMethods, app: { globals } } };
   globals.gameManager = world.game;
   const hud = new GuestHud(world), receive = (value = profile(), sequence = 1, expected = 1) => hud.receive({ type: 'life', sequence, life: {}, hud: value }, expected);
   return { world, hud, receive, globals, drawn };
@@ -66,5 +67,48 @@ test('HUD validation refuses malformed totals, sparse arrays, flags, authority f
   for (const invalid of [{ resources: Array(2) }, { resources: [-1, 0] }, { caps: [Infinity, 0] }, { amber: NaN }, { xp: 1.5 }, { xp: 2147483648 }, { points: -1 }, { points: 1e10 }, { flags: { resources: true, amber: true, rank: 1 } }, { flags: { resources: true, amber: true, rank: true, save: true } }, { save: true }]) assert.throws(() => f.receive({ ...profile(), ...invalid }), /Invalid guest HUD/);
   assert.throws(() => f.hud.receive({ type: 'revive', sequence: 1, life: {}, hud: profile() }, 1), /Invalid guest HUD/);
   assert.throws(() => f.hud.receive({ type: 'life', sequence: 1, hud: profile() }, 1), /Invalid guest HUD/);
+  assert.equal(JSON.stringify(f.hud.state), before);
+});
+
+test('island HUD captures the assigned faction HQ and current host war phase without reading the host hero or changing the world', () => {
+  const health = Object.assign(Object.create(ast.component('ECHealth')), { health: 45, startHealth: 100, healthChangedTime: 19.75, globals: { gameCurrentTime: 20 } });
+  const regions = [], war = { getActiveCampaignRegionName: () => 'north', getCurrentBattleKilledEnemyCount: region => { regions.push(region); return 3; }, getNextBattleEnemyCount: region => { regions.push(region); return 10; }, getNextBattleArchetypeQuantities: region => { regions.push(region); return { a_melee: 10 }; } };
+  const flags = { displayHQHealth: true, displayWarCompassPrepare: true, displayWarCompassInvasion: false, displayNextInvasionDescription: true };
+  const data = { getResource: () => 1, getResourceCap: () => 500, getSoftCurrency: () => 2, getXP: () => 0, getUpgradePoints: () => 0 };
+  const hero = { shouldBeDestroyed: () => false, getEC: name => name === 'ECPlayerData' ? data : name === 'ECPlayerLife' ? { state: 0, states: { NORMAL: 0, DYING: 1 } } : { getFactionName: () => 'guest' }, getGameSpace: () => ({ getEntitiesWithEC: () => [{ getEC: () => war }] }) };
+  const game = { getHero: () => { throw new Error('Host hero must not be used'); }, getPlayFlags: () => flags, getFactionManager: () => ({ getFactionByName: name => { assert.equal(name, 'guest'); return { getHQ: () => ({ getEC: () => health }) }; } }), getGuiScores: () => ({ prepareTimeRemaining: 12 }) };
+  const before = JSON.stringify(health), prepare = captureHud(game, hero).island;
+  game.getGameEntityByName = () => hero; assert.deepEqual(new HostActions().execute(game, hero, {}, 'guest', null, 'life').hud.island, prepare); regions.length = 0;
+  assert.deepEqual(prepare, { hq: { current: 45, maximum: 100, changedAgo: 0.25 }, prepare: 12, invasion: null, upcoming: [{ archetype: 'a_melee', count: 10 }] });
+  flags.displayWarCompassPrepare = false; flags.displayWarCompassInvasion = true; flags.displayNextInvasionDescription = false;
+  assert.deepEqual(captureHud(game, hero).island.invasion, { killed: 3, total: 10 }); assert.deepEqual(regions, ['north', 'north']); assert.equal(JSON.stringify(health), before);
+  game.getFactionManager = () => ({ getFactionByName: () => ({ getHQ: () => null }) }); hero.getGameSpace = () => null;
+  assert.deepEqual(captureHud(game, hero).island, { hq: null, prepare: null, invasion: null, upcoming: null });
+  game.getPlayFlags = () => ({}); game.getFactionManager = hero.getGameSpace = () => { throw new Error('Hidden HUD must not query world state'); };
+  assert.deepEqual(captureHud(game, hero).island, profile().island);
+});
+
+test('actual original island renderers show host HQ damage, preparation, invasion progress and original enemy artwork', t => {
+  let now = 10000; t.mock.method(performance, 'now', () => now);
+  const f = guest(), state = profile();
+  state.island = { hq: { current: 45, maximum: 100, changedAgo: 0.1 }, prepare: 12, invasion: null, upcoming: [{ archetype: 'a_melee', count: 10 }] };
+  f.receive(state); const source = JSON.stringify(state); f.hud.draw();
+  assert.equal(f.drawn.find(draw => draw.name === 'hqHealthBar').value.scale, 1.2125); assert.equal(f.drawn.find(draw => draw.name === 'hqHealthBar').value.completeFactor, 0.45);
+  assert.equal(f.drawn.find(draw => draw.name === 'war_compass_prepare').value.text, '0:12');
+  assert.equal(f.drawn.find(draw => draw.name === 'melee_quantity').value.text, '10');
+  now += 3000; f.drawn.length = 0; f.hud.draw();
+  assert.equal(f.drawn.find(draw => draw.name === 'hqHealthBar').value.scale, 1);
+  assert.equal(f.drawn.find(draw => draw.name === 'war_compass_prepare').value.text, '0:09');
+  now += 60000; f.drawn.length = 0; f.hud.draw(); assert.equal(f.drawn.find(draw => draw.name === 'war_compass_prepare').value.text, '0:00');
+  assert.equal(f.drawn.some(draw => draw.name === 'war_compass_invasion'), false); assert.equal(JSON.stringify(state), source);
+  f.receive({ ...profile(), island: { hq: { current: -1, maximum: 0, changedAgo: 10 }, prepare: null, invasion: { killed: 3, total: 10 }, upcoming: null } });
+  f.drawn.length = 0; f.hud.draw(); assert.equal(f.drawn.find(draw => draw.name === 'hqHealthBar').value.completeFactor, 0); assert.equal(f.drawn.find(draw => draw.name === 'war_compass_invasion').value.text, '30%'); assert.equal(f.drawn.some(draw => draw.name === 'war_compass_prepare'), false);
+  f.receive({ ...profile(), island: { ...profile().island, invasion: { killed: 0, total: 0 } } }); f.drawn.length = 0; f.hud.draw(); assert.equal(f.drawn.find(draw => draw.name === 'war_compass_invasion').value.text, '100%');
+  f.receive(profile()); f.drawn.length = 0; f.hud.draw(); assert.equal(f.drawn.some(draw => ['hqHealthBar', 'war_compass_invasion', 'war_compass_prepare', 'melee_quantity'].includes(draw.name)), false);
+});
+
+test('island HUD validation rejects malformed health, phases, quantities and arbitrary artwork before replacing the last state', () => {
+  const f = guest(); f.receive(); const before = JSON.stringify(f.hud.state), blank = profile().island;
+  for (const value of [null, {}, { ...blank, save: true }, { ...blank, prepare: NaN }, { ...blank, prepare: -1 }, { ...blank, hq: { current: Infinity, maximum: 100, changedAgo: 0 } }, { ...blank, hq: { current: 1, maximum: -1, changedAgo: 0 } }, { ...blank, hq: { current: 1, maximum: 2, changedAgo: -1 } }, { ...blank, invasion: { killed: 1.5, total: 10 } }, { ...blank, invasion: { killed: 1, total: -1 } }, { ...blank, upcoming: Array(1) }, { ...blank, upcoming: Array(65).fill({ archetype: 'a_melee', count: 1 }) }, { ...blank, upcoming: [{ archetype: 'gui/evil.svg', count: 1 }] }, { ...blank, upcoming: [{ archetype: 'a_melee', count: -1 }] }, { ...blank, upcoming: [{ archetype: 'a_melee', count: 1, sprite: 'bad' }] }, { ...blank, upcoming: Array(2).fill({ archetype: 'a_melee', count: 1 }) }]) assert.throws(() => f.receive({ ...profile(), island: value }), /Invalid (island HUD|upcoming invasion)/);
   assert.equal(JSON.stringify(f.hud.state), before);
 });

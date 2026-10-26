@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest quest controls — Beta 19, 2026-10-26
+## Current guest island HUD — Beta 20, 2026-10-26
+
+The paired life/HUD response now carries host-owned HQ health, preparation time, battle progress and optional enemy quantities. Capture follows original play flags and the assigned hero's faction. No extra polling, guest simulation or saving was added. Exact bounded shapes, finite health/timing, integer counts, known local archetypes and unique quantities are checked before display state changes.
+
+Original HQ/war rendering methods are reused through read-only received values; the suspended solo faction is never queried. Countdown estimation clamps at zero without changing the authoritative phase. Original enemy family artwork and optional description flags remain. Game runtime changes to coop-17; signaling stays 2 and save/quest/co-op versions stay 7/1/4. All 275 checks pass, including actual original renderers and the host/guest status path. No graphical game, personal island or external service was used. Visible preparation/battle/HQ/quest pickup, full guest parity and native/physical-network acceptance remain open. See RESTORATION_STATUS.md for local package evidence and next gates.
+
+## Previous guest quest controls — Beta 19, 2026-10-26
 
 Guest task cards/descriptions and the pending reward card reuse the actual original renderer. Canonical bounded quest views ride the existing paired life/HUD reply, with monotonic revisions and no new polling. Description input is local; the host validates its original event without moving the host camera. Reward claims validate assigned/living hero, current visible pending card and script state, use original drops at the requesting hero, remove the ledger record once and wait for coherent saving before acknowledgement. Original proximity pickup rules remain.
 

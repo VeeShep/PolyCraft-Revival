@@ -253,7 +253,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   world.targetSequence = 4; world.lifeRequest = 4;
   const ast = require('./runtime-ast.cjs'), hudRanks = ast.objectWith('xpTable');
   controls.xpTable = hudRanks.xpTable; controls.playerDataMethods = ast.component('ECPlayerData', { kd: hudRanks });
-  const hud = { resources: [100, 50], caps: [500, 1000], amber: 10, xp: 600, points: 1, quests: null, flags: { resources: true, amber: true, rank: true } }, feedback = world.lastTargetResult;
+  const hud = { resources: [100, 50], caps: [500, 1000], amber: 10, xp: 600, points: 1, quests: null, island: { hq: { current: 25, maximum: 100, changedAgo: 1 }, prepare: null, invasion: { killed: 1, total: 4 }, upcoming: null }, flags: { resources: true, amber: true, rank: true } }, feedback = world.lastTargetResult;
   const heroStatus = { type: 'life', sequence: 4, message: 'Hero life state.', life: { phase: 'waiting', remaining: 10, episode: 1, option: 'lumber', affordable: true }, hud };
   connection.onMessage({ kind: 'result', payload: heroStatus });
   assert.deepEqual(world.hud.state, hud); assert.equal(world.lastTargetResult, feedback);
