@@ -187,3 +187,37 @@ test('tracked original quests advance in host menus before coherent captures, wi
   frame++; f.queue.push(f.info(1)); const disabled = ast.method('updateOnlineTasks', { ba: { runTasks: false } }); disabled.call(f.game); assert.equal(f.flags.two, undefined);
   assert.equal(ticks, 2); f.game.updateOnlineTasks(); assert.equal(ticks, 3); assert.equal(draws, 1); assert.equal(quests.data.pending[0].task, 'two'); assert.equal(f.gifts.length, 2); quests.close();
 });
+test('validated guest rotation advances the actual original task once without moving the host camera or directly paying a reward', () => {
+  const ast = require('./runtime-ast.cjs'), { HostActions } = require('../desktop/coop-actions.js'), f = fixture(), task = ast.assignedObject('rotateCamera'), listeners = new Map();
+  const events = { subscribe(name, callback) { listeners.set(name, callback); }, unsubscribe(name) { listeners.delete(name); }, notify(name, value) { listeners.get(name)?.(value); } };
+  f.game.eventManager = events; f.game.getEventManager = () => events; f.game.isScriptLocked = () => false;
+  f.game.getGameCamera = () => { throw new Error('Host camera must not be rotated'); };
+  const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECHealth' ? { getHealth: () => 10 } : name === 'ECPlayerLife' ? { state: 0, states: { NORMAL: 0 } } : {} };
+  f.game.getGameEntityByName = () => actor;
+  const tasks = { archetypes: { rotateCamera: task }, conditions: { onEvent: ast.assignedObject('onEvent') } };
+  const group = Object.assign(Object.create(ast.taskGroupMethods(tasks)), { globals: { metricsManager: { sendMetric() {} } }, gameManager: f.game, taskList: ['rotateCamera'], uniqueGroupString: 'fill', taskConditionStateMap: {}, eventInterestMap: {}, eventHandlerMap: {}, eventMap: {}, taskCompleteStatusList: [false] });
+  f.manager.taskArchetypes = tasks.archetypes; f.manager.criticalTaskGroup.taskList = []; f.manager.fillerTaskGroup = group; group.activateTask(task, 0);
+  const quests = f.attach(), actions = new HostActions(); actions.receive({ type: 'rotateCamera', sequence: 1, target: 'owned' });
+  assert.equal(actions.apply(f.game, actor, {}).save, undefined); assert.equal(f.gifts.length, 0); f.manager.updateCompletedTasks();
+  assert.equal(f.flags.rotateCamera, true); assert.deepEqual(quests.data.pending, [{ id: 'taskIdfill_0', task: 'rotateCamera' }]);
+  actions.receive({ type: 'rotateCamera', sequence: 2, target: 'owned' }); actions.apply(f.game, actor, {}); f.manager.updateCompletedTasks(); assert.equal(quests.data.pending.length, 1); assert.equal(f.gifts.length, 0);
+  assert.equal(quests.award('taskIdfill_0'), true); assert.equal(quests.award('taskIdfill_0'), false); assert.equal(f.gifts.length, 2); quests.close();
+});
+test('camera event intents reject extra authority, duplicate sequences, other heroes, incapacitation and script locks', () => {
+  const { HostActions } = require('../desktop/coop-actions.js'), value = { type: 'rotateCamera', sequence: 1, target: 'owned' };
+  const actions = new HostActions(); actions.receive(value); assert.throws(() => actions.receive(value), /repeated/);
+  for (const extra of [{ angle: 1 }, { yaw: 100 }, { quest: 'rotateCamera' }, { playerId: 'other' }, { reward: 100 }]) assert.throws(() => new HostActions().receive({ ...value, ...extra }), /Invalid/);
+  for (const failure of ['other', 'dead', 'dying', 'script']) {
+    let notified = 0; const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECHealth' ? { getHealth: () => failure === 'dead' ? 0 : 10 } : name === 'ECPlayerLife' ? { state: failure === 'dying' ? 1 : 0, states: { NORMAL: 0 } } : {} };
+    const game = { getGameEntityByName: () => failure === 'other' ? { shouldBeDestroyed: () => false } : actor, isScriptLocked: () => failure === 'script', eventManager: { notify: () => { notified++; } } };
+    assert.match(new HostActions().execute(game, actor, {}, 'owned', null, 'rotateCamera'), /not available/); assert.equal(notified, 0);
+  }
+});
+test('camera notices have a separate bounded budget and cannot exhaust normal action capacity', () => {
+  const { HostActions } = require('../desktop/coop-actions.js'); let now = 0; const actions = new HostActions(() => now);
+  const receive = (type, sequence) => { actions.receive({ type, sequence, target: 'owned' }); actions.queue.shift(); };
+  for (let sequence = 1; sequence <= 10; sequence++) receive('life', sequence);
+  receive('rotateCamera', 11); receive('rotateCamera', 12); assert.equal(actions.tokens, 0);
+  assert.throws(() => receive('rotateCamera', 13), /Too many camera/); assert.equal(actions.sequence, 12);
+  now = 500; receive('rotateCamera', 13); receive('life', 14); assert.equal(actions.tokens, 4);
+});

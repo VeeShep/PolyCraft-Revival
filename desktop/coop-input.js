@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
-  const KEY_AXES = { KeyW: 'forward', ArrowUp: 'forward', KeyS: 'back', ArrowDown: 'back', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right' };
+  const KEY_AXES = { KeyW: 'forward', ArrowUp: 'forward', KeyS: 'back', ArrowDown: 'back', KeyA: 'left', KeyD: 'right' };
+  const CAMERA_KEYS = ['ArrowLeft', 'ArrowRight'];
   class HostMovement {
     constructor(now = () => performance.now()) {
       this.now = now; this.sequence = 0; this.move = [0, 0]; this.receivedAt = -Infinity;
@@ -58,11 +59,11 @@
         if (event.code === 'Escape') { if (this.world.construction?.placement?.held) this.world.construction.cancelHeld(); else this.world.cancelLocalMenu?.(); this.keys.clear(); this.flush(); return; }
         if (this.world.localMenu?.()) { this.keys.clear(); this.flush(); return; }
         if (event.repeat) return;
-        if (KEY_AXES[event.code] && this.available()) this.keys.add(event.code);
+        if ((KEY_AXES[event.code] || CAMERA_KEYS.includes(event.code)) && this.available()) this.keys.add(event.code);
         this.flush();
       });
       listen('keyup', event => {
-        if (!KEY_AXES[event.code]) return;
+        if (!KEY_AXES[event.code] && !CAMERA_KEYS.includes(event.code)) return;
         this.keys.delete(event.code);
         if (root.document.activeElement === this.canvas) { event.preventDefault(); event.stopImmediatePropagation(); }
         this.flush();

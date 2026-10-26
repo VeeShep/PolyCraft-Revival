@@ -56,6 +56,10 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   global.desktop = { windowFocused: async () => true, onWindowFocusChanged: callback => { nativeFocus = callback; return () => { removed = true; }; } };
   const input = new GuestMovement(world); t.after(() => input.close());
   await Promise.resolve();
+  const arrow = code => ({ code, preventDefault() {}, stopImmediatePropagation() {} });
+  listeners.get('keydown')(arrow('ArrowLeft')); assert.equal(input.keys.has('ArrowLeft'), true); assert.deepEqual(input.direction(), [0, 0]);
+  listeners.get('keyup')(arrow('ArrowLeft')); assert.equal(input.keys.has('ArrowLeft'), false);
+  listeners.get('keydown')(arrow('ArrowRight')); listeners.get('blur')(); assert.equal(input.keys.size, 0);
   const click = { target: canvas, button: 0, preventDefault() {}, stopImmediatePropagation() {} };
   listeners.get('pointerdown')(click); listeners.get('mousedown')(click);
   assert.equal(clicks, 1, 'Use pointer-down without duplicating its compatibility mouse event');

@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current assigned-hero lighting — Beta 24, 2026-10-26
+## Current guest camera rotation — Beta 25, 2026-10-26
+
+Guest left/right arrows now use native local camera rotation while WASD and guest up/down movement remain. Focus/menu/life/resync gating and opposing keys suppress turns. A sequenced own-hero intent, without angle or arbitrary event name, lets the host validate eligibility before sending the original RotateCamera task event. The host camera and world orientation are untouched. Original task processing and normal saving retain completion/rewards; each notice is not a forced disk write.
+
+Client notices are capped at two per second with one pending reply. The host has a separate small camera budget alongside unchanged construction/status budget and queue cap. Matching receipts remain quiet and add no HUD polling. All 292 checks pass, including actual native task completion/pending/one-time acceptance, validation, rate isolation and result parsing. A reused read-only reviewer found no concrete issues. Runtime changes to coop-20; world/delta/signaling/save/quest/co-op remain 5/1/2/7/1/4. Visual/native, physical-network and remaining gameplay acceptance stay open. See RESTORATION_STATUS.md for package and Beta 24 CI evidence.
+
+## Previous assigned-hero lighting — Beta 24, 2026-10-26
 
 A pure native hero-light calculation now supplies each assigned hero's original rotated offset and night/brightness visibility to coherent snapshots. It does not move the host node or tick torch components. Native host updating targets its own hero and retains the original movement threshold/bounds. Guest lighting overrides only personal positioning, applies received/interpolated state and bounds, and restores the exact original hook on close; directional/day-night/shadow handling remains native.
 

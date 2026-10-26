@@ -287,6 +287,10 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(world.quests.pending, null); assert.equal(world.quests.state.completed, null);
   world.quests.openRequest = world.sendQuest('questOpen', 'taskIdcrit_0');
   connection.onMessage({ kind: 'result', payload: { type: 'questOpen', sequence: 11, message: 'Quest changed.' } }); assert.equal(world.quests.openRequest, null);
+  const cameraFeedback = world.lastTargetResult; world.cameraRequest = world.sendTarget('rotateCamera', world.identity.entity); world.lastLifeQuery = 0;
+  assert.equal(requests.at(-1).payload.type, 'rotateCamera'); assert.equal(requests.at(-1).payload.target, world.identity.entity);
+  connection.onMessage({ kind: 'result', payload: { type: 'rotateCamera', sequence: 11, message: 'Recorded.' } }); assert.equal(world.cameraRequest, 12);
+  connection.onMessage({ kind: 'result', payload: { type: 'rotateCamera', sequence: 12, message: 'Recorded.' } }); assert.equal(world.cameraRequest, null); assert.equal(world.lastLifeQuery, 0); assert.equal(world.lastTargetResult, cameraFeedback);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);

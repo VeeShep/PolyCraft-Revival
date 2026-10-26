@@ -128,7 +128,7 @@
         this.playerFor(connection);
         if (message.kind === 'resync') { this.requestResync(connection, message.payload); return; }
         if (message.kind === 'action') {
-          if (['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward'].includes(message.payload.type)) binding.actions.receive(message.payload);
+          if (['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera'].includes(message.payload.type)) binding.actions.receive(message.payload);
           else binding.input.receive(message.payload);
           return;
         }

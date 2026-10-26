@@ -9,13 +9,13 @@
     return { phase, remaining, episode: phase === 'normal' ? null : life.deathTime, option, affordable: !!(option && life.canAffordToRevive(option === 'amber' ? 10 : 0, option === 'lumber' ? 50 : 0)) };
   }
   class HostActions {
-    constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); }
+    constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); this.cameraTokens = 2; this.cameraTokenTime = this.tokenTime; }
     receive(value) {
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
       const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
       const quest = ['questOpen', 'questReward'].includes(value?.type);
       const held = value?.archetype !== undefined;
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest ? 4 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest ? 4 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
       if (quest && (typeof value.quest !== 'string' || !/^taskId(?:crit|fill)_\d{1,4}$/.test(value.quest))) throw new Error('Invalid quest request.');
       if ((buildingUpgrade || cancelUpgrade) && (typeof value.next !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.next))) throw new Error('Invalid building upgrade.');
       if (cancelUpgrade && (!Number.isSafeInteger(value.episode) || value.episode < 1)) throw new Error('Invalid upgrade episode.');
@@ -26,8 +26,14 @@
       if (upgrade && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 2 || !Number.isInteger(value.level) || value.level < 0 || value.level >= 5 || typeof value.amber !== 'boolean')) throw new Error('Invalid totem upgrade.');
       const now = this.now();
       this.tokens = Math.min(10, this.tokens + Math.max(0, now - this.tokenTime) * 0.01); this.tokenTime = now;
-      if (this.tokens < 1 || this.queue.length >= 4) throw new Error('Too many target actions.');
-      this.tokens--; this.sequence = value.sequence; this.queue.push({ ...value, ...(placement ? { location: [...value.location] } : {}), ...(value.type === 'repair' || buildingUpgrade ? { costs: [...value.costs] } : {}) });
+      if (this.queue.length >= 4) throw new Error('Too many target actions.');
+      // Camera notices must not consume construction and status-query capacity.
+      if (value.type === 'rotateCamera') {
+        this.cameraTokens = Math.min(2, this.cameraTokens + Math.max(0, now - this.cameraTokenTime) * 0.002); this.cameraTokenTime = now;
+        if (this.cameraTokens < 1) throw new Error('Too many camera actions.');
+        this.cameraTokens--;
+      } else { if (this.tokens < 1) throw new Error('Too many target actions.'); this.tokens--; }
+      this.sequence = value.sequence; this.queue.push({ ...value, ...(placement ? { location: [...value.location] } : {}), ...(value.type === 'repair' || buildingUpgrade ? { costs: [...value.costs] } : {}) });
     }
     apply(game, hero, players, controls) {
       const action = this.queue.shift();
@@ -40,6 +46,11 @@
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
       const life = hero.getEC('ECPlayerLife'), incapacitated = life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL);
+      if (type === 'rotateCamera') {
+        if (target !== hero || incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0) return 'Camera interaction is not available.';
+        game.eventManager.notify('RotateCamera', {});
+        return { message: 'Camera rotation recorded.' };
+      }
       if (type === 'questOpen' || type === 'questReward') {
         const quests = game.desktopQuestRewards;
         if (!quests || target !== hero || incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0) return 'Quest interaction is not available.';

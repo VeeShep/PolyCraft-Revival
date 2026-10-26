@@ -212,6 +212,13 @@
       const hero = this.actor(state.hero), location = hero.getv3Location();
       if (this.resyncing || state.hero !== this.lastHero || this.lastLocation && Math.hypot(...location.map((value, index) => value - this.lastLocation[index])) > 8) { this.camera.sphereCentre = this.camera.globals.mathDevice.v3Copy(location); this.camera.setShouldSnap(); }
       this.resyncing = false; this.lastHero = state.hero; this.lastLocation = Array.from(location);
+      if (this.world.movement?.available()) {
+        const keys = this.world.movement.keys, turn = Number(keys.has('ArrowLeft')) - Number(keys.has('ArrowRight'));
+        if (turn && this.camera.globals.gameAppTimeStep > 0) {
+          this.camera.rotate(turn * 0.5 * Math.PI * this.camera.globals.gameAppTimeStep);
+          if (!this.world.cameraRequest && now - (this.lastRotationNotice ?? -Infinity) >= 500) { this.lastRotationNotice = now; this.world.cameraRequest = this.world.sendTarget('rotateCamera', state.hero); }
+        }
+      }
       this.camera.setHero(hero); this.camera.update();
     }
   }
@@ -278,10 +285,11 @@
         else if (message.kind === 'result') {
           const value = message.payload;
           const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud', 'quests'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (value.type === 'life' && Object.hasOwn(value, 'life') !== Object.hasOwn(value, 'hud')) throw new Error('Incomplete hero status.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
+          if (value.type === 'rotateCamera' && value.sequence === this.cameraRequest) this.cameraRequest = null;
           if (['upgradeBuilding', 'cancelUpgrade'].includes(value.type) && value.sequence === this.upgradeRequest) this.upgradeRequest = null;
           const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
@@ -296,7 +304,7 @@
           this.hud.receive(value, this.lifeRequest);
           this.receiveLife(value);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
-          if (!['held', 'life'].includes(value.type)) {
+          if (!['held', 'life', 'rotateCamera'].includes(value.type)) {
             this.lastTargetResult = { ...value };
             const status = root.document?.getElementById?.('status');
             if (status) status.textContent = value.message;

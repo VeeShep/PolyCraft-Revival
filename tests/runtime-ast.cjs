@@ -70,4 +70,10 @@ function cameraMethods(zoomer) {
   const create = start.body.body.find(node => node.type === 'ExpressionStatement' && node.expression.type === 'AssignmentExpression').expression.right;
   return evaluate(prototype, { [create.callee.object.name]: { create: zoomer } });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod, taskManagerFactory, healthDrawing, cameraMethods };
+function taskGroupMethods(tasks) {
+  const prototype = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'createTaskConditionState')), 'task group prototype').right;
+  const render = prototype.properties.find(p => key(p) === 'getRenderInfoForTask').value;
+  const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
+  return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
+}
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod, taskManagerFactory, healthDrawing, cameraMethods, taskGroupMethods };
