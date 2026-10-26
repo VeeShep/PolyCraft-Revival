@@ -227,6 +227,7 @@
       if (!controls.ready() || controls.onlineWorld || controls.guestWorld || connection.role !== 'guest' || connection.closed) throw new Error('Joining needs a loaded renderer and an available guest connection.');
       this.controls = controls; this.connection = connection;
       this.targetSequence = 0;
+      this.uiRequests = new Map();
       this.lastLifeQuery = -Infinity;
       this.game = controls.manager();
       const game = this.game, app = controls.app, globals = app.globals;
@@ -285,11 +286,12 @@
         else if (message.kind === 'result') {
           const value = message.payload;
           const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud', 'quests'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (value.type === 'life' && Object.hasOwn(value, 'life') !== Object.hasOwn(value, 'hud')) throw new Error('Incomplete hero status.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
           if (value.type === 'rotateCamera' && value.sequence === this.cameraRequest) this.cameraRequest = null;
+          if (['pauseGame', 'enterFullscreen'].includes(value.type) && this.uiRequests.get(value.type) === value.sequence) this.uiRequests.delete(value.type);
           if (['upgradeBuilding', 'cancelUpgrade'].includes(value.type) && value.sequence === this.upgradeRequest) this.upgradeRequest = null;
           const selected = value.type === 'target' && value.sequence === this.selectionRequest;
           if (value.building) {
@@ -304,7 +306,7 @@
           this.hud.receive(value, this.lifeRequest);
           this.receiveLife(value);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
-          if (!['held', 'life', 'rotateCamera'].includes(value.type)) {
+          if (!['held', 'life', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type)) {
             this.lastTargetResult = { ...value };
             const status = root.document?.getElementById?.('status');
             if (status) status.textContent = value.message;
@@ -327,7 +329,8 @@
       this.connection.send('resync', { version: 1, tick: this.scene.tick }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
     }
     clickTarget(event) {
-      if (this.game.getIMGui().hasCapturedInput() || this.game.getIMGui().isHot('guest-pause')) return;
+      const gui = this.game.getIMGui();
+      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen')) return;
       const target = pickTarget(this, event);
       if (!target) return;
       this.selectionRequest = this.sendTarget('target', target);
@@ -411,6 +414,22 @@
       this.cancelLocalMenu();
       this.pauseMenu = open;
       this.movement?.flush();
+      if (open) this.recordUiEvent('pauseGame');
+    }
+    recordUiEvent(type) {
+      if (this.closed || this.resyncing || !this.identity || !this.scene.snapshot || this.connection.closed || this.connection.state !== 'connected' || this.uiRequests.has(type)) return;
+      this.uiRequests.set(type, this.sendTarget(type, this.identity.entity));
+    }
+    async toggleFullscreen() {
+      const now = performance.now();
+      if (this.closed || this.fullscreenChanging || now - (this.lastFullscreenRequest ?? -Infinity) < 500) return;
+      this.fullscreenChanging = true; this.lastFullscreenRequest = now;
+      try {
+        if (root.document?.fullscreenElement) { await root.document.exitFullscreen(); if (this.controls.nativeFullscreen) await root.desktop.fullscreen(); }
+        else await root.desktop.fullscreen();
+      }
+      catch (error) { console.error(error); const status = root.document?.getElementById?.('status'); if (!this.closed && status) status.textContent = 'Unable to change fullscreen: ' + error.message; }
+      finally { this.fullscreenChanging = false; }
     }
     drawPauseMenu() {
       const gui = this.game.getIMGui(), renderer = this.controls.app.globals.guiRenderer;
@@ -421,7 +440,10 @@
         this.game.getGuiManager().addDrawGui('bgPattern', { v2ScreenLocation: location(0, 0) }, 'guest-pause-background');
         this.game.getGuiManager().addDrawGui('polycraftLogo', { v2ScreenLocation: location(0, -260) }, 'guest-pause-logo');
         if (gui.doButton({ id: 'guest-resume', text: 'Resume', v2ScreenLocation: location(0, 0), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: 'buttonStart' })) this.cancelLocalMenu();
-      } else if (gui.doButton({ id: 'guest-pause', text: '', v2ScreenLocation: location(116, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: 'pause' })) this.togglePauseMenu();
+      } else {
+        if (gui.doButton({ id: 'guest-fullscreen', text: '', v2ScreenLocation: location(54, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: this.controls.fullscreen ? 'minimize' : 'fullscreen', passive: true })) this.toggleFullscreen();
+        if (gui.doButton({ id: 'guest-pause', text: '', v2ScreenLocation: location(116, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: 'pause' })) this.togglePauseMenu();
+      }
     }
     cancelLocalMenu() {
       this.pauseMenu = false;

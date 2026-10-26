@@ -15,7 +15,7 @@
       const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
       const quest = ['questOpen', 'questReward'].includes(value?.type);
       const held = value?.archetype !== undefined;
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest ? 4 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest ? 4 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
       if (quest && (typeof value.quest !== 'string' || !/^taskId(?:crit|fill)_\d{1,4}$/.test(value.quest))) throw new Error('Invalid quest request.');
       if ((buildingUpgrade || cancelUpgrade) && (typeof value.next !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.next))) throw new Error('Invalid building upgrade.');
       if (cancelUpgrade && (!Number.isSafeInteger(value.episode) || value.episode < 1)) throw new Error('Invalid upgrade episode.');
@@ -46,6 +46,11 @@
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
       const life = hero.getEC('ECPlayerLife'), incapacitated = life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL);
+      if (type === 'pauseGame' || type === 'enterFullscreen') {
+        if (target !== hero) return 'Only your own interface actions can be recorded.';
+        game.eventManager.notify(type === 'pauseGame' ? 'PauseGame' : 'GoFullScreen', {});
+        return { message: 'Interface event recorded.' };
+      }
       if (type === 'rotateCamera') {
         if (target !== hero || incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0) return 'Camera interaction is not available.';
         game.eventManager.notify('RotateCamera', {});

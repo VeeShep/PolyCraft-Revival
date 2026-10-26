@@ -23,6 +23,13 @@ test('fullscreen quest receives one event for each actual entry', () => {
   for (const entered of [false, true, true, false, false, true]) controls.fullscreenChanged(entered);
   assert.deepEqual(events, ['GoFullScreen', 'GoFullScreen']);
 });
+test('confirmed guest fullscreen entries route to the host and never notify the suspended solo task manager', () => {
+  const controls = new Controls(), events = [];
+  controls.manager = () => { throw new Error('Solo task manager must not be used'); };
+  controls.guestWorld = { recordUiEvent: type => events.push(type) };
+  for (const entered of [false, true, true, false, false, true]) controls.fullscreenChanged(entered);
+  assert.deepEqual(events, ['enterFullscreen', 'enterFullscreen']); assert.equal(controls.fullscreen, true);
+});
 
 test('hero progression edits level, within-level XP and unspent points without erasing upgrades', () => {
   const controls = new Controls();

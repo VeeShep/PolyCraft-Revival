@@ -52,11 +52,22 @@
       if (!root.addEventListener || !this.canvas) return;
       const listen = (event, handler) => { root.addEventListener(event, handler, { capture: true, passive: false }); this.listeners.push([event, handler]); };
       listen('keydown', event => {
-        if (event.ctrlKey || event.metaKey || event.altKey || root.document.activeElement !== this.canvas) return;
+        if (event.ctrlKey || event.metaKey || root.document.activeElement !== this.canvas) return;
+        if (event.code === 'KeyF' && !event.altKey || event.code === 'Enter' && event.altKey) {
+          event.preventDefault(); event.stopImmediatePropagation();
+          if (!event.repeat) this.world.toggleFullscreen?.();
+          return;
+        }
+        if (event.altKey) return;
         if (event.code === 'Tab') { this.keys.clear(); this.flush(); return; }
         event.preventDefault(); event.stopImmediatePropagation();
         if (event.code === 'KeyP') { if (!event.repeat) this.world.togglePauseMenu?.(); this.keys.clear(); this.flush(); return; }
-        if (event.code === 'Escape') { if (this.world.construction?.placement?.held) this.world.construction.cancelHeld(); else this.world.cancelLocalMenu?.(); this.keys.clear(); this.flush(); return; }
+        if (event.code === 'Escape') {
+          if (this.world.construction?.placement?.held) this.world.construction.cancelHeld();
+          else if (this.world.controls.fullscreen && !this.world.localMenu?.() && !this.world.construction?.placement) this.world.toggleFullscreen?.();
+          else this.world.cancelLocalMenu?.();
+          this.keys.clear(); this.flush(); return;
+        }
         if (this.world.localMenu?.()) { this.keys.clear(); this.flush(); return; }
         if (event.repeat) return;
         if ((KEY_AXES[event.code] || CAMERA_KEYS.includes(event.code)) && this.available()) this.keys.add(event.code);

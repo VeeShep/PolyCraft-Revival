@@ -6,6 +6,8 @@ Preserve the original appearance and progression while making the game independe
 
 Delegation policy agreed 2026-10-26: use a subagent only for a narrow, independent investigation, review or repetitive file batch that materially saves time while the parent continues useful work. Start with one, reuse context when useful and request concise results. Routine searches, checks, version bumps and tightly connected changes stay with the parent; avoid overlapping work and token cost without a clear benefit.
 
+The durable working policy is in `AGENTS.md` under **Subagent budget**. Before spawning, explain the concrete benefit, define completion criteria and assign non-overlapping work; the parent reviews and integrates results. No agents are needed just to plan delegation.
+
 ## Approved next networking milestone: room codes and direct-first connections — 2026-10-24
 
 The user now requests a small, long-term signaling/credential service and room-code joining, preferring minimal server information/load and avoiding TURN gameplay charges whenever a working direct route exists. **This promotes room codes from the deferred backlog into the next networking milestone.** Beta 8 now implements the staged connection coordinator on top of the Beta 6 room service and Beta 7 address discovery. Temporary provider credential issuance and physical-network acceptance remain open; configured TURN credentials are currently entered by players.
@@ -31,7 +33,20 @@ Reference audit: [FlimLick/flimssite/tools/stun](https://github.com/FlimLick/fli
 
 Implementation order: bounded signaling/room protocol and server with deployment instructions → authenticated room-code host/join adapter → direct-first route coordinator and staged WebRTC/TURN → network timing/bandwidth instrumentation and disposable acceptance. Beta 8 now contains source and local non-GUI checks for the first three steps with manually configured TURN. Automatic credential issuance, measurements and physical gameplay/deployment acceptance remain next. Continue preserving existing multiplayer/save/gameplay gates; no backend deployment, provider account setup or automatic router mappings occurred in this requirements pass. That requirements checkpoint changed documentation only; the subsequent room implementation is Beta 6, recorded below.
 
-## Current source: Beta 25 guest camera rotation and quest event — 2026-10-26
+## Current source: Beta 26 guest pause/fullscreen quest events — 2026-10-26
+
+Working version is **1.0.0-beta.26**, runtime **`polycraft-1.0.0.25-coop-21`**. All players need matching Beta 26 builds. World/delta/signaling/save/quest/co-op formats remain 5/1/2/7/1/4.
+
+- Guests now have the original fullscreen/minimize icon beside Pause, plus F and Alt+Enter. Escape exits fullscreen when no local menu or placement needs cancellation. Requests coalesce and retain the original half-second cooldown. Document and native fullscreen exits are handled; local window failures report an error without disconnecting the session.
+- Opening the guest pause menu records the original `PauseGame` event on the host; Resume does not. A confirmed fullscreen entry records `GoFullScreen`; a key press or failed window request alone gives no credit. The suspended solo task manager is never notified for guest events. The host validates exact own-hero intents with existing sequence/rate/queue limits and emits only those fixed native events. No host pause, fullscreen change, direct reward or per-event forced save occurs. Like native UI controls, these events remain available while knocked out or script-locked.
+- Pending receipts are matched by type/sequence, suppress duplicate pending notices, leave action feedback intact and add no HUD polls. Fullscreen GUI clicks cannot also select or attack the world underneath. Online simulation remains independent of local menus.
+- **297 unit/regression checks pass.** Coverage includes actual original rotation/pause/fullscreen tasks, completion once, retained pending reward and one-time acceptance; own-hero/malformed/replay validation, original-style buttons, guest key handling, confirmed-entry routing, pending receipts, fullscreen coalescing/cooldown/document exit and error handling. No graphical game was launched.
+- Final local ZIP: `/private/tmp/polycraft-beta26-package.3JH1Xj/PolyCraft-Offline-1.0.0-beta.26-mac-arm64.zip`. Fresh extraction verifies all **14 ARM64 Mach-O** files and deep/strict ad-hoc signature. Seven affected runtime files match source; package metadata is Beta 26. Packaged Node 24.22.0 compiles the bundle, loads the host/guest modules and accepts both validated events without host pausing or saving. No game, network or save is opened by this helper.
+- Next: visible disposable two/four-player pause/fullscreen controls, shared quest completion/reward pickup/save restoration, host-menu simulation continuity and failures/focus changes. Guest pause still offers Resume only; settings parity remains open. Camera springs/lighting, native OS gameplay, physical LAN/internet/UPnP/STUN/TURN, deployment/temporary credentials and remaining restoration acceptance remain open. Graphical tests remain deferred per user instruction. Goal stays active and incomplete.
+
+**Beta 25 CI succeeded:** [run 40395523503](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40395523503), source `094889705e8fda093ea0e4aadd3e9bfe766568d5`. All eight platform/format artifacts are present and non-expired as verified 2026-10-26. Native gameplay acceptance remains open.
+
+## Previous source: Beta 25 guest camera rotation and quest event — 2026-10-26
 
 Working version is **1.0.0-beta.25**. Guest left/right arrows now rotate the original camera instead of acting as horizontal movement aliases, matching native controls and the README. WASD and the existing guest up/down movement aliases remain. Runtime is **`polycraft-1.0.0.25-coop-20`**: all players need matching Beta 25 builds for the new interaction type. World snapshot/delta/signaling remain 5/1/2 and save/quest/co-op remain 7/1/4.
 

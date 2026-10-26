@@ -103,3 +103,23 @@ test('guest picking maps CSS pixels to the rendered scene and ignores own hero, 
   assert.equal(pickTarget(world, { clientX: 30, clientY: 30 }), 'enemy', 'Picking follows the visible interpolated target, not its newer authoritative position');
   assert.equal(pickTarget(world, { clientX: 100, clientY: 65 }), null);
 });
+test('guest interface events validate ownership and exact intent without pausing or changing the host window', () => {
+  const { game, hero, players, state } = setup(), events = [];
+  game.eventManager.notify = (name, data) => events.push([name, data]);
+  game.isScriptLocked = () => true; state.health = 0;
+  game.togglePause = game.startPaused = () => assert.fail('host must keep simulating');
+  for (const [type, event] of [['pauseGame', 'PauseGame'], ['enterFullscreen', 'GoFullScreen']]) {
+    for (const extra of [{ event: 'Reward' }, { amount: 99 }, { angle: 1 }]) {
+      const actions = new HostActions();
+      assert.throws(() => actions.receive({ type, sequence: 1, target: 'self', ...extra }), /Invalid/);
+    }
+    const actions = new HostActions();
+    actions.receive({ type, sequence: 1, target: 'tree' });
+    assert.match(actions.apply(game, hero, players).message, /own interface/);
+    actions.receive({ type, sequence: 2, target: 'self' });
+    assert.match(actions.apply(game, hero, players).message, /recorded/);
+    assert.deepEqual(events.at(-1), [event, {}]);
+    assert.throws(() => actions.receive({ type, sequence: 2, target: 'self' }), /repeated/);
+  }
+  assert.equal(events.length, 2);
+});

@@ -75,6 +75,11 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   focused = true; input.keys.add('KeyW'); input.lastSent = -Infinity; await input.flush();
   nativeFocus(false); await input.flush(); assert.deepEqual(sent.at(-1).value.move, [0, 0]);
   let pauses = 0; world.togglePauseMenu = () => { pauses++; };
+  let fullscreens = 0; world.toggleFullscreen = () => { fullscreens++; };
+  listeners.get('keydown')({ ...arrow('KeyF'), repeat: false }); listeners.get('keydown')({ ...arrow('KeyF'), repeat: true }); assert.equal(fullscreens, 1);
+  listeners.get('keydown')({ ...arrow('Enter'), altKey: true }); assert.equal(fullscreens, 2);
+  listeners.get('keydown')({ ...arrow('KeyF'), ctrlKey: true }); assert.equal(fullscreens, 2);
+  controls.fullscreen = true; listeners.get('keydown')(arrow('Escape')); assert.equal(fullscreens, 3); controls.fullscreen = false;
   const key = repeat => ({ code: 'KeyP', repeat, preventDefault() {}, stopImmediatePropagation() {} });
   listeners.get('keydown')(key(false)); listeners.get('keydown')(key(true)); assert.equal(pauses, 1);
   let cancelled = 0;

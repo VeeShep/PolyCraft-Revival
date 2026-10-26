@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest camera rotation — Beta 25, 2026-10-26
+## Current guest interface quest events — Beta 26, 2026-10-26
+
+Guest Pause opens its local original-style menu and sends a bounded own-hero `pauseGame` intent; confirmed fullscreen entry sends `enterFullscreen`. The host emits only the fixed original PauseGame/GoFullScreen events, without touching its menu, fullscreen state or simulation pause. Original task processing and checkpoint/autosave retain progress and pending rewards. Guests cannot specify event names or rewards. Native UI actions are available even while knocked out/script-locked.
+
+The original fullscreen/minimize icon, F, Alt+Enter and context-sensitive Escape use local window APIs with coalescing/cooldown and error reporting. Only confirmed state transitions receive quest credit. Type/sequence-matched pending receipts prevent duplicate outstanding notices without overwriting feedback or extra HUD polling. Existing rate/queue limits remain. Runtime is coop-21; all players need Beta 26. Other formats remain world/delta/signaling/save/quest/co-op 5/1/2/7/1/4.
+
+All 297 checks pass, including actual original task completion and one-time reward acceptance, input/GUI ownership, request validation and local fullscreen failures. The finished ARM64 ZIP passes architecture/signature/source checks. No graphical game or personal save was opened. Visible multiplayer, native platforms, physical networks and remaining gameplay/menu parity stay open; see RESTORATION_STATUS.md.
+
+## Previous guest camera rotation — Beta 25, 2026-10-26
 
 Guest left/right arrows now use native local camera rotation while WASD and guest up/down movement remain. Focus/menu/life/resync gating and opposing keys suppress turns. A sequenced own-hero intent, without angle or arbitrary event name, lets the host validate eligibility before sending the original RotateCamera task event. The host camera and world orientation are untouched. Original task processing and normal saving retain completion/rewards; each notice is not a forced disk write.
 

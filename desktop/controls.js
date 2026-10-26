@@ -220,7 +220,10 @@
     settings(cheats) { if (this.app) this.app.globals.desktopCheats = cheats.enabled ? cheats : {}; }
     cheatsEnabled() { return !!this.app?.globals.desktopCheats?.enabled; }
     fullscreenChanged(entered) {
-      if (entered && !this.fullscreen) this.manager()?.getEventManager()?.notify('GoFullScreen', {});
+      if (entered && !this.fullscreen) {
+        if (this.guestWorld) this.guestWorld.recordUiEvent('enterFullscreen');
+        else this.manager()?.getEventManager()?.notify('GoFullScreen', {});
+      }
       this.fullscreen = entered;
     }
     async checkpoint(bridge) {

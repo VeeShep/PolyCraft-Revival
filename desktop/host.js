@@ -294,7 +294,7 @@
     window.TurbulenzEngine.onload = entry;
     entry();
     let nativeFullscreen = false;
-    const syncFullscreen = () => controls.fullscreenChanged(nativeFullscreen || !!document.fullscreenElement);
+    const syncFullscreen = () => { controls.nativeFullscreen = nativeFullscreen; controls.fullscreenChanged(nativeFullscreen || !!document.fullscreenElement); };
     document.addEventListener('fullscreenchange', syncFullscreen);
     window.desktop.onFullscreenChanged(entered => { nativeFullscreen = entered; syncFullscreen(); });
     applyCheatMode();

@@ -291,6 +291,11 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(requests.at(-1).payload.type, 'rotateCamera'); assert.equal(requests.at(-1).payload.target, world.identity.entity);
   connection.onMessage({ kind: 'result', payload: { type: 'rotateCamera', sequence: 11, message: 'Recorded.' } }); assert.equal(world.cameraRequest, 12);
   connection.onMessage({ kind: 'result', payload: { type: 'rotateCamera', sequence: 12, message: 'Recorded.' } }); assert.equal(world.cameraRequest, null); assert.equal(world.lastLifeQuery, 0); assert.equal(world.lastTargetResult, cameraFeedback);
+  world.recordUiEvent('pauseGame'); world.recordUiEvent('pauseGame'); assert.equal(world.uiRequests.get('pauseGame'), 13);
+  connection.onMessage({ kind: 'result', payload: { type: 'pauseGame', sequence: 12, message: 'Recorded.' } }); assert.equal(world.uiRequests.get('pauseGame'), 13);
+  connection.onMessage({ kind: 'result', payload: { type: 'pauseGame', sequence: 13, message: 'Recorded.' } }); assert.equal(world.uiRequests.has('pauseGame'), false);
+  controls.fullscreenChanged(true); assert.equal(requests.at(-1).payload.type, 'enterFullscreen'); assert.equal(world.uiRequests.get('enterFullscreen'), 14);
+  connection.onMessage({ kind: 'result', payload: { type: 'enterFullscreen', sequence: 14, message: 'Recorded.' } }); assert.equal(world.uiRequests.size, 0); assert.equal(world.lastTargetResult, cameraFeedback); assert.equal(world.lastLifeQuery, 0);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
@@ -322,6 +327,9 @@ test('guest Pause and Resume use original artwork and block local actions withou
   world.controls = { paused: false, guiTypes: {}, app: { globals: { guiRenderer: { getv2RenderLocation: (x, y) => [x, y] } } } };
   world.guiInput = {}; world.movement = { keys: new Set(['KeyW']), flush() { stopped++; } };
   world.game = { getIMGui: () => ({ doBackground() {}, doButton(options) { buttons.push(options); return options.id === clicked; } }), getGuiManager: () => ({ addDrawGui: name => draws.push(name) }) };
+  let fullscreen = 0; world.toggleFullscreen = () => { fullscreen++; };
+  clicked = 'guest-fullscreen'; world.drawPauseMenu(); assert.equal(fullscreen, 1); assert.equal(buttons[0].guiArchetype, 'fullscreen'); assert.deepEqual(buttons[0].v2ScreenLocation, [54, 52]);
+  world.controls.fullscreen = true; world.drawPauseMenu(); assert.equal(buttons.at(-2).guiArchetype, 'minimize'); clicked = 'guest-pause';
   world.drawPauseMenu(); assert.equal(world.pauseMenu, true); assert.equal(world.localMenu(), true);
   assert.equal(world.movement.keys.size, 0); assert.equal(stopped, 1); assert.equal(world.controls.paused, false);
   clicked = ''; world.drawPauseMenu(); assert.deepEqual(draws, ['bgPattern', 'polycraftLogo']);
@@ -342,10 +350,11 @@ test('a building selection uses original radial Move artwork and sends only one 
   assert.equal(drawn[0].guiArchetype, 'move');
 });
 
-test('captured quest GUI input cannot also select or attack an underlying world entity', () => {
+test('captured GUI input and the fullscreen button cannot also select or attack an underlying world entity', () => {
   const world = Object.create(GuestWorld.prototype); let sent = 0;
   world.game = { getIMGui: () => ({ hasCapturedInput: () => true }) }; world.sendTarget = () => { sent++; };
   world.clickTarget({ clientX: 10, clientY: 10 }); assert.equal(sent, 0);
+  world.game = { getIMGui: () => ({ hasCapturedInput: () => false, isHot: id => id === 'guest-fullscreen' }) }; world.clickTarget({ clientX: 10, clientY: 10 }); assert.equal(sent, 0);
 });
 
 test('guest health uses actual original bar sprites, colors and local off-screen damage rules at interpolated positions', t => {
@@ -375,4 +384,26 @@ test('guest health uses actual original bar sprites, colors and local off-screen
   icons.length = 0; world.drawHealth(); assert.equal(sprites.length, 4); assert.equal(new Set(icons.map(icon => icon.id)).size, 2);
   world.scene.entities.delete('friend'); sprites.length = 0; record.health.bar = record.health.damage = null; world.drawHealth(); assert.equal(sprites.length, 0);
   record.health = null; world.drawHealth(); assert.equal(sprites.length, 0);
+});
+test('guest fullscreen requests coalesce, wait for confirmation and handle document exit and local failure', async t => {
+  const originals = { desktop: global.desktop, document: global.document, error: console.error };
+  t.after(() => { global.desktop = originals.desktop; global.document = originals.document; console.error = originals.error; });
+  const world = Object.create(GuestWorld.prototype), status = { textContent: '' };
+  world.controls = { nativeFullscreen: false }; let requests = 0, resolve, exits = 0;
+  global.document = { fullscreenElement: null, getElementById: () => status, exitFullscreen: async () => { exits++; global.document.fullscreenElement = null; } };
+  global.desktop = { fullscreen: () => { requests++; return new Promise(done => { resolve = done; }); } };
+  world.recordUiEvent = () => assert.fail('requests alone cannot award fullscreen credit');
+  const pending = world.toggleFullscreen(); await world.toggleFullscreen(); assert.equal(requests, 1);
+  resolve(); await pending; assert.equal(world.fullscreenChanging, false);
+  await world.toggleFullscreen(); assert.equal(requests, 1);
+  world.lastFullscreenRequest = -Infinity; global.document.fullscreenElement = {};
+  await world.toggleFullscreen(); assert.equal(exits, 1); assert.equal(requests, 1);
+  world.lastFullscreenRequest = -Infinity; global.document.fullscreenElement = {}; world.controls.nativeFullscreen = true;
+  global.desktop.fullscreen = async () => { requests++; };
+  await world.toggleFullscreen(); assert.equal(exits, 2); assert.equal(requests, 2);
+  world.lastFullscreenRequest = -Infinity; console.error = () => {};
+  global.desktop.fullscreen = async () => { throw new Error('window unavailable'); };
+  await world.toggleFullscreen(); assert.match(status.textContent, /window unavailable/); assert.equal(world.fullscreenChanging, false);
+  world.closed = true; world.lastFullscreenRequest = -Infinity; status.textContent = '';
+  await world.toggleFullscreen(); assert.equal(status.textContent, '');
 });
