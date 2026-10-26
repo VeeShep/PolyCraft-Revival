@@ -33,6 +33,12 @@ Reference audit: [FlimLick/flimssite/tools/stun](https://github.com/FlimLick/fli
 
 Implementation order: bounded signaling/room protocol and server with deployment instructions → authenticated room-code host/join adapter → direct-first route coordinator and staged WebRTC/TURN → network timing/bandwidth instrumentation and disposable acceptance. Beta 8 now contains source and local non-GUI checks for the first three steps with manually configured TURN. Automatic credential issuance, measurements and physical gameplay/deployment acceptance remain next. Continue preserving existing multiplayer/save/gameplay gates; no backend deployment, provider account setup or automatic router mappings occurred in this requirements pass. That requirements checkpoint changed documentation only; the subsequent room implementation is Beta 6, recorded below.
 
+## Usage-limit continuation checkpoint — 2026-10-26
+
+The user requested wrapping up soon as usage limits approach. Beta 27 is committed/pushed at `0657b8f430a2a6ef863271a10c1f67de73280701`; 298 checks and the local ARM64 ZIP verification passed. Its GitHub [run 40399648846](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40399648846) is still **in progress**: checks, Mac ARM64 and Windows x64 have succeeded; Mac x64, Linux x64/ARM64 and Windows ARM64 were running when checked. Recheck that exact run on resume; do not restart it merely because observation ends.
+
+No Beta 28 or combat implementation has begun. The next concrete task is restoring original guest automatic-fire targeting, not enabling unused charge/rage components. The read-only findings, exact native methods and implementation/test checklist are saved in `MULTIPLAYER_AUDIT.md` under **Combat continuation audit**. Start there, then follow the normal review/package/publish workflow. No game windows, personal saves, router or external multiplayer service were used in this audit. The goal remains active and incomplete; visual/native/physical-network acceptance remains open.
+
 ## Current source: Beta 27 original guest pause settings — 2026-10-26
 
 Working version is **1.0.0-beta.27**. Original Shadows, Music and Sound controls are available from the guest pause menu, alongside Resume. The original settings renderer is shared with solo, retaining its artwork, localized labels, enable/disable behavior and positions. Resume now occupies the original left column. No tutorial, credits or premium shop transition is exposed through the guest menu yet.

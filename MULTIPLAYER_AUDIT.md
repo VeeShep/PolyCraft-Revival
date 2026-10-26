@@ -2,6 +2,18 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
+## Combat continuation audit — 2026-10-26, after Beta 27
+
+Read-only audit; no combat code changed. One narrowly scoped subagent traced the original component/input paths while the parent inspected guest actions and host lifecycle. No game was launched.
+
+- The configured hero `a_h_hero_01` has `ECFirearm`, `ECBumpAttack` and `ECAutoFire` (bundle around 104773–104874). No configured hero uses `ECChargeableShot` or `ECSuper`; do not activate dormant systems as an original-game parity fix. Those belong to the later expansion/design work.
+- Original `attackRangedTargetedEntity` (41597) attempts the eligible initial shot, clears the overload projectile, then calls `ECAutoFire.setTargetEntity` even when the weapon is reloading. Native `ECAutoFire.update` (46089) handles continued shots, cooldown, range and clearing on destruction, own death or construction. The hero config uses target/trigger range 25, while the default shotgun weapon range is 10; preserve the distinction rather than guessing a new balance value.
+- Current `HostActions.execute` in `desktop/coop-actions.js` validates ownership-bound actor eligibility, target health/eligibility, PvP protection, weapon range/ammo/cooldown and fires only once. It does not arm native automatic fire. This is the next concrete original-combat gap; no charge/rage RPC should be added for the current hero.
+- Next implementation: reuse the assigned hero's native automatic-fire component, preserve its trigger-range and reload behavior, keep host validation and native projectile/ammunition handling, and ensure retained targets cannot bypass current PvP/faction/script restrictions. Stop automatic fire on disconnect/session shutdown, including when hero removal is deferred by in-flight construction. Audit normal movement/menu targeting cancellation against original behavior before inventing new cancellation rules. Do not trust client-supplied damage, ammunition, duration or projectile names.
+- Required checks: actual native automatic-fire update with deterministic fixtures, initial shot plus later host ticks, reload/empty ammunition, range/target disappearance/death/construction, invalid or friendly selection, PvP off/on, script lock and disconnect with failed/deferred removal. Retain existing save/quest/input checks. Then increment the next beta, update this checkpoint, build/verify a fresh package and publish only after review. Visible disposable gameplay and real-network/native acceptance stay deferred/open.
+
+Legacy reference only: `ECChargeableShot` (47539) owns host-time charge, projectile thresholds, cancellation and priming; it is not configured for the hero. `ECSuper` has incomplete activation paths, including an undefined lifecycle variable and a controller calling the wrong method. It requires deliberate repair/configuration and acceptance before future use.
+
 ## Current guest pause settings — Beta 27, 2026-10-26
 
 The original pause settings renderer is now shared between solo and guest presentation. Guests get the original localized Shadows, Music and Sound toggles at their original positions, plus Resume. A session-only copy of the local profile settings suppresses persistence, while native setters still update local lighting/audio. Disconnect restores the original three preferences. Native solo settings still save normally. The native sound presentation update runs in the drawn guest menu so current sources reflect toggles; gameplay audio replication remains open.
