@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest island HUD — Beta 20, 2026-10-26
+## Current guest entity health display — Beta 21, 2026-10-26
+
+World snapshot format 4 adds bounded original health-bar presentation and timed damage metadata. The host uses original disabled/recent-damage/healing/regeneration rules and upgraded row/size/level. Absolute change timestamps keep unchanged health out of deltas. Guest presentation uses original health and entity sprite methods with received totals, interpolated positions and each guest's own camera; no ECS activation or health/combat simulation occurs. Damage arrows expire locally if updates stall. Resync and zero max health are handled; arbitrary GUI identifiers are not carried by this wire shape.
+
+Game runtime changes to coop-18; delta/signaling/save/quest/co-op versions remain 1/2/7/1/4. All 278 checks pass, including actual original visibility, sprite/color/icon routines, two heroes, local camera/expiry and strict full/delta validation. No graphical game, personal island, public service or router was used. Visible/native/physical-network acceptance and full original gameplay parity remain open; see RESTORATION_STATUS.md for package evidence and next gates.
+
+## Previous guest island HUD — Beta 20, 2026-10-26
 
 The paired life/HUD response now carries host-owned HQ health, preparation time, battle progress and optional enemy quantities. Capture follows original play flags and the assigned hero's faction. No extra polling, guest simulation or saving was added. Exact bounded shapes, finite health/timing, integer counts, known local archetypes and unique quantities are checked before display state changes.
 

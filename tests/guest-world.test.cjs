@@ -24,8 +24,8 @@ test('guest original-style demolition menus use presentation input only, support
 const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
   const entity = id => ({ id, archetype: null, interactive: true, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
-    mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50 } });
-  return { version: 3, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, spaces: [{
+    mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
+  return { version: 4, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -342,4 +342,33 @@ test('captured quest GUI input cannot also select or attack an underlying world 
   const world = Object.create(GuestWorld.prototype); let sent = 0;
   world.game = { getIMGui: () => ({ hasCapturedInput: () => true }) }; world.sendTarget = () => { sent++; };
   world.clickTarget({ clientX: 10, clientY: 10 }); assert.equal(sent, 0);
+});
+
+test('guest health uses actual original bar sprites, colors and local off-screen damage rules at interpolated positions', t => {
+  let now = 10000; t.mock.method(performance, 'now', () => now);
+  const { healthMethods, drawProgressBar } = require('./runtime-ast.cjs').healthDrawing(), sprites = [], icons = [];
+  let onScreen = false;
+  const globals = { simpleSpriteRenderer: { addSprite: value => sprites.push(value) }, mathDevice: {
+    getFactor: (a, b, value) => Math.max(0, Math.min(1, (value - a) / (b - a))), v4Lerp: (a, b, amount) => a.map((value, index) => value + (b[index] - value) * amount), v4Build: (...values) => values,
+    remap: (a, b, c, d, value) => c + (d - c) * ((value - a) / (b - a)), lerp: (a, b, amount) => a + (b - a) * amount
+  } };
+  const record = { id: 'guest', location: [9, 0, 9], mesh: { visible: true }, health: { current: 25, maximum: 50, bar: { row: -2, scale: 2, level: 3 }, damage: { changedAt: 10, onlyOffscreen: true } } };
+  const world = Object.create(GuestWorld.prototype);
+  world.controls = { healthMethods, drawProgressBar, app: { globals } };
+  world.scene = { snapshot: { time: 10.1 }, receivedAt: 10000, entities: new Map([['guest', { record, displayLocation: [1, 0, 2] }]]) };
+  world.game = { getGameCamera: () => ({ isOnScreen: location => { assert.deepEqual(location, [1, 0, 2]); return onScreen; } }), getGuiManager: () => ({ addDrawGui: (name, value, id) => icons.push({ name, value, id }) }), getHero: () => { throw new Error('Suspended solo hero must not be queried'); } };
+  const before = JSON.stringify(record); world.drawHealth();
+  assert.equal(sprites.length, 2); assert.equal(sprites[0].texture, 'textures/block.dds'); assert.equal(sprites[0].blendStyle, 'no-depth'); assert.equal(sprites[1].sizeX, 0.75); assert.deepEqual(sprites[1].v4color, [1, 0.8, 0, 1]); assert.deepEqual(sprites[0].v3Location, [1, 0, 2]);
+  assert.equal(icons[0].name, 'offScreenBuildingDamaged'); assert.ok(Math.abs(icons[0].value.scale - 1.4375) < 1e-9); assert.equal(icons[0].value.allowOffscreen, true);
+  onScreen = true; icons.length = 0; world.drawHealth(); assert.equal(icons.length, 0);
+  record.health.damage.onlyOffscreen = false; world.drawHealth(); assert.equal(icons.length, 1);
+  record.health.damage.onlyOffscreen = true; onScreen = false; now = 13000; icons.length = 0; world.drawHealth(); assert.equal(icons.length, 0, 'A stalled stream cannot keep the damage icon alive past its original duration'); now = 10000;
+  world.resyncing = true; sprites.length = 0; world.drawHealth(); assert.equal(sprites.length, 0); world.resyncing = false;
+  record.health.maximum = 0; world.drawHealth(); assert.equal(sprites.length, 0, 'Zero maximum health must not create NaN sprites');
+  record.health.maximum = 50; record.health.damage.onlyOffscreen = true; assert.equal(JSON.stringify(record), before);
+  world.scene.snapshot.time = 10.1;
+  const other = structuredClone(record); other.id = 'friend'; world.scene.entities.set('friend', { record: other, displayLocation: [1, 0, 2] });
+  icons.length = 0; world.drawHealth(); assert.equal(sprites.length, 4); assert.equal(new Set(icons.map(icon => icon.id)).size, 2);
+  world.scene.entities.delete('friend'); sprites.length = 0; record.health.bar = record.health.damage = null; world.drawHealth(); assert.equal(sprites.length, 0);
+  record.health = null; world.drawHealth(); assert.equal(sprites.length, 0);
 });

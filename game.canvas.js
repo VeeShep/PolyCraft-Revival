@@ -145011,7 +145011,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype);
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction);
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };

@@ -418,6 +418,22 @@
         this.demolition = building; this.selectedBuilding = null;
       }
     }
+    drawHealth() {
+      if (this.resyncing) return;
+      const globals = this.controls.app.globals, elapsed = Math.max(0, (performance.now() - this.scene.receivedAt) / 1000);
+      for (const entry of this.scene.entities.values()) {
+        const health = entry.record.health;
+        if (!health || !health.bar && !health.damage) continue;
+        const location = () => entry.displayLocation || entry.record.location;
+        const view = Object.assign(Object.create(this.controls.healthMethods), { globals, gameManager: this.game,
+          entity: { globals, getName: () => entry.record.id, getv3Location: location, drawProgressBarFromFraction: this.controls.drawProgressBar },
+          health: health.current, startHealth: health.maximum, getv3Location: location,
+          archetype: { barLevel: health.bar?.level, drawOffScreenIconIfDamagedRecently: !!health.damage, onlyDrawIconIfOffScreen: health.damage?.onlyOffscreen, offScreenDamageIconArchetype: 'offScreenBuildingDamaged' },
+          getTimeSinceHealthChange: () => Math.max(0, this.scene.snapshot.time - health.damage.changedAt) + elapsed });
+        if (health.bar && health.maximum > 0) view.drawHealthBar(health.bar.row, health.bar.scale);
+        if (health.damage && view.shouldDrawOffScreenIcon()) view.drawOffScreenIcon();
+      }
+    }
     update() {
       const game = this.game, globals = this.controls.app.globals;
       globals.simpleFontRenderer.clearFontList(); globals.simpleSpriteRenderer.clearSpriteList();
@@ -442,6 +458,7 @@
         torch.setDisabled(!this.scene.torch?.visible);
       }
       this.hasFrame = true;
+      this.drawHealth();
       this.hud.draw();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       if (!this.pauseMenu) this.updateMenu();

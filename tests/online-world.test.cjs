@@ -245,7 +245,7 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
 });
 
 function worldSnapshot(tick) {
-  return { version: 3, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null,
+  return { version: 4, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null,
     spaces: [{ extents: [-10, -10, -10, 10, 10, 10], transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], blocks: [],
       entities: [{ id: 'hero', archetype: null, interactive: true, location: [tick, 0, 0], scale: [1, 1, 1], rotation: 0, mesh: null, health: null }] }] };
 }

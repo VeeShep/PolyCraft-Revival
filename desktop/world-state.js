@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const VERSION = 3;
+  const VERSION = 4;
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];
   const meshFields = ['path', 'transform', 'visible', 'skin'];
@@ -39,7 +39,12 @@
       if (!partial || Object.hasOwn(mesh, 'visible')) requireValue(typeof mesh.visible === 'boolean', 'invalid mesh visibility.');
       if (!partial || Object.hasOwn(mesh, 'skin')) requireValue(mesh.skin === null || (Array.isArray(mesh.skin) && mesh.skin.length > 0 && mesh.skin.length <= 3072 && mesh.skin.length % 12 === 0 && Array.from(mesh.skin).every(number)), 'invalid skin matrices.');
     }
-    if (has('health') && entity.health !== null) requireValue(keys(entity.health, ['current', 'maximum']) && number(entity.health.current) && number(entity.health.maximum) && entity.health.maximum >= 0, 'invalid entity health.');
+    if (has('health') && entity.health !== null) {
+      const health = entity.health;
+      requireValue(keys(health, ['current', 'maximum', 'bar', 'damage']) && number(health.current) && number(health.maximum) && health.maximum >= 0, 'invalid entity health.');
+      requireValue(health.bar === null || keys(health.bar, ['row', 'scale', 'level']) && number(health.bar.row) && Math.abs(health.bar.row) <= 1000 && number(health.bar.scale) && health.bar.scale >= 0 && health.bar.scale <= 1000 && Number.isInteger(health.bar.level) && health.bar.level >= 1 && health.bar.level <= 64, 'invalid health bar.');
+      requireValue(health.damage === null || keys(health.damage, ['changedAt', 'onlyOffscreen']) && number(health.damage.changedAt) && typeof health.damage.onlyOffscreen === 'boolean', 'invalid damage indicator.');
+    }
   }
   function validateSnapshot(snapshot, assets) {
     requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'torch', 'spaces']), 'missing or unexpected fields.');
@@ -87,7 +92,9 @@
             interactive: !!(entity.getEC('ECResourceDispenser') || entity.getEC('ECTarget') || entity.getEC('ECBuilding') || entity.getEC('ECDispenser') || entity.getEC('ECHeroShrine')),
             location: Array.from(entity.getv3Location()), scale: Array.from(entity.getV3Scale()), rotation: entity.getRotationY(),
             mesh: mesh?.node ? { path: mesh.getMeshPath(), transform: Array.from(mesh.getm43Transform()), visible: !mesh.node.disabled, skin: skin ? Array.from(skin.output) : null } : null,
-            health: health ? { current: health.getHealth(), maximum: health.getMaxHealth() } : null
+            health: health ? { current: health.getHealth(), maximum: health.getMaxHealth(),
+              bar: health.shouldDrawBar() ? { row: health.getWorldBarRow(), scale: health.getHealthBarScale(), level: health.archetype.barLevel } : null,
+              damage: health.archetype.drawOffScreenIconIfDamagedRecently && health.getTimeSinceHealthChange() < 2.5 ? { changedAt: health.healthChangedTime, onlyOffscreen: health.archetype.onlyDrawIconIfOffScreen } : null } : null
           };
         })
       }))

@@ -7,7 +7,7 @@ function fixture() {
   const transform = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3, 4]);
   const mesh = { node: { disabled: false }, getMeshPath: () => 'models/hero.dae', getm43Transform: () => transform };
   const entity = (id, destroyed = false) => ({ name: id, shouldLevelSave: false, shouldPlayerSave: false,
-    shouldBeDestroyed: () => destroyed, getEC: name => name === 'ECMesh' ? mesh : name === 'ECHealth' ? { getHealth: () => 31, getMaxHealth: () => 50 } : name === 'ECTarget' && id === 'hero' ? {} : null,
+    shouldBeDestroyed: () => destroyed, getEC: name => name === 'ECMesh' ? mesh : name === 'ECHealth' ? { getHealth: () => 31, getMaxHealth: () => 50, shouldDrawBar: () => false, archetype: { drawOffScreenIconIfDamagedRecently: false } } : name === 'ECTarget' && id === 'hero' ? {} : null,
     getv3Location: () => location, getV3Scale: () => scale, getRotationY: () => 0
   });
   const entities = [entity('hero'), entity('pickup'), entity('removed', true)];
@@ -21,7 +21,7 @@ test('replication captures unsaved heroes and transient objects, excludes destro
   const { game, location, scale, transform } = fixture();
   const snapshot = captureSnapshot(game);
   assert.deepEqual(snapshot.spaces[0].entities.map(entity => entity.id), ['hero', 'pickup']);
-  assert.deepEqual(snapshot.spaces[0].entities[0].health, { current: 31, maximum: 50 });
+  assert.deepEqual(snapshot.spaces[0].entities[0].health, { current: 31, maximum: 50, bar: null, damage: null });
   assert.equal(snapshot.tick, 17);
   assert.equal(snapshot.time, 0.5);
   assert.deepEqual(snapshot.spaces[0].entities.map(entity => entity.interactive), [true, false]);
@@ -29,6 +29,33 @@ test('replication captures unsaved heroes and transient objects, excludes destro
   location.fill(100); scale.fill(100); transform.fill(100);
   assert.equal(JSON.stringify(snapshot), before, 'Later simulation cannot mutate queued network state');
   assert.deepEqual(JSON.parse(before), snapshot, 'Transfer is plain JSON without typed-array objects');
+});
+test('actual original health rules supply bars and timed damage metadata without querying the host camera or changing health', () => {
+  const f = fixture(), original = require('./runtime-ast.cjs').component('ECHealth'), get = f.entities[0].getEC;
+  const health = Object.assign(Object.create(original), { health: 31, startHealth: 50, healthChangedTime: 0.4, healthBarScale: 2, globals: f.game.globals,
+    archetype: { drawInWorldBarIfDamagedRecently: true, drawOffScreenIconIfDamagedRecently: true, onlyDrawIconIfOffScreen: true, worldBarRow: -2, barLevel: 3 }, shouldRegen: () => false });
+  f.entities[0].getEC = name => name === 'ECHealth' ? health : get(name);
+  f.game.getGameCamera = () => { throw new Error('Host camera must not decide guest indicators'); };
+  const capture = () => captureSnapshot(f.game), before = JSON.stringify(health), state = capture();
+  assert.deepEqual(state.spaces[0].entities[0].health, { current: 31, maximum: 50, bar: { row: -2, scale: 2, level: 3 }, damage: { changedAt: 0.4, onlyOffscreen: true } });
+  assert.equal(JSON.stringify(health), before);
+  f.game.gameClock.getFrameIndex = () => 18; f.game.globals.gameCurrentTime = 0.6;
+  const delta = createDelta(state, capture()); assert.equal(delta.spaces.length, 0, 'Absolute change time must not resend every health component each tick');
+  health.disableHealthBar = true; assert.equal(capture().spaces[0].entities[0].health.bar, null);
+  health.disableHealthBar = false; f.game.globals.gameCurrentTime = 3;
+  const expired = capture(); assert.equal(expired.spaces[0].entities[0].health.bar, null); assert.equal(expired.spaces[0].entities[0].health.damage, null);
+  assert.deepEqual(applyDelta(state, createDelta(state, expired)), expired);
+  health.healing = true; assert.notEqual(capture().spaces[0].entities[0].health.bar, null); health.healing = false;
+  health.shouldRegen = () => true; assert.notEqual(capture().spaces[0].entities[0].health.bar, null);
+});
+test('health view parsing rejects missing or unbounded metadata and arbitrary GUI authority in full snapshots and deltas', () => {
+  const base = captureSnapshot(fixture().game);
+  for (const extra of [{ bar: {} }, { bar: { row: 0, scale: -1, level: 1 } }, { bar: { row: 1001, scale: 1, level: 1 } }, { bar: { row: 0, scale: 1, level: 65 } }, { bar: { row: 0, scale: 1, level: 1.5 } }, { bar: { row: 0, scale: Infinity, level: 1 } }, { damage: { changedAt: NaN, onlyOffscreen: true } }, { damage: { changedAt: 0, onlyOffscreen: 1 } }, { damage: { changedAt: 0, onlyOffscreen: true, icon: 'arbitrary' } }, { bar: undefined }]) {
+    const next = structuredClone(base); Object.assign(next.spaces[0].entities[0].health, extra);
+    assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
+    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, torch: base.torch, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
+    assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
+  }
 });
 test('world validation requires unique live identities, selected hero and bounded terrain', () => {
   for (const mutate of [
