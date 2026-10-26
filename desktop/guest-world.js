@@ -226,7 +226,7 @@
       const camera = game.getGameCamera();
       this.scene = new GuestScene(globals, game.getBlockFactory());
       this.original = {
-        update: app.updateGame, draw: game.draw, draw2D: game.draw2D, save: game.saveLevel, getCamera: game.getGameCamera,
+        update: app.updateGame, draw: game.draw, draw2D: game.draw2D, save: game.saveLevel, getCamera: game.getGameCamera, heroLightUpdate: game.gameLighting.updateHeroLightPosition,
         time: globals.gameCurrentTime, dayTime: game.getGameDayTime(),
         paused: controls.paused, guiController: game.imgui.controller,
         camera: Object.fromEntries(['desiredV3Focus', 'desiredV3Position', 'currentV3Focus', 'currentV3Position', 'currentV3Up', 'currentv3Direction'].filter(key => camera[key]).map(key => [key, Array.from(camera[key])])),
@@ -237,6 +237,7 @@
       };
       this.viewCamera = new GuestCamera(this);
       game.getGameCamera = () => this.viewCamera.camera;
+      game.gameLighting.updateHeroLightPosition = () => this.updateTorch();
       controls.guestWorld = this;
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
@@ -468,6 +469,16 @@
         if (health.damage && view.shouldDrawOffScreenIcon()) view.drawOffScreenIcon();
       }
     }
+    updateTorch() {
+      const lighting = this.game.gameLighting, node = lighting.heroLightNode, state = this.scene.torch;
+      if (!node) return;
+      if (state) {
+        node.setLocalTransform(state.transform);
+        const radius = lighting.heroLight.radius + 2;
+        lighting.heroLight.halfExtents[0] = lighting.heroLight.halfExtents[1] = lighting.heroLight.halfExtents[2] = radius;
+      }
+      node.setDisabled(!state?.visible);
+    }
     update() {
       const game = this.game, globals = this.controls.app.globals;
       globals.simpleFontRenderer.clearFontList(); globals.simpleSpriteRenderer.clearSpriteList();
@@ -481,11 +492,7 @@
       game.gameDayTime = state.dayTime;
       game.applyDayNightTime();
       this.viewCamera.update(); game.gameLighting.update();
-      const torch = game.gameLighting.heroLightNode;
-      if (torch) {
-        if (this.scene.torch) torch.setLocalTransform(this.scene.torch.transform);
-        torch.setDisabled(!this.scene.torch?.visible);
-      }
+      this.updateTorch();
       this.hasFrame = true;
       this.drawHealth();
       this.hud.draw();
@@ -501,6 +508,7 @@
       this.movement.close();
       this.cancelLocalMenu(); this.game.imgui.controller = this.original.guiController;
       const game = this.game, app = this.controls.app, original = this.original;
+      game.gameLighting.updateHeroLightPosition = original.heroLightUpdate;
       this.connection.onMessage = original.onMessage; this.connection.onState = original.onState;
       this.connection.close(); this.scene.close();
       for (const node of original.roots) app.globals.scene.addRootNode(node);

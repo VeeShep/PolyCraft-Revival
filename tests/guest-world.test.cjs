@@ -191,14 +191,14 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const game = { hasLoadedLevel: true, getLoading: () => false, getHero: () => ({ getv3Location: () => [0, 0, 0] }),
     getBlockFactory: () => blocks, getGameCamera: () => camera, getGameDayTime: () => 18, setGameDayTime() {}, applyDayNightTime() {},
     gameClock: {}, getGameController: () => ({ clearInputs() {}, unlockMouse() {} }),
-    guiManager: { clearDrawList() {} }, imgui: { clearDrawList() {}, clearValidation() {} }, gameLighting: { update() {} },
+    guiManager: { clearDrawList() {} }, imgui: { clearDrawList() {}, clearValidation() {} }, gameLighting: { update() { this.updateHeroLightPosition(); }, updateHeroLightPosition() { throw new Error("Suspended solo torch must not be queried"); } },
     draw() {}, draw2D() {}, saveLevel() { saves++; }
   };
   globals.gameManager = game;
   const app = { globals, updateGame() { simulations++; } }, controls = new Controls();
   controls.attach(app, [], {});
   controls.paused = true;
-  const update = app.updateGame, draw = game.draw, save = game.saveLevel, getCamera = game.getGameCamera;
+  const update = app.updateGame, draw = game.draw, save = game.saveLevel, getCamera = game.getGameCamera, heroLightUpdate = game.gameLighting.updateHeroLightPosition;
   const guiController = game.imgui.controller;
   let forwarded = 0;
   const requests = [];
@@ -291,7 +291,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
   assert.equal(app.updateGame, update); assert.equal(game.draw, draw); assert.equal(game.saveLevel, save);
-  assert.equal(game.imgui.controller, guiController); assert.equal(game.getGameCamera, getCamera); assert.equal(world.localMenu(), false);
+  assert.equal(game.imgui.controller, guiController); assert.equal(game.getGameCamera, getCamera); assert.equal(game.gameLighting.updateHeroLightPosition, heroLightUpdate); assert.equal(world.localMenu(), false);
   assert.equal(globals.gameCurrentTime, 20); assert.equal(game.gameClock.prevEngineTime, 100);
   assert.deepEqual(Array.from(camera.desiredV3Focus), [0, 0, 0]); assert.deepEqual(Array.from(camera.desiredV3Position), [0, 10, 10]);
   assert.equal(controls.paused, true, 'An originally paused solo island stays paused after disconnect');

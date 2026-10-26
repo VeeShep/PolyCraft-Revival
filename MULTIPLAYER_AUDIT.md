@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest camera framing — Beta 23, 2026-10-26
+## Current assigned-hero lighting — Beta 24, 2026-10-26
+
+A pure native hero-light calculation now supplies each assigned hero's original rotated offset and night/brightness visibility to coherent snapshots. It does not move the host node or tick torch components. Native host updating targets its own hero and retains the original movement threshold/bounds. Guest lighting overrides only personal positioning, applies received/interpolated state and bounds, and restores the exact original hook on close; directional/day-night/shadow handling remains native.
+
+All 288 checks pass, including actual original lighting/rotation routines, distinct heroes, capture immutability, missing/day/dark states, cutoff/threshold/bounds, and restoration. Game/world/delta/signaling/save/quest/co-op versions remain coop-19/5/1/2/7/1/4, wire-compatible with Beta 23. Use current host and guest builds for both sides of the lighting fix. No games, personal saves, public services or routers were opened. Visual/native, real-network and remaining original gameplay acceptance stay open. See RESTORATION_STATUS.md for package and Beta 23's successful six-job/eight-artifact CI evidence.
+
+## Previous guest camera framing — Beta 23, 2026-10-26
 
 Guest framing now runs original native camera methods against read-only received hero/locomotion/life/building/actor/space data. Coherent snapshot capture selects the assigned hero before building that context; delta/full validation checks bounded fields and actor identities. Private native vectors, value library, scratch and zoomers prevent changes to the suspended solo camera. The game camera getter routes GUI/off-screen projection to the guest camera and is restored exactly on close. Resync/large corrections reset the native snap/cage; no authoritative gameplay runs on the guest.
 

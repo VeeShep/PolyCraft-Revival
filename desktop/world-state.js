@@ -74,13 +74,14 @@
     return snapshot;
   }
   function captureSnapshot(game, hero = game.getHero()) {
+    const torch = game.gameLighting?.getHeroLightState(hero);
     const snapshot = {
       version: VERSION,
       tick: game.gameClock.getFrameIndex(),
       time: game.globals.gameCurrentTime,
       dayTime: game.getGameDayTime(),
       hero: hero.name,
-      torch: game.gameLighting?.heroLightNode ? { transform: Array.from(game.gameLighting.heroLightNode.getLocalTransform()), visible: !game.gameLighting.heroLightNode.disabled } : null,
+      torch: torch ? { transform: Array.from(torch.transform), visible: torch.visible } : null,
       spaces: game.getGameSpaceList().map(space => ({
         extents: Array.from(space.calculateExtents()), transform: Array.from(space.getM43FullTransform()),
         blocks: space.getBlockList().map(block => ({

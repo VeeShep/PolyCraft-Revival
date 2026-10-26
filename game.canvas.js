@@ -65485,11 +65485,24 @@
         j = this.scratchpad.v3Direction = b.v3Build(this.worldLight2PitchCurrent, this.worldLight2YawCurrent, 0, this.scratchpad.v3Direction);
         j = this.scratchpad.m43Transform = b.m43BuildRotationXZY(j, this.scratchpad.m43Transform);
         b.m43TransformVector(j, f, this.worldDirectionLight2.direction);
-        c = d.getFirstEntityWithEC("ECHeroTorch");
-        f = !1;
-        c && (d = c.getEC("ECHeroTorch"), d.getNight() && (i[0] = 0.3, i[1] = 1.5, i[2] = 0, b.v3RotateY(i, c.getRotationY()), b.v3Add(c.getv3Location(), i, k), c = this.heroLightNode.getLocalTransform(), i = b.m43Pos(c, i), c = this.heroLight.radius + 2, this.heroLight.halfExtents[0] = c, this.heroLight.halfExtents[1] = c, this.heroLight.halfExtents[2] = c, b.v3DistanceSq(k, i) > 0.05 * 0.05 && (b.m43SetPos(this.heroLightNode.getLocalTransform(), k), this.heroLightNode.setLocalTransform(this.heroLightNode.getLocalTransform())), this.heroLightNode.disabled = b.v3Length(this.v3HeroLightCurrent) < 1 / 256, f = !0));
-        f || (this.heroLightNode.disabled = !0);
+        this.updateHeroLightPosition();
       }
+    },
+    getHeroLightState: function (hero) {
+      if (!this.useMultipleLights || !this.heroLightNode || !hero || !hero.getEC("ECHeroTorch")?.getNight()) return null;
+      const math = this.globals.mathDevice, offset = math.v3Build(0.3, 1.5, 0);
+      math.v3RotateY(offset, hero.getRotationY());
+      const transform = math.m43Copy(this.heroLightNode.getLocalTransform());
+      math.m43SetPos(transform, math.v3Add(hero.getv3Location(), offset));
+      return { transform, visible: math.v3Length(this.v3HeroLightCurrent) >= 1 / 256 };
+    },
+    updateHeroLightPosition: function () {
+      const state = this.getHeroLightState(this.globals.gameManager.getHero());
+      if (!state) { if (this.heroLightNode) this.heroLightNode.disabled = true; return; }
+      const math = this.globals.mathDevice, radius = this.heroLight.radius + 2;
+      this.heroLight.halfExtents[0] = this.heroLight.halfExtents[1] = this.heroLight.halfExtents[2] = radius;
+      if (math.v3DistanceSq(math.m43Pos(state.transform), math.m43Pos(this.heroLightNode.getLocalTransform())) > 0.05 * 0.05) this.heroLightNode.setLocalTransform(state.transform);
+      this.heroLightNode.disabled = !state.visible;
     },
     setLightPosition: function (a) {
       var b = this.globals,
