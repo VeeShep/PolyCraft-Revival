@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest entity health display — Beta 21, 2026-10-26
+## Current build checkpoint — Beta 22, 2026-10-26
+
+Game behavior and networking formats are unchanged from Beta 21: runtime coop-18, world 4, delta/signaling 1/2, save/quest/co-op 7/1/4. Beta 21's Mac ARM64 job failed to acquire a runner because of hosted capacity, before executing steps. Beta 22 packages that target on an Intel Mac runner with explicit ARM64 output. CI extracts and checks the final ZIP's Mach-O architectures, required executables and deep/strict signature before upload; host architecture is recorded honestly.
+
+All 280 checks pass; the locally built ARM64 ZIP passes extraction, all 14 native-file architecture checks and signature verification. The new Intel-hosted CI path still needs real-run acceptance. Native gameplay/physical networks remain open, and no games or personal saves were used. See RESTORATION_STATUS.md for dependency/review evidence and next gates.
+
+## Previous guest entity health display — Beta 21, 2026-10-26
 
 World snapshot format 4 adds bounded original health-bar presentation and timed damage metadata. The host uses original disabled/recent-damage/healing/regeneration rules and upgraded row/size/level. Absolute change timestamps keep unchanged health out of deltas. Guest presentation uses original health and entity sprite methods with received totals, interpolated positions and each guest's own camera; no ECS activation or health/combat simulation occurs. Damage arrows expire locally if updates stall. Resync and zero max health are handled; arbitrary GUI identifiers are not carried by this wire shape.
 

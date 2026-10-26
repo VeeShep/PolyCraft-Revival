@@ -14,6 +14,7 @@ on:
       - 'img/**'
       - '*.json'
       - 'scripts/collect-build.cjs'
+      - 'scripts/verify-mac.cjs'
       - 'tests/**'
   pull_request:
 
@@ -53,17 +54,16 @@ jobs:
       matrix:
         include:
           - id: mac-arm64
-            os: macos-15
+            os: macos-15-intel
+            runnerArch: x64
             platform: darwin
             arch: arm64
             arguments: --mac zip --arm64
-            app: dist/ci/mac-arm64/PolyCraft Offline.app
           - id: mac-x64
             os: macos-15-intel
             platform: darwin
             arch: x64
             arguments: --mac zip --x64
-            app: dist/ci/mac/PolyCraft Offline.app
           - id: win-x64
             os: windows-2025
             platform: win32
@@ -97,17 +97,22 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Confirm native runner architecture
+      - name: Confirm build runner architecture
         env:
           BUILD_PLATFORM: ${{ matrix.platform }}
-          BUILD_ARCH: ${{ matrix.arch }}
+          BUILD_ARCH: ${{ matrix.runnerArch || matrix.arch }}
         run: node -e "const assert = require('node:assert/strict'); assert.equal(process.platform, process.env.BUILD_PLATFORM); assert.equal(process.arch, process.env.BUILD_ARCH);"
       - run: npm ci
       - name: Build packages without publishing
         run: npx --no-install electron-builder ${{ matrix.arguments }} --publish never --config.directories.output=dist/ci
-      - name: Verify Mac ad-hoc signature
+      - name: Verify finished Mac ZIP architecture and signature
         if: runner.os == 'macOS'
-        run: codesign --verify --deep --strict "${{ matrix.app }}"
+        run: |
+          verify_dir=$(mktemp -d "${RUNNER_TEMP}/polycraft-mac-verify.XXXXXX")
+          trap 'rm -rf "$verify_dir"' EXIT
+          version=$(node -p 'require("./package.json").version')
+          ditto -x -k "dist/ci/PolyCraft-Offline-${version}-mac-${{ matrix.arch }}.zip" "$verify_dir"
+          node scripts/verify-mac.cjs "$verify_dir/PolyCraft Offline.app" "${{ matrix.arch }}"
       - name: Collect packages, instructions and checksums
         run: |
           if [[ "${{ matrix.platform }}" == linux ]]; then

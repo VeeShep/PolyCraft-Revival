@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { collectBuild } = require('../scripts/collect-build.cjs');
+const { verifyMacApp } = require('../scripts/verify-mac.cjs');
 const { version } = require('../package.json');
 function fixture(t) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-artifacts-'));
@@ -62,4 +63,29 @@ test('collecting a build never overwrites an existing download bundle', t => {
   assert.throws(() => collectBuild('win-x64', output, destination), /overwrite/);
   assert.deepEqual(fs.readdirSync(destination), ['keep.txt']);
   assert.equal(fs.readFileSync(path.join(destination, 'keep.txt'), 'utf8'), 'original');
+});
+function macFixture(t) {
+  const { directory } = fixture(t), app = path.join(directory, 'PolyCraft Offline.app');
+  const files = ['MacOS/PolyCraft Offline', 'Frameworks/Electron Framework.framework/Versions/A/Electron Framework', 'Frameworks/Helper.app/Contents/MacOS/Helper', 'Frameworks/libtest.dylib'];
+  for (const file of files) { const target = path.join(app, 'Contents', file); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, Buffer.from('cffaedfe00000000', 'hex')); }
+  fs.writeFileSync(path.join(app, 'Contents', 'Info.plist'), 'not executable');
+  return { app, files };
+}
+test('Mac artifact verification checks every executable and library against target arch before verifying the extracted signature', t => {
+  const { app, files } = macFixture(t), calls = [];
+  const run = (command, args) => { calls.push({ command, args }); return 'arm64\n'; };
+  assert.equal(verifyMacApp(app, 'arm64', run), files.length);
+  assert.equal(calls.filter(call => call.command === 'lipo').length, files.length);
+  assert.deepEqual(calls.at(-1), { command: 'codesign', args: ['--verify', '--deep', '--strict', app] });
+  assert.equal(verifyMacApp(app, 'x64', () => 'x86_64\n'), files.length);
+  assert.throws(() => verifyMacApp(app, 'constructor', run), /Unsupported/);
+});
+test('Mac artifact verification refuses wrong or mixed architectures, missing framework and invalid signatures', t => {
+  const { app } = macFixture(t); let signed = false;
+  const wrong = (command, args) => { if (command === 'codesign') signed = true; return args.at(-1).endsWith('.dylib') ? 'x86_64' : 'arm64'; };
+  assert.throws(() => verifyMacApp(app, 'arm64', wrong), /Wrong architecture/); assert.equal(signed, false);
+  assert.throws(() => verifyMacApp(app, 'arm64', () => 'arm64 x86_64'), /Wrong architecture/);
+  assert.throws(() => verifyMacApp(app, 'arm64', command => { if (command === 'codesign') throw new Error('Invalid signature'); return 'arm64'; }), /Invalid signature/);
+  fs.unlinkSync(path.join(app, 'Contents/Frameworks/Electron Framework.framework/Versions/A/Electron Framework'));
+  assert.throws(() => verifyMacApp(app, 'arm64', () => 'arm64'), /Missing Mach-O/);
 });
