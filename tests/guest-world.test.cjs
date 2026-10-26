@@ -253,7 +253,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   world.targetSequence = 4; world.lifeRequest = 4;
   const ast = require('./runtime-ast.cjs'), hudRanks = ast.objectWith('xpTable');
   controls.xpTable = hudRanks.xpTable; controls.playerDataMethods = ast.component('ECPlayerData', { kd: hudRanks });
-  const hud = { resources: [100, 50], caps: [500, 1000], amber: 10, xp: 600, points: 1, flags: { resources: true, amber: true, rank: true } }, feedback = world.lastTargetResult;
+  const hud = { resources: [100, 50], caps: [500, 1000], amber: 10, xp: 600, points: 1, quests: null, flags: { resources: true, amber: true, rank: true } }, feedback = world.lastTargetResult;
   const heroStatus = { type: 'life', sequence: 4, message: 'Hero life state.', life: { phase: 'waiting', remaining: 10, episode: 1, option: 'lumber', affordable: true }, hud };
   connection.onMessage({ kind: 'result', payload: heroStatus });
   assert.deepEqual(world.hud.state, hud); assert.equal(world.lastTargetResult, feedback);
@@ -279,6 +279,14 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   world.requestBuildingUpgrade('storage', { active: true, next: 'wall2', episode: 1 });
   assert.deepEqual(requests.at(-1), { kind: 'action', payload: { type: 'cancelUpgrade', sequence: 9, target: 'storage', next: 'wall2', episode: 1 } });
   connection.onMessage({ kind: 'result', payload: { type: 'cancelUpgrade', sequence: 9, message: 'Saved.' } }); assert.equal(world.upgradeRequest, null);
+  game.getTaskManager = () => ({ taskArchetypes: { one: {} }, criticalTaskGroup: { taskList: ['one'] }, fillerTaskGroup: { taskList: [] } });
+  world.quests.receiveView({ revision: 1, visible: true, offset: false, tasks: [], completed: { id: 'taskIdcrit_0', task: 'one' } });
+  world.quests.pending = world.sendQuest('questReward', 'taskIdcrit_0');
+  assert.deepEqual(requests.at(-1), { kind: 'action', payload: { type: 'questReward', sequence: 10, target: world.identity.entity, quest: 'taskIdcrit_0' } });
+  connection.onMessage({ kind: 'result', payload: { type: 'questReward', sequence: 10, message: 'Saved.', quests: { revision: 2, visible: true, offset: false, tasks: [], completed: null } } });
+  assert.equal(world.quests.pending, null); assert.equal(world.quests.state.completed, null);
+  world.quests.openRequest = world.sendQuest('questOpen', 'taskIdcrit_0');
+  connection.onMessage({ kind: 'result', payload: { type: 'questOpen', sequence: 11, message: 'Quest changed.' } }); assert.equal(world.quests.openRequest, null);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
@@ -328,4 +336,10 @@ test('a building selection uses original radial Move artwork and sends only one 
   world.updateMenu(); world.requestMove('storage');
   assert.deepEqual(sent, [{ type: 'move', target: 'storage' }]); assert.equal(world.moveRequest, 1); assert.equal(world.selectedBuilding, null);
   assert.equal(drawn[0].guiArchetype, 'move');
+});
+
+test('captured quest GUI input cannot also select or attack an underlying world entity', () => {
+  const world = Object.create(GuestWorld.prototype); let sent = 0;
+  world.game = { getIMGui: () => ({ hasCapturedInput: () => true }) }; world.sendTarget = () => { sent++; };
+  world.clickTarget({ clientX: 10, clientY: 10 }); assert.equal(sent, 0);
 });

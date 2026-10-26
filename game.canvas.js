@@ -40263,7 +40263,7 @@
     FILLER_ACTIVATION_TASK: "buildStonelingHut",
     MAX_ARROW_DISPLAY_DURATION: 30,
     badgeThresholdList: [0.25, 0.5, 0.75],
-    update: function () {
+    update: function (present) {
       var a = this.updateTasks(),
         b = this.updateBadgeTasks(),
         b = {
@@ -40274,6 +40274,7 @@
         },
         a = !1,
         c;
+      if (present === !1) return;
       this.gameManager.getPlayFlags().showTasks && (c = this.taskRenderer.doTaskUI(b));
       c ? (b = c.buttonName, "closeDescription" === b ? (this.descriptionTaskRenderInfo = null, this.arrowCreationTime = this.globals.gameCurrentTime, this.playTaskCloseDescriptionScripts(c.taskRenderInfo)) : "acceptReward" === b ? (this.completedTaskRenderInfo = null, this.awardCompletedTaskList([c.taskRenderInfo])) : "openTaskDescription" === b && (a = !0, this.activeTaskRenderInfo = this.descriptionTaskRenderInfo = c.taskRenderInfo, this.gameManager.eventManager.notify("taskDescriptionOpened", {}))) : this.completedTaskRenderInfo && this.descriptionTaskRenderInfo && (this.playTaskCloseDescriptionScripts(this.descriptionTaskRenderInfo), this.descriptionTaskRenderInfo = null);
       this.updateArrowAndCameraLocation(a);
@@ -40386,9 +40387,9 @@
     runScript: function (a, b) {
       this.gameManager.gameScriptManager.runScript(a, ka.scriptMap[a], !1, b);
     },
-    giveTaskReward: function (a) {
+    giveTaskReward: function (a, hero) {
       var b = this.gameManager,
-        c = b.getHero().getv3Location(),
+        c = (hero || b.getHero()).getv3Location(),
         d = a.xpReward;
       b.giveAmberReward(a.amberReward, c);
       b.giveXpReward(d, c);
@@ -68263,6 +68264,9 @@
         c.push(e);
       }
       return c;
+    },
+    updateOnlineTasks: function () {
+      ba.runTasks && this.desktopQuestRewards && this.desktopQuestRewards.updateWhileMenu();
     },
     getTaskManager: function () {
       return this.taskManager;

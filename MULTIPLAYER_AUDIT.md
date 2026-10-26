@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current pending quest reward persistence — Beta 18, 2026-10-26
+## Current guest quest controls — Beta 19, 2026-10-26
+
+Guest task cards/descriptions and the pending reward card reuse the actual original renderer. Canonical bounded quest views ride the existing paired life/HUD reply, with monotonic revisions and no new polling. Description input is local; the host validates its original event without moving the host camera. Reward claims validate assigned/living hero, current visible pending card and script state, use original drops at the requesting hero, remove the ledger record once and wait for coherent saving before acknowledgement. Original proximity pickup rules remain.
+
+Host menu task/badge evaluation now precedes coherent captures without drawing task UI, and is frame-fenced against a normal update changing to a menu. Save schema/envelope remain 4/7 (quest ledger 1); game runtime changes to coop-16, signaling stays 2. All 272 checks pass; independent read-only review found no concrete bugs. No game window or personal island was opened. Visible two/four-player reward pickup/save restoration, native platforms, full guest parity and physical networks remain unverified. See RESTORATION_STATUS.md for package evidence and next gates.
+
+## Previous pending quest reward persistence — Beta 18, 2026-10-26
 
 Original completion flags precede acceptance of the final reward card; that card was only in memory. Tracked islands now keep a version-1 `desktopQuests` ledger under envelope 7, with co-op hero schema unchanged at 4. It resolves bounded unique task ID/name records to canonical group/archetype data. Original automatic/final-card reward spawning remains, records are removed once accepted, and save guards latch partial reward exceptions. Known live legacy pending cards can be captured; historical flags alone cannot identify old lost rewards. Tracking reattaches after groups exist, including later solo play on co-op islands. Untracked solo stays format 2.
 

@@ -135,3 +135,55 @@ test('original quest conditions count shared construction/harvest/hero kills and
   for (const aggressor of [undefined, null, { toBeDestroyed: true }, { getEC: () => null }]) assert.equal(killed.evaluator({ victim, aggressor }, params), false);
   assert.equal(killed.evaluator({ victim, aggressor: { getEC: () => ({}) } }, params), true);
 });
+
+test('guest quest requests validate the current visible task and place one original reward at the assigned hero without changing the host hero', () => {
+  const { HostActions } = require('../desktop/coop-actions.js'), f = fixture(), events = [];
+  const actor = position => ({ shouldBeDestroyed: () => false, getv3Location: () => position, getEC: name => name === 'ECHealth' ? { getHealth: () => 10 } : name === 'ECPlayerLife' ? { state: 0, states: { NORMAL: 0 } } : { isBuilding: () => true, isThrowing: () => false } });
+  const first = actor([10, 0, 20]), second = actor([30, 0, 40]), originalHero = f.game.getHero;
+  f.game.getGameEntityByName = id => id === 'first' ? first : second; f.game.getPlayFlags = () => ({ showTasks: true }); f.game.isScriptLocked = () => false; f.game.eventManager = { notify: (...args) => events.push(args) };
+  const quests = f.attach(); f.manager.criticalRenderInfoList = [f.info(0)];
+  const open = new HostActions(); open.receive({ type: 'questOpen', sequence: 1, target: 'first', quest: 'taskIdcrit_0' });
+  assert.equal(open.apply(f.game, first, {}).save, true); assert.deepEqual(events, [['taskDescriptionOpened', {}]]); assert.equal(f.gifts.length, 0);
+  f.queue.push(f.info(0)); f.manager.updateCompletedTasks(); f.manager.criticalRenderInfoList = [];
+  const one = new HostActions(), two = new HostActions();
+  one.receive({ type: 'questReward', sequence: 1, target: 'first', quest: 'taskIdcrit_0' }); two.receive({ type: 'questReward', sequence: 1, target: 'second', quest: 'taskIdcrit_0' });
+  const result = one.apply(f.game, first, {}); assert.equal(result.save, true); assert.equal(result.quests.completed, null);
+  assert.equal(two.apply(f.game, second, {}).save, undefined); assert.deepEqual(f.gifts, [['amber', 1, [10, 0, 20]], ['xp', 20, [10, 0, 20]]]);
+  assert.equal(f.game.getHero, originalHero); assert.equal(quests.data.pending.length, 0); quests.close();
+});
+
+test('quest requests refuse hidden, stale, other-hero, dead and script-locked interactions without awarding', () => {
+  const { HostActions } = require('../desktop/coop-actions.js');
+  for (const failure of ['hidden', 'stale', 'other', 'dead', 'dying', 'script']) {
+    const f = fixture(), life = { state: 0, states: { NORMAL: 0, DYING: 1 } };
+    const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECPlayerLife' ? life : name === 'ECHealth' ? { getHealth: () => failure === 'dead' ? 0 : 10 } : {} };
+    f.game.getGameEntityByName = () => failure === 'other' ? { shouldBeDestroyed: () => false } : actor; f.game.getPlayFlags = () => ({ showTasks: failure !== 'hidden' }); f.game.isScriptLocked = () => failure === 'script';
+    if (failure === 'dying') life.state = 1;
+    const quests = f.attach(); f.queue.push(f.info(0)); f.manager.updateCompletedTasks();
+    const actions = new HostActions(); actions.receive({ type: 'questReward', sequence: 1, target: 'owned', quest: failure === 'stale' ? 'taskIdcrit_1' : 'taskIdcrit_0' });
+    assert.equal(actions.apply(f.game, actor, {}).save, undefined, failure); assert.equal(f.gifts.length, 0); assert.equal(quests.data.pending.length, 1); quests.close();
+  }
+});
+
+test('quest view revisions survive manager replacement, and wire intents accept only bounded task IDs without reward authority', () => {
+  const { HostActions } = require('../desktop/coop-actions.js'), f = fixture(); f.game.getPlayFlags = () => ({ showTasks: true });
+  const quests = f.attach(), first = quests.snapshot(); quests.close(); const next = f.attach(); assert.ok(next.snapshot().revision > first.revision); next.close();
+  for (const type of ['questOpen', 'questReward']) {
+    const value = { type, sequence: 1, target: 'owned', quest: 'taskIdcrit_0' }, actions = new HostActions(); actions.receive(value);
+    assert.throws(() => actions.receive(value), /repeated/);
+    for (const extra of [{ quest: '' }, { quest: 'taskIdbadge_0' }, { quest: 'taskIdcrit_10000' }, { quest: 0 }, { reward: 100 }, { playerId: 'host' }, { position: [0, 0, 0] }]) assert.throws(() => new HostActions().receive({ ...value, ...extra }), /Invalid/);
+  }
+});
+
+test('tracked original quests advance in host menus before coherent captures, without duplicate ticks or drawing task UI', () => {
+  const ast = require('./runtime-ast.cjs'), f = fixture(); let frame = 1, draws = 0, ticks = 0;
+  f.game.gameClock = { getFrameIndex: () => frame }; f.game.getPlayFlags = () => ({ showTasks: true });
+  f.game.updateOnlineTasks = ast.method('updateOnlineTasks', { ba: { runTasks: true } });
+  f.manager.globals = { gameTimeStep: 0.05 }; f.manager.badgeRenderInfoList = []; f.manager.badgeTaskGroup.handleEvents = () => { ticks++; return []; };
+  f.manager.getTaskRenderInfoList = () => []; f.manager.taskRenderer = { doTaskUI: () => { draws++; return null; } };
+  const quests = f.attach(); f.queue.push(f.info(0)); f.game.updateOnlineTasks();
+  assert.equal(f.flags.one, true); assert.equal(draws, 0); const remaining = f.queue.length; f.game.updateOnlineTasks(); assert.equal(f.queue.length, remaining); assert.equal(ticks, 1);
+  frame++; f.manager.update(); f.game.updateOnlineTasks(); assert.equal(draws, 1); assert.equal(ticks, 2);
+  frame++; f.queue.push(f.info(1)); const disabled = ast.method('updateOnlineTasks', { ba: { runTasks: false } }); disabled.call(f.game); assert.equal(f.flags.two, undefined);
+  assert.equal(ticks, 2); f.game.updateOnlineTasks(); assert.equal(ticks, 3); assert.equal(draws, 1); assert.equal(quests.data.pending[0].task, 'two'); assert.equal(f.gifts.length, 2); quests.close();
+});

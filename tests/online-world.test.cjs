@@ -311,3 +311,16 @@ test('online checkpoints refuse in-flight construction before writing and succee
     assert.equal(clock.isStopped, false);
   } finally { delete world.players; await world.close(); }
 });
+
+test('host menu quests update before coherent snapshot capture', async t => {
+  const { controls, transport, game } = setup(t), world = await startHostingWorld(controls, transport);
+  let completed = false, ticks = 0;
+  game.desktopQuestRewards = {};
+  game.getActiveGameState = () => ({ name: 'GamestateShop' });
+  game.updateOnlineTasks = () => { completed = true; ticks++; };
+  world.worldUpdated = true;
+  const captured = world.atBoundary(() => completed);
+  world.endTick(); assert.equal(await captured, true); assert.equal(ticks, 1);
+  game.getActiveGameState = () => ({ name: 'GamestatePlaying' });
+  world.endTick(); assert.equal(ticks, 1); await world.close();
+});

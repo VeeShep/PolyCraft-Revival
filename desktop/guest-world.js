@@ -5,6 +5,7 @@
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   const { GuestConstruction } = typeof module !== 'undefined' ? require('./guest-construction.js') : root.PolycraftGuestConstruction;
+  const { GuestQuests } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
   const { GuestHud } = typeof module !== 'undefined' ? require('./hud.js') : root.PolycraftHud;
 
   const same = (a, b) => a === b || !!(a && b && a.length === b.length && a.every((value, index) => value === b[index]));
@@ -206,7 +207,7 @@
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
       this.guiInput = { down: false, pendingDown: false, position: [0, 0], getGuiDown() { return this.down; }, getv2ScreenCoord() { return this.position; } };
-      this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this); this.hud = new GuestHud(this);
+      this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this); this.hud = new GuestHud(this); this.quests = new GuestQuests(this);
       game.imgui.controller = this.guiInput;
       game.draw = () => {};
       game.draw2D = () => { game.imgui.draw2D(); game.updateInterfaceTweens(); game.getGuiManager().completeDraw(); globals.simpleFontRenderer.render(); };
@@ -241,8 +242,8 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud', 'quests'].filter(key => Object.hasOwn(value, key));
+          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (value.type === 'life' && Object.hasOwn(value, 'life') !== Object.hasOwn(value, 'hud')) throw new Error('Incomplete hero status.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
@@ -256,6 +257,7 @@
           if (value.totem && !['target', 'upgrade'].includes(value.type)) throw new Error('Invalid totem result.');
           this.totem.receive(value, selected);
           this.construction.receive(value, selected);
+          this.quests.receive(value);
           this.hud.receive(value, this.lifeRequest);
           this.receiveLife(value);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
@@ -282,7 +284,7 @@
       this.connection.send('resync', { version: 1, tick: this.scene.tick }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
     }
     clickTarget(event) {
-      if (this.game.getIMGui().isHot('guest-pause')) return;
+      if (this.game.getIMGui().hasCapturedInput() || this.game.getIMGui().isHot('guest-pause')) return;
       const target = pickTarget(this, event);
       if (!target) return;
       this.selectionRequest = this.sendTarget('target', target);
@@ -313,6 +315,11 @@
     sendPlacement(type, target, index, location, archetype) {
       const sequence = ++this.targetSequence;
       this.connection.send('action', { type, sequence, target, index, location, ...(archetype === undefined ? {} : { archetype }) }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      return sequence;
+    }
+    sendQuest(type, quest) {
+      const sequence = ++this.targetSequence;
+      this.connection.send('action', { type, sequence, target: this.identity.entity, quest }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
     sendUpgrade(target, index, level, amber) {
@@ -355,7 +362,7 @@
       }
       return true;
     }
-    localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu); }
+    localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu || this.quests?.description); }
     togglePauseMenu() {
       const open = !this.pauseMenu;
       this.cancelLocalMenu();
@@ -376,7 +383,7 @@
     cancelLocalMenu() {
       this.pauseMenu = false;
       this.selectedBuilding = this.demolition = null;
-      this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel();
+      this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel(); this.quests?.cancel();
       this.guiInput.down = this.guiInput.pendingDown = false;
       this.movement?.keys.clear();
     }
@@ -390,6 +397,7 @@
     }
     updateMenu() {
       if (this.updateLife()) return;
+      if (this.quests?.update()) return;
       this.construction?.update(); this.totem?.update();
       const building = this.demolition || this.selectedBuilding;
       if (!building) return;
@@ -440,6 +448,7 @@
     }
     close() {
       if (this.closed) return;
+      this.quests?.close();
       this.closed = true;
       this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive');
       clearTimeout(this.resyncTimer); this.resyncing = false;

@@ -62,6 +62,7 @@
         this.game.updateSimulation();
       }
       this.players?.flushRefreshes();
+      if (this.game.desktopQuestRewards && this.game.getActiveGameState().name !== 'GamestatePlaying') this.game.updateOnlineTasks();
       const captures = this.captures.splice(0);
       for (const capture of captures) {
         clearTimeout(capture.timer);
@@ -127,7 +128,7 @@
         this.playerFor(connection);
         if (message.kind === 'resync') { this.requestResync(connection, message.payload); return; }
         if (message.kind === 'action') {
-          if (['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade'].includes(message.payload.type)) binding.actions.receive(message.payload);
+          if (['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward'].includes(message.payload.type)) binding.actions.receive(message.payload);
           else binding.input.receive(message.payload);
           return;
         }
