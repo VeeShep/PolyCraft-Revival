@@ -25,7 +25,7 @@ const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
   const entity = id => ({ id, archetype: null, interactive: true, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
-  return { version: 4, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, spaces: [{
+  return { version: 5, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -46,7 +46,7 @@ function setup() {
   const math = {
     m43BuildScale: scale => [scale[0], 0, 0, 0, scale[1], 0, 0, 0, scale[2], 0, 0, 0],
     m43Translate: (transform, location) => { transform.splice(9, 3, ...location); },
-    v3Sub: (a, b) => a.map((value, i) => value - b[i]), v3Add: (a, b) => a.map((value, i) => value + b[i])
+    v3Copy: a => [...a], v3Sub: (a, b) => a.map((value, i) => value - b[i]), v3Add: (a, b) => a.map((value, i) => value + b[i])
   };
   const loader = {
     pathRemapping: { 'hero.dae': 'staticmax/hero', 'grass.dae': 'staticmax/grass', 'changed.dae': 'staticmax/changed', 'pending.dae': 'staticmax/pending' },
@@ -186,7 +186,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   t.after(() => { global.document = previousDocument; });
   const { globals, blocks, node, roots } = setup();
   const originalRoot = node('solo'); let simulations = 0, saves = 0;
-  const camera = { desiredV3Focus: [0, 0, 0], desiredV3Position: [0, 10, 10], setDesiredFocus(value) { this.desiredV3Focus = value; },
+  const camera = { init() {}, setModeViewScene() {}, setHero(value) { this.heroEntity = value; }, update() { this.setDesiredFocus(this.heroEntity.getv3Location()); }, desiredV3Focus: [0, 0, 0], desiredV3Position: [0, 10, 10], setDesiredFocus(value) { this.desiredV3Focus = value; },
     setDesiredPosition(value) { this.desiredV3Position = value; }, blendLerp() {}, apply() {}, getTimeAdjustedBlendFactor: value => value, setShouldSnap() {} };
   const game = { hasLoadedLevel: true, getLoading: () => false, getHero: () => ({ getv3Location: () => [0, 0, 0] }),
     getBlockFactory: () => blocks, getGameCamera: () => camera, getGameDayTime: () => 18, setGameDayTime() {}, applyDayNightTime() {},
@@ -198,7 +198,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const app = { globals, updateGame() { simulations++; } }, controls = new Controls();
   controls.attach(app, [], {});
   controls.paused = true;
-  const update = app.updateGame, draw = game.draw, save = game.saveLevel;
+  const update = app.updateGame, draw = game.draw, save = game.saveLevel, getCamera = game.getGameCamera;
   const guiController = game.imgui.controller;
   let forwarded = 0;
   const requests = [];
@@ -218,9 +218,9 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.throws(() => connection.onMessage({ kind: 'snapshot', payload: { ...snapshot(), hero: 'someone-else' } }), /different hero/);
   connection.onMessage({ kind: 'snapshot', payload: snapshot() }); app.updateGame();
   assert.equal(simulations, 0); assert.equal(saves, 0); assert.equal(forwarded, 2);
-  assert.deepEqual(camera.desiredV3Focus, [2, 0, 3]);
+  assert.deepEqual(world.viewCamera.camera.desiredV3Focus, [2, 0, 3]); assert.deepEqual(camera.desiredV3Focus, [0, 0, 0]);
   assert.equal(globals.gameCurrentTime, 1 / 30);
-  const ranked = snapshot(); ranked.tick++; ranked.hero = 'ranked-hero'; ranked.spaces[0].entities[0].id = ranked.hero;
+  const ranked = snapshot(); ranked.tick++; ranked.hero = 'ranked-hero'; ranked.camera.heroes = [ranked.hero]; ranked.spaces[0].entities[0].id = ranked.hero;
   connection.onMessage({ kind: 'update', payload: createDelta(world.scene.snapshot, ranked) });
   assert.equal(world.identity.playerId, welcome.playerId); assert.equal(world.identity.entity, ranked.hero);
   const missing = structuredClone(ranked); missing.tick++; missing.spaces[0].entities[0].health.current--;
@@ -291,7 +291,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   connection.onState('closed', {});
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
   assert.equal(app.updateGame, update); assert.equal(game.draw, draw); assert.equal(game.saveLevel, save);
-  assert.equal(game.imgui.controller, guiController); assert.equal(world.localMenu(), false);
+  assert.equal(game.imgui.controller, guiController); assert.equal(game.getGameCamera, getCamera); assert.equal(world.localMenu(), false);
   assert.equal(globals.gameCurrentTime, 20); assert.equal(game.gameClock.prevEngineTime, 100);
   assert.deepEqual(Array.from(camera.desiredV3Focus), [0, 0, 0]); assert.deepEqual(Array.from(camera.desiredV3Position), [0, 10, 10]);
   assert.equal(controls.paused, true, 'An originally paused solo island stays paused after disconnect');

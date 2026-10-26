@@ -181,6 +181,40 @@
     }
   }
 
+  class GuestCamera {
+    constructor(world) {
+      this.world = world; this.actors = new Map(); this.lastFrame = performance.now();
+      const original = world.game.getGameCamera(), globals = Object.assign(Object.create(world.controls.app.globals), { dynamicUI: null });
+      const game = { getPlayFlags: () => ({ cameraMode: world.scene.snapshot.camera.mode }), getGameClock: () => ({ getTimeStep: () => globals.gameAppTimeStep }),
+        getCurrentGameSpace: () => { const state = world.scene.snapshot, space = state.spaces.find(space => space.entities.some(entity => entity.id === state.hero)); return { extents: space.extents, getv3Location: () => state.camera.center }; },
+        getFactionManager: () => ({ applyToEnemies: (hero, apply) => world.scene.snapshot.camera.enemies.forEach(id => apply(this.actor(id))) }),
+        applyToHeroEntities: apply => world.scene.snapshot.camera.heroes.forEach(id => apply(this.actor(id))) };
+      globals.gameManager = game;
+      // Native init creates private vectors/zoomers; the suspended solo camera is only a method source.
+      this.camera = Object.assign(Object.create(original), { globals, gameManager: game, heroEntity: null, zoomerBlend: false, continuousZoom: false, exitModeFunction: undefined });
+      this.camera.init(); this.camera.setModeViewScene();
+    }
+    actor(id) {
+      if (!this.actors.has(id)) {
+        const world = this.world, entry = () => world.scene.entities.get(id), context = () => world.scene.snapshot.camera;
+        this.actors.set(id, { get v3Location() { return entry().displayLocation || entry().record.location; }, getv3Location() { return this.v3Location; },
+          getEC: name => name === 'ECPlayerLife' ? { isDead: () => context().dead } : name === 'ECPlayerBuilder' ? { getTimeSinceBuilding: () => context().buildingAge } : name === 'ECLocomotion' ? {
+            getDestination: () => context().destination, getLookAhead: () => context().lookAhead && context().lookAhead.map((value, index) => value + (entry().displayLocation || entry().record.location)[index] - entry().record.location[index]), getTimeHeld: () => context().timeHeld
+          } : null });
+      }
+      return this.actors.get(id);
+    }
+    update() {
+      const now = performance.now(), state = this.world.scene.snapshot;
+      if (this.world.resyncing) { this.resyncing = true; this.lastFrame = now; return; }
+      this.camera.globals.gameAppTimeStep = Math.max(0, Math.min(0.1, (now - this.lastFrame) / 1000)); this.lastFrame = now;
+      for (const id of this.actors.keys()) if (!this.world.scene.entities.has(id)) this.actors.delete(id);
+      const hero = this.actor(state.hero), location = hero.getv3Location();
+      if (this.resyncing || state.hero !== this.lastHero || this.lastLocation && Math.hypot(...location.map((value, index) => value - this.lastLocation[index])) > 8) { this.camera.sphereCentre = this.camera.globals.mathDevice.v3Copy(location); this.camera.setShouldSnap(); }
+      this.resyncing = false; this.lastHero = state.hero; this.lastLocation = Array.from(location);
+      this.camera.setHero(hero); this.camera.update();
+    }
+  }
   class GuestWorld {
     constructor(controls, connection) {
       if (!controls.ready() || controls.onlineWorld || controls.guestWorld || connection.role !== 'guest' || connection.closed) throw new Error('Joining needs a loaded renderer and an available guest connection.');
@@ -189,10 +223,10 @@
       this.lastLifeQuery = -Infinity;
       this.game = controls.manager();
       const game = this.game, app = controls.app, globals = app.globals;
-      const math = globals.mathDevice, camera = game.getGameCamera(), location = game.getHero().getv3Location();
+      const camera = game.getGameCamera();
       this.scene = new GuestScene(globals, game.getBlockFactory());
       this.original = {
-        update: app.updateGame, draw: game.draw, draw2D: game.draw2D, save: game.saveLevel,
+        update: app.updateGame, draw: game.draw, draw2D: game.draw2D, save: game.saveLevel, getCamera: game.getGameCamera,
         time: globals.gameCurrentTime, dayTime: game.getGameDayTime(),
         paused: controls.paused, guiController: game.imgui.controller,
         camera: Object.fromEntries(['desiredV3Focus', 'desiredV3Position', 'currentV3Focus', 'currentV3Position', 'currentV3Up', 'currentv3Direction'].filter(key => camera[key]).map(key => [key, Array.from(camera[key])])),
@@ -201,8 +235,8 @@
         onMessage: connection.onMessage, onState: connection.onState,
         roots: globals.scene.rootNodes.filter(node => node !== game.gameLighting.worldDirectionLightNode && node !== game.gameLighting.heroLightNode)
       };
-      this.focusOffset = math.v3Sub(camera.desiredV3Focus, location);
-      this.positionOffset = math.v3Sub(camera.desiredV3Position, location);
+      this.viewCamera = new GuestCamera(this);
+      game.getGameCamera = () => this.viewCamera.camera;
       controls.guestWorld = this;
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
@@ -446,12 +480,7 @@
       globals.gameCurrentTime = state.time;
       game.gameDayTime = state.dayTime;
       game.applyDayNightTime();
-      const camera = game.getGameCamera(), math = globals.mathDevice;
-      const hero = this.scene.entities.get(state.hero);
-      camera.setDesiredFocus(math.v3Add(hero.displayLocation, this.focusOffset));
-      camera.setDesiredPosition(math.v3Add(hero.displayLocation, this.positionOffset));
-      camera.blendLerp(this.hasFrame ? camera.getTimeAdjustedBlendFactor(0.15) : 1);
-      camera.apply(); game.gameLighting.update();
+      this.viewCamera.update(); game.gameLighting.update();
       const torch = game.gameLighting.heroLightNode;
       if (torch) {
         if (this.scene.torch) torch.setLocalTransform(this.scene.torch.transform);
@@ -477,6 +506,7 @@
       for (const node of original.roots) app.globals.scene.addRootNode(node);
       app.updateGame = original.update; game.draw = original.draw; game.draw2D = original.draw2D; game.saveLevel = original.save;
       app.globals.gameCurrentTime = original.time; game.gameDayTime = original.dayTime; game.applyDayNightTime(true);
+      game.getGameCamera = original.getCamera;
       const camera = game.getGameCamera();
       for (const [key, vector] of Object.entries(original.camera)) camera[key] = new Float32Array(vector);
       camera.currentFOV = original.fov; camera.apply();
@@ -487,7 +517,7 @@
       this.controls.pause(original.paused);
     }
   }
-  const api = { GuestScene, GuestWorld };
+  const api = { GuestScene, GuestWorld, GuestCamera };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftGuestWorld = api;
 })(globalThis);

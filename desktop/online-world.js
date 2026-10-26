@@ -188,7 +188,7 @@
         this.detachedPlayers.delete(binding.id);
         binding.joined = true;
         const entity = this.players.active.get(binding.id).hero.getName();
-        const snapshot = captureSnapshot(this.game); snapshot.hero = entity;
+        const snapshot = captureSnapshot(this.game, this.players.active.get(binding.id).hero);
         return { welcome: { version: 1, playerId: binding.id, name: this.players.registry.player(binding.id).name,
           entity, pvp: this.transport.pvp }, snapshot };
       });
@@ -225,8 +225,7 @@
     snapshot(connection) {
       return this.atBoundary(() => {
         const player = connection && this.players ? this.playerFor(connection) : null;
-        const snapshot = captureSnapshot(this.game);
-        if (player) snapshot.hero = player.hero.getName();
+        const snapshot = captureSnapshot(this.game, player?.hero);
         return snapshot;
       });
     }

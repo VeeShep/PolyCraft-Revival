@@ -64,4 +64,10 @@ function healthDrawing() {
   return { healthMethods: evaluate(health, { [owner(drawHealth, 'healthMid')]: colors }), drawProgressBar: evaluate(drawBar, {
     [owner(drawBar, 'progressBarTexturePath')]: { progressBarTexturePath: 'textures/block.dds' }, [owner(drawBar, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth' } } }, [owner(drawBar, 'outline')]: colors }) };
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod, taskManagerFactory, healthDrawing };
+function cameraMethods(zoomer) {
+  const prototype = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'buildSphereCentreAndExtents')), 'camera prototype').right;
+  const start = prototype.properties.find(p => key(p) === 'startZoomer').value;
+  const create = start.body.body.find(node => node.type === 'ExpressionStatement' && node.expression.type === 'AssignmentExpression').expression.right;
+  return evaluate(prototype, { [create.callee.object.name]: { create: zoomer } });
+}
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod, taskManagerFactory, healthDrawing, cameraMethods };

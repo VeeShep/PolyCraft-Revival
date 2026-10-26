@@ -70,8 +70,8 @@ test('host-selected invitation slots reserve identities, reject duplicate claims
   world.atBoundary = async read => read();
   const registry = new CoopData(emptyState()), first = registry.addPlayer('One'), second = registry.addPlayer('Two');
   const active = new Map();
-  const hero = name => ({ name, getName: () => name, getEC: () => null, shouldBeDestroyed: () => false, getv3Location: () => [0, 0, 0], getV3Scale: () => [1, 1, 1], getRotationY: () => 0 });
-  const host = hero('Host'); game.getHero = () => host;
+  const hero = name => ({ getGameSpace: () => ({ getv3Location: () => [0, 0, 0] }), name, getName: () => name, getEC: () => null, shouldBeDestroyed: () => false, getv3Location: () => [0, 0, 0], getV3Scale: () => [1, 1, 1], getRotationY: () => 0 });
+  const host = hero('Host'); game.getHero = () => host; game.getPlayFlags = () => ({}); game.applyToHeroEntities = apply => apply(host); game.getFactionManager = () => ({ applyToEnemies() {} });
   game.gameClock.getFrameIndex = () => 1; game.globals = { gameCurrentTime: 0 }; game.getGameDayTime = () => 12;
   game.getGameSpaceList = () => [{ calculateExtents: () => [-10, -10, -10, 10, 10, 10], getM43FullTransform: () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], getBlockList: () => [], getEntityList: () => [host, ...[...active.values()].map(entry => entry.hero)] }];
   world.players = { registry, active, add(id) { active.set(id, { hero: hero('Hero_' + id), model: { id } }); },
@@ -245,7 +245,7 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
 });
 
 function worldSnapshot(tick) {
-  return { version: 4, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null,
+  return { version: 5, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },
     spaces: [{ extents: [-10, -10, -10, 10, 10, 10], transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], blocks: [],
       entities: [{ id: 'hero', archetype: null, interactive: true, location: [tick, 0, 0], scale: [1, 1, 1], rotation: 0, mesh: null, health: null }] }] };
 }

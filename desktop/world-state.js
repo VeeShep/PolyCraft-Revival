@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const VERSION = 4;
+  const VERSION = 5;
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];
   const meshFields = ['path', 'transform', 'visible', 'skin'];
@@ -16,6 +16,10 @@
     requireValue(Number.isSafeInteger(value.tick) && value.tick >= 0 && number(value.time) && value.time >= 0, 'invalid simulation time.');
     requireValue(number(value.dayTime) && value.dayTime >= 0 && value.dayTime <= 24 && name(value.hero), 'invalid island clock or hero.');
     requireValue(value.torch === null || (keys(value.torch, ['transform', 'visible']) && vector(value.torch.transform, 12) && typeof value.torch.visible === 'boolean'), 'invalid hero light.');
+    const camera = value.camera;
+    requireValue(keys(camera, ['mode', 'dead', 'buildingAge', 'destination', 'lookAhead', 'timeHeld', 'heroes', 'enemies', 'center']) && ['explore', 'war', 'building', 'dead'].includes(camera.mode) && typeof camera.dead === 'boolean' && number(camera.buildingAge) && camera.buildingAge >= 0 && number(camera.timeHeld) && camera.timeHeld >= 0 && vector(camera.center, 3), 'invalid camera context.');
+    requireValue(camera.destination === null && camera.lookAhead === null || vector(camera.destination, 3) && vector(camera.lookAhead, 3), 'invalid camera movement.');
+    for (const list of [camera.heroes, camera.enemies]) requireValue(Array.isArray(list) && list.length <= LIMITS.entities && Array.from(list).every(name) && new Set(list).size === list.length, 'invalid camera actors.');
   }
   function validateBlock(block, assets) {
     requireValue(keys(block, ['archetype', 'location', 'scale', 'rotation']) && name(block.archetype) && vector(block.location, 3) && vector(block.scale, 3) && number(block.rotation), 'invalid terrain block.');
@@ -47,7 +51,7 @@
     }
   }
   function validateSnapshot(snapshot, assets) {
-    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'torch', 'spaces']), 'missing or unexpected fields.');
+    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'spaces']), 'missing or unexpected fields.');
     requireValue(snapshot.version === VERSION, 'incompatible version.');
     validateHeader(snapshot);
     requireValue(Array.isArray(snapshot.spaces) && snapshot.spaces.length > 0 && snapshot.spaces.length <= LIMITS.spaces, 'invalid space count.');
@@ -66,15 +70,16 @@
       }
     }
     requireValue(ids.has(snapshot.hero), 'the selected hero is missing.');
+    requireValue(snapshot.camera.heroes.includes(snapshot.hero) && [...snapshot.camera.heroes, ...snapshot.camera.enemies].every(id => ids.has(id)), 'unknown camera actor.');
     return snapshot;
   }
-  function captureSnapshot(game) {
+  function captureSnapshot(game, hero = game.getHero()) {
     const snapshot = {
       version: VERSION,
       tick: game.gameClock.getFrameIndex(),
       time: game.globals.gameCurrentTime,
       dayTime: game.getGameDayTime(),
-      hero: game.getHero().name,
+      hero: hero.name,
       torch: game.gameLighting?.heroLightNode ? { transform: Array.from(game.gameLighting.heroLightNode.getLocalTransform()), visible: !game.gameLighting.heroLightNode.disabled } : null,
       spaces: game.getGameSpaceList().map(space => ({
         extents: Array.from(space.calculateExtents()), transform: Array.from(space.getM43FullTransform()),
@@ -99,6 +104,13 @@
         })
       }))
     };
+    const ids = new Set(snapshot.spaces.flatMap(space => space.entities.map(entity => entity.id))), heroes = new Set([hero.name]), enemies = new Set();
+    game.applyToHeroEntities(entity => { if (ids.has(entity.name)) heroes.add(entity.name); });
+    game.getFactionManager().applyToEnemies(hero, entity => { if (ids.has(entity.name)) enemies.add(entity.name); });
+    const builder = hero.getEC('ECPlayerBuilder'), life = hero.getEC('ECPlayerLife'), movement = hero.getEC('ECLocomotion'), destination = movement?.getDestination();
+    const mode = game.getPlayFlags().cameraMode;
+    snapshot.camera = { mode: ['explore', 'war', 'building', 'dead'].includes(mode) ? mode : 'explore', dead: !!life?.isDead(), buildingAge: builder ? Math.max(0, builder.getTimeSinceBuilding()) : 1e9,
+      destination: destination ? Array.from(destination) : null, lookAhead: destination ? Array.from(movement.getLookAhead()) : null, timeHeld: movement?.getTimeHeld() || 0, heroes: [...heroes], enemies: [...enemies], center: Array.from(hero.getGameSpace().getv3Location()) };
     return validateSnapshot(snapshot);
   }
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -125,10 +137,10 @@
       }
       return patch.remove.length || patch.entities.length || Object.keys(patch).length > 3 ? [patch] : [];
     });
-    return structuredClone({ version: 1, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, torch: next.torch, spaces });
+    return structuredClone({ version: 1, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, torch: next.torch, camera: next.camera, spaces });
   }
   function validateDelta(delta, assets) {
-    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'torch', 'spaces']) && delta.version === 1, 'invalid world update.');
+    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'spaces']) && delta.version === 1, 'invalid world update.');
     validateHeader(delta);
     requireValue(Number.isSafeInteger(delta.baseTick) && delta.baseTick >= 0 && delta.tick > delta.baseTick, 'invalid update base.');
     requireValue(Array.isArray(delta.spaces) && delta.spaces.length <= LIMITS.spaces, 'invalid changed spaces.');
@@ -157,7 +169,7 @@
       const error = new Error('World update lost synchronization; requesting a fresh snapshot.'); error.code = 'WORLD_BASE_MISMATCH'; throw error;
     }
     const result = structuredClone(previous);
-    for (const key of ['tick', 'time', 'dayTime', 'hero', 'torch']) result[key] = structuredClone(delta[key]);
+    for (const key of ['tick', 'time', 'dayTime', 'hero', 'torch', 'camera']) result[key] = structuredClone(delta[key]);
     for (const patch of delta.spaces) {
       requireValue(patch.index < result.spaces.length, 'unknown space update.');
       const space = result.spaces[patch.index], entities = new Map(space.entities.map(entity => [entity.id, entity]));

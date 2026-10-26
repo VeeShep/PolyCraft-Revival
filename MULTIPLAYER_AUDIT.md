@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current build checkpoint — Beta 22, 2026-10-26
+## Current guest camera framing — Beta 23, 2026-10-26
+
+Guest framing now runs original native camera methods against read-only received hero/locomotion/life/building/actor/space data. Coherent snapshot capture selects the assigned hero before building that context; delta/full validation checks bounded fields and actor identities. Private native vectors, value library, scratch and zoomers prevent changes to the suspended solo camera. The game camera getter routes GUI/off-screen projection to the guest camera and is restored exactly on close. Resync/large corrections reset the native snap/cage; no authoritative gameplay runs on the guest.
+
+Runtime changes to coop-19 and world snapshot 5; delta/signaling/save/quest/co-op remain 1/2/7/1/4. All 284 checks pass, including actual original camera framing/phase selection in deterministic fixtures, isolation, coherent capture/validation and restoration. The zoomer fixture is simplified; real smoothing remains a visual acceptance gate. Rotation/input events, menu/script cameras, own torch and broader gameplay/native/physical-network acceptance remain open. No graphical game, personal save or public service was opened. Beta 22's full six-job/eight-artifact CI and Intel-hosted Mac ARM64 ZIP verification passed; see RESTORATION_STATUS.md for evidence.
+
+## Previous build checkpoint — Beta 22, 2026-10-26
 
 Game behavior and networking formats are unchanged from Beta 21: runtime coop-18, world 4, delta/signaling 1/2, save/quest/co-op 7/1/4. Beta 21's Mac ARM64 job failed to acquire a runner because of hosted capacity, before executing steps. Beta 22 packages that target on an Intel Mac runner with explicit ARM64 output. CI extracts and checks the final ZIP's Mach-O architectures, required executables and deep/strict signature before upload; host architecture is recorded honestly.
 

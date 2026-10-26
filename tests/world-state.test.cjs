@@ -8,13 +8,13 @@ function fixture() {
   const mesh = { node: { disabled: false }, getMeshPath: () => 'models/hero.dae', getm43Transform: () => transform };
   const entity = (id, destroyed = false) => ({ name: id, shouldLevelSave: false, shouldPlayerSave: false,
     shouldBeDestroyed: () => destroyed, getEC: name => name === 'ECMesh' ? mesh : name === 'ECHealth' ? { getHealth: () => 31, getMaxHealth: () => 50, shouldDrawBar: () => false, archetype: { drawOffScreenIconIfDamagedRecently: false } } : name === 'ECTarget' && id === 'hero' ? {} : null,
-    getv3Location: () => location, getV3Scale: () => scale, getRotationY: () => 0
+    getGameSpace: () => space, getv3Location: () => location, getV3Scale: () => scale, getRotationY: () => 0
   });
   const entities = [entity('hero'), entity('pickup'), entity('removed', true)];
-  const block = { getArchetypeName: () => 'island', getv3Location: () => location, getV3Scale: () => scale, getRotationY: () => 0 };
-  const space = { calculateExtents: () => [-20, -20, -20, 20, 20, 20], getM43FullTransform: () => transform, getBlockList: () => [block], getEntityList: () => entities };
+  const block = { getArchetypeName: () => 'island', getGameSpace: () => space, getv3Location: () => location, getV3Scale: () => scale, getRotationY: () => 0 };
+  const space = { getv3Location: () => [0, 0, 0], calculateExtents: () => [-20, -20, -20, 20, 20, 20], getM43FullTransform: () => transform, getBlockList: () => [block], getEntityList: () => entities };
   const game = { gameClock: { getFrameIndex: () => 17 }, globals: { gameCurrentTime: 0.5 }, getGameDayTime: () => 12,
-    getHero: () => entities[0], getGameSpaceList: () => [space] };
+    getPlayFlags: () => ({}), applyToHeroEntities: apply => apply(entities[0]), getFactionManager: () => ({ applyToEnemies() {} }), getHero: () => entities[0], getGameSpaceList: () => [space] };
   return { game, entities, location, scale, transform, mesh };
 }
 test('replication captures unsaved heroes and transient objects, excludes destroyed entities and owns every vector', () => {
@@ -53,8 +53,26 @@ test('health view parsing rejects missing or unbounded metadata and arbitrary GU
   for (const extra of [{ bar: {} }, { bar: { row: 0, scale: -1, level: 1 } }, { bar: { row: 1001, scale: 1, level: 1 } }, { bar: { row: 0, scale: 1, level: 65 } }, { bar: { row: 0, scale: 1, level: 1.5 } }, { bar: { row: 0, scale: Infinity, level: 1 } }, { damage: { changedAt: NaN, onlyOffscreen: true } }, { damage: { changedAt: 0, onlyOffscreen: 1 } }, { damage: { changedAt: 0, onlyOffscreen: true, icon: 'arbitrary' } }, { bar: undefined }]) {
     const next = structuredClone(base); Object.assign(next.spaces[0].entities[0].health, extra);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, torch: base.torch, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
+    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
+  }
+});
+test('camera context follows the assigned hero and owns original movement, phase and actor interests across deltas', () => {
+  const f = fixture(), actor = f.entities[1], get = actor.getEC, destination = [8, 3, 9], ahead = [5, 3, 6]; let seen;
+  actor.getEC = name => name === 'ECPlayerLife' ? { isDead: () => true } : name === 'ECPlayerBuilder' ? { getTimeSinceBuilding: () => 2 } : name === 'ECLocomotion' ? { getDestination: () => destination, getLookAhead: () => ahead, getTimeHeld: () => 0.5 } : get(name);
+  f.game.getPlayFlags = () => ({ cameraMode: 'war' }); f.game.getFactionManager = () => ({ applyToEnemies: (hero, apply) => { seen = hero; f.entities.forEach(apply); } });
+  const state = captureSnapshot(f.game, actor); assert.equal(seen, actor); assert.equal(state.hero, actor.name); assert.equal(state.camera.dead, true); assert.equal(state.camera.mode, 'war'); assert.equal(state.camera.buildingAge, 2); assert.deepEqual(state.camera.heroes, ['pickup', 'hero']); assert.deepEqual(state.camera.enemies, ['hero', 'pickup']);
+  destination[0] = 99; ahead[0] = 99; assert.equal(state.camera.destination[0], 8); assert.equal(state.camera.lookAhead[0], 5);
+  const next = structuredClone(state); next.tick++; next.camera.dead = false; next.camera.mode = 'explore'; next.camera.destination = next.camera.lookAhead = null;
+  assert.deepEqual(applyDelta(state, createDelta(state, next)), next); assert.equal(state.camera.dead, true);
+});
+test('camera context rejects unknown modes/actors, sparse or duplicate interests and malformed movement without partially applying a delta', () => {
+  const base = captureSnapshot(fixture().game);
+  for (const extra of [{ mode: 'editor' }, { dead: 1 }, { buildingAge: -1 }, { timeHeld: Infinity }, { heroes: [] }, { heroes: ['missing'] }, { heroes: ['hero', 'hero'] }, { enemies: Array(1) }, { center: [0, NaN, 0] }, { destination: [0, 0, 0] }, { lookAhead: [0, 0, 0] }, { save: true }]) {
+    const next = structuredClone(base); Object.assign(next.camera, extra); const before = JSON.stringify(base);
+    assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
+    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, torch: base.torch, camera: next.camera, spaces: [] };
+    assert.throws(() => applyDelta(base, delta), /Invalid world snapshot/); assert.equal(JSON.stringify(base), before);
   }
 });
 test('world validation requires unique live identities, selected hero and bounded terrain', () => {
@@ -134,7 +152,7 @@ test('world deltas preserve ordering, space moves, terrain/metadata changes, new
   const pickup = next.spaces[0].entities.pop(); pickup.mesh = null; pickup.health = null;
   next.spaces[1].entities.push(pickup); next.spaces[1].extents[0] = -30; next.spaces[1].transform[9]++;
   next.spaces[1].blocks = structuredClone(base.spaces[0].blocks);
-  const hero = next.spaces[0].entities[0]; hero.id = next.hero = 'rankedHero'; hero.mesh.path = 'models/newHero.dae';
+  const hero = next.spaces[0].entities[0]; hero.id = next.hero = 'rankedHero'; next.camera.heroes = ['rankedHero']; hero.mesh.path = 'models/newHero.dae';
   next.spaces[0].entities.unshift({ ...structuredClone(hero), id: 'newBuilding' });
   const delta = createDelta(base, next);
   assert.deepEqual(delta.spaces[0].remove, ['hero', 'pickup']);
