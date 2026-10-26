@@ -71543,41 +71543,48 @@
         guiArchetype: this.gameManager.validToRewardShare("facebook") ? "buttonShareFacebookReward" : "buttonShareFacebook",
         passive: !0
       }));
-      a.gameLighting.getShadowsEnabled() ? b.doButton({
+      this.updateSettingsMenu();
+    },
+    updateSettingsMenu: function (profile) {
+      var game = this.gameManager,
+        gui = game.getIMGui(),
+        renderer = this.globals.guiRenderer;
+      profile = profile || game.getPlayerData();
+      game.gameLighting.getShadowsEnabled() ? gui.doButton({
         id: "Paused Disable Shadows",
         text: this.globals.currentLanguage.GUI_BUTTON_DISABLE_SHADOWS,
-        v2ScreenLocation: c.getv2RenderLocation(200, 50)
-      }) && (a.gameLighting.setShadowsEnabled(!1), a.getPlayerData().setShadowsEnabled(!1)) : b.doButton({
+        v2ScreenLocation: renderer.getv2RenderLocation(200, 50)
+      }) && (game.gameLighting.setShadowsEnabled(!1), profile.setShadowsEnabled(!1)) : gui.doButton({
         id: "Paused Enable Shadows",
         text: this.globals.currentLanguage.GUI_BUTTON_ENABLE_SHADOWS,
-        v2ScreenLocation: c.getv2RenderLocation(200, 50)
-      }) && (a.gameLighting.setShadowsEnabled(!0), a.getPlayerData().setShadowsEnabled(!0));
-      a.getPlayerData().getMusicEnabled() ? b.doButton({
+        v2ScreenLocation: renderer.getv2RenderLocation(200, 50)
+      }) && (game.gameLighting.setShadowsEnabled(!0), profile.setShadowsEnabled(!0));
+      profile.getMusicEnabled() ? gui.doButton({
         id: "Paused Disable Music",
         text: this.globals.currentLanguage.GUI_BUTTON_DISABLE_MUSIC,
-        v2ScreenLocation: c.getv2RenderLocation(100, 170),
+        v2ScreenLocation: renderer.getv2RenderLocation(100, 170),
         buttonType: Z.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
-      }) && a.getPlayerData().setMusicEnabled(!1) : b.doButton({
+      }) && profile.setMusicEnabled(!1) : gui.doButton({
         id: "Paused Enable Music",
         text: this.globals.currentLanguage.GUI_BUTTON_ENABLE_MUSIC,
-        v2ScreenLocation: c.getv2RenderLocation(100, 170),
+        v2ScreenLocation: renderer.getv2RenderLocation(100, 170),
         buttonType: Z.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
-      }) && a.getPlayerData().setMusicEnabled(!0);
-      a.gameSoundManager.getSoundsEnabled() ? b.doButton({
+      }) && profile.setMusicEnabled(!0);
+      game.gameSoundManager.getSoundsEnabled() ? gui.doButton({
         id: "Paused Disable Sound",
         text: this.globals.currentLanguage.GUI_BUTTON_DISABLE_SOUNDS,
-        v2ScreenLocation: c.getv2RenderLocation(300, 170),
+        v2ScreenLocation: renderer.getv2RenderLocation(300, 170),
         buttonType: Z.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
-      }) && (a.gameSoundManager.setSoundsEnabled(!1), a.getPlayerData().setSoundsEnabled(!1)) : b.doButton({
+      }) && (game.gameSoundManager.setSoundsEnabled(!1), profile.setSoundsEnabled(!1)) : gui.doButton({
         id: "Paused Enable Sound",
         text: this.globals.currentLanguage.GUI_BUTTON_ENABLE_SOUNDS,
-        v2ScreenLocation: c.getv2RenderLocation(300, 170),
+        v2ScreenLocation: renderer.getv2RenderLocation(300, 170),
         buttonType: Z.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
-      }) && (a.gameSoundManager.setSoundsEnabled(!0), a.getPlayerData().setSoundsEnabled(!0));
+      }) && (game.gameSoundManager.setSoundsEnabled(!0), profile.setSoundsEnabled(!0));
     },
     draw: function () {
       var a = this.gameManager,
@@ -145024,7 +145031,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction);
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu);
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };

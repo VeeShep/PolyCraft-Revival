@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest interface quest events — Beta 26, 2026-10-26
+## Current guest pause settings — Beta 27, 2026-10-26
+
+The original pause settings renderer is now shared between solo and guest presentation. Guests get the original localized Shadows, Music and Sound toggles at their original positions, plus Resume. A session-only copy of the local profile settings suppresses persistence, while native setters still update local lighting/audio. Disconnect restores the original three preferences. Native solo settings still save normally. The native sound presentation update runs in the drawn guest menu so current sources reflect toggles; gameplay audio replication remains open.
+
+All 298 checks pass, including actual native renderer/setters, both toggle directions, no guest profile writes, normal solo persistence and disconnect restoration. ARM64 ZIP architecture/signature/source checks pass. Runtime stays coop-21 (Beta 26 compatible); formats remain 5/1/2/7/1/4. No network action, host state transition or simulation pause is added. Actual audio/shadow effects, full tutorial/credits/shop parity, native gameplay and real-network acceptance remain unverified. Graphical tests are deferred; see RESTORATION_STATUS.md.
+
+## Previous guest interface quest events — Beta 26, 2026-10-26
 
 Guest Pause opens its local original-style menu and sends a bounded own-hero `pauseGame` intent; confirmed fullscreen entry sends `enterFullscreen`. The host emits only the fixed original PauseGame/GoFullScreen events, without touching its menu, fullscreen state or simulation pause. Original task processing and checkpoint/autosave retain progress and pending rewards. Guests cannot specify event names or rewards. Native UI actions are available even while knocked out/script-locked.
 

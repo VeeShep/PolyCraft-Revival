@@ -33,7 +33,19 @@ Reference audit: [FlimLick/flimssite/tools/stun](https://github.com/FlimLick/fli
 
 Implementation order: bounded signaling/room protocol and server with deployment instructions → authenticated room-code host/join adapter → direct-first route coordinator and staged WebRTC/TURN → network timing/bandwidth instrumentation and disposable acceptance. Beta 8 now contains source and local non-GUI checks for the first three steps with manually configured TURN. Automatic credential issuance, measurements and physical gameplay/deployment acceptance remain next. Continue preserving existing multiplayer/save/gameplay gates; no backend deployment, provider account setup or automatic router mappings occurred in this requirements pass. That requirements checkpoint changed documentation only; the subsequent room implementation is Beta 6, recorded below.
 
-## Current source: Beta 26 guest pause/fullscreen quest events — 2026-10-26
+## Current source: Beta 27 original guest pause settings — 2026-10-26
+
+Working version is **1.0.0-beta.27**. Original Shadows, Music and Sound controls are available from the guest pause menu, alongside Resume. The original settings renderer is shared with solo, retaining its artwork, localized labels, enable/disable behavior and positions. Resume now occupies the original left column. No tutorial, credits or premium shop transition is exposed through the guest menu yet.
+
+- Guest preferences use a separate copy of the loaded local settings with persistence disabled. They affect only that renderer/session, never the host's preferences or suspended solo profile. Leaving/disconnecting restores the original shadow, sound and music choices. Solo setters continue saving normally. The native sound presentation update runs while the guest pause menu is drawn so toggles reach active sources; this is not gameplay sound replication.
+- No host game-state transition, simulation pause, network action, save format or wire format is added. Runtime remains **`polycraft-1.0.0.25-coop-21`**, world/delta/signaling/save/quest/co-op 5/1/2/7/1/4; wire-compatible with Beta 26. Use Beta 27 for the new local settings controls.
+- **298 unit/regression checks pass.** Tests execute the shared original settings renderer and original player-data setters, both directions of each toggle, original button positions/artwork, zero guest persistence, unchanged solo persistence and settings restoration on actual guest-boundary disconnect. Original pause/fullscreen/quest/save protections remain covered. No graphical game was launched.
+- Finished local ZIP: `/private/tmp/polycraft-beta27-package.BDByL6/PolyCraft-Offline-1.0.0-beta.27-mac-arm64.zip`. Fresh extraction verifies all **14 ARM64 Mach-O** files and deep/strict signature; the bundle and two changed desktop modules match source. Packaged Node 24.22.0 compiles the bundle, loads host/guest modules and retains the native settings hook; metadata/runtime match Beta 27/coop-21. The helper opens no game, network or save and prints the usual harmless macOS `task_name_for_pid` diagnostic before successful exit.
+- Next: visible disposable two/four-player settings toggles, actual audio/shadow effects, resume/focus and disconnect restoration while AI keeps running. Full guest tutorial/credits/shop parity, gameplay audio/effects, remaining combat/campaign/menu behavior, native platforms and physical-network/provider acceptance remain open. Graphical testing is still deferred by the user; the goal remains active and incomplete.
+
+**Beta 26 CI succeeded:** [run 40398866516](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40398866516), source `7fae5c830d0b2e58d13e5b3715f3d96d04e97b21`. Checks and all six platform package jobs passed. All eight platform/format artifacts are present and non-expired, verified 2026-10-26. Packaging is not native gameplay acceptance.
+
+## Previous source: Beta 26 guest pause/fullscreen quest events — 2026-10-26
 
 Working version is **1.0.0-beta.26**, runtime **`polycraft-1.0.0.25-coop-21`**. All players need matching Beta 26 builds. World/delta/signaling/save/quest/co-op formats remain 5/1/2/7/1/4.
 

@@ -194,6 +194,12 @@ test('guest boundary freezes the local simulation and persistence, receives stat
     guiManager: { clearDrawList() {} }, imgui: { clearDrawList() {}, clearValidation() {} }, gameLighting: { update() { this.updateHeroLightPosition(); }, updateHeroLightPosition() { throw new Error("Suspended solo torch must not be queried"); } },
     draw() {}, draw2D() {}, saveLevel() { saves++; }
   };
+  const preferences = { settings: { shadows: true, sounds: true, music: true }, getMusicEnabled() { return this.settings.music; }, saveSettings() { assert.fail('guest cannot save local preferences'); } };
+  let shadows = true, sounds = true, music = true;
+  game.getPlayerData = () => preferences;
+  game.gameLighting.getShadowsEnabled = () => shadows; game.gameLighting.setShadowsEnabled = value => { shadows = value; };
+  game.gameSoundManager = { getSoundsEnabled: () => sounds, setSoundsEnabled: value => { sounds = value; }, update() {} };
+  game.setMusicVolume = value => { music = !!value; };
   globals.gameManager = game;
   const app = { globals, updateGame() { simulations++; } }, controls = new Controls();
   controls.attach(app, [], {});
@@ -206,6 +212,10 @@ test('guest boundary freezes the local simulation and persistence, receives stat
     onMessage() { forwarded++; }, close() { this.closed = true; this.onState?.('closed', {}); } };
   const world = new GuestWorld(controls, connection);
   assert.equal(controls.ready(), false); assert.equal(roots.includes(originalRoot), false);
+  assert.notEqual(world.sessionSettings.settings, preferences.settings);
+  world.sessionSettings.settings.music = false; world.sessionSettings.saveSettings();
+  assert.equal(preferences.settings.music, true);
+  shadows = sounds = music = false;
   assert.throws(() => controls.writeCheckpoint(), /host saves/);
   assert.throws(() => game.saveLevel(), /host saves/);
   await assert.rejects(controls.checkpoint({ state: {} }));
@@ -298,6 +308,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   connection.onMessage({ kind: 'result', payload: { type: 'enterFullscreen', sequence: 14, message: 'Recorded.' } }); assert.equal(world.uiRequests.size, 0); assert.equal(world.lastTargetResult, cameraFeedback); assert.equal(world.lastLifeQuery, 0);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
+  assert.equal(shadows && sounds && music, true, 'original local presentation preferences restored');
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
   assert.equal(app.updateGame, update); assert.equal(game.draw, draw); assert.equal(game.saveLevel, save);
   assert.equal(game.imgui.controller, guiController); assert.equal(game.getGameCamera, getCamera); assert.equal(game.gameLighting.updateHeroLightPosition, heroLightUpdate); assert.equal(world.localMenu(), false);
@@ -324,9 +335,9 @@ test('an unanswered guest resync times out without repeatedly requesting snapsho
 test('guest Pause and Resume use original artwork and block local actions without pausing the shared simulation', () => {
   const world = Object.create(GuestWorld.prototype), draws = [], buttons = [];
   let clicked = 'guest-pause', stopped = 0;
-  world.controls = { paused: false, guiTypes: {}, app: { globals: { guiRenderer: { getv2RenderLocation: (x, y) => [x, y] } } } };
+  world.controls = { drawPauseSettings() {}, paused: false, guiTypes: {}, app: { globals: { guiRenderer: { getv2RenderLocation: (x, y) => [x, y] } } } };
   world.guiInput = {}; world.movement = { keys: new Set(['KeyW']), flush() { stopped++; } };
-  world.game = { getIMGui: () => ({ doBackground() {}, doButton(options) { buttons.push(options); return options.id === clicked; } }), getGuiManager: () => ({ addDrawGui: name => draws.push(name) }) };
+  world.game = { gameSoundManager: { update() {} }, getIMGui: () => ({ doBackground() {}, doButton(options) { buttons.push(options); return options.id === clicked; } }), getGuiManager: () => ({ addDrawGui: name => draws.push(name) }) };
   let fullscreen = 0; world.toggleFullscreen = () => { fullscreen++; };
   clicked = 'guest-fullscreen'; world.drawPauseMenu(); assert.equal(fullscreen, 1); assert.equal(buttons[0].guiArchetype, 'fullscreen'); assert.deepEqual(buttons[0].v2ScreenLocation, [54, 52]);
   world.controls.fullscreen = true; world.drawPauseMenu(); assert.equal(buttons.at(-2).guiArchetype, 'minimize'); clicked = 'guest-pause';
@@ -406,4 +417,33 @@ test('guest fullscreen requests coalesce, wait for confirmation and handle docum
   await world.toggleFullscreen(); assert.match(status.textContent, /window unavailable/); assert.equal(world.fullscreenChanging, false);
   world.closed = true; world.lastFullscreenRequest = -Infinity; status.textContent = '';
   await world.toggleFullscreen(); assert.equal(status.textContent, '');
+});
+test('shared original pause settings use session data while native solo settings still save', () => {
+  const ast = require('./runtime-ast.cjs'), buttons = [], volume = [];
+  const globals = { currentLanguage: {}, guiRenderer: { getv2RenderLocation: (x, y) => [x, y] } };
+  let clicked = '', shadows = true, sounds = true, saves = 0;
+  const game = { getIMGui: () => ({ doButton(options) { buttons.push(options); return options.id === clicked; } }),
+    gameLighting: { getShadowsEnabled: () => shadows, setShadowsEnabled: value => { shadows = value; } },
+    gameSoundManager: { getSoundsEnabled: () => sounds, setSoundsEnabled: value => { sounds = value; } },
+    setMusicVolume: (value, duration) => volume.push([value, duration]) };
+  globals.gameManager = game;
+  const profile = Object.assign(Object.create(ast.prototypeWith('saveSettings')), { globals, settings: { shadows: true, music: true, sounds: true }, saveSettings() { saves++; } });
+  const session = Object.assign(Object.create(profile), { settings: { ...profile.settings }, saveSettings() {} });
+  game.getPlayerData = () => assert.fail('guest settings cannot consult the solo profile');
+  const view = { gameManager: game, globals }, draw = ast.method('updateSettingsMenu', { Z: { BUTTON_NORMAL_HALF: 'half' } });
+  for (const label of ['Disable Shadows', 'Disable Music', 'Disable Sound']) { clicked = 'Paused ' + label; draw.call(view, session); }
+  assert.deepEqual(session.settings, { shadows: false, music: false, sounds: false });
+  assert.deepEqual(profile.settings, { shadows: true, music: true, sounds: true }); assert.equal(saves, 0);
+  assert.equal(shadows || sounds, false); assert.deepEqual(volume, [[0, 0]]);
+  for (const label of ['Enable Shadows', 'Enable Music', 'Enable Sound']) { clicked = 'Paused ' + label; draw.call(view, session); }
+  assert.deepEqual(session.settings, profile.settings); assert.equal(shadows && sounds, true); assert.deepEqual(volume.at(-1), [1, 0]);
+  const music = buttons.find(button => button.id === 'Paused Disable Music');
+  assert.deepEqual(Array.from(music.v2ScreenLocation), [100, 170]); assert.equal(music.guiArchetype, 'buttonHalf'); assert.equal(music.buttonType, 'half');
+  game.getPlayerData = () => profile; clicked = 'Paused Disable Music'; draw.call(view);
+  assert.equal(profile.settings.music, false); assert.equal(saves, 1, 'solo keeps original persistent settings behavior');
+  const native = ast.prototypeWith('updateSettingsMenu', { Z: {}, za: { offline: true } }); let called = 0;
+  native.updateSettingsMenu = () => { called++; }; clicked = '';
+  game.getGuiManager = () => ({ addDrawGui() {} });
+  game.getIMGui = () => ({ doBackground() {}, doButton: () => false });
+  native.updateMenu.call({ ...native, ...view }); assert.equal(called, 1, 'original pause menu uses the shared native settings renderer');
 });

@@ -243,6 +243,10 @@
         onMessage: connection.onMessage, onState: connection.onState,
         roots: globals.scene.rootNodes.filter(node => node !== game.gameLighting.worldDirectionLightNode && node !== game.gameLighting.heroLightNode)
       };
+      const profile = game.getPlayerData();
+      this.original.settings = { shadows: game.gameLighting.getShadowsEnabled(), sounds: game.gameSoundManager.getSoundsEnabled(), music: profile.getMusicEnabled() };
+      // Session preferences must never save into the suspended local island.
+      this.sessionSettings = Object.assign(Object.create(profile), { settings: { ...profile.settings }, saveSettings() {} });
       this.viewCamera = new GuestCamera(this);
       game.getGameCamera = () => this.viewCamera.camera;
       game.gameLighting.updateHeroLightPosition = () => this.updateTorch();
@@ -435,11 +439,12 @@
       const gui = this.game.getIMGui(), renderer = this.controls.app.globals.guiRenderer;
       const location = (x, y, anchor) => renderer.getv2RenderLocation(x, y, anchor);
       if (this.pauseMenu) {
-        // shortcut: guest pause offers Resume only, expand with the remaining guest HUD/settings work.
         gui.doBackground();
         this.game.getGuiManager().addDrawGui('bgPattern', { v2ScreenLocation: location(0, 0) }, 'guest-pause-background');
         this.game.getGuiManager().addDrawGui('polycraftLogo', { v2ScreenLocation: location(0, -260) }, 'guest-pause-logo');
-        if (gui.doButton({ id: 'guest-resume', text: 'Resume', v2ScreenLocation: location(0, 0), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: 'buttonStart' })) this.cancelLocalMenu();
+        if (gui.doButton({ id: 'guest-resume', text: 'Resume', v2ScreenLocation: location(-220, -70), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: 'buttonStart' })) this.cancelLocalMenu();
+        this.controls.drawPauseSettings.call({ gameManager: this.game, globals: this.controls.app.globals }, this.sessionSettings);
+        this.game.gameSoundManager.update();
       } else {
         if (gui.doButton({ id: 'guest-fullscreen', text: '', v2ScreenLocation: location(54, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: this.controls.fullscreen ? 'minimize' : 'fullscreen', passive: true })) this.toggleFullscreen();
         if (gui.doButton({ id: 'guest-pause', text: '', v2ScreenLocation: location(116, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: 'pause' })) this.togglePauseMenu();
@@ -538,6 +543,9 @@
       this.movement.close();
       this.cancelLocalMenu(); this.game.imgui.controller = this.original.guiController;
       const game = this.game, app = this.controls.app, original = this.original;
+      game.gameLighting.setShadowsEnabled(original.settings.shadows);
+      game.gameSoundManager.setSoundsEnabled(original.settings.sounds);
+      game.setMusicVolume(original.settings.music ? 1 : 0, 0);
       game.gameLighting.updateHeroLightPosition = original.heroLightUpdate;
       this.connection.onMessage = original.onMessage; this.connection.onState = original.onState;
       this.connection.close(); this.scene.close();
