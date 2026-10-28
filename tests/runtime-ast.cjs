@@ -37,6 +37,10 @@ function objectWith(name) {
 function assignedObject(name, context) {
   return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name && a.right.type === 'ObjectExpression'), name).right, context);
 }
+function archetypeComponent(name, component) {
+  const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name && a.right.type === 'ObjectExpression'), name).right;
+  return evaluate(one(definition.properties.filter(p => key(p) === component), `${name}.${component}`).value);
+}
 function staticMethod(owner, name, context) {
   return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.name === owner && a.left.property.name === name && a.right.type === 'FunctionExpression'), `${owner}.${name}`).right, context);
 }
@@ -76,4 +80,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, staticMethod, taskManagerFactory, healthDrawing, cameraMethods, taskGroupMethods };
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, cameraMethods, taskGroupMethods };

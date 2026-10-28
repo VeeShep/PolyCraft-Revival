@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest combat marker — Beta 29, 2026-10-27
+## Current resource interaction parity — Beta 30, 2026-10-27
+
+Original `liftTargetedInteractable` asks `ECInteractable.shouldApproachOnUp` before choosing movement or immediate callbacks. All nine interactable tree/rock/seed resource archetypes explicitly disable required movement; the remaining resource definition is non-interactable scenery. Guest-only unconditional reach/ray checks were therefore a parity bug. The host now applies them only for interactions requesting approach, while direct interactions use the original callback and assigned actor. Native activity/depletion and actor/script/construction guards, sequence/rate/queue validation and original drop/upgrade/quest processing remain unchanged. No client amounts or resource edits are introduced.
+
+All 306 checks pass, including actual original archetypes/controller/interaction methods, one callback, depleted-repeat refusal, inactive/dead/script refusals and retained movement-required checks. The new fixture extracts only a public named component rather than evaluating unrelated minified dependencies. ARM64 ZIP and packaged runtime checks pass without a game or personal save. Runtime/world stay coop-22/6, with all save/wire formats unchanged from Beta 29. The host needs Beta 30. Movement-required resources retain the documented manual-approach fallback; generic ground click-to-move remains open. Real drops/worker collection/upgrade/shared-quest/save workflows and visual/native/physical-network acceptance remain unverified; see RESTORATION_STATUS.md.
+
+## Previous guest combat marker — Beta 29, 2026-10-27
 
 Coherent host snapshots capture the assigned hero's native automatic-fire target and native damage-range result, or null when unavailable/self/destroyed/uncaptured. Full/delta validation bounds the exact two fields and checks references after applying removals. Guest presentation calls original ECAutoFire.drawTargetCross with that state and the target's interpolated pose, using original crosshair/crosshairNo artwork. No suspended solo lookup, arbitrary GUI asset, extra query or guest damage authority is introduced. Missing targets, cancellation and resync hide the marker.
 

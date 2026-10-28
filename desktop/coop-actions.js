@@ -120,10 +120,12 @@
       if (resource) {
         const interaction = target.getEC('ECInteractable');
         if (!interaction?.getActive() || resource.getResource() <= 0) return 'No resources available here.';
-        // shortcut: require walking into reach; add original click-to-approach with guest camera/input parity.
-        if (target.getDistanceUsingSize(hero.getv3Location()) > hero.getRadius() + 0.5) return 'Move closer to gather.';
-        const collision = game.getCollisionInfo(hero.getv3Location(), target.getv3Location(), false, hero);
-        if (collision && collision.collidedEntity !== target) return 'The way is blocked.';
+        if (interaction.shouldApproachOnUp(hero)) {
+          // shortcut: movement-required resources need manual approach until native destination commands are exposed.
+          if (target.getDistanceUsingSize(hero.getv3Location()) > hero.getRadius() + 0.5) return 'Move closer to gather.';
+          const collision = game.getCollisionInfo(hero.getv3Location(), target.getv3Location(), false, hero);
+          if (collision && collision.collidedEntity !== target) return 'The way is blocked.';
+        }
         interaction.executeCallbacks(hero);
         return 'Resources gathered.';
       }

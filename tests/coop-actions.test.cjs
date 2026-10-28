@@ -13,13 +13,13 @@ test('build and preview intents accept only an owned copy of a bounded position 
   }
 });
 function setup() {
-  const state = { remaining: 4, range: 0, active: true, blocked: false, building: false, throwing: false, health: 50, permitted: true, armed: true, inRange: true, ready: true, ammo: 4, collected: 0, fired: 0 };
+  const state = { remaining: 4, range: 0, active: true, approach: true, blocked: false, building: false, throwing: false, health: 50, permitted: true, armed: true, inRange: true, ready: true, ammo: 4, collected: 0, fired: 0 };
   const hero = { shouldBeDestroyed: () => false, getRadius: () => 1, getv3Location: () => [0, 0, 0], getEC: name => ({
     ECHealth: { getHealth: () => state.health }, ECPlayerBuilder: { isBuilding: () => state.building, isThrowing: () => state.throwing },
     ECFirearm: { hasWeapon: () => state.armed, isWithinRange: () => state.inRange, getCanFire: () => state.ready, getAmmo: () => state.ammo, clearOverloadProjectile() {}, attemptFire: target => { assert.equal(target, enemy); state.fired++; } }
   })[name] };
   const resource = { shouldBeDestroyed: () => false, getv3Location: () => [1, 0, 0], getDistanceUsingSize: () => state.range, getEC: name => ({
-    ECResourceDispenser: { getResource: () => state.remaining }, ECInteractable: { getActive: () => state.active, executeCallbacks: actor => { assert.equal(actor, hero); state.remaining--; state.collected++; } }
+    ECResourceDispenser: { getResource: () => state.remaining }, ECInteractable: { getActive: () => state.active, shouldApproachOnUp: () => state.approach, executeCallbacks: actor => { assert.equal(actor, hero); state.remaining--; state.collected++; } }
   })[name] };
   const enemy = { shouldBeDestroyed: () => false, getv3Location: () => [2, 0, 0], getEC: name => ({ ECTarget: { isValidTarget: () => true }, ECHealth: { getHealth: () => 10 } })[name] };
   const game = { getGameEntityByName: id => ({ tree: resource, enemy, self: hero })[id], isScriptLocked: () => false,
@@ -59,7 +59,7 @@ test('target actions reject replay, authority fields, malformed IDs, queue overf
   for (let i = 5; i <= 10; i++) { send(i); actions.apply(game, hero, players); }
   assert.throws(() => send(11), /Too many/); now = 1000; send(11);
 });
-test('gathering uses only a live reachable unobstructed resource and the assigned actor callback, rechecking depletion for every queued action', () => {
+test('movement-required gathering uses only a live reachable unobstructed resource and the assigned actor callback, rechecking depletion for every queued action', () => {
   const { state, game, hero, players } = setup(), actions = new HostActions();
   state.range = 20; assert.match(actions.execute(game, hero, players, 'tree'), /closer/);
   state.range = 0; state.blocked = true; assert.match(actions.execute(game, hero, players, 'tree'), /blocked/);
@@ -185,4 +185,25 @@ test('automatic guest combat retains original hero-only PvP protection at select
   assert.match(actions.execute(game, hero, players, 'enemy'), /protected/);
   players.active.set('guest', { hero: target }); actions.execute(game, hero, players, 'enemy');
   game.globals.desktopWorld.transport.pvp = false; actions.apply(game, hero, players); assert.equal(automatic.getTargetEntity(), undefined);
+});
+test('guest resource clicks preserve actual original no-movement interaction rules for trees and rocks', () => {
+  const ast = require('./runtime-ast.cjs'), native = ast.component('ECInteractable'), lift = ast.method('liftTargetedInteractable');
+  const names = ['a_v_seed_tree', 'a_v_seed_rock', 'a_r_tree01', 'a_r_tree02', 'a_r_tree04', 'a_r_rock01', 'a_r_rock02', 'a_r_rock03', 'a_r_rock04'];
+  for (const name of names) {
+    const archetype = ast.archetypeComponent(name, 'ECInteractable');
+    const { state, game, hero, resource, players } = setup(), original = resource.getEC;
+    const interaction = Object.assign(Object.create(native), { archetype, active: true, onInteractCallbacks: [actor => { assert.equal(actor, hero); state.remaining--; state.collected++; }] });
+    assert.equal(interaction.shouldApproachOnUp(hero), false, name);
+    resource.getEC = component => component === 'ECInteractable' ? interaction : original(component);
+    resource.getDistanceUsingSize = () => assert.fail('direct native interactions have no reach restriction');
+    game.getCollisionInfo = () => assert.fail('direct native interactions have no ray obstruction restriction');
+    lift.call({ getTargetEntity: () => resource, getHeroEntity: () => hero, setControllableDestination: () => assert.fail('original click must not move this hero') });
+    assert.equal(state.collected, 1, name); state.collected = 0; state.remaining = 1;
+    const actions = new HostActions(); actions.receive({ type: 'target', sequence: 1, target: 'tree' });
+    assert.match(actions.apply(game, hero, players).message, /gathered/); assert.equal(state.collected, 1, name); assert.equal(state.remaining, 0);
+    assert.match(actions.execute(game, hero, players, 'tree'), /No resources/); assert.equal(state.collected, 1);
+    state.remaining = 1; interaction.active = false; assert.match(actions.execute(game, hero, players, 'tree'), /No resources/);
+    interaction.active = true; state.health = 0; assert.match(actions.execute(game, hero, players, 'tree'), /Finish/);
+    state.health = 50; game.isScriptLocked = () => true; assert.match(actions.execute(game, hero, players, 'tree'), /Finish/); assert.equal(state.collected, 1);
+  }
 });
