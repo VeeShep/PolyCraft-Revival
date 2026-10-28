@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current original guest automatic fire — Beta 28, 2026-10-27
+## Current guest combat marker — Beta 29, 2026-10-27
+
+Coherent host snapshots capture the assigned hero's native automatic-fire target and native damage-range result, or null when unavailable/self/destroyed/uncaptured. Full/delta validation bounds the exact two fields and checks references after applying removals. Guest presentation calls original ECAutoFire.drawTargetCross with that state and the target's interpolated pose, using original crosshair/crosshairNo artwork. No suspended solo lookup, arbitrary GUI asset, extra query or guest damage authority is introduced. Missing targets, cancellation and resync hide the marker.
+
+All 305 checks pass, including assigned-hero capture, strict/owned full and delta data, reference/removal/cancellation handling and original native rendering at display positions. The final ARM64 ZIP passes architecture/signature/source checks. Runtime is coop-22/world 6, requiring matching Beta 29 peers; delta/signaling/save/quest/co-op remain 1/2/7/1/4. No graphical game or personal save was opened. Real combat/projectile/effects/audio, visual/native and physical-network acceptance remain open. See RESTORATION_STATUS.md.
+
+## Previous original guest automatic fire — Beta 28, 2026-10-27
 
 Eligible guest combat clicks now assign the actual host-side hero's native automatic-fire target, including during reload. The original trigger/retention range of 25 is used rather than replacing it with the shotgun projectile's shorter damage range. The initial shot retains host actor/target/PvP/ammo/weapon checks and clears projectile overrides on failure. Later shots, cooldown/reload/range and bump-charge suppression remain native. No new charge/rage component or RPC is enabled.
 

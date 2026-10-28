@@ -16,13 +16,13 @@
     };
   }
   class Controls {
-    attach(app, xpTable, guiTypes, infoPanels, upgradeMethods, playerDataMethods, healthMethods, drawProgressBar, drawPauseSettings) {
+    attach(app, xpTable, guiTypes, infoPanels, upgradeMethods, playerDataMethods, healthMethods, drawProgressBar, drawPauseSettings, drawTargetCross) {
       this.app = app;
       this.xpTable = xpTable;
       this.guiTypes = guiTypes;
       this.infoPanels = infoPanels; this.upgradeMethods = upgradeMethods;
       this.playerDataMethods = playerDataMethods;
-      this.healthMethods = healthMethods; this.drawProgressBar = drawProgressBar; this.drawPauseSettings = drawPauseSettings;
+      this.healthMethods = healthMethods; this.drawProgressBar = drawProgressBar; this.drawPauseSettings = drawPauseSettings; this.drawTargetCross = drawTargetCross;
       const render = app.render;
       if (render) app.render = (...args) => {
         const now = app.globals.appCurrentTime;

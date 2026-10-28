@@ -53,7 +53,7 @@ test('health view parsing rejects missing or unbounded metadata and arbitrary GU
   for (const extra of [{ bar: {} }, { bar: { row: 0, scale: -1, level: 1 } }, { bar: { row: 1001, scale: 1, level: 1 } }, { bar: { row: 0, scale: 1, level: 65 } }, { bar: { row: 0, scale: 1, level: 1.5 } }, { bar: { row: 0, scale: Infinity, level: 1 } }, { damage: { changedAt: NaN, onlyOffscreen: true } }, { damage: { changedAt: 0, onlyOffscreen: 1 } }, { damage: { changedAt: 0, onlyOffscreen: true, icon: 'arbitrary' } }, { bar: undefined }]) {
     const next = structuredClone(base); Object.assign(next.spaces[0].entities[0].health, extra);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
+    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, combat: base.combat, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
   }
 });
@@ -71,7 +71,7 @@ test('camera context rejects unknown modes/actors, sparse or duplicate interests
   for (const extra of [{ mode: 'editor' }, { dead: 1 }, { buildingAge: -1 }, { timeHeld: Infinity }, { heroes: [] }, { heroes: ['missing'] }, { heroes: ['hero', 'hero'] }, { enemies: Array(1) }, { center: [0, NaN, 0] }, { destination: [0, 0, 0] }, { lookAhead: [0, 0, 0] }, { save: true }]) {
     const next = structuredClone(base); Object.assign(next.camera, extra); const before = JSON.stringify(base);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, torch: base.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, combat: base.combat, torch: base.torch, camera: next.camera, spaces: [] };
     assert.throws(() => applyDelta(base, delta), /Invalid world snapshot/); assert.equal(JSON.stringify(base), before);
   }
 });
@@ -207,4 +207,33 @@ test('successive wire deltas reconstruct changing worlds exactly, including reor
     guest = tick % 11 === 0 ? JSON.parse(JSON.stringify(next)) : applyDelta(guest, JSON.parse(JSON.stringify(delta)));
     assert.deepEqual(guest, next); base = next;
   }
+});
+test('combat capture selects only the assigned hero native target and owns bounded presentation data', () => {
+  const f = fixture(), actor = f.entities[1], original = actor.getEC;
+  let selected = f.entities[0], inRange = false, reads = 0;
+  actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
+  f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
+  const state = captureSnapshot(f.game, actor);
+  assert.equal(state.version, 6); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
+  for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
+  assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');
+});
+test('combat headers reject malformed or unavailable targets and survive owned delta changes and cancellation', () => {
+  const base = captureSnapshot(fixture().game), next = structuredClone(base); next.tick++; next.combat = { target: 'pickup', inDamageRange: true };
+  const delta = createDelta(base, next), result = applyDelta(base, delta);
+  assert.deepEqual(result.combat, next.combat); delta.combat.inDamageRange = false; assert.equal(result.combat.inDamageRange, true);
+  const cancelled = structuredClone(result); cancelled.tick++; cancelled.combat = null;
+  assert.equal(applyDelta(result, createDelta(result, cancelled)).combat, null);
+  for (const combat of [undefined, {}, { target: '', inDamageRange: true }, { target: 'x'.repeat(257), inDamageRange: false }, { target: 'pickup', inDamageRange: 1 }, { target: 'pickup', inDamageRange: true, damage: 100 }]) {
+    const full = { ...next, combat }, patch = { ...createDelta(base, next), combat };
+    assert.throws(() => validateSnapshot(full), /combat target/); assert.throws(() => validateDelta(patch), /combat target/);
+  }
+  for (const target of [base.hero, 'missing']) {
+    assert.throws(() => validateSnapshot({ ...next, combat: { target, inDamageRange: true } }), /combat target/);
+    assert.throws(() => applyDelta(base, { ...createDelta(base, next), combat: { target, inDamageRange: true } }), /combat target/);
+  }
+  const removed = createDelta(base, next); removed.spaces = [{ index: 0, remove: ['pickup'], entities: [] }];
+  assert.throws(() => applyDelta(base, removed), /combat target/);
+  assert.throws(() => validateSnapshot({ ...base, version: 5 }), /version/);
 });

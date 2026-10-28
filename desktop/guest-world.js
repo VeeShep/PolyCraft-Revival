@@ -504,6 +504,13 @@
         if (health.damage && view.shouldDrawOffScreenIcon()) view.drawOffScreenIcon();
       }
     }
+    drawCombatTarget() {
+      if (this.resyncing) return;
+      const combat = this.scene.snapshot?.combat, target = combat && this.scene.entities.get(combat.target);
+      if (!target) return;
+      this.controls.drawTargetCross.call({ gameManager: this.game, isWithinDamageRange: () => combat.inDamageRange,
+        targetEntity: { getName: () => combat.target, getv3Location: () => target.displayLocation || target.record.location } });
+    }
     updateTorch() {
       const lighting = this.game.gameLighting, node = lighting.heroLightNode, state = this.scene.torch;
       if (!node) return;
@@ -530,6 +537,7 @@
       this.updateTorch();
       this.hasFrame = true;
       this.drawHealth();
+      this.drawCombatTarget();
       this.hud.draw();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       if (!this.pauseMenu) this.updateMenu();

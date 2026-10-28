@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const VERSION = 5;
+  const VERSION = 6;
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];
   const meshFields = ['path', 'transform', 'visible', 'skin'];
@@ -16,6 +16,7 @@
     requireValue(Number.isSafeInteger(value.tick) && value.tick >= 0 && number(value.time) && value.time >= 0, 'invalid simulation time.');
     requireValue(number(value.dayTime) && value.dayTime >= 0 && value.dayTime <= 24 && name(value.hero), 'invalid island clock or hero.');
     requireValue(value.torch === null || (keys(value.torch, ['transform', 'visible']) && vector(value.torch.transform, 12) && typeof value.torch.visible === 'boolean'), 'invalid hero light.');
+    requireValue(value.combat === null || keys(value.combat, ['target', 'inDamageRange']) && name(value.combat.target) && typeof value.combat.inDamageRange === 'boolean', 'invalid combat target.');
     const camera = value.camera;
     requireValue(keys(camera, ['mode', 'dead', 'buildingAge', 'destination', 'lookAhead', 'timeHeld', 'heroes', 'enemies', 'center']) && ['explore', 'war', 'building', 'dead'].includes(camera.mode) && typeof camera.dead === 'boolean' && number(camera.buildingAge) && camera.buildingAge >= 0 && number(camera.timeHeld) && camera.timeHeld >= 0 && vector(camera.center, 3), 'invalid camera context.');
     requireValue(camera.destination === null && camera.lookAhead === null || vector(camera.destination, 3) && vector(camera.lookAhead, 3), 'invalid camera movement.');
@@ -51,7 +52,7 @@
     }
   }
   function validateSnapshot(snapshot, assets) {
-    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'spaces']), 'missing or unexpected fields.');
+    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'combat', 'spaces']), 'missing or unexpected fields.');
     requireValue(snapshot.version === VERSION, 'incompatible version.');
     validateHeader(snapshot);
     requireValue(Array.isArray(snapshot.spaces) && snapshot.spaces.length > 0 && snapshot.spaces.length <= LIMITS.spaces, 'invalid space count.');
@@ -71,6 +72,7 @@
     }
     requireValue(ids.has(snapshot.hero), 'the selected hero is missing.');
     requireValue(snapshot.camera.heroes.includes(snapshot.hero) && [...snapshot.camera.heroes, ...snapshot.camera.enemies].every(id => ids.has(id)), 'unknown camera actor.');
+    requireValue(snapshot.combat === null || snapshot.combat.target !== snapshot.hero && ids.has(snapshot.combat.target), 'unknown combat target.');
     return snapshot;
   }
   function captureSnapshot(game, hero = game.getHero()) {
@@ -112,6 +114,8 @@
     const mode = game.getPlayFlags().cameraMode;
     snapshot.camera = { mode: ['explore', 'war', 'building', 'dead'].includes(mode) ? mode : 'explore', dead: !!life?.isDead(), buildingAge: builder ? Math.max(0, builder.getTimeSinceBuilding()) : 1e9,
       destination: destination ? Array.from(destination) : null, lookAhead: destination ? Array.from(movement.getLookAhead()) : null, timeHeld: movement?.getTimeHeld() || 0, heroes: [...heroes], enemies: [...enemies], center: Array.from(hero.getGameSpace().getv3Location()) };
+    const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
+    snapshot.combat = target && target !== hero && !target.shouldBeDestroyed() && ids.has(target.name) ? { target: target.name, inDamageRange: !!automatic.isWithinDamageRange(target.getv3Location()) } : null;
     return validateSnapshot(snapshot);
   }
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -138,10 +142,10 @@
       }
       return patch.remove.length || patch.entities.length || Object.keys(patch).length > 3 ? [patch] : [];
     });
-    return structuredClone({ version: 1, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, torch: next.torch, camera: next.camera, spaces });
+    return structuredClone({ version: 1, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, torch: next.torch, camera: next.camera, combat: next.combat, spaces });
   }
   function validateDelta(delta, assets) {
-    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'spaces']) && delta.version === 1, 'invalid world update.');
+    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'combat', 'spaces']) && delta.version === 1, 'invalid world update.');
     validateHeader(delta);
     requireValue(Number.isSafeInteger(delta.baseTick) && delta.baseTick >= 0 && delta.tick > delta.baseTick, 'invalid update base.');
     requireValue(Array.isArray(delta.spaces) && delta.spaces.length <= LIMITS.spaces, 'invalid changed spaces.');
@@ -170,7 +174,7 @@
       const error = new Error('World update lost synchronization; requesting a fresh snapshot.'); error.code = 'WORLD_BASE_MISMATCH'; throw error;
     }
     const result = structuredClone(previous);
-    for (const key of ['tick', 'time', 'dayTime', 'hero', 'torch', 'camera']) result[key] = structuredClone(delta[key]);
+    for (const key of ['tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'combat']) result[key] = structuredClone(delta[key]);
     for (const patch of delta.spaces) {
       requireValue(patch.index < result.spaces.length, 'unknown space update.');
       const space = result.spaces[patch.index], entities = new Map(space.entities.map(entity => [entity.id, entity]));

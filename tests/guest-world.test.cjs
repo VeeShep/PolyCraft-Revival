@@ -25,7 +25,7 @@ const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
   const entity = id => ({ id, archetype: null, interactive: true, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
-  return { version: 5, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
+  return { version: 6, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -446,4 +446,15 @@ test('shared original pause settings use session data while native solo settings
   game.getGuiManager = () => ({ addDrawGui() {} });
   game.getIMGui = () => ({ doBackground() {}, doButton: () => false });
   native.updateMenu.call({ ...native, ...view }); assert.equal(called, 1, 'original pause menu uses the shared native settings renderer');
+});
+test('guest combat markers use original crosshair artwork and host range at the interpolated target pose', () => {
+  const world = Object.create(GuestWorld.prototype), drawn = [], display = [8, 0, 9];
+  world.scene = { snapshot: { combat: { target: 'enemy', inDamageRange: true } }, entities: new Map([['enemy', { record: { location: [80, 0, 90] }, displayLocation: display }]]) };
+  world.game = { getGuiManager: () => ({ addDrawGui: (...args) => drawn.push(args) }), getHero: () => assert.fail('guest marker must not read the suspended solo hero') };
+  world.controls = { drawTargetCross: require('./runtime-ast.cjs').component('ECAutoFire').drawTargetCross };
+  world.drawCombatTarget(); assert.equal(drawn[0][0], 'crosshair'); assert.equal(drawn[0][1].v3WorldLocation, display); assert.equal(drawn[0][2], 'targetCrossenemy');
+  world.scene.snapshot.combat.inDamageRange = false; world.drawCombatTarget(); assert.equal(drawn[1][0], 'crosshairNo'); assert.equal(drawn[1][1].v3WorldLocation, display);
+  world.resyncing = true; world.drawCombatTarget(); assert.equal(drawn.length, 2);
+  world.resyncing = false; world.scene.entities.clear(); world.drawCombatTarget(); assert.equal(drawn.length, 2);
+  world.scene.snapshot.combat = null; world.drawCombatTarget(); assert.equal(drawn.length, 2);
 });
