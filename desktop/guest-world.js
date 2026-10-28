@@ -336,7 +336,7 @@
       const gui = this.game.getIMGui();
       if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen')) return;
       const target = pickTarget(this, event);
-      if (!target) return;
+      if (!target) { this.movement.requestWalk(this.construction.cursor()); return; }
       this.selectionRequest = this.sendTarget('target', target);
     }
     sendTarget(type, target, archetype) {

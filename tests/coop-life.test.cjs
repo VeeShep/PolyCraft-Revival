@@ -65,7 +65,7 @@ test('actual schema-3 files migrate with exact pre-v6 bytes and refuse the froze
 test('positive-health death animations still block host movement and interaction intents', () => {
   const f = fixture(), { HostMovement } = require('../desktop/coop-input.js'), { HostActions } = require('../desktop/coop-actions.js');
   let destination = null;
-  const locomotion = { setDestination: value => { destination = value; }, clearDestination: () => { destination = null; } };
+  const locomotion = { setDestination: value => { destination = value; }, clearDestination: () => { destination = null; }, clearDestinationEntity() {} };
   const hero = { shouldBeDestroyed: () => false, getv3Location: () => [0, 0, 0], getEC: name => ({ ECPlayerLife: f.life, ECHealth: { getHealth: () => 10 }, ECLocomotion: locomotion, ECPlayerBuilder: { isBuilding: () => false, isThrowing: () => false } })[name] };
   const movement = new HostMovement(() => 0); movement.receive({ type: 'move', sequence: 1, move: [1, 0] }); movement.apply(hero); assert.ok(destination);
   f.life.state = f.life.states.DYING; movement.apply(hero); assert.equal(destination, null);

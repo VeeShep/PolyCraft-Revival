@@ -458,3 +458,13 @@ test('guest combat markers use original crosshair artwork and host range at the 
   world.resyncing = false; world.scene.entities.clear(); world.drawCombatTarget(); assert.equal(drawn.length, 2);
   world.scene.snapshot.combat = null; world.drawCombatTarget(); assert.equal(drawn.length, 2);
 });
+test('a guest ground click reuses the existing cursor projection while an entity click remains a target action', () => {
+  const world = Object.create(GuestWorld.prototype), walked = [], selected = [];
+  world.identity = { entity: 'hero' }; world.scene = { entities: new Map() };
+  world.controls = { app: { globals: { graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: () => [10, 10] } } } };
+  world.game = { getIMGui: () => ({ hasCapturedInput: () => false, isHot: () => false }) };
+  world.construction = { cursor: () => [30, 2, 20] }; world.movement = { requestWalk: location => walked.push(location) }; world.sendTarget = (type, target) => { selected.push([type, target]); return 1; };
+  world.clickTarget({ clientX: 10, clientY: 10 }); assert.deepEqual(walked, [[30, 2, 20]]); assert.deepEqual(selected, []);
+  world.scene.entities.set('enemy', { record: { id: 'enemy', interactive: true, mesh: { visible: true }, location: [1, 0, 1] } });
+  world.clickTarget({ clientX: 10, clientY: 10 }); assert.deepEqual(selected, [['target', 'enemy']]); assert.equal(walked.length, 1);
+});

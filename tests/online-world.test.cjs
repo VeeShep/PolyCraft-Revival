@@ -70,7 +70,7 @@ test('host-selected invitation slots reserve identities, reject duplicate claims
   world.atBoundary = async read => read();
   const registry = new CoopData(emptyState()), first = registry.addPlayer('One'), second = registry.addPlayer('Two');
   const active = new Map();
-  const hero = name => ({ getGameSpace: () => ({ getv3Location: () => [0, 0, 0] }), name, getName: () => name, getEC: () => null, shouldBeDestroyed: () => false, getv3Location: () => [0, 0, 0], getV3Scale: () => [1, 1, 1], getRotationY: () => 0 });
+  const hero = name => ({ getGameSpace: () => ({ getv3Location: () => [0, 0, 0] }), name, getName: () => name, getEC: component => component === 'ECLocomotion' ? { clearDestination() {}, clearDestinationEntity() {}, getDestination: () => null, getTimeHeld: () => 0 } : null, shouldBeDestroyed: () => false, getv3Location: () => [0, 0, 0], getV3Scale: () => [1, 1, 1], getRotationY: () => 0 });
   const host = hero('Host'); game.getHero = () => host; game.getPlayFlags = () => ({}); game.applyToHeroEntities = apply => apply(host); game.getFactionManager = () => ({ applyToEnemies() {} });
   game.gameClock.getFrameIndex = () => 1; game.globals = { gameCurrentTime: 0 }; game.getGameDayTime = () => 12;
   game.getGameSpaceList = () => [{ calculateExtents: () => [-10, -10, -10, 10, 10, 10], getM43FullTransform: () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], getBlockList: () => [], getEntityList: () => [host, ...[...active.values()].map(entry => entry.hero)] }];
@@ -341,4 +341,22 @@ test('disconnect and host shutdown stop guest automatic fire even if constructio
   target = {}; binding.releasing = false; binding.connection = { closed: false, state: 'connected' }; world.peerPlayers.set('peer', binding); world.closing = true;
   world.beginTick(); assert.equal(target, null); assert.equal(stops, 3);
   world.closing = false; world.peerPlayers.clear(); delete world.players; await world.close();
+});
+test('the host dispatcher keeps walking, directional cancellation and construction moves on their separate validated streams', async t => {
+  const { controls, transport } = setup(t), world = await startHostingWorld(controls, transport);
+  const { HostMovement } = require('../desktop/coop-input.js'), { HostActions } = require('../desktop/coop-actions.js');
+  const connection = { peer: 'guest-peer', state: 'connected', closed: false }, input = new HostMovement(), actions = new HostActions(), hero = {};
+  world.players = { active: new Map([['guest', { hero }]]) }; transport.peers.set(connection.peer, connection);
+  world.peerPlayers.set(connection.peer, { id: 'guest', connection, ready: true, input, actions });
+  transport.onMessage = world.receiveMessage.bind(world);
+  try {
+    const send = payload => transport.onMessage({ kind: 'action', payload }, connection);
+    send({ type: 'walk', sequence: 1, location: [30, 2, 20] }); assert.deepEqual(input.pendingWalk, [30, 2, 20]);
+    send({ type: 'move', sequence: 2, move: [0, 0] }); assert.equal(input.pendingWalk, null); assert.equal(input.sequence, 2); assert.equal(actions.sequence, 0);
+    send({ type: 'move', sequence: 3, move: [1, 0] }); assert.deepEqual(input.move, [1, 0]);
+    send({ type: 'move', sequence: 1, target: 'workshop' }); assert.equal(actions.queue[0].target, 'workshop'); assert.equal(actions.sequence, 1); assert.equal(input.sequence, 3);
+    assert.throws(() => send({ type: 'move', sequence: 4, move: [0, 0], target: 'forged hero' }), /Invalid/);
+    assert.equal(input.sequence, 3); assert.equal(actions.sequence, 1);
+    assert.throws(() => transport.onMessage({ kind: 'action', payload: { type: 'move', sequence: 4, move: [0, 0] } }, { ...connection }), /no assigned/);
+  } finally { world.peerPlayers.clear(); transport.peers.clear(); delete world.players; await world.close(); }
 });

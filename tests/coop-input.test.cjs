@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { HostMovement, GuestMovement } = require('../desktop/coop-input.js');
 function hero() {
   let destination = null, health = 50;
-  return { getv3Location: () => [10, 2, 20], getEC: name => name === 'ECHealth' ? { getHealth: () => health } : { setDestination: value => { destination = value; }, clearDestination: () => { destination = null; } },
+  return { getv3Location: () => [10, 2, 20], getEC: name => ({ ECHealth: { getHealth: () => health }, ECLocomotion: { setDestination: value => { destination = value; }, clearDestination: () => { destination = null; }, clearDestinationEntity() {} } })[name],
     destination: () => destination, die: () => { health = 0; } };
 }
 test('host applies normalized intent through the assigned hero locomotion and stops on neutral, timeout or death', () => {
@@ -90,5 +90,68 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   let heldCancellations = 0; world.construction = { placement: { held: true }, cancelHeld() { heldCancellations++; } };
   listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} });
   assert.equal(heldCancellations, 1); assert.equal(cancelled, 1, 'Escape must request authoritative held cancellation rather than silently hide it');
+  world.localMenu = () => false; world.construction = null; input.keys.clear();
+  if (input.pending) await input.pending;
+  const point = [30, 999, 20]; input.requestWalk(point); point[0] = 999;
+  const walk = sent.at(-1).value; assert.equal(walk.type, 'walk'); assert.deepEqual(walk.location, [30, 999, 20]);
+  const before = sent.length; await input.flush(); assert.equal(sent.length, before, 'neutral idle ticks retain a click path');
+  world.localMenu = () => true; await input.flush(); assert.equal(sent.at(-1).value.type, 'move'); assert.deepEqual(sent.at(-1).value.move, [0, 0]); assert.equal(sent.at(-1).value.sequence, walk.sequence + 1);
+  world.localMenu = () => false; input.requestWalk([30, 2, 20]); world.resyncing = true; await input.flush(); assert.deepEqual(sent.at(-1).value.move, [0, 0]);
+  world.resyncing = false; input.requestWalk([30, 2, 20]); nativeFocus(false); await input.flush(); assert.deepEqual(sent.at(-1).value.move, [0, 0]);
+  nativeFocus(true); input.keys.add('KeyW'); const count = sent.length; input.requestWalk([30, 2, 20]); assert.equal(sent.length, count, 'held movement keys take priority over ground clicks');
   input.close(); assert.equal(listeners.size, 0); assert.equal(removed, true);
+});
+function walkingFixture() {
+  const ast = require('./runtime-ast.cjs'), position = [10, 2, 20], state = { admit: true, blocked: true, space: true, dead: false, script: false, building: false, throwing: false, queries: 0, chargeCancelled: 0 };
+  const math = { v3Copy: a => [...a], v3Sub: (a, b) => a.map((v, i) => v - b[i]), v3ScalarMul: (a, b) => a.map(v => v * b), v3Normalize: a => a.map(v => v / Math.hypot(...a)), v3Dot: (a, b) => a.reduce((sum, v, i) => sum + v * b[i], 0), v3Distance2DSq: (a, b) => (a[0] - b[0]) ** 2 + (a[2] - b[2]) ** 2 };
+  const locomotion = { destination: null, entity: {}, setDestination(value) { this.destination = [...value]; }, clearDestination() { this.destination = null; }, clearDestinationEntity() { this.entity = null; } };
+  const hero = { getv3Location: () => position, getCentreLocation: () => [position[0], position[1] + 0.25, position[2]], getEC: name => ({ ECHealth: { getHealth: () => 50 }, ECPlayerLife: { isDead: () => state.dead }, ECLocomotion: locomotion, ECNav: nav, ECPlayerBuilder: { isBuilding: () => state.building, isThrowing: () => state.throwing }, ECChargeAttack: { cancel: () => { state.chargeCancelled++; } } })[name] };
+  const path = { getEndWaypointIndex: () => 2, getV3WaypointLocationByIndex: index => index === 1 ? [10, 2, 25] : [30, 2, 20] };
+  const game = { globals: { mathDevice: math, gameCurrentTime: 1 }, isScriptLocked: () => state.script, getGameSpace: () => state.space ? {} : null,
+    getCollisionInfo: (start, end) => { assert.equal(start[1], 2.25); assert.equal(end[1], 2.25); return state.blocked ? { v3Location: [15, 2.25, 20], v3Normal: [-1, 0, 0] } : null; },
+    getNavManager: () => ({ getPathQueryPeriod: () => 1, getV3ToV3Path(start, end, faction, heights, force) { state.queries++; state.requested = [...end]; assert.equal(start, position); assert.equal(force, true); assert.deepEqual(Array.from(heights), [0.5, -2]); return state.admit ? path : null; } }) };
+  const nav = Object.assign(Object.create(ast.component('ECNav')), { _super() {}, globals: game.globals, gameManager: game, entity: hero, path: null, lastQueryTime: 0, archetype: { canClimb: true, canDrop: true }, getv3Location: () => position, getEntityEC: name => hero.getEC(name) });
+  const controls = { movementMethods: { destination: ast.method('setControllableDestination'), collision: ast.prototypeWith('getv3WorldGroundLocationFromCoord').buildCollisionInfo } };
+  let now = 0; const input = new HostMovement(() => now);
+  return { hero, game, controls, input, nav, locomotion, position, state, time: value => { now = value; } };
+}
+test('walking trust boundary owns finite destinations and rate limits path queries without accepting actor or speed authority', () => {
+  for (const extra of [{ location: Array(3) }, { location: [0, NaN, 1] }, { location: [0, Infinity, 1] }, { location: [0, 1e7, 1] }, { location: [1, 2] }, { target: 'another hero' }, { speed: 100 }, { run: true }]) {
+    const input = new HostMovement(() => 0); assert.throws(() => input.receive({ type: 'walk', sequence: 1, location: [1, 2, 3], ...extra }), /Invalid/); assert.equal(input.sequence, 0);
+  }
+  let now = 0; const input = new HostMovement(() => now), location = [1, 2, 3];
+  input.receive({ type: 'walk', sequence: 1, location }); location[0] = 99; assert.deepEqual(input.pendingWalk, [1, 2, 3]);
+  assert.throws(() => input.receive({ type: 'walk', sequence: 1, location }), /repeated/);
+  for (let sequence = 2; sequence <= 4; sequence++) input.receive({ type: 'walk', sequence, location });
+  assert.throws(() => input.receive({ type: 'walk', sequence: 5, location }), /Too many walking/); assert.equal(input.sequence, 4);
+  now = 1000; input.receive({ type: 'walk', sequence: 5, location }); assert.equal(input.sequence, 5);
+});
+test('ground clicks use actual native navigation, authoritative height and original collision fallback without teleporting', () => {
+  const f = walkingFixture(); f.input.receive({ type: 'walk', sequence: 1, location: [30, 999, 20] }); f.input.apply(f.hero, f.game, f.controls);
+  assert.deepEqual(f.state.requested, [30, 2, 20]); assert.deepEqual(f.position, [10, 2, 20]); assert.deepEqual(f.locomotion.destination, [10, 2, 25]); assert.equal(f.state.chargeCancelled, 1); assert.equal(f.locomotion.entity, null);
+  f.time(10000); f.input.apply(f.hero, f.game, f.controls); assert.ok(f.nav.path, 'click paths survive idle keyboard timeout');
+  f.position[2] = 25; f.nav.update(); assert.deepEqual(f.locomotion.destination, [30, 2, 20]);
+  f.input.receive({ type: 'walk', sequence: 2, location: [...f.position] }); f.input.apply(f.hero, f.game, f.controls);
+  assert.equal(f.nav.path, null); assert.equal(f.locomotion.destination, null, 'same-position clicks cannot revive an old waypoint');
+  f.state.admit = false; f.input.receive({ type: 'walk', sequence: 3, location: [30, 0, 20] }); f.input.apply(f.hero, f.game, f.controls);
+  assert.equal(f.nav.path, null); assert.ok(Math.abs(f.locomotion.destination[0] - 14.65) < 1e-9, 'original normal-clearance collision fallback');
+  f.state.blocked = false; f.state.space = false; f.input.receive({ type: 'walk', sequence: 4, location: [30, 500, 20] }); f.input.apply(f.hero, f.game, f.controls);
+  assert.deepEqual(f.locomotion.destination, [30, 2, 20]);
+});
+test('neutral cancellation, keyboard takeover, life/script/construction guards and forced disconnect clear both native path and destination', () => {
+  for (const reason of ['neutral', 'keyboard', 'dead', 'script', 'building', 'throwing', 'disconnect']) {
+    const f = walkingFixture(); f.input.receive({ type: 'walk', sequence: 1, location: [30, 2, 20] }); f.input.apply(f.hero, f.game, f.controls);
+    if (reason === 'disconnect') f.input.stop(f.hero, true);
+    else { if (['neutral', 'keyboard'].includes(reason)) f.input.receive({ type: 'move', sequence: 2, move: reason === 'keyboard' ? [1, 0] : [0, 0] }); else f.state[reason] = true; f.input.apply(f.hero, f.game, f.controls); }
+    assert.equal(f.nav.path, null, reason); assert.equal(f.locomotion.entity, null, reason); assert.deepEqual(f.locomotion.destination, reason === 'keyboard' ? [15, 2, 20] : null, reason);
+  }
+});
+test('a click following keyboard release stays ordered through send backpressure and only explicit cancellation sends neutral', async () => {
+  const input = Object.create(GuestMovement.prototype), sent = []; let release, direction = [1, 0], available = true;
+  Object.assign(input, { sequence: 0, lastMove: [0, 0], lastSent: -Infinity, keys: new Set(), available: () => available, direction: () => direction,
+    world: { identity: {}, scene: { snapshot: {} }, connection: { state: 'connected', send(_kind, value) { sent.push(value); return value.sequence === 1 ? new Promise(done => { release = done; }) : Promise.resolve(); }, fail: error => { throw error; } } } });
+  const sending = input.flush(); direction = [0, 0]; input.flush(); input.requestWalk([30, 2, 20]);
+  assert.deepEqual(sent.map(value => [value.type, value.sequence]), [['move', 1], ['walk', 2]]);
+  release(); await sending; assert.equal(sent.length, 2, 'a late dirty keyboard flush must not cancel the new path');
+  available = false; await input.flush(); assert.equal(sent[2].type, 'move'); assert.equal(sent[2].sequence, 3); assert.deepEqual(sent[2].move, [0, 0]);
 });

@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current resource interaction parity — Beta 30, 2026-10-27
+## Current ground movement and movement dispatch — Beta 31, 2026-10-27
+
+Empty-ground clicks send a bounded `walk` intent on the connection-owned movement sequence. Guest projection reuses the original hero-height plane implementation; host height is authoritative. Native collision/controller methods and ECNav perform path admission, faction/climb/drop handling and collision-adjusted fallback without teleporting. Old path/destination/entity references clear on replacement (including same-position clicks), keyboard takeover and explicit cancellation. Idle ticks keep paths; client menus/focus/resync and server life/script/construction/disconnect/shutdown stop them. Path requests are independently rate-limited within the movement budget. Ordinary autofire stays native and independent.
+
+A narrow reviewer identified an existing `move` routing ambiguity: directional/neutral messages were entering building relocation validation. The connection-bound receiveMessage dispatcher now distinguishes the directional `move` field, retaining exact input/building validators and independent sequences. Actual dispatcher tests cover walk, neutral, WASD, building move, combined authority fields and copied connections. Native-method and client backpressure/cancellation tests bring the suite to 312 passing checks.
+
+Final ARM64 ZIP architecture/signature/source and packaged Node checks pass. Runtime changes to coop-23, requiring matching Beta 31 peers; world/delta/signaling/save/quest/co-op stay 6/1/2/7/1/4. No game or personal save was opened. Real terrain, held/drag control parity, original gameplay interactions, native OS and physical-network acceptance remain open; see RESTORATION_STATUS.md.
+
+## Previous resource interaction parity — Beta 30, 2026-10-27
 
 Original `liftTargetedInteractable` asks `ECInteractable.shouldApproachOnUp` before choosing movement or immediate callbacks. All nine interactable tree/rock/seed resource archetypes explicitly disable required movement; the remaining resource definition is non-interactable scenery. Guest-only unconditional reach/ray checks were therefore a parity bug. The host now applies them only for interactions requesting approach, while direct interactions use the original callback and assigned actor. Native activity/depletion and actor/script/construction guards, sequence/rate/queue validation and original drop/upgrade/quest processing remain unchanged. No client amounts or resource edits are introduced.
 

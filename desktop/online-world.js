@@ -42,7 +42,7 @@
         const entry = this.players?.active.get(binding.id);
         if (!entry || !binding.ready) continue;
         if (!this.closing && !binding.releasing && !binding.connection.closed && binding.connection.state === 'connected') {
-          binding.input.apply(entry.hero);
+          binding.input.apply(entry.hero, this.game, this.controls);
           const result = binding.actions.apply(this.game, entry.hero, this.players, this.controls);
           if (result) {
             const { save, ...payload } = result;
@@ -51,7 +51,7 @@
             saved.then(() => { if (!binding.connection.closed) return binding.connection.send('result', payload); }).catch(error => { if (!binding.connection.closed) binding.connection.fail(error); });
           }
         }
-        else { binding.input.stop(entry.hero); binding.actions.stop(entry.hero); }
+        else { binding.input.stop(entry.hero, true); binding.actions.stop(entry.hero); }
       }
     }
     endTick() {
@@ -122,20 +122,22 @@
         }
         this.original.peerState?.(peer, state, details);
       };
-      this.transport.onMessage = (message, connection) => {
-        const binding = this.peerPlayers.get(connection.peer);
-        if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) return;
-        this.playerFor(connection);
-        if (message.kind === 'resync') { this.requestResync(connection, message.payload); return; }
-        if (message.kind === 'action') {
-          if (['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(message.payload.type)) binding.actions.receive(message.payload);
-          else binding.input.receive(message.payload);
-          return;
-        }
-        if (message.kind !== 'hello' || Object.keys(message.payload).length !== 1 || message.payload.version !== 1) throw new Error('Invalid guest message. Guests cannot select heroes or edit saved state.');
-        this.original.peerMessage?.(message, connection);
-      };
+      this.transport.onMessage = this.receiveMessage.bind(this);
       return this.players;
+    }
+    receiveMessage(message, connection) {
+      const binding = this.peerPlayers.get(connection.peer);
+      if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) return;
+      this.playerFor(connection);
+      if (message.kind === 'resync') { this.requestResync(connection, message.payload); return; }
+      if (message.kind === 'action') {
+        const directional = message.payload.type === 'move' && Object.hasOwn(message.payload, 'move');
+        if (!directional && ['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(message.payload.type)) binding.actions.receive(message.payload);
+        else binding.input.receive(message.payload);
+        return;
+      }
+      if (message.kind !== 'hello' || Object.keys(message.payload).length !== 1 || message.payload.version !== 1) throw new Error('Invalid guest message. Guests cannot select heroes or edit saved state.');
+      this.original.peerMessage?.(message, connection);
     }
     async createPlayerInvitation(id) {
       if (!this.players || this.closed || this.closing || id === this.players.registry.data.host || this.guestSlots.has(id) || (this.players.active.has(id) && !this.detachedPlayers.has(id))) throw new Error('Choose an available saved guest hero before creating an invitation.');
@@ -206,7 +208,7 @@
         if (binding.joined && !this.closed) {
           await this.atBoundary(() => {
             const entry = this.players.active.get(binding.id);
-            if (entry) { binding.input.stop(entry.hero); binding.actions.stop(entry.hero); }
+            if (entry) { binding.input.stop(entry.hero, true); binding.actions.stop(entry.hero); }
             try { this.players.remove(binding.id); }
             catch (error) {
               // Keep a disconnected hero's held construction alive until the host can reconnect or finish it.
