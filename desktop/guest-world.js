@@ -336,7 +336,14 @@
       const gui = this.game.getIMGui();
       if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen')) return;
       const target = pickTarget(this, event);
-      if (!target) { this.movement.requestWalk(this.construction.cursor()); return; }
+      if (!target) {
+        if (this.movement.requestWalk(this.construction.cursor())) {
+          this.groundDrag = Object.assign(Object.create(this.controls.movementMethods.gesture), { globals: this.controls.app.globals, prevDown: true,
+            downTime: this.controls.app.globals.appCurrentTime, downv2ScreenCoord: [...this.guiInput.position], crashMobController: { getv2ScreenCoord: () => this.guiInput.position }, lastSent: -Infinity, steered: false });
+          if (typeof event.pointerId === 'number') { try { this.movement.canvas.setPointerCapture?.(event.pointerId); } catch { this.cancelGroundDrag(true); } }
+        }
+        return;
+      }
       this.selectionRequest = this.sendTarget('target', target);
     }
     sendTarget(type, target, archetype) {
@@ -451,6 +458,7 @@
       }
     }
     cancelLocalMenu() {
+      this.groundDrag = null;
       this.pauseMenu = false;
       this.selectedBuilding = this.demolition = null;
       this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel(); this.quests?.cancel();
@@ -463,7 +471,26 @@
       this.construction.pointer(event, value);
       if (value.button !== 0) return;
       if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = !this.controls.paused;
-      if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) this.guiInput.pendingDown = false;
+      if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) { this.guiInput.pendingDown = false; this.finishGroundDrag(); }
+    }
+    cancelGroundDrag(stop = false) {
+      if (!this.groundDrag) return;
+      this.groundDrag = null; this.guiInput.down = this.guiInput.pendingDown = false;
+      if (stop) this.movement.cancelWalk();
+    }
+    updateGroundDrag() {
+      const drag = this.groundDrag;
+      if (!drag) return;
+      if (!this.movement.available()) { this.cancelGroundDrag(true); return; }
+      const now = performance.now();
+      if (drag.hasHeldOrSwiped() && now - drag.lastSent >= 50 && this.movement.requestWalk(this.construction.cursor(), 'drag')) { drag.lastSent = now; drag.steered = true; }
+    }
+    finishGroundDrag() {
+      const drag = this.groundDrag;
+      if (!drag) return;
+      this.groundDrag = null;
+      if (!this.movement.available()) { this.movement.cancelWalk(); return; }
+      if ((drag.steered || drag.hasHeldOrSwiped()) && !this.movement.requestWalk(this.construction.cursor(), 'release')) this.movement.cancelWalk();
     }
     updateMenu() {
       if (this.updateLife()) return;
@@ -533,7 +560,7 @@
       globals.gameCurrentTime = state.time;
       game.gameDayTime = state.dayTime;
       game.applyDayNightTime();
-      this.viewCamera.update(); game.gameLighting.update();
+      this.viewCamera.update(); this.updateGroundDrag(); game.gameLighting.update();
       this.updateTorch();
       this.hasFrame = true;
       this.drawHealth();

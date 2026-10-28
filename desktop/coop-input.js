@@ -9,19 +9,22 @@
     }
     receive(value) {
       const walk = value?.type === 'walk';
-      if (!value || Object.keys(value).length !== 3 || !['move', 'walk'].includes(value.type) ||
+      if (!value || Object.keys(value).length !== (walk ? 4 : 3) || !['move', 'walk'].includes(value.type) ||
           !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 ||
-          (walk ? !Array.isArray(value.location) || value.location.length !== 3 || !Array.from(value.location).every(number => typeof number === 'number' && Number.isFinite(number) && Math.abs(number) <= 1e6) :
+          (walk ? !['click', 'drag', 'release'].includes(value.mode) || !Array.isArray(value.location) || value.location.length !== 3 || !Array.from(value.location).every(number => typeof number === 'number' && Number.isFinite(number) && Math.abs(number) <= 1e6) :
           !Array.isArray(value.move) || value.move.length !== 2 || !Array.from(value.move).every(number => typeof number === 'number' && Number.isFinite(number)) || !Number.isFinite(Math.hypot(...value.move)) || Math.hypot(...value.move) > 1.000001)) {
         throw new Error('Invalid or repeated movement intent. Guests cannot select heroes or edit saved state.');
       }
       const now = this.now();
       this.tokens = Math.min(30, this.tokens + Math.max(0, now - this.tokenTime) * 0.03); this.tokenTime = now;
       if (this.tokens < 1) throw new Error('Too many movement messages.');
-      if (walk) {
+      if (walk && value.mode !== 'drag') {
         this.walkTokens = Math.min(4, this.walkTokens + Math.max(0, now - this.walkTime) * 0.01); this.walkTime = now;
         if (this.walkTokens < 1) throw new Error('Too many walking commands.');
-        this.walkTokens--; this.pendingWalk = [...value.location]; this.cancelWalk = false; this.move = [0, 0];
+        this.walkTokens--;
+      }
+      if (walk) {
+        this.pendingWalk = { location: [...value.location], mode: value.mode }; this.cancelWalk = false; this.move = [0, 0];
       } else {
         const length = Math.max(1, Math.hypot(...value.move));
         this.move = value.move.map(number => number / length); this.pendingWalk = null; this.cancelWalk = this.walking || this.cancelWalk;
@@ -36,18 +39,18 @@
         const requested = this.pendingWalk;
         this.stop(hero, true);
         const builder = hero.getEC('ECPlayerBuilder');
-        if (builder?.isBuilding() || builder?.isThrowing() || !controls?.movementMethods) return;
-        const location = [requested[0], hero.getv3Location()[1], requested[2]], methods = controls.movementMethods;
+        if (builder?.isBuilding() || builder?.isThrowing() || !controls?.movementMethods || requested.mode === 'drag' && this.now() - this.receivedAt > 600) return;
+        const location = [requested.location[0], hero.getv3Location()[1], requested.location[2]], steering = requested.mode === 'drag', methods = controls.movementMethods;
         const view = { gameManager: game, globals: game.globals, getHeroEntity: () => hero, getTargetEntity: () => null,
           getv3WorldCursorLocation: () => location, getHighHeroLocation: () => hero.getCentreLocation() };
         view.collisionInfo = methods.collision.call(view, location);
-        methods.destination.call(view, true, false, true);
-        this.walking = true;
+        methods.destination.call(view, !steering, requested.mode !== 'click', !steering);
+        this.walking = true; this.steering = steering;
         return;
       }
       if (this.walking) {
         const builder = hero.getEC('ECPlayerBuilder');
-        if (builder?.isBuilding() || builder?.isThrowing()) this.stop(hero);
+        if (builder?.isBuilding() || builder?.isThrowing() || this.steering && this.now() - this.receivedAt > 600) this.stop(hero);
         return;
       }
       const move = this.now() - this.receivedAt <= 600 ? this.move : [0, 0];
@@ -63,7 +66,7 @@
         hero.getEC('ECNav')?.endPath();
         const locomotion = hero.getEC('ECLocomotion'); locomotion.clearDestination(); locomotion.clearDestinationEntity();
       }
-      this.moving = this.walking = this.cancelWalk = false; this.pendingWalk = null;
+      this.moving = this.walking = this.steering = this.cancelWalk = false; this.pendingWalk = null;
     }
   }
   class GuestMovement {
@@ -76,7 +79,7 @@
       const focus = focused => {
         if (this.closed) return;
         this.nativeFocused = focused;
-        if (!focused) { this.keys.clear(); this.flush(); }
+        if (!focused) { this.world.cancelGroundDrag?.(); this.keys.clear(); this.flush(); }
       };
       this.unsubscribeFocus = root.desktop?.onWindowFocusChanged?.(focused => { receivedFocusEvent = true; focus(focused); });
       root.desktop?.windowFocused?.().then(focused => { if (!receivedFocusEvent) focus(focused); }).catch(error => { if (!this.closed) this.world.connection.fail(error); });
@@ -110,10 +113,11 @@
         if (root.document.activeElement === this.canvas) { event.preventDefault(); event.stopImmediatePropagation(); }
         this.flush();
       });
-      listen('blur', () => { this.keys.clear(); this.flush(); });
-      listen('focusout', () => { if (root.document.activeElement !== this.canvas) { this.keys.clear(); this.flush(); } });
+      listen('blur', () => { this.world.cancelGroundDrag?.(); this.keys.clear(); this.flush(); });
+      listen('focusout', () => { if (root.document.activeElement !== this.canvas) { this.world.cancelGroundDrag?.(); this.keys.clear(); this.flush(); } });
+      for (const event of ['pointercancel', 'lostpointercapture']) listen(event, value => { if (value.target === this.canvas) this.world.cancelGroundDrag?.(true); });
       for (const event of ['mousemove', 'pointermove', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel', 'contextmenu']) listen(event, value => {
-        if (value.target !== this.canvas) return;
+        if (value.target !== this.canvas) { if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) this.world.cancelGroundDrag?.(true); return; }
         value.preventDefault(); value.stopImmediatePropagation();
         if (['mousedown', 'pointerdown', 'touchstart'].includes(event)) this.canvas.focus();
         if (['mousemove', 'pointermove', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'].includes(event)) this.world.pointer?.(event, value);
@@ -136,20 +140,27 @@
       const move = [right[0] * x + forward[0] * y, right[1] * x + forward[1] * y], length = Math.hypot(...move);
       return length ? move.map(number => number / length) : [0, 0];
     }
-    requestWalk(location) {
-      if (!location || !this.available() || this.direction().some(Boolean)) return;
-      this.walkRequested = true; this.lastMove = [0, 0];
-      this.world.connection.send('action', { type: 'walk', sequence: ++this.sequence, location: [...location] }).catch(error => { if (!this.closed && !this.world.connection.closed) this.world.connection.fail(error); });
+    requestWalk(location, mode = 'click') {
+      if (!location || !this.available() || this.direction().some(Boolean)) return false;
+      this.walkRequested = true; this.stopWalk = false; this.lastMove = [0, 0]; this.queuedWalk = { location: [...location], mode };
+      this.flush();
+      return true;
+    }
+    cancelWalk() {
+      if (!this.walkRequested && !this.queuedWalk) return;
+      this.stopWalk = true; this.queuedWalk = null; this.flush();
     }
     async flush() {
       if (this.closed || !this.world.identity || !this.world.scene.snapshot || this.world.connection.closed || this.world.connection.state !== 'connected') return;
+      const available = this.available(), move = this.direction(), cancelWalk = this.walkRequested && (this.stopWalk || !available || move.some(Boolean));
+      if (cancelWalk) { this.stopWalk = true; this.queuedWalk = null; this.world.cancelGroundDrag?.(); }
       if (this.pending) { this.dirty = true; return this.pending; }
-      const available = this.available(), move = this.direction(), now = performance.now(), cancelWalk = this.walkRequested && (!available || move.some(Boolean)), changed = move.some((number, index) => number !== this.lastMove[index]);
-      if (!cancelWalk && ((!changed && !(move[0] || move[1])) || ((move[0] || move[1] || !changed) && now - this.lastSent < 50))) return;
-      if (cancelWalk) this.walkRequested = false;
-      this.lastMove = move; this.lastSent = now;
+      const now = performance.now(), walk = this.queuedWalk, changed = move.some((number, index) => number !== this.lastMove[index]);
+      if (!walk && !cancelWalk && ((!changed && !move.some(Boolean)) || ((move.some(Boolean) || !changed) && now - this.lastSent < 50))) return;
+      if (cancelWalk) { this.walkRequested = this.stopWalk = false; }
+      this.queuedWalk = null; this.lastMove = walk ? [0, 0] : move; this.lastSent = now;
       try {
-        this.pending = this.world.connection.send('action', { type: 'move', sequence: ++this.sequence, move });
+        this.pending = this.world.connection.send('action', walk ? { type: 'walk', sequence: ++this.sequence, ...walk } : { type: 'move', sequence: ++this.sequence, move });
         await this.pending;
       } catch (error) { if (!this.closed && !this.world.connection.closed) this.world.connection.fail(error); }
       finally {

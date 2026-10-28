@@ -1,6 +1,6 @@
 # PolyCraft restoration: current roadmap and status
 
-Updated 2026-10-27. **Resumable goal is active**, verified through the goal service on 2026-10-26. The roadmap below is the durable goal specification for this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). The stored objective still contains older wording deferring room codes; the available tools cannot edit that objective. The user-approved room/network requirements below supersede that older deferral. Do not mark restoration complete while required implementation or acceptance remains open.
+Updated 2026-10-28. **Resumable goal is active**, verified through the goal service on 2026-10-26. The roadmap below is the durable goal specification for this chat (`01a1601b-422f-7f80-8849-3ecc3571969c`). The stored objective still contains older wording deferring room codes; the available tools cannot edit that objective. The user-approved room/network requirements below supersede that older deferral. Do not mark restoration complete while required implementation or acceptance remains open.
 
 Preserve the original appearance and progression while making the game independently playable, maintainable, and shareable. Order: **foundations → multiplayer → gameplay expansion**. The historical appendix below records earlier work; its old instructions and status statements do not override this roadmap.
 
@@ -33,7 +33,21 @@ Reference audit: [FlimLick/flimssite/tools/stun](https://github.com/FlimLick/fli
 
 Implementation order: bounded signaling/room protocol and server with deployment instructions → authenticated room-code host/join adapter → direct-first route coordinator and staged WebRTC/TURN → network timing/bandwidth instrumentation and disposable acceptance. Beta 8 now contains source and local non-GUI checks for the first three steps with manually configured TURN. Automatic credential issuance, measurements and physical gameplay/deployment acceptance remain next. Continue preserving existing multiplayer/save/gameplay gates; no backend deployment, provider account setup or automatic router mappings occurred in this requirements pass. That requirements checkpoint changed documentation only; the subsequent room implementation is Beta 6, recorded below.
 
-## Current source: Beta 32 verified input-controller readability — 2026-10-27
+## Current source: Beta 33 guest held/drag ground movement — 2026-10-28
+
+Working version is **1.0.0-beta.33**, runtime **`polycraft-1.0.0.25-coop-24`**. Use matching Beta 33 peers: walking now includes a required click/drag/release mode. World/delta/signaling/save/quest/co-op remain 6/1/2/7/1/4; island formats are unchanged.
+
+- Empty-ground gestures reuse the original controller predicates: hold strictly longer than 0.5 seconds or swipe more than 10 pixels. Steering sends at most every 50 ms; release requests native navigation with the original run/collision flags. This restores original ground controls, not a new upgradeable sprint system. Host collision, height, pathfinding and actor guards remain authoritative.
+- Pointer and keyboard commands share one ordered send chain. Pending drag commands coalesce; release replaces an unsent drag. Focus/menu/resync cancellation stays latched through slow sends and rapid focus return. Lost capture, pointer cancellation and outside release stop active gestures; normal automatic capture loss after release does not cancel the accepted path.
+- Host steering expires after 600 ms, including stale queued steering. Click/release path requests retain the separate path-query budget; drag uses the shared movement budget without triggering path queries.
+- **320 unit/regression checks pass**, including actual native gesture thresholds/controller/navigation methods, release flags, stale steering, send ordering/coalescing, pointer cancellation and sticky focus cancellation. A narrow read-only review found no concrete must-fix issue. No graphical game or personal island was opened.
+- Final local ZIP: `/private/tmp/polycraft-beta33-package.QluQwK/PolyCraft-Offline-1.0.0-beta.33-mac-arm64.zip`. Fresh extraction verifies 14 ARM64 Mach-O files, deep/strict ad-hoc signature and exact source equality for all four changed runtime files. Packaged Node 24.22.0 compiles the bundle, loads host/guest modules, verifies Beta 33 metadata and exercises movement mode admission/refusal; exit 0. The harmless macOS `task_name_for_pid` diagnostic remains. Temporary packages are local verification artifacts, not durable public downloads.
+
+**Resume here:** review Beta 33 CI/package availability after this checkpoint. Graphical tests remain deferred by the user. Test visible two/four-player empty-ground holds/swipes, terrain, UI boundaries, physical pointer capture, cancellation and release paths when graphical testing resumes. Entity-target-to-held-movement parity and held cursor visuals remain open, along with broader combat/effects/audio/menu/campaign parity. Native-platform gameplay, physical LAN/forwarding/UPnP/STUN/TURN, public room-service deployment and temporary provider credential issuance remain open. Restoration goal remains active and incomplete; this checkpoint does not create unattended work.
+
+**Beta 32 CI succeeded:** [run 40635429089](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40635429089), source `fc76b750426dd85e178fdf97ffa3a79fe08f5cba`. Checks and all six platform package jobs passed; all eight platform/format artifacts verified present and non-expired during this revision. Packaging is not native gameplay acceptance. Beta 32 peers cannot join Beta 33.
+
+## Previous source: Beta 32 verified input-controller readability — 2026-10-27
 
 Working version is **1.0.0-beta.32**. Two private input constructors now have descriptive role names: `oa` → `GameInputController` (gameController factory) and `Yd` → `HeroControllerAction` (shared controllerActionA/B factories). These labels are supported by local definitions; their lost original names remain unknown. The 70 references plus declarations changed through scope-aware AST binding selection and source spans, preserving surrounding formatting.
 

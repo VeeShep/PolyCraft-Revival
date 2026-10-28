@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current ground movement and movement dispatch — Beta 31, 2026-10-27
+## Current held/drag ground controls — Beta 33, 2026-10-28
+
+Guest empty-ground input reuses actual native hold/swipe predicates and click/drag/release destination flags. Steering is capped at 20 Hz, shares the keyboard movement sequence and send chain, coalesces under backpressure and expires on the host after 600 ms. Path-query limits remain separate. Focus/menu/resync cancellation stays latched while sends are pending; pointer cancellation/lost capture/outside release stop active gestures, while normal capture loss after accepted release does not stop its path.
+
+All 320 checks pass, including actual native methods and ordering/cancellation regressions. A narrow read-only review found no concrete must-fix issue. The Mac ARM64 ZIP passes source, architecture, signature and packaged Node checks. Runtime coop-24 requires matching Beta 33 peers; world/delta/signaling/save/quest/co-op remain 6/1/2/7/1/4. No graphical game or personal save was opened. Physical pointer capture, terrain/UI behavior, entity-target-to-held-movement parity, cursor visuals, native gameplay and real-network acceptance remain open. See RESTORATION_STATUS.md for the continuation checkpoint.
+
+## Previous ground movement and movement dispatch — Beta 31, 2026-10-27
 
 Empty-ground clicks send a bounded `walk` intent on the connection-owned movement sequence. Guest projection reuses the original hero-height plane implementation; host height is authoritative. Native collision/controller methods and ECNav perform path admission, faction/climb/drop handling and collision-adjusted fallback without teleporting. Old path/destination/entity references clear on replacement (including same-position clicks), keyboard takeover and explicit cancellation. Idle ticks keep paths; client menus/focus/resync and server life/script/construction/disconnect/shutdown stop them. Path requests are independently rate-limited within the movement budget. Ordinary autofire stays native and independent.
 

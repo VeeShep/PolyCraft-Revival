@@ -463,8 +463,41 @@ test('a guest ground click reuses the existing cursor projection while an entity
   world.identity = { entity: 'hero' }; world.scene = { entities: new Map() };
   world.controls = { app: { globals: { graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: () => [10, 10] } } } };
   world.game = { getIMGui: () => ({ hasCapturedInput: () => false, isHot: () => false }) };
-  world.construction = { cursor: () => [30, 2, 20] }; world.movement = { requestWalk: location => walked.push(location) }; world.sendTarget = (type, target) => { selected.push([type, target]); return 1; };
+  world.construction = { cursor: () => [30, 2, 20] }; world.movement = { requestWalk(location) { walked.push(location); return false; } }; world.sendTarget = (type, target) => { selected.push([type, target]); return 1; };
   world.clickTarget({ clientX: 10, clientY: 10 }); assert.deepEqual(walked, [[30, 2, 20]]); assert.deepEqual(selected, []);
   world.scene.entities.set('enemy', { record: { id: 'enemy', interactive: true, mesh: { visible: true }, location: [1, 0, 1] } });
   world.clickTarget({ clientX: 10, clientY: 10 }); assert.deepEqual(selected, [['target', 'enemy']]); assert.equal(walked.length, 1);
+});
+function groundGesture() {
+  const world = Object.create(GuestWorld.prototype), requested = [], globals = { appCurrentTime: 0,
+    mathDevice: { v2DistanceSq: (a, b) => a.reduce((sum, value, index) => sum + (value - b[index]) ** 2, 0) },
+    graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: () => null } };
+  let available = true, cancelled = 0, captured = null;
+  world.identity = { entity: 'hero' }; world.scene = { entities: new Map() }; world.guiInput = { position: [0, 0] };
+  world.controls = { app: { globals }, movementMethods: { gesture: require('./runtime-ast.cjs').prototypeWith('hasHeldOrSwiped') } };
+  world.game = { getIMGui: () => ({ hasCapturedInput: () => false, isHot: () => false }) };
+  world.construction = { cursor: () => [30, 2, 20], pointer() {} };
+  world.movement = { canvas: { ...globals.graphicsDevice.canvas, setPointerCapture: id => { captured = id; } }, available: () => available,
+    requestWalk(location, mode = 'click') { if (!available || !location) return false; requested.push({ location, mode }); return true; }, cancelWalk() { cancelled++; } };
+  return { world, globals, requested, captured: () => captured, cancelled: () => cancelled, unavailable: () => { available = false; } };
+}
+test('ground holds and swipes use the actual original thresholds and send one released navigation command', t => {
+  t.mock.method(performance, 'now', () => 1000);
+  const f = groundGesture(); f.world.clickTarget({ clientX: 0, clientY: 0, pointerId: 7 }); assert.equal(f.captured(), 7);
+  f.globals.appCurrentTime = 0.5; f.world.updateGroundDrag(); assert.deepEqual(f.requested.map(value => value.mode), ['click']);
+  f.globals.appCurrentTime = 0.501; f.world.updateGroundDrag(); f.world.updateGroundDrag(); assert.deepEqual(f.requested.map(value => value.mode), ['click', 'drag'], 'steering sends at most once per 50 ms');
+  f.world.finishGroundDrag(); f.world.finishGroundDrag(); assert.deepEqual(f.requested.map(value => value.mode), ['click', 'drag', 'release']); assert.equal(f.world.groundDrag, null);
+  f.world.cancelGroundDrag(true); assert.equal(f.cancelled(), 0, 'automatic lost capture after release cannot cancel its path');
+  const swipe = groundGesture(); swipe.world.clickTarget({ clientX: 0, clientY: 0 }); swipe.world.guiInput.position = [10, 0]; swipe.world.updateGroundDrag(); assert.equal(swipe.requested.length, 1);
+  swipe.world.guiInput.position = [10.01, 0]; swipe.world.updateGroundDrag(); assert.equal(swipe.requested[1].mode, 'drag');
+  const click = groundGesture(); click.world.clickTarget({ clientX: 0, clientY: 0 }); click.world.finishGroundDrag(); assert.deepEqual(click.requested.map(value => value.mode), ['click']);
+});
+test('lost pointer, unavailable input and an invalid release cursor cannot retain or resume a ground gesture', () => {
+  for (const reason of ['lost', 'unavailable', 'cursor']) {
+    const f = groundGesture(); f.world.clickTarget({ clientX: 0, clientY: 0 });
+    if (reason === 'lost') f.world.cancelGroundDrag(true);
+    if (reason === 'unavailable') { f.unavailable(); f.world.updateGroundDrag(); }
+    if (reason === 'cursor') { f.globals.appCurrentTime = 1; f.world.construction.cursor = () => null; f.world.finishGroundDrag(); }
+    assert.equal(f.world.groundDrag, null, reason); assert.equal(f.cancelled(), 1, reason); assert.equal(f.requested.length, 1, reason);
+  }
 });

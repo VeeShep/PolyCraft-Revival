@@ -351,7 +351,7 @@ test('the host dispatcher keeps walking, directional cancellation and constructi
   transport.onMessage = world.receiveMessage.bind(world);
   try {
     const send = payload => transport.onMessage({ kind: 'action', payload }, connection);
-    send({ type: 'walk', sequence: 1, location: [30, 2, 20] }); assert.deepEqual(input.pendingWalk, [30, 2, 20]);
+    send({ type: 'walk', mode: 'click', sequence: 1, location: [30, 2, 20] }); assert.deepEqual(input.pendingWalk, { location: [30, 2, 20], mode: 'click' });
     send({ type: 'move', sequence: 2, move: [0, 0] }); assert.equal(input.pendingWalk, null); assert.equal(input.sequence, 2); assert.equal(actions.sequence, 0);
     send({ type: 'move', sequence: 3, move: [1, 0] }); assert.deepEqual(input.move, [1, 0]);
     send({ type: 'move', sequence: 1, target: 'workshop' }); assert.equal(actions.queue[0].target, 'workshop'); assert.equal(actions.sequence, 1); assert.equal(input.sequence, 3);
