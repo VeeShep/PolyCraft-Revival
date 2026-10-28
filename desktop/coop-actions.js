@@ -35,7 +35,18 @@
       } else { if (this.tokens < 1) throw new Error('Too many target actions.'); this.tokens--; }
       this.sequence = value.sequence; this.queue.push({ ...value, ...(placement ? { location: [...value.location] } : {}), ...(value.type === 'repair' || buildingUpgrade ? { costs: [...value.costs] } : {}) });
     }
+    stop(hero) { hero.getEC('ECAutoFire')?.disable(); }
+    updateCombat(game, hero, players) {
+      const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
+      if (!target) return;
+      const life = hero.getEC('ECPlayerLife'), builder = hero.getEC('ECPlayerBuilder');
+      if (hero.shouldBeDestroyed() || target.shouldBeDestroyed() || game.isScriptLocked() ||
+          hero.getEC('ECHealth').getHealth() <= 0 || life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL) ||
+          builder.isBuilding() || builder.isThrowing() || !target.getEC('ECTarget')?.isValidTarget(hero) ||
+          !target.getEC('ECHealth') || target.getEC('ECHealth').getHealth() <= 0 || !players.canDamage(target, hero)) automatic.disable();
+    }
     apply(game, hero, players, controls) {
+      this.updateCombat(game, hero, players);
       const action = this.queue.shift();
       if (!action) return null;
       const result = this.execute(game, hero, players, action.target, controls, action.type, action);
@@ -118,12 +129,16 @@
       }
       if (target === hero || !target.getEC('ECTarget')?.isValidTarget(hero) || !target.getEC('ECHealth') || target.getEC('ECHealth').getHealth() <= 0) return 'That target cannot be attacked.';
       if (!players.canDamage(target, hero)) return 'Friendly targets are protected.';
-      const firearm = hero.getEC('ECFirearm');
-      if (!firearm?.hasWeapon() || !firearm.isWithinRange(target.getv3Location())) return 'Target out of weapon range.';
-      if (!firearm.getCanFire() || firearm.getAmmo() <= 0) return 'Weapon is reloading.';
-      firearm.attemptFire(target);
-      game.eventManager.notify('PlayerAttackedTarget', target);
-      return 'Attack issued.';
+      const firearm = hero.getEC('ECFirearm'), automatic = hero.getEC('ECAutoFire');
+      if (!firearm?.hasWeapon() || !(automatic ? automatic.isWithinFiringRange(target.getv3Location()) : firearm.isWithinRange(target.getv3Location()))) return 'Target out of weapon range.';
+      const ready = firearm.getCanFire() && firearm.getAmmo() > 0;
+      if (ready) {
+        try { firearm.attemptFire(target); }
+        finally { firearm.clearOverloadProjectile(); }
+      }
+      automatic?.setTargetEntity(target);
+      if (ready || automatic) game.eventManager.notify('PlayerAttackedTarget', target);
+      return ready ? 'Attack issued.' : automatic ? 'Target selected. Weapon is reloading.' : 'Weapon is reloading.';
     }
   }
   function pickTarget(world, event) {

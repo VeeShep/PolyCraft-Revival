@@ -22,7 +22,7 @@ function fixture() {
     const builder = { held: false, entity: null, getHeldObjectName: () => 'wall', getHeldItemQuantity: () => 1, canCancelHeldBuilding: () => true, isBuilding() { return this.held; }, isThrowing: () => false,
       clearInHand() { events.push(['clear']); this.held = false; this.spMoveFromEntity = undefined; },
       getMoveFromEntity() { return this.spMoveFromEntity?.get(); }, placeMoveScaffoldInHand(archetype, entity, parent) { assert.equal(archetype, 'wall'); assert.equal(parent, null); this.spMoveFromEntity = entity.getSmartPointer(); this.held = true; this.instantBuildFlavour = true; } };
-    const hero = { getName: () => id, shouldBeDestroyed: () => false, getEC: name => name === 'ECPlayerBuilder' ? builder : name === 'ECHealth' ? { getHealth: () => 10 } : { clearDestination() {}, clearDestinationEntity() {} } }; builder.entity = hero;
+    const hero = { getName: () => id, shouldBeDestroyed: () => false, getEC: name => name === 'ECAutoFire' ? null : name === 'ECPlayerBuilder' ? builder : name === 'ECHealth' ? { getHealth: () => 10 } : { clearDestination() {}, clearDestinationEntity() {} } }; builder.entity = hero;
     game.desktopPlayers.active.set(id, { hero }); game.desktopPlayers.registry.data.players.push({ id, construction: null }); return { hero, builder };
   }
   const first = actor('one'), second = actor('two'); game.getGameEntityByName = id => id === 'Wall_1' ? source : null;

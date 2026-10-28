@@ -324,3 +324,21 @@ test('host menu quests update before coherent snapshot capture', async t => {
   game.getActiveGameState = () => ({ name: 'GamestatePlaying' });
   world.endTick(); assert.equal(ticks, 1); await world.close();
 });
+test('disconnect and host shutdown stop guest automatic fire even if construction defers hero removal', async t => {
+  const { controls, transport } = setup(t), previous = global.polycraft;
+  t.after(() => { global.polycraft = previous; });
+  global.polycraft = { checkpoint: async () => {} };
+  const world = await startHostingWorld(controls, transport);
+  let target = {}, stops = 0;
+  const hero = { getEC: name => name === 'ECAutoFire' ? { disable() { target = null; } } : null };
+  const binding = { id: 'guest', peer: 'peer', ready: true, joined: true, connection: { closed: true }, input: { stop() { stops++; } }, actions: new (require('../desktop/coop-actions.js').HostActions)() };
+  world.players = { active: new Map([['guest', { hero }]]), remove() { throw new Error('Finish thrown building'); } };
+  world.peerPlayers.set('peer', binding); world.guestSlots.set('guest', binding);
+  world.beginTick(); assert.equal(target, null); assert.equal(stops, 1);
+  target = {}; world.atBoundary = async read => read();
+  await assert.rejects(world.releasePlayer(binding), /thrown building/);
+  assert.equal(target, null); assert.equal(stops, 2); assert.equal(world.players.active.has('guest'), true); assert.equal(world.detachedPlayers.has('guest'), true);
+  target = {}; binding.releasing = false; binding.connection = { closed: false, state: 'connected' }; world.peerPlayers.set('peer', binding); world.closing = true;
+  world.beginTick(); assert.equal(target, null); assert.equal(stops, 3);
+  world.closing = false; world.peerPlayers.clear(); delete world.players; await world.close();
+});

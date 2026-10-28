@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Combat continuation audit — 2026-10-26, after Beta 27
+## Current original guest automatic fire — Beta 28, 2026-10-27
+
+Eligible guest combat clicks now assign the actual host-side hero's native automatic-fire target, including during reload. The original trigger/retention range of 25 is used rather than replacing it with the shotgun projectile's shorter damage range. The initial shot retains host actor/target/PvP/ammo/weapon checks and clears projectile overrides on failure. Later shots, cooldown/reload/range and bump-charge suppression remain native. No new charge/rage component or RPC is enabled.
+
+Every host tick revalidates retained targets for health/life, scripts, construction, target eligibility and current damage permission. Disconnection/release/shutdown stops native automatic fire even if construction defers removing the hero. Ordinary movement/menu input keeps valid targeting as in the original. No save or message format changes: runtime coop-21 and formats 5/1/2/7/1/4 remain compatible with Beta 26/27; use a Beta 28 host for the fix.
+
+All 302 checks pass, including actual native automatic-fire routines with deterministic firearm fixtures, later ticks/reload/range/guards, actual PvP policy, exception cleanup and deferred-removal/shutdown handling. A reused read-only reviewer found no concrete issues. The ARM64 ZIP passes architecture/signature/source checks. No graphical game was launched. Real projectile/area damage, guest crosshair/effects/audio and multiplayer/native/physical-network acceptance remain open; see RESTORATION_STATUS.md. The planning audit below is historical and its proposed work is superseded by this checkpoint.
+
+## Historical combat planning audit — 2026-10-26, after Beta 27
 
 Read-only audit; no combat code changed. One narrowly scoped subagent traced the original component/input paths while the parent inspected guest actions and host lifecycle. No game was launched.
 
@@ -14,7 +22,7 @@ Read-only audit; no combat code changed. One narrowly scoped subagent traced the
 
 Legacy reference only: `ECChargeableShot` (47539) owns host-time charge, projectile thresholds, cancellation and priming; it is not configured for the hero. `ECSuper` has incomplete activation paths, including an undefined lifecycle variable and a controller calling the wrong method. It requires deliberate repair/configuration and acceptance before future use.
 
-## Current guest pause settings — Beta 27, 2026-10-26
+## Previous guest pause settings — Beta 27, 2026-10-26
 
 The original pause settings renderer is now shared between solo and guest presentation. Guests get the original localized Shadows, Music and Sound toggles at their original positions, plus Resume. A session-only copy of the local profile settings suppresses persistence, while native setters still update local lighting/audio. Disconnect restores the original three preferences. Native solo settings still save normally. The native sound presentation update runs in the drawn guest menu so current sources reflect toggles; gameplay audio replication remains open.
 

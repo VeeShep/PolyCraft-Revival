@@ -138,7 +138,7 @@ test('original quest conditions count shared construction/harvest/hero kills and
 
 test('guest quest requests validate the current visible task and place one original reward at the assigned hero without changing the host hero', () => {
   const { HostActions } = require('../desktop/coop-actions.js'), f = fixture(), events = [];
-  const actor = position => ({ shouldBeDestroyed: () => false, getv3Location: () => position, getEC: name => name === 'ECHealth' ? { getHealth: () => 10 } : name === 'ECPlayerLife' ? { state: 0, states: { NORMAL: 0 } } : { isBuilding: () => true, isThrowing: () => false } });
+  const actor = position => ({ shouldBeDestroyed: () => false, getv3Location: () => position, getEC: name => name === 'ECAutoFire' ? null : name === 'ECHealth' ? { getHealth: () => 10 } : name === 'ECPlayerLife' ? { state: 0, states: { NORMAL: 0 } } : { isBuilding: () => true, isThrowing: () => false } });
   const first = actor([10, 0, 20]), second = actor([30, 0, 40]), originalHero = f.game.getHero;
   f.game.getGameEntityByName = id => id === 'first' ? first : second; f.game.getPlayFlags = () => ({ showTasks: true }); f.game.isScriptLocked = () => false; f.game.eventManager = { notify: (...args) => events.push(args) };
   const quests = f.attach(); f.manager.criticalRenderInfoList = [f.info(0)];
@@ -156,7 +156,7 @@ test('quest requests refuse hidden, stale, other-hero, dead and script-locked in
   const { HostActions } = require('../desktop/coop-actions.js');
   for (const failure of ['hidden', 'stale', 'other', 'dead', 'dying', 'script']) {
     const f = fixture(), life = { state: 0, states: { NORMAL: 0, DYING: 1 } };
-    const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECPlayerLife' ? life : name === 'ECHealth' ? { getHealth: () => failure === 'dead' ? 0 : 10 } : {} };
+    const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECAutoFire' ? null : name === 'ECPlayerLife' ? life : name === 'ECHealth' ? { getHealth: () => failure === 'dead' ? 0 : 10 } : {} };
     f.game.getGameEntityByName = () => failure === 'other' ? { shouldBeDestroyed: () => false } : actor; f.game.getPlayFlags = () => ({ showTasks: failure !== 'hidden' }); f.game.isScriptLocked = () => failure === 'script';
     if (failure === 'dying') life.state = 1;
     const quests = f.attach(); f.queue.push(f.info(0)); f.manager.updateCompletedTasks();
@@ -192,7 +192,7 @@ for (const [type, taskName] of [['rotateCamera', 'rotateCamera'], ['pauseGame', 
   const events = { subscribe(name, callback) { listeners.set(name, callback); }, unsubscribe(name) { listeners.delete(name); }, notify(name, value) { listeners.get(name)?.(value); } };
   f.game.eventManager = events; f.game.getEventManager = () => events; f.game.isScriptLocked = () => false;
   f.game.getGameCamera = () => { throw new Error('Host camera must not be rotated'); };
-  const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECHealth' ? { getHealth: () => 10 } : name === 'ECPlayerLife' ? { state: 0, states: { NORMAL: 0 } } : {} };
+  const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECAutoFire' ? null : name === 'ECHealth' ? { getHealth: () => 10 } : name === 'ECPlayerLife' ? { state: 0, states: { NORMAL: 0 } } : {} };
   f.game.getGameEntityByName = () => actor;
   const tasks = { archetypes: { [taskName]: task }, conditions: { onEvent: ast.assignedObject('onEvent') } };
   const group = Object.assign(Object.create(ast.taskGroupMethods(tasks)), { globals: { metricsManager: { sendMetric() {} } }, gameManager: f.game, taskList: [taskName], uniqueGroupString: 'fill', taskConditionStateMap: {}, eventInterestMap: {}, eventHandlerMap: {}, eventMap: {}, taskCompleteStatusList: [false] });
@@ -208,7 +208,7 @@ test('camera event intents reject extra authority, duplicate sequences, other he
   const actions = new HostActions(); actions.receive(value); assert.throws(() => actions.receive(value), /repeated/);
   for (const extra of [{ angle: 1 }, { yaw: 100 }, { quest: 'rotateCamera' }, { playerId: 'other' }, { reward: 100 }]) assert.throws(() => new HostActions().receive({ ...value, ...extra }), /Invalid/);
   for (const failure of ['other', 'dead', 'dying', 'script']) {
-    let notified = 0; const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECHealth' ? { getHealth: () => failure === 'dead' ? 0 : 10 } : name === 'ECPlayerLife' ? { state: failure === 'dying' ? 1 : 0, states: { NORMAL: 0 } } : {} };
+    let notified = 0; const actor = { shouldBeDestroyed: () => false, getEC: name => name === 'ECAutoFire' ? null : name === 'ECHealth' ? { getHealth: () => failure === 'dead' ? 0 : 10 } : name === 'ECPlayerLife' ? { state: failure === 'dying' ? 1 : 0, states: { NORMAL: 0 } } : {} };
     const game = { getGameEntityByName: () => failure === 'other' ? { shouldBeDestroyed: () => false } : actor, isScriptLocked: () => failure === 'script', eventManager: { notify: () => { notified++; } } };
     assert.match(new HostActions().execute(game, actor, {}, 'owned', null, 'rotateCamera'), /not available/); assert.equal(notified, 0);
   }

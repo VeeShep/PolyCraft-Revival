@@ -51,7 +51,7 @@
             saved.then(() => { if (!binding.connection.closed) return binding.connection.send('result', payload); }).catch(error => { if (!binding.connection.closed) binding.connection.fail(error); });
           }
         }
-        else binding.input.stop(entry.hero);
+        else { binding.input.stop(entry.hero); binding.actions.stop(entry.hero); }
       }
     }
     endTick() {
@@ -206,7 +206,7 @@
         if (binding.joined && !this.closed) {
           await this.atBoundary(() => {
             const entry = this.players.active.get(binding.id);
-            if (entry) binding.input.stop(entry.hero);
+            if (entry) { binding.input.stop(entry.hero); binding.actions.stop(entry.hero); }
             try { this.players.remove(binding.id); }
             catch (error) {
               // Keep a disconnected hero's held construction alive until the host can reconnect or finish it.
