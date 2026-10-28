@@ -644,5 +644,34 @@
       "offset": 5184,
       "evidence": "literal state name on prototype"
     }
+  ],
+  "passes": [
+    {
+      "id": "input-controller-role-names",
+      "names": [
+        {
+          "original": "oa",
+          "name": "GameInputController",
+          "role": "gameController",
+          "evidence": "gameController factory assignment",
+          "offset": 4285,
+          "references": 64,
+          "descriptive": true
+        },
+        {
+          "original": "Yd",
+          "name": "HeroControllerAction",
+          "role": "controllerActionA",
+          "evidence": "shared controllerActionA/controllerActionB factory assignments",
+          "offset": 4266,
+          "references": 6,
+          "descriptive": true
+        }
+      ],
+      "inputSHA256": "39634cd6de26de9164a8e06b6aba0d97b76b72f6c0b6fb203f7a1b327cf2125e",
+      "outputSHA256": "f7dd9194c3c72434034f8a0e7013f82b3f98fd4a444a305d1b1d36f792c247ee",
+      "inputCanonicalSHA256": "fd1ace447d63ab380bccf98e9449dc04c75801d5783b2f0503cec5a22890e716",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    }
   ]
 }

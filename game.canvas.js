@@ -122,8 +122,8 @@
   function rf() {}
   function sf() {}
   function tf() {}
-  function Yd() {}
-  function oa() {}
+  function HeroControllerAction() {}
+  function GameInputController() {}
   function lb() {}
   function uf() {}
   function vf() {}
@@ -40914,7 +40914,7 @@
     l && l.setStatic();
     return e;
   };
-  Yd.prototype = {
+  HeroControllerAction.prototype = {
     HELD_THRESHOLD: 0.5,
     CURSOR_YOFFSET: 0.1,
     ATTACK_ON_DOWN: !0,
@@ -41152,7 +41152,7 @@
       b && (b[1] = 0, d.v3Normalize(b, b));
       var e = function (c) {
         var e = c.getEC("ECSelectable");
-        if (e && (!e || e.isSelectable()) && this.getSelectedType(c) !== oa.interactTypes.NONE) {
+        if (e && (!e || e.isSelectable()) && this.getSelectedType(c) !== GameInputController.interactTypes.NONE) {
           var h = c.getv3Location(),
             e = d.v3DistanceSq(a, h);
           if (b) {
@@ -41360,15 +41360,15 @@
       b[1] = f;
       b[2] = g;
       if ((c = c.getEC("ECSuper")) && c.getSpecialFromChargeType(a)) switch (a) {
-        case oa.interactTypes.FRIEND:
+        case GameInputController.interactTypes.FRIEND:
           return this.crashMobController.chargeFriendTexturePath;
-        case oa.interactTypes.ENEMY:
+        case GameInputController.interactTypes.ENEMY:
           return this.crashMobController.chargeEnemyTexturePath;
-        case oa.interactTypes.ENEMY_MELEE:
+        case GameInputController.interactTypes.ENEMY_MELEE:
           return this.crashMobController.chargeEnemyTexturePath;
-        case oa.interactTypes.ENEMY_RANGED:
+        case GameInputController.interactTypes.ENEMY_RANGED:
           return this.crashMobController.chargeEnemyTexturePath;
-        case oa.interactTypes.SELF:
+        case GameInputController.interactTypes.SELF:
           return this.crashMobController.chargeYouTexturePath;
       }
     },
@@ -41426,7 +41426,7 @@
       this.updateFunction = this.updateTargeted;
       this.downFunction = this.downTargeted;
       this.liftFunction = this.liftTargeted;
-      this.interactType = oa.interactTypes.NONE;
+      this.interactType = GameInputController.interactTypes.NONE;
     },
     endTargeted: function () {
       var a = this.getHeroEntity(),
@@ -41437,13 +41437,13 @@
       b && b.isCharging() && (b.canFireNonTargetedShot() ? (b.primeForFire(), c && c.attemptFireAtLocation(this.getv3WorldAimLocation()), c.clearOverloadProjectile()) : b.stopCharging());
       (a = a.getEC("ECLocomotion")) && a.clearLookAt();
       this.resetModeFunction && this.resetModeFunction();
-      this.interactType = oa.interactTypes.NONE;
+      this.interactType = GameInputController.interactTypes.NONE;
     },
     updateTargeted: function () {
       this.calculateNearestTarget(this.getSelectionRadius() + this.getAddedSelectionRadius());
       var a = this.interactType;
       this.interactType = this.getSelectedType(this.getTargetEntity());
-      this.useDirection && this.interactType === oa.interactTypes.NONE && (this.interactType = oa.interactTypes.ENEMY_RANGED);
+      this.useDirection && this.interactType === GameInputController.interactTypes.NONE && (this.interactType = GameInputController.interactTypes.ENEMY_RANGED);
       this.END_TARGETED_IF_HELD && this.hasHeld() ? (this.endTargetedMode(a), this.clearTargetEntity(), this.beginMove()) : (this.interactType !== a && (this.endTargetedMode(a), this.beginTargetedMode(this.interactType)), this.updateTargetedMode(this.interactType));
     },
     liftTargeted: function () {
@@ -41455,76 +41455,76 @@
     },
     beginTargetedMode: function (a) {
       switch (a) {
-        case oa.interactTypes.ENEMY:
+        case GameInputController.interactTypes.ENEMY:
           this.beginTargetedRunMelee();
           break;
-        case oa.interactTypes.ENEMY_MELEE:
+        case GameInputController.interactTypes.ENEMY_MELEE:
           this.beginTargetedMelee();
           break;
-        case oa.interactTypes.ENEMY_RANGED:
+        case GameInputController.interactTypes.ENEMY_RANGED:
           this.beginTargetedRanged();
           break;
-        case oa.interactTypes.SELF:
+        case GameInputController.interactTypes.SELF:
           this.beginTargetedSelf();
           break;
-        case oa.interactTypes.INTERACTABLE:
+        case GameInputController.interactTypes.INTERACTABLE:
           this.beginTargetedInteractable();
       }
     },
     endTargetedMode: function (a) {
       switch (a) {
-        case oa.interactTypes.ENEMY:
+        case GameInputController.interactTypes.ENEMY:
           this.endTargetedRunMelee();
           break;
-        case oa.interactTypes.ENEMY_MELEE:
+        case GameInputController.interactTypes.ENEMY_MELEE:
           this.endTargetedMelee();
           break;
-        case oa.interactTypes.ENEMY_RANGED:
+        case GameInputController.interactTypes.ENEMY_RANGED:
           this.endTargetedRanged();
           break;
-        case oa.interactTypes.SELF:
+        case GameInputController.interactTypes.SELF:
           this.endTargetedSelf();
           break;
-        case oa.interactTypes.INTERACTABLE:
+        case GameInputController.interactTypes.INTERACTABLE:
           this.endTargetedInteractable();
       }
     },
     updateTargetedMode: function (a) {
       switch (a) {
-        case oa.interactTypes.NONE:
+        case GameInputController.interactTypes.NONE:
           this.updateTargetedNone();
           break;
-        case oa.interactTypes.ENEMY:
+        case GameInputController.interactTypes.ENEMY:
           this.updateTargetedRunMelee();
           break;
-        case oa.interactTypes.ENEMY_MELEE:
+        case GameInputController.interactTypes.ENEMY_MELEE:
           this.updateTargetedMelee();
           break;
-        case oa.interactTypes.ENEMY_RANGED:
+        case GameInputController.interactTypes.ENEMY_RANGED:
           this.updateTargetedRanged();
           break;
-        case oa.interactTypes.SELF:
+        case GameInputController.interactTypes.SELF:
           this.updateTargetedSelf();
           break;
-        case oa.interactTypes.INTERACTABLE:
+        case GameInputController.interactTypes.INTERACTABLE:
           this.updateTargetedInteractable();
       }
     },
     liftTargetedMode: function (a) {
       switch (a) {
-        case oa.interactTypes.ENEMY:
+        case GameInputController.interactTypes.ENEMY:
           this.liftTargetedRunMelee();
           break;
-        case oa.interactTypes.ENEMY_MELEE:
+        case GameInputController.interactTypes.ENEMY_MELEE:
           this.liftTargetedMelee();
           break;
-        case oa.interactTypes.ENEMY_RANGED:
+        case GameInputController.interactTypes.ENEMY_RANGED:
           this.liftTargetedRanged();
           break;
-        case oa.interactTypes.SELF:
+        case GameInputController.interactTypes.SELF:
           this.liftTargetedSelf();
           break;
-        case oa.interactTypes.INTERACTABLE:
+        case GameInputController.interactTypes.INTERACTABLE:
           this.liftTargetedInteractable();
       }
     },
@@ -41776,25 +41776,25 @@
     },
     combatOnly: function (a) {
       switch (a) {
-        case oa.interactTypes.ENEMY:
+        case GameInputController.interactTypes.ENEMY:
           return a;
-        case oa.interactTypes.ENEMY_MELEE:
+        case GameInputController.interactTypes.ENEMY_MELEE:
           return a;
-        case oa.interactTypes.ENEMY_RANGED:
+        case GameInputController.interactTypes.ENEMY_RANGED:
           return a;
       }
-      return oa.interactTypes.NONE;
+      return GameInputController.interactTypes.NONE;
     },
     nonCombatOnly: function (a) {
       switch (a) {
-        case oa.interactTypes.FRIEND:
+        case GameInputController.interactTypes.FRIEND:
           return a;
-        case oa.interactTypes.SELF:
+        case GameInputController.interactTypes.SELF:
           return a;
-        case oa.interactTypes.INTERACTABLE:
+        case GameInputController.interactTypes.INTERACTABLE:
           return a;
       }
-      return oa.interactTypes.NONE;
+      return GameInputController.interactTypes.NONE;
     },
     setTargetEntity: function (a) {
       var b;
@@ -41850,7 +41850,7 @@
           if (p && (!p || p.isSelectable())) {
             var c = c * p.getRadiusFactor(),
               r = this.getSelectedType(a);
-            if (r !== oa.interactTypes.NONE && (p = f.worldToScreen(a.getCentreLocation()))) if (b && !q && r === oa.interactTypes.ENEMY_RANGED && (r = d.v3Sub(a.getCentreLocation(), i), d.v3Normalize(r, r), r = d.v3Dot(r, l), r > k && (e = a, k = r)), p = d.v2DistanceSq(g, p), !(p > c * c) && (!q || p < m)) e = a, m = p, q = !0;
+            if (r !== GameInputController.interactTypes.NONE && (p = f.worldToScreen(a.getCentreLocation()))) if (b && !q && r === GameInputController.interactTypes.ENEMY_RANGED && (r = d.v3Sub(a.getCentreLocation(), i), d.v3Normalize(r, r), r = d.v3Dot(r, l), r > k && (e = a, k = r)), p = d.v2DistanceSq(g, p), !(p > c * c) && (!q || p < m)) e = a, m = p, q = !0;
           }
         }.bind(this);
       this.gameManager.applyToEntitiesInGridCellsWithinRadius(c, 10, p);
@@ -41901,20 +41901,20 @@
       return this.typeValidFunction(this.crashMobController.getSelectedType(a));
     },
     activateTargetEntityIfValid: function () {
-      this.interactType !== oa.interactTypes.NONE && this.activateTargetEntity();
+      this.interactType !== GameInputController.interactTypes.NONE && this.activateTargetEntity();
     },
     buildCollisionInfo: function (a) {
       return this.crashMobController.buildCollisionInfo(a);
     }
   };
-  Yd.create = function (a, b, c) {
-    var d = new Yd();
+  HeroControllerAction.create = function (a, b, c) {
+    var d = new HeroControllerAction();
     d.globals = a;
     d.gameManager = b;
     d.crashMobController = c;
     return d;
   };
-  oa.interactTypes = {
+  GameInputController.interactTypes = {
     NONE: -1,
     FRIEND: 0,
     ENEMY: 1,
@@ -41925,7 +41925,7 @@
     INTERACTABLE: 6,
     LAST: 7
   };
-  oa.prototype = {
+  GameInputController.prototype = {
     initUI: function () {
       var a = this.globals.dynamicUI;
       if (a) {
@@ -42115,12 +42115,12 @@
     },
     getSelectedType: function (a) {
       var b = this.getHeroEntity();
-      if (!a) return oa.interactTypes.NONE;
+      if (!a) return GameInputController.interactTypes.NONE;
       var c = b.getEC("ECPlayerBuilder"),
         c = c && c.isBuilding(),
         d = a.getEC("ECInteractable"),
         f = a.getEC("ECDispenser");
-      return d && d.getActive() && f && c ? oa.interactTypes.INTERACTABLE : c ? oa.interactTypes.NONE : d && d.getActive() ? oa.interactTypes.INTERACTABLE : a === b ? oa.interactTypes.SELF : a.hasEC("ECTarget") ? (c = b.getEC("ECMelee")) && c.isWithinRange(a) ? oa.interactTypes.ENEMY_MELEE : (a = b.getEC("ECFirearm")) && a.hasWeapon() ? oa.interactTypes.ENEMY_RANGED : oa.interactTypes.ENEMY : oa.interactTypes.NONE;
+      return d && d.getActive() && f && c ? GameInputController.interactTypes.INTERACTABLE : c ? GameInputController.interactTypes.NONE : d && d.getActive() ? GameInputController.interactTypes.INTERACTABLE : a === b ? GameInputController.interactTypes.SELF : a.hasEC("ECTarget") ? (c = b.getEC("ECMelee")) && c.isWithinRange(a) ? GameInputController.interactTypes.ENEMY_MELEE : (a = b.getEC("ECFirearm")) && a.hasWeapon() ? GameInputController.interactTypes.ENEMY_RANGED : GameInputController.interactTypes.ENEMY : GameInputController.interactTypes.NONE;
     },
     getNearestValidTarget: function (a, b) {
       if (this.isIMGuiHot) return this.targetEntity;
@@ -42144,7 +42144,7 @@
           if (p && (!p || p.isSelectable())) {
             var c = c * p.getRadiusFactor(),
               r = this.getSelectedType(a);
-            if (r !== oa.interactTypes.NONE && (p = f.worldToScreen(a.getCentreLocation()))) if (b && !q && r === oa.interactTypes.ENEMY_RANGED && (r = d.v3Sub(a.getCentreLocation(), i), d.v3Normalize(r, r), r = d.v3Dot(r, l), r > k && (e = a, k = r)), p = g.getDistanceSq(p), !(p > c * c) && (!q || p < m)) e = a, m = p, q = !0;
+            if (r !== GameInputController.interactTypes.NONE && (p = f.worldToScreen(a.getCentreLocation()))) if (b && !q && r === GameInputController.interactTypes.ENEMY_RANGED && (r = d.v3Sub(a.getCentreLocation(), i), d.v3Normalize(r, r), r = d.v3Dot(r, l), r > k && (e = a, k = r)), p = g.getDistanceSq(p), !(p > c * c) && (!q || p < m)) e = a, m = p, q = !0;
           }
         }.bind(this);
       this.gameManager.applyToEntitiesInGridCellsWithinRadius(c, 10, p);
@@ -42347,8 +42347,8 @@
       TurbulenzEngine.canvas && ba.enableCustomCursors && "chrome-extension:" !== window.location.protocol && (TurbulenzEngine.canvas.style.cursor = a);
     }
   };
-  oa.create = function (a, b) {
-    var c = new oa();
+  GameInputController.create = function (a, b) {
+    var c = new GameInputController();
     c.globals = a;
     c.sx = 0;
     c.sy = 0;
@@ -42381,8 +42381,8 @@
     c.verticalTexture = null;
     c.verticalTexturePath = "textures/vertical.dds";
     c.mouseLockingEnabled = ba.lockMouseInMenus;
-    c.controllerActionA = Yd.create(a, b, c);
-    c.controllerActionB = Yd.create(a, b, c);
+    c.controllerActionA = HeroControllerAction.create(a, b, c);
+    c.controllerActionB = HeroControllerAction.create(a, b, c);
     c.controlOneButton = ba.controlOneButton;
     c.controlwsad = ba.controlwsad;
     c.controlNavigate = ba.controlNavigate;
@@ -57856,13 +57856,13 @@
     },
     getSpecialFromChargeType: function (a) {
       switch (a) {
-        case oa.interactTypes.FRIEND:
+        case GameInputController.interactTypes.FRIEND:
           return this.specialFriend;
-        case oa.interactTypes.ENEMY:
-        case oa.interactTypes.ENEMY_MELEE:
-        case oa.interactTypes.ENEMY_RANGED:
+        case GameInputController.interactTypes.ENEMY:
+        case GameInputController.interactTypes.ENEMY_MELEE:
+        case GameInputController.interactTypes.ENEMY_RANGED:
           return this.specialEnemy;
-        case oa.interactTypes.SELF:
+        case GameInputController.interactTypes.SELF:
           return this.specialSelf;
       }
     },
@@ -68442,7 +68442,7 @@
     c.uniqueIndex = 0;
     c.uniqueLevelIndex = 0;
     c.gameCamera = td.create(b, c);
-    c.gameController = oa.create(b, c);
+    c.gameController = GameInputController.create(b, c);
     c.imgui = Z.create(b, c, c.gameController);
     c.guiManager = zf.create(b, c.gameController);
     c.gameScoresUI = Af.create(b, c.imgui);
@@ -145031,7 +145031,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: Yd.prototype.setControllableDestination, collision: oa.prototype.buildCollisionInfo });
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo });
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };
