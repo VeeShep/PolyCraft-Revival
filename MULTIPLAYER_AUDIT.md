@@ -2,13 +2,19 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Next input gap: targeted press/hold/release — audited 2026-11-03
+## Current targeted gesture timing — Beta 34, 2026-11-03
+
+Target intents now include press/update/clear/release phases with strict shape/enum/sequence checks. The host uses the original selected-type method against its assigned hero and live entity. Only ranged entry runs on press or interaction-type change; resource/menu interactions run on release. Same-type ranged target changes retain the original automatic-fire target rather than issuing another shot. Guest target holds use native `hasHeld`, then existing ground navigation/steering/release; swipes retain a target until it is lost. Release re-evaluates the pointed target, including when it arrives before another render update.
+
+New gestures invalidate old selection receipts. Cancellation never synthesizes a release callback, and only the selected release opens a menu. Held target updates are bounded at 100 ms; an independent ten-per-second press/update/clear budget preserves the release allowance while retaining the queue and owner-bound action sequence. A narrow review caught and corrected the same-type ranged transition rule; follow-up found no further concrete must-fix. All 326 checks pass. Runtime coop-25 requires Beta 34 peers; world/delta/signaling/save/quest/co-op stay 6/1/2/7/1/4. No graphical game or personal save was opened. Physical input, full original effects/facing/cursor/campaign/menu parity, native OS and real-network acceptance remain open; see RESTORATION_STATUS.md.
+
+## Historical input gap: targeted press/hold/release — audited before Beta 34, 2026-11-03
 
 Native `HeroControllerAction.updateTargeted` uses `hasHeld`, not `hasHeldOrSwiped`, to leave a retained target after 0.5 seconds. Resources dispatch in `liftTargetedInteractable` on release; ranged targets fire on entry through `beginTargetedRanged` with `ATTACK_ON_DOWN`. Native update runs before down/up processing and recalculates the nearest target, so a faithful implementation must consider changing targets and cancellation rather than merely enabling ground drag for every press.
 
 Guest `clickTarget` currently sends a `target` action immediately, while `HostActions.execute` either selects a menu, gathers or attacks based on live host components. Ground gesture state is only created when no target was picked. This means a resource press executes before release and a targeted hold cannot become movement. Two tests in `tests/coop-input.test.cjs` execute the actual original methods to pin release/hold/swipe and ranged timing before changing the guest protocol. Runtime is unchanged; 322 checks pass. Target classification must retain host authority and stale menu receipts must not open a menu after transitioning into movement. See the current continuation entry in RESTORATION_STATUS.md for scope and remaining gates.
 
-## Current held/drag ground controls — Beta 33, 2026-10-28
+## Previous held/drag ground controls — Beta 33, 2026-10-28
 
 Guest empty-ground input reuses actual native hold/swipe predicates and click/drag/release destination flags. Steering is capped at 20 Hz, shares the keyboard movement sequence and send chain, coalesces under backpressure and expires on the host after 600 ms. Path-query limits remain separate. Focus/menu/resync cancellation stays latched while sends are pending; pointer cancellation/lost capture/outside release stop active gestures, while normal capture loss after accepted release does not stop its path.
 

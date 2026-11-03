@@ -145031,7 +145031,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype });
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED });
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };

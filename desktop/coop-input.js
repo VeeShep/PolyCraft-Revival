@@ -104,7 +104,10 @@
         }
         if (this.world.localMenu?.()) { this.keys.clear(); this.flush(); return; }
         if (event.repeat) return;
-        if ((KEY_AXES[event.code] || CAMERA_KEYS.includes(event.code)) && this.available()) this.keys.add(event.code);
+        if ((KEY_AXES[event.code] || CAMERA_KEYS.includes(event.code)) && this.available()) {
+          if (KEY_AXES[event.code]) this.world.cancelGroundDrag?.(true);
+          this.keys.add(event.code);
+        }
         this.flush();
       });
       listen('keyup', event => {

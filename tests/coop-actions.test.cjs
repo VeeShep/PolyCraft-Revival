@@ -38,7 +38,7 @@ test('target menus and previews use the assigned hero and current host construct
       return { message: 'Cannot build here.', preview };
     }
   };
-  actions.receive({ type: 'target', sequence: 1, target: 'tree' });
+  actions.receive({ type: 'target', phase: 'release', sequence: 1, target: 'tree' });
   assert.equal(actions.apply(game, hero, players).construction, construction);
   actions.receive({ type: 'preview', sequence: 2, target: 'tree', index: 2, location: [1, 0, 2] });
   assert.deepEqual(actions.apply(game, hero, players), { type: 'preview', sequence: 2, message: 'Cannot build here.', preview });
@@ -47,11 +47,11 @@ test('target menus and previews use the assigned hero and current host construct
   assert.match(actions.execute(game, hero, players, 'tree', null, 'preview', { index: 2, location: [1, 0, 2] }), /Finish/);
 });
 test('target actions reject replay, authority fields, malformed IDs, queue overflow and excess rate without advancing accepted sequence', () => {
-  for (const value of [null, {}, { type: 'target', sequence: 2, target: 'tree' }, { type: 'target', sequence: 1, target: '' }, { type: 'target', sequence: 1, target: 'x'.repeat(257) }, { type: 'target', sequence: 1, target: 'tree', playerId: 'other' }]) {
+  for (const value of [null, {}, { type: 'target', phase: 'release', sequence: 2, target: 'tree' }, { type: 'target', phase: 'release', sequence: 1, target: '' }, { type: 'target', phase: 'release', sequence: 1, target: 'x'.repeat(257) }, { type: 'target', phase: 'release', sequence: 1, target: 'tree', playerId: 'other' }]) {
     const actions = new HostActions(() => 0); assert.throws(() => actions.receive(value), /Invalid/); assert.equal(actions.sequence, 0);
   }
   let now = 0; const actions = new HostActions(() => now), { game, hero, players } = setup();
-  const send = sequence => actions.receive({ type: 'target', sequence, target: 'missing' });
+  const send = sequence => actions.receive({ type: 'target', phase: 'release', sequence, target: 'missing' });
   send(1); assert.throws(() => send(1), /repeated/);
   for (let i = 2; i <= 4; i++) send(i);
   assert.throws(() => send(5), /Too many/); assert.equal(actions.sequence, 4);
@@ -66,7 +66,7 @@ test('movement-required gathering uses only a live reachable unobstructed resour
   state.blocked = false; state.active = false; assert.match(actions.execute(game, hero, players, 'tree'), /No resources/);
   state.active = true; state.throwing = true; assert.match(actions.execute(game, hero, players, 'tree'), /Finish/);
   state.throwing = false; state.remaining = 1;
-  actions.receive({ type: 'target', sequence: 1, target: 'tree' }); actions.receive({ type: 'target', sequence: 2, target: 'tree' });
+  actions.receive({ type: 'target', phase: 'release', sequence: 1, target: 'tree' }); actions.receive({ type: 'target', phase: 'release', sequence: 2, target: 'tree' });
   assert.match(actions.apply(game, hero, players).message, /gathered/); assert.match(actions.apply(game, hero, players).message, /No resources/);
   assert.equal(state.collected, 1); assert.equal(actions.apply(game, hero, players), null);
 });
@@ -84,7 +84,7 @@ test('demolition selects host metadata, rechecks protection at execution and req
   let removed = 0, reason = '', available = true;
   const controls = { demolitionInfo: () => available ? { id: 'enemy', name: 'Storage', reason } : null,
     demolishBuilding: id => { assert.equal(id, 'enemy'); removed++; } };
-  const send = (type, sequence) => actions.receive({ type, sequence, target: 'enemy' });
+  const send = (type, sequence) => actions.receive({ type, sequence, target: 'enemy', ...(type === 'target' ? { phase: 'release' } : {}) });
   send('target', 1); assert.deepEqual(actions.apply(game, hero, players, controls), { type: 'target', sequence: 1, message: 'Building selected.', building: { id: 'enemy', name: 'Storage', reason: '', movable: false } });
   send('demolish', 2); reason = 'Remove the buildings above this one first';
   assert.equal(actions.apply(game, hero, players, controls).message, reason); assert.equal(removed, 0);
@@ -142,13 +142,13 @@ function automaticCombat() {
 }
 test('guest attack selects original automatic fire at its native trigger range, including while reloading', () => {
   const f = automaticCombat(), { actions, game, hero, players, automatic, state, target } = f;
-  actions.receive({ type: 'target', sequence: 1, target: 'enemy' });
+  actions.receive({ type: 'target', phase: 'release', sequence: 1, target: 'enemy' });
   assert.equal(actions.apply(game, hero, players).message, 'Attack issued.');
   assert.equal(state.fired, 1); assert.equal(state.cleared, 1); assert.equal(automatic.getTargetEntity(), target);
   actions.apply(game, hero, players); automatic.update(); assert.equal(state.fired, 1, 'cooldown remains native');
   state.ready = true; actions.apply(game, hero, players); automatic.update(); assert.equal(state.fired, 2); assert.equal(state.ammo, 0);
   actions.stop(hero); assert.equal(automatic.getTargetEntity(), undefined);
-  actions.receive({ type: 'target', sequence: 2, target: 'enemy' });
+  actions.receive({ type: 'target', phase: 'release', sequence: 2, target: 'enemy' });
   assert.match(actions.apply(game, hero, players).message, /selected.*reloading/); assert.equal(automatic.getTargetEntity(), target);
   automatic.update(); assert.equal(state.fired, 2);
   state.ammo = 2; state.ready = true; actions.apply(game, hero, players); automatic.update(); assert.equal(state.fired, 3);
@@ -199,11 +199,40 @@ test('guest resource clicks preserve actual original no-movement interaction rul
     game.getCollisionInfo = () => assert.fail('direct native interactions have no ray obstruction restriction');
     lift.call({ getTargetEntity: () => resource, getHeroEntity: () => hero, setControllableDestination: () => assert.fail('original click must not move this hero') });
     assert.equal(state.collected, 1, name); state.collected = 0; state.remaining = 1;
-    const actions = new HostActions(); actions.receive({ type: 'target', sequence: 1, target: 'tree' });
+    const actions = new HostActions(); actions.receive({ type: 'target', phase: 'release', sequence: 1, target: 'tree' });
     assert.match(actions.apply(game, hero, players).message, /gathered/); assert.equal(state.collected, 1, name); assert.equal(state.remaining, 0);
     assert.match(actions.execute(game, hero, players, 'tree'), /No resources/); assert.equal(state.collected, 1);
     state.remaining = 1; interaction.active = false; assert.match(actions.execute(game, hero, players, 'tree'), /No resources/);
     interaction.active = true; state.health = 0; assert.match(actions.execute(game, hero, players, 'tree'), /Finish/);
     state.health = 50; game.isScriptLocked = () => true; assert.match(actions.execute(game, hero, players, 'tree'), /Finish/); assert.equal(state.collected, 1);
   }
+});
+
+test('target phases use native host classification: resources and menus wait for release while ranged attacks start once on press', () => {
+  const f = setup(), actions = new HostActions(), ast = require('./runtime-ast.cjs'), types = ast.assignedObject('interactTypes');
+  const enemy = f.game.getGameEntityByName('enemy'); enemy.hasEC = name => !!enemy.getEC(name);
+  const controls = { movementMethods: { targetType: ast.prototypeWith('getv3WorldGroundLocationFromCoord', { GameInputController: { interactTypes: types } }).getSelectedType, rangedType: types.ENEMY_RANGED }, demolitionInfo: () => null };
+  let menus = 0; f.game.desktopConstruction = { menu: () => { menus++; return null; } };
+  f.state.approach = false;
+  const send = (sequence, target, phase) => { actions.receive({ type: 'target', sequence, target, phase }); return actions.apply(f.game, f.hero, f.players, controls); };
+  send(1, 'tree', 'press'); assert.equal(f.state.collected, 0); assert.equal(menus, 0);
+  send(2, 'tree', 'release'); assert.equal(f.state.collected, 1); assert.equal(menus, 1);
+  send(3, 'enemy', 'press'); assert.equal(f.state.fired, 1); assert.equal(menus, 1);
+  const other = { ...enemy }; f.game.getGameEntityByName = id => id === 'other' ? other : ({ tree: f.resource, enemy })[id];
+  send(4, 'other', 'update'); assert.equal(f.state.fired, 1, 'changing between ranged enemies does not re-enter ranged mode');
+  send(5, 'other', 'release'); assert.equal(f.state.fired, 1, 'release must not issue a second original press shot');
+  send(6, 'tree', 'press'); assert.equal(f.state.collected, 1, 'cancelled/held presses have no deferred resource effect');
+  actions.stop(f.hero); assert.equal(actions.targetMode, null);
+});
+test('target phases reject malformed fields and preserve release capacity with a separately bounded press budget', () => {
+  for (const phase of [undefined, null, 'drag', true]) {
+    const actions = new HostActions(() => 0); assert.throws(() => actions.receive({ type: 'target', sequence: 1, target: 'tree', phase }), /Invalid/); assert.equal(actions.sequence, 0);
+  }
+  const actions = new HostActions(() => 0);
+  for (let sequence = 1; sequence <= 20; sequence++) {
+    actions.receive({ type: 'target', sequence, target: 'tree', phase: sequence % 2 ? 'press' : 'release' }); actions.queue.shift();
+  }
+  assert.equal(actions.tokens, 0); assert.equal(actions.pressTokens, 0);
+  assert.throws(() => actions.receive({ type: 'target', sequence: 21, target: 'tree', phase: 'press' }), /Too many/);
+  assert.equal(actions.sequence, 20);
 });

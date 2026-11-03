@@ -310,7 +310,7 @@
           this.hud.receive(value, this.lifeRequest);
           this.receiveLife(value);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem) this.selectedBuilding = this.demolition = null; }
-          if (!['held', 'life', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type)) {
+          if ((value.type !== 'target' || selected) && !['held', 'life', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type)) {
             this.lastTargetResult = { ...value };
             const status = root.document?.getElementById?.('status');
             if (status) status.textContent = value.message;
@@ -336,19 +336,18 @@
       const gui = this.game.getIMGui();
       if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen')) return;
       const target = pickTarget(this, event);
-      if (!target) {
-        if (this.movement.requestWalk(this.construction.cursor())) {
-          this.groundDrag = Object.assign(Object.create(this.controls.movementMethods.gesture), { globals: this.controls.app.globals, prevDown: true,
-            downTime: this.controls.app.globals.appCurrentTime, downv2ScreenCoord: [...this.guiInput.position], crashMobController: { getv2ScreenCoord: () => this.guiInput.position }, lastSent: -Infinity, steered: false });
-          if (typeof event.pointerId === 'number') { try { this.movement.canvas.setPointerCapture?.(event.pointerId); } catch { this.cancelGroundDrag(true); } }
-        }
-        return;
+      this.selectionRequest = null;
+      if (target || this.movement.requestWalk(this.construction.cursor())) {
+        this.groundDrag = Object.assign(Object.create(this.controls.movementMethods.gesture), { globals: this.controls.app.globals, prevDown: true,
+          downTime: this.controls.app.globals.appCurrentTime, downv2ScreenCoord: [...this.guiInput.position], crashMobController: { getv2ScreenCoord: () => this.guiInput.position },
+          lastSent: -Infinity, lastTargetSent: performance.now(), steered: false, targeted: !!target, target, event });
+        if (typeof event.pointerId === 'number') { try { this.movement.canvas.setPointerCapture?.(event.pointerId); } catch { this.cancelGroundDrag(true); return; } }
+        if (target) this.sendTarget('target', target, undefined, 'press');
       }
-      this.selectionRequest = this.sendTarget('target', target);
     }
-    sendTarget(type, target, archetype) {
+    sendTarget(type, target, archetype, phase = 'release') {
       const sequence = ++this.targetSequence;
-      this.connection.send('action', { type, sequence, target, ...(archetype === undefined ? {} : { archetype }) }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+      this.connection.send('action', { type, sequence, target, ...(type === 'target' ? { phase } : {}), ...(archetype === undefined ? {} : { archetype }) }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
       return sequence;
     }
     requestMove(target) {
@@ -469,6 +468,7 @@
       const canvas = this.movement.canvas, bounds = canvas.getBoundingClientRect(), device = this.controls.app.globals.graphicsDevice;
       this.guiInput.position = [(value.clientX - bounds.left) * device.width / bounds.width, (value.clientY - bounds.top) * device.height / bounds.height];
       this.construction.pointer(event, value);
+      if (this.groundDrag) this.groundDrag.event = value;
       if (value.button !== 0) return;
       if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = !this.controls.paused;
       if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) { this.guiInput.pendingDown = false; this.finishGroundDrag(); }
@@ -482,6 +482,19 @@
       const drag = this.groundDrag;
       if (!drag) return;
       if (!this.movement.available()) { this.cancelGroundDrag(true); return; }
+      if (drag.targeted) {
+        const target = pickTarget(this, drag.event);
+        if (drag.hasHeld() || !target && drag.hasHeldOrSwiped()) {
+          drag.targeted = false; this.selectionRequest = null;
+          this.movement.requestWalk(this.construction.cursor());
+        } else {
+          if (target && target !== drag.target && performance.now() - drag.lastTargetSent >= 100) {
+            this.sendTarget('target', target, undefined, 'update'); drag.target = target; drag.lastTargetSent = performance.now();
+          }
+          if (!target && drag.target) { this.sendTarget('target', drag.target, undefined, 'clear'); drag.target = null; }
+          return;
+        }
+      }
       const now = performance.now();
       if (drag.hasHeldOrSwiped() && now - drag.lastSent >= 50 && this.movement.requestWalk(this.construction.cursor(), 'drag')) { drag.lastSent = now; drag.steered = true; }
     }
@@ -490,6 +503,14 @@
       if (!drag) return;
       this.groundDrag = null;
       if (!this.movement.available()) { this.movement.cancelWalk(); return; }
+      if (drag.targeted && !drag.hasHeld()) {
+        const target = pickTarget(this, drag.event);
+        if (target) {
+          this.selectionRequest = this.sendTarget('target', target);
+          return;
+        }
+        if (!drag.hasHeldOrSwiped()) return;
+      }
       if ((drag.steered || drag.hasHeldOrSwiped()) && !this.movement.requestWalk(this.construction.cursor(), 'release')) this.movement.cancelWalk();
     }
     updateMenu() {

@@ -460,10 +460,10 @@ test('guest combat markers use original crosshair artwork and host range at the 
 });
 test('a guest ground click reuses the existing cursor projection while an entity click remains a target action', () => {
   const world = Object.create(GuestWorld.prototype), walked = [], selected = [];
-  world.identity = { entity: 'hero' }; world.scene = { entities: new Map() };
-  world.controls = { app: { globals: { graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: () => [10, 10] } } } };
+  world.identity = { entity: 'hero' }; world.scene = { entities: new Map() }; world.guiInput = { position: [10, 10] };
+  world.controls = { movementMethods: { gesture: require('./runtime-ast.cjs').prototypeWith('hasHeldOrSwiped') }, app: { globals: { graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: () => [10, 10] } } } };
   world.game = { getIMGui: () => ({ hasCapturedInput: () => false, isHot: () => false }) };
-  world.construction = { cursor: () => [30, 2, 20] }; world.movement = { requestWalk(location) { walked.push(location); return false; } }; world.sendTarget = (type, target) => { selected.push([type, target]); return 1; };
+  world.construction = { cursor: () => [30, 2, 20] }; world.movement = { canvas: {}, requestWalk(location) { walked.push(location); return false; } }; world.sendTarget = (type, target) => { selected.push([type, target]); return 1; };
   world.clickTarget({ clientX: 10, clientY: 10 }); assert.deepEqual(walked, [[30, 2, 20]]); assert.deepEqual(selected, []);
   world.scene.entities.set('enemy', { record: { id: 'enemy', interactive: true, mesh: { visible: true }, location: [1, 0, 1] } });
   world.clickTarget({ clientX: 10, clientY: 10 }); assert.deepEqual(selected, [['target', 'enemy']]); assert.equal(walked.length, 1);
@@ -476,8 +476,8 @@ function groundGesture() {
   world.identity = { entity: 'hero' }; world.scene = { entities: new Map() }; world.guiInput = { position: [0, 0] };
   world.controls = { app: { globals }, movementMethods: { gesture: require('./runtime-ast.cjs').prototypeWith('hasHeldOrSwiped') } };
   world.game = { getIMGui: () => ({ hasCapturedInput: () => false, isHot: () => false }) };
-  world.construction = { cursor: () => [30, 2, 20], pointer() {} };
-  world.movement = { canvas: { ...globals.graphicsDevice.canvas, setPointerCapture: id => { captured = id; } }, available: () => available,
+  world.construction = { cursor: () => [30, 2, 20], pointer() {}, cancel() {} };
+  world.movement = { keys: new Set(), canvas: { ...globals.graphicsDevice.canvas, setPointerCapture: id => { captured = id; } }, available: () => available,
     requestWalk(location, mode = 'click') { if (!available || !location) return false; requested.push({ location, mode }); return true; }, cancelWalk() { cancelled++; } };
   return { world, globals, requested, captured: () => captured, cancelled: () => cancelled, unavailable: () => { available = false; } };
 }
@@ -500,4 +500,40 @@ test('lost pointer, unavailable input and an invalid release cursor cannot retai
     if (reason === 'cursor') { f.globals.appCurrentTime = 1; f.world.construction.cursor = () => null; f.world.finishGroundDrag(); }
     assert.equal(f.world.groundDrag, null, reason); assert.equal(f.cancelled(), 1, reason); assert.equal(f.requested.length, 1, reason);
   }
+});
+
+function targetedWorld() {
+  const f = groundGesture(), sent = [];
+  f.globals.camera.worldToScreen = location => location;
+  for (const [id, x] of [['tree', 0], ['enemy', 90]]) f.world.scene.entities.set(id, { record: { id, interactive: true, mesh: { visible: true }, location: [x, 0, 0] } });
+  f.world.sendTarget = (type, target, _archetype, phase = 'release') => { sent.push({ type, target, phase }); return sent.length; };
+  return { ...f, sent };
+}
+test('targeted guest gestures defer selection until release and retain a target through a swipe, then switch a hold into native movement', () => {
+  const f = targetedWorld(); f.world.clickTarget({ clientX: 0, clientY: 0, pointerId: 3 });
+  assert.equal(f.captured(), 3); assert.deepEqual(f.sent, [{ type: 'target', target: 'tree', phase: 'press' }]); assert.equal(f.world.selectionRequest, null);
+  f.world.guiInput.position = [20, 0]; f.world.updateGroundDrag(); assert.equal(f.requested.length, 0, 'a retained target uses hold, not swipe');
+  f.world.finishGroundDrag(); assert.equal(f.sent[1].phase, 'release'); assert.equal(f.world.selectionRequest, 2);
+  const held = targetedWorld(); held.world.clickTarget({ clientX: 0, clientY: 0 });
+  held.globals.appCurrentTime = 0.5; held.world.updateGroundDrag(); assert.equal(held.requested.length, 0);
+  held.globals.appCurrentTime = 0.501; held.world.updateGroundDrag(); held.world.finishGroundDrag();
+  assert.deepEqual(held.requested.map(value => value.mode), ['click', 'drag', 'release']); assert.equal(held.sent.length, 1); assert.equal(held.world.selectionRequest, null);
+});
+test('target gestures resample targets, stop on cancellation and handle release before the next frame', t => {
+  let now = 0; t.mock.method(performance, 'now', () => now);
+  const f = targetedWorld(); f.world.clickTarget({ clientX: 0, clientY: 0 });
+  f.world.groundDrag.event = { clientX: 90, clientY: 0 }; f.world.updateGroundDrag(); assert.equal(f.sent.length, 1);
+  now = 100; f.world.updateGroundDrag(); assert.deepEqual(f.sent[1], { type: 'target', target: 'enemy', phase: 'update' });
+  f.world.finishGroundDrag(); assert.deepEqual(f.sent[2], { type: 'target', target: 'enemy', phase: 'release' });
+  for (const reason of ['capture', 'focus', 'menu']) {
+    const cancelled = targetedWorld(); cancelled.world.clickTarget({ clientX: 0, clientY: 0 });
+    if (reason === 'focus') { cancelled.unavailable(); cancelled.world.updateGroundDrag(); }
+    else if (reason === 'menu') cancelled.world.cancelLocalMenu();
+    else cancelled.world.cancelGroundDrag(true);
+    cancelled.world.finishGroundDrag(); assert.equal(cancelled.sent.length, 1, reason);
+  }
+  const held = targetedWorld(); held.world.clickTarget({ clientX: 0, clientY: 0 }); held.globals.appCurrentTime = 0.501; held.world.finishGroundDrag();
+  assert.deepEqual(held.requested.map(value => value.mode), ['release']); assert.equal(held.sent.length, 1);
+  const changed = targetedWorld(); changed.world.clickTarget({ clientX: 0, clientY: 0 }); changed.world.groundDrag.event = { clientX: 90, clientY: 0 }; changed.world.finishGroundDrag();
+  assert.deepEqual(changed.sent.map(value => [value.target, value.phase]), [['tree', 'press'], ['enemy', 'release']]);
 });

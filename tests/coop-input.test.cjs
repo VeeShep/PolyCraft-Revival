@@ -210,6 +210,7 @@ test('original targeted resources wait for release; a swipe alone retains target
 test('original ranged targeting attacks when selected and does not repeat the press attack during targeted updates or release', () => {
   const ranged = targetedGesture('ENEMY_RANGED'); ranged.view.updateFunction(); ranged.view.downFunction();
   assert.deepEqual(ranged.calls, ['attack']);
-  ranged.view.updateFunction(); assert.deepEqual(ranged.calls, ['attack']);
+  ranged.view.getTargetEntity = () => ({ getEC: () => null });
+  ranged.view.updateFunction(); assert.deepEqual(ranged.calls, ['attack'], 'another ranged enemy does not re-enter the same interaction mode');
   ranged.view.liftFunction(); assert.deepEqual(ranged.calls, ['attack', 'activate', 'end']);
 });

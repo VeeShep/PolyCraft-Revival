@@ -9,16 +9,17 @@
     return { phase, remaining, episode: phase === 'normal' ? null : life.deathTime, option, affordable: !!(option && life.canAffordToRevive(option === 'amber' ? 10 : 0, option === 'lumber' ? 50 : 0)) };
   }
   class HostActions {
-    constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); this.cameraTokens = 2; this.cameraTokenTime = this.tokenTime; }
+    constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); this.pressTokens = 10; this.pressTokenTime = this.tokenTime; this.cameraTokens = 2; this.cameraTokenTime = this.tokenTime; }
     receive(value) {
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
       const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
       const quest = ['questOpen', 'questReward'].includes(value?.type);
-      const held = value?.archetype !== undefined;
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest ? 4 : 3) + (held ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      const held = value?.archetype !== undefined, targeted = value?.type === 'target';
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
       if (quest && (typeof value.quest !== 'string' || !/^taskId(?:crit|fill)_\d{1,4}$/.test(value.quest))) throw new Error('Invalid quest request.');
       if ((buildingUpgrade || cancelUpgrade) && (typeof value.next !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.next))) throw new Error('Invalid building upgrade.');
       if (cancelUpgrade && (!Number.isSafeInteger(value.episode) || value.episode < 1)) throw new Error('Invalid upgrade episode.');
+      if (targeted && !['press', 'update', 'clear', 'release'].includes(value.phase)) throw new Error('Invalid target phase.');
       if ((value.type === 'repair' || buildingUpgrade) && (!Array.isArray(value.costs) || value.costs.length !== 2 || ![0, 1].every(index => typeof value.costs[index] === 'number' && Number.isFinite(value.costs[index]) && value.costs[index] >= 0 && value.costs[index] <= 2147483647))) throw new Error('Invalid resource quote.');
       if (revive && (typeof value.amber !== 'boolean' || typeof value.episode !== 'number' || !Number.isFinite(value.episode) || Math.abs(value.episode) > 1e9)) throw new Error('Invalid revive choice.');
       if (value.type === 'cancelBuild' && !held || held && (!(placement || value.type === 'cancelBuild') || typeof value.archetype !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.archetype))) throw new Error('Invalid held building selection.');
@@ -32,10 +33,14 @@
         this.cameraTokens = Math.min(2, this.cameraTokens + Math.max(0, now - this.cameraTokenTime) * 0.002); this.cameraTokenTime = now;
         if (this.cameraTokens < 1) throw new Error('Too many camera actions.');
         this.cameraTokens--;
+      } else if (targeted && value.phase !== 'release') {
+        this.pressTokens = Math.min(10, this.pressTokens + Math.max(0, now - this.pressTokenTime) * 0.01); this.pressTokenTime = now;
+        if (this.pressTokens < 1) throw new Error('Too many target presses.');
+        this.pressTokens--;
       } else { if (this.tokens < 1) throw new Error('Too many target actions.'); this.tokens--; }
       this.sequence = value.sequence; this.queue.push({ ...value, ...(placement ? { location: [...value.location] } : {}), ...(value.type === 'repair' || buildingUpgrade ? { costs: [...value.costs] } : {}) });
     }
-    stop(hero) { hero.getEC('ECAutoFire')?.disable(); }
+    stop(hero) { this.targetMode = null; hero.getEC('ECAutoFire')?.disable(); }
     updateCombat(game, hero, players) {
       const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
       if (!target) return;
@@ -53,6 +58,8 @@
       return { type: action.type, sequence: action.sequence, ...(typeof result === 'string' ? { message: result } : result) };
     }
     execute(game, hero, players, id, controls, type = 'target', action) {
+      if (type === 'target' && action?.phase === 'press') this.targetMode = null;
+      if (type === 'target' && action?.phase === 'clear') { this.targetMode = null; return 'Target cleared.'; }
       const target = game.getGameEntityByName(id);
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
@@ -99,24 +106,34 @@
       }
       if (action?.archetype !== undefined) return 'Only your own held building can be controlled.';
       if (incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || builder.isBuilding() || builder.isThrowing()) return 'Finish the current action first.';
+      let rangedTarget = false;
+      if (type === 'target' && action?.phase) {
+        const methods = controls?.movementMethods;
+        if (methods) {
+          const mode = methods.targetType.call({ getHeroEntity: () => hero }, target), previous = this.targetMode;
+          this.targetMode = action.phase === 'release' ? null : mode;
+          rangedTarget = mode === methods.rangedType;
+          if (rangedTarget && previous === mode || !rangedTarget && action.phase !== 'release') return 'Target selected.';
+        } else if (action.phase !== 'release') return 'Target selection unavailable.';
+      }
       if (type === 'upgradeBuilding') return game.desktopConstruction?.upgradeBuilding(hero, target, action.next, action.costs) || 'Construction is not ready.';
       if (type === 'cancelUpgrade') return game.desktopConstruction?.cancelUpgrade(hero, target, action.next, action.episode) || 'Construction is not ready.';
       if (type === 'repair') return game.desktopConstruction?.repair(hero, target, action.costs) || 'Construction is not ready.';
       if (type === 'move') return game.desktopConstruction?.move(hero, target) || 'Construction is not ready.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
       if (type === 'upgrade') return upgradeTotem(game, hero, players, target, action, controls);
-      const totem = type === 'target' ? totemMenu(hero, target, controls) : null;
+      const totem = type === 'target' && !rangedTarget ? totemMenu(hero, target, controls) : null;
       if (totem) return { message: 'Choose a hero upgrade. Escape cancels.', totem };
-      const construction = type === 'target' ? game.desktopConstruction?.menu(hero, target, controls) : null;
+      const construction = type === 'target' && !rangedTarget ? game.desktopConstruction?.menu(hero, target, controls) : null;
       if (construction && (construction.products.length || construction.move || construction.repair || construction.upgrade)) return { message: 'Choose a building action. Escape cancels.', construction };
-      const building = controls?.demolitionInfo(target);
+      const building = rangedTarget ? null : controls?.demolitionInfo(target);
       if (type === 'demolish') {
         if (!building || building.reason) return building?.reason || 'This building cannot be demolished.';
         controls.demolishBuilding(id);
         return { message: 'Building demolished and saved.', save: true };
       }
       if (building) return { message: building.reason || 'Building selected.', building: { id: building.id, name: building.name, reason: building.reason, movable: !!game.desktopConstruction?.canMove(hero, target) } };
-      const resource = target.getEC('ECResourceDispenser');
+      const resource = rangedTarget ? null : target.getEC('ECResourceDispenser');
       if (resource) {
         const interaction = target.getEC('ECInteractable');
         if (!interaction?.getActive() || resource.getResource() <= 0) return 'No resources available here.';
