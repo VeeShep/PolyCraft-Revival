@@ -2,6 +2,12 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
+## Next input gap: targeted press/hold/release — audited 2026-11-03
+
+Native `HeroControllerAction.updateTargeted` uses `hasHeld`, not `hasHeldOrSwiped`, to leave a retained target after 0.5 seconds. Resources dispatch in `liftTargetedInteractable` on release; ranged targets fire on entry through `beginTargetedRanged` with `ATTACK_ON_DOWN`. Native update runs before down/up processing and recalculates the nearest target, so a faithful implementation must consider changing targets and cancellation rather than merely enabling ground drag for every press.
+
+Guest `clickTarget` currently sends a `target` action immediately, while `HostActions.execute` either selects a menu, gathers or attacks based on live host components. Ground gesture state is only created when no target was picked. This means a resource press executes before release and a targeted hold cannot become movement. Two tests in `tests/coop-input.test.cjs` execute the actual original methods to pin release/hold/swipe and ranged timing before changing the guest protocol. Runtime is unchanged; 322 checks pass. Target classification must retain host authority and stale menu receipts must not open a menu after transitioning into movement. See the current continuation entry in RESTORATION_STATUS.md for scope and remaining gates.
+
 ## Current held/drag ground controls — Beta 33, 2026-10-28
 
 Guest empty-ground input reuses actual native hold/swipe predicates and click/drag/release destination flags. Steering is capped at 20 Hz, shares the keyboard movement sequence and send chain, coalesces under backpressure and expires on the host after 600 ms. Path-query limits remain separate. Focus/menu/resync cancellation stays latched while sends are pending; pointer cancellation/lost capture/outside release stop active gestures, while normal capture loss after accepted release does not stop its path.

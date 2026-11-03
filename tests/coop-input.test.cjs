@@ -181,3 +181,35 @@ test('a cancelled pointer intent stays cancelled if focus returns before a slow 
   finish(); await pending; await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(sent.map(value => value.type), ['walk', 'move']); assert.deepEqual(sent[1].move, [0, 0]); assert.equal(input.queuedWalk, null); assert.equal(input.walkRequested, false);
 });
+
+function targetedGesture(type) {
+  const types = { NONE: 0, INTERACTABLE: 1, ENEMY_RANGED: 2 }, calls = [];
+  const methods = require('./runtime-ast.cjs').prototypeWith('updateTargeted', { GameInputController: { interactTypes: types } });
+  let target = { getEC: name => name === 'ECInteractable' ? { shouldApproachOnUp: () => false, executeCallbacks: actor => { assert.equal(actor, hero); calls.push('gather'); } } : null };
+  const hero = { getEC: () => null }, view = Object.assign(Object.create(methods), {
+    globals: { appCurrentTime: 0, mathDevice: { v2DistanceSq: (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 } },
+    prevDown: true, downTime: 0, downv2ScreenCoord: [0, 0], crashMobController: { getv2ScreenCoord: () => [100, 0], controlNavigate: true },
+    getHeroEntity: () => hero, getTargetEntity: () => target, calculateNearestTarget() {}, getSelectionRadius: () => 1, getAddedSelectionRadius: () => 0,
+    getSelectedType: () => types[type], clearTargetEntity() { target = null; calls.push('clear'); },
+    setControllableDestination(...flags) { calls.push(['destination', ...flags]); }, attackRangedTargetedEntity() { calls.push('attack'); },
+    activateTargetEntityIfValid() { calls.push('activate'); }, endTargeted() { calls.push('end'); }
+  });
+  view.beginTargeted();
+  return { view, calls };
+}
+test('original targeted resources wait for release; a swipe alone retains targeting but a hold switches to native movement', () => {
+  const short = targetedGesture('INTERACTABLE'); short.view.updateFunction(); short.view.downFunction();
+  assert.deepEqual(short.calls, [], 'a resource press and large swipe do not gather or abandon a retained target');
+  short.view.liftFunction(); assert.deepEqual(short.calls, ['gather', 'activate', 'end']);
+  const held = targetedGesture('INTERACTABLE'); held.view.globals.appCurrentTime = 0.5; held.view.updateFunction(); assert.deepEqual(held.calls, []);
+  held.view.globals.appCurrentTime = 0.501; held.view.updateFunction(); held.view.downFunction();
+  assert.deepEqual(held.calls, ['clear', ['destination', true, false, true], ['destination', false, true, false]]);
+  held.view.liftFunction(); assert.deepEqual(held.calls.at(-1), ['destination', true, true, true]);
+  assert.equal(held.calls.includes('gather'), false, 'holding must not execute the original resource callback');
+});
+test('original ranged targeting attacks when selected and does not repeat the press attack during targeted updates or release', () => {
+  const ranged = targetedGesture('ENEMY_RANGED'); ranged.view.updateFunction(); ranged.view.downFunction();
+  assert.deepEqual(ranged.calls, ['attack']);
+  ranged.view.updateFunction(); assert.deepEqual(ranged.calls, ['attack']);
+  ranged.view.liftFunction(); assert.deepEqual(ranged.calls, ['attack', 'activate', 'end']);
+});
