@@ -1,7 +1,7 @@
 'use strict';
 (function (root) {
   const { emptyAudio, validateAudio } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
-  const VERSION = 9;
+  const VERSION = 10;
   const MUSIC = new Set(['aud_music_theme', 'aud_music_day', 'aud_music_night', 'aud_music_battle', 'aud_music_battle_boss']);
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];

@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current spatial world audio — Beta 40, 2026-11-04
+## Current shared battle cues and existing fades — Beta 41, 2026-11-04
+
+Two native global-only victory/defeat cues complement the 34 spatial world sounds. Native preparation is a local campaign menu cue and numbered success stings include purchase audio, so these remain outside shared playback. Parsing restricts cue scope; original guest SFX mute and replicated-source ownership apply. Hosting also captures remaining fades on existing spatial loops without restarting the host source, excluding expired/invalid/global sources.
+
+361 checks pass with actual original sound methods and silent devices; the initial focused set has 74 passing checks. Runtime coop-30/world 10 require matching Beta 41 game peers. Room/save formats are unchanged. Audible fade levels, shared campaign screens, visual effects, native platforms and physical networks remain unaccepted. Exact packaging/build evidence and the visual-effect/tween boundary audit are in RESTORATION_STATUS.md.
+
+## Previous spatial world audio — Beta 40, 2026-11-04
 
 Original host play/stop internals feed a bounded, copied, spatial-only whitelist journal and current loop/fade state at coherent world boundaries. Muted/unloaded host audio still records intent; guests use local original archetypes. Monotonic IDs skip initial one-shot history and deduplicate later full/delta/resync delivery. Loop instance reconciliation handles missing stops, same-name ordering and remaining fades without restarting unchanged playback. Attached sources follow displayed entities; replicated one-shot stops cannot stop same-name local menu sounds. Host shutdown restores exact original hooks, and guest teardown uses the isolated manager from Beta 39.
 

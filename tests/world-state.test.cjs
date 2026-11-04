@@ -214,7 +214,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 9); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 10); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');
@@ -284,5 +284,5 @@ test('world audio is captured coherently and carried through full/delta validati
   assert.deepEqual(applyDelta(before, delta), next); delta.audio.events[0].name = 'aud_music_day';
   assert.throws(() => validateDelta(delta), /Invalid world audio/);
   const missing = structuredClone(next); delete missing.audio; assert.throws(() => validateSnapshot(missing), /Invalid world snapshot/);
-  const old = structuredClone(next); old.version = 8; assert.throws(() => validateSnapshot(old), /incompatible version/);
+  const old = structuredClone(next); old.version = 9; assert.throws(() => validateSnapshot(old), /incompatible version/);
 });

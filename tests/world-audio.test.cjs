@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { HostAudio, GuestAudio, SOUNDS, LOOPS, LIMITS, emptyAudio, validateAudio } = require('../desktop/world-audio.js');
+const { HostAudio, GuestAudio, SOUNDS, LOOPS, GLOBAL_SOUNDS, LIMITS, emptyAudio, validateAudio } = require('../desktop/world-audio.js');
 const { soundManagerMethods } = require('./runtime-ast.cjs');
 const native = soundManagerMethods();
 function fixture() {
@@ -12,7 +12,7 @@ function fixture() {
   };
   const globals = { gameCurrentTime: 1, gameTimeStep: 0.1, settings: { volume: 1 }, soundManager: {},
     mathDevice: { v3BuildZero: () => [0, 0, 0], v3Copy: value => [...value], v3Equal: (a, b) => a.every((value, i) => value === b[i]), saturate: value => Math.max(0, Math.min(1, value)), lerp: (a, b, f) => a + (b - a) * f } };
-  const manager = Object.assign(Object.create(native.methods), { globals, activeSoundSourceList: [], soundSourceDepot: Array.from({ length: 50 }, source), soundSourceGlobalDepot: [source(true)],
+  const manager = Object.assign(Object.create(native.methods), { globals, activeSoundSourceList: [], soundSourceDepot: Array.from({ length: 50 }, source), soundSourceGlobalDepot: Array.from({ length: 20 }, () => source(true)),
     soundManager: { isSoundLoaded: () => loaded, isSoundMissing: () => !loaded, get: path => path } });
   const game = { globals, gameSoundManager: manager }, entity = { getName: () => 'hero', getv3Location: () => location, shouldBeDestroyed: () => false };
   return { game, manager, entity, location, played, sources, unloaded: () => { loaded = false; } };
@@ -25,6 +25,7 @@ test('world sound whitelist matches original archetypes and loop flags and exclu
     const definition = native.archetypes[name]; assert.ok(definition, name);
     for (const value of definition.sounds || [definition]) assert.equal(!!value.loop, LOOPS.includes(name), name);
   }
+  assert.deepEqual(GLOBAL_SOUNDS, ['aud_sting_success_battle', 'aud_sting_fail_battle']);
   for (const name of ['aud_test', 'aud_music_day', 'aud_music_day_preview', 'aud_amber_spend', 'aud_alert', 'aud_newquest', 'aud_badge_complete']) assert.equal(SOUNDS.includes(name), false);
 });
 test('host captures original entity/action/effect intents independently of mute or missing assets and restores native hooks', () => {
@@ -135,4 +136,38 @@ test('replicated one-shot stops cannot stop local menu audio with the same arche
   const remote = f.manager.activeSoundSourceList[1];
   guest.receive({ sequence: 2, events: [{ id: 2, op: 'stop', name: 'aud_celebrate', entity: null, location: null, fade: 0, time: 1, target: null }], loops: [] }, 1);
   assert.equal(local.soundSource.playing, true); assert.equal(remote.soundSource.playing, false);
+});
+
+test('shared battle results use original global sources once while preparation, purchase and achievement cues remain local', () => {
+  const f = fixture(), host = new HostAudio(f.game), local = fixture(), guest = new GuestAudio(local.manager, { entities: new Map() }); guest.receive(emptyAudio(), 1);
+  f.game.globals.settings.volume = 0; f.unloaded(); local.game.globals.settings.volume = 0;
+  for (const name of GLOBAL_SOUNDS) f.manager.playInternal(name);
+  f.manager.playInternal('aud_sting_prepare_battle'); f.manager.playInternal('aud_sting_success_2'); f.manager.playInternal('aud_badge_complete');
+  f.manager.playInternal('aud_sting_success_battle', [1, 2, 3]);
+  const state = host.capture(); assert.equal(state.events.length, 2); validateAudio(state, 1);
+  assert.ok(state.events.every(event => event.location === null && event.entity === null));
+  guest.receive(state, 1); guest.receive(structuredClone(state), 1); assert.equal(local.played.length, 2);
+  assert.ok(local.played.every(value => value.source.globalSource)); assert.ok(local.played.every(value => value.source.gain === 0), 'guest SFX mute applies to shared cues');
+  assert.deepEqual(local.played.map(value => value.sound), GLOBAL_SOUNDS.map(name => native.archetypes[name].path));
+  const late = fixture(), lateGuest = new GuestAudio(late.manager, { entities: new Map() }); lateGuest.receive(state, 1); assert.equal(late.played.length, 0);
+  local.manager.playInternal('aud_sting_success_battle'); const menu = local.manager.activeSoundSourceList.at(-1);
+  f.manager.stopInternal('aud_sting_success_battle', null, 0); guest.receive(host.capture(), 1);
+  assert.equal(local.played[0].source.playing, false); assert.equal(menu.soundSource.playing, true, 'host stop cannot stop local same-name audio');
+  for (const event of [{ ...state.events[0], location: [0, 0, 0] }, { ...state.events[0], entity: 'hero' }, { ...state.events[0], name: 'aud_explosion' }, { ...state.events[0], name: 'aud_sting_prepare_battle' }]) {
+    assert.throws(() => validateAudio({ sequence: 1, events: [{ ...event, id: 1 }], loops: [] }, 1), /Invalid world audio/);
+  }
+  host.close();
+});
+test('hosting seeds remaining native loop fades without restarting expired or global sources', () => {
+  const f = fixture(); f.manager.playInternal('aud_amb_fire', null, f.entity);
+  f.manager.stopInternal('aud_amb_fire', f.entity, 2); const original = f.manager.activeSoundSourceList[0]; original.fadeTime = 0.75;
+  f.manager.playInternal('aud_amb_s_waves', [0, 0, 0]); f.manager.activeSoundSourceList[1].fadeTime = 0; f.manager.activeSoundSourceList[1].startFadeTime = 1;
+  f.manager.playInternal('aud_amb_e_death');
+  const host = new HostAudio(f.game), state = host.capture(); validateAudio(state, 1);
+  assert.equal(state.loops.length, 1); assert.deepEqual(state.loops[0].fade, { duration: 2, until: 1.75 });
+  assert.equal(original.fadeTime, 0.75, 'hosting does not restart the host fade');
+  const local = fixture(), guest = new GuestAudio(local.manager, { entities: new Map() }); guest.receive(state, 1);
+  assert.equal(guest.loops.get(1).entry.fadeTime, 0.75); assert.equal(guest.loops.get(1).entry.startFadeTime, 2);
+  f.game.globals.gameCurrentTime = 1.8; assert.equal(host.capture().loops.length, 0);
+  guest.receive(host.capture(), 1.8); assert.equal(local.played[0].source.playing, false); host.close();
 });

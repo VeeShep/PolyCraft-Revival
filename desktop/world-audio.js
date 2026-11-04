@@ -1,13 +1,14 @@
 'use strict';
 (function (root) {
   const LOOPS = Object.freeze(['aud_amb_e_berserker', 'aud_amb_e_death', 'aud_amb_fire', 'aud_amb_s_cave', 'aud_amb_s_runningwater', 'aud_amb_s_waves']);
-  const SOUNDS = Object.freeze([...LOOPS, 'aud_hero_rankup', 'aud_healing', 'aud_crt_e_bannerling', 'aud_attack_death', 'aud_hit_generic',
+  const GLOBAL_SOUNDS = Object.freeze(['aud_sting_success_battle', 'aud_sting_fail_battle']);
+  const SOUNDS = Object.freeze([...LOOPS, ...GLOBAL_SOUNDS, 'aud_hero_rankup', 'aud_healing', 'aud_crt_e_bannerling', 'aud_attack_death', 'aud_hit_generic',
     'aud_hit_e_berserker', 'aud_dth_e_death', 'aud_hit_e_treasure', 'aud_amb_amber', 'aud_amb_xp', 'aud_dst_xp', 'aud_dynamite',
     'aud_dth_building', 'aud_scenery_mushroom', 'aud_hit_mushroom', 'aud_dst_fire', 'aud_explosion', 'aud_explosionBerserker',
     'aud_explosionBarrel', 'aud_explosionMine', 'aud_shotguncock', 'aud_shotgunreload', 'aud_shotgundryfire', 'aud_shotgunshot',
     'aud_celebrate', 'aud_celebrate_build', 'aud_crate_destroy', 'aud_amb_s_firefly']);
   const LIMITS = Object.freeze({ events: 128, loops: 50, age: 2 });
-  const sounds = new Set(SOUNDS), loops = new Set(LOOPS);
+  const sounds = new Set(SOUNDS), loops = new Set(LOOPS), globalSounds = new Set(GLOBAL_SOUNDS);
   const keys = (value, names) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));
   const number = value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= 1e9;
   const position = value => Array.isArray(value) && value.length === 3 && Array.from(value).every(number);
@@ -20,7 +21,10 @@
     let previous = 0;
     for (const event of value.events) {
       if (!keys(event, ['id', 'op', 'name', 'entity', 'location', 'fade', 'time', 'target']) || !identity(event.id) || event.id <= previous || event.id > value.sequence || !sounds.has(event.name) || !entityName(event.entity) || !number(event.time) || event.time < 0 || event.time > time) fail();
-      if (event.op === 'play' ? !position(event.location) || event.fade !== 0 || event.target !== null : event.op !== 'stop' || event.location !== null || !number(event.fade) || event.fade < 0 || event.fade > 30 || !(event.target === null || loops.has(event.name) && identity(event.target) && event.target < event.id)) fail();
+      if (globalSounds.has(event.name) && (event.entity !== null || event.location !== null)) fail();
+      if (event.op === 'play') {
+        if ((!globalSounds.has(event.name) && !position(event.location)) || event.fade !== 0 || event.target !== null) fail();
+      } else if (event.op !== 'stop' || event.location !== null || !number(event.fade) || event.fade < 0 || event.fade > 30 || !(event.target === null || loops.has(event.name) && identity(event.target) && event.target < event.id)) fail();
       previous = event.id;
     }
     const plays = new Map(value.events.map(event => [event.id, event]));
@@ -40,10 +44,15 @@
       this.sequence = 0; this.events = []; this.loops = new Map();
       this.original = { play: this.manager.playInternal, stop: this.manager.stopInternal };
       for (const entry of this.manager.activeSoundSourceList || []) {
-        if (!loops.has(entry.soundName) || entry.soundSource.globalSource || !entry.soundSource.playing || entry.startFadeTime !== undefined) continue;
+        if (!loops.has(entry.soundName) || entry.soundSource.globalSource || !entry.soundSource.playing) continue;
+        if (entry.startFadeTime !== undefined && !(number(entry.startFadeTime) && entry.startFadeTime > 0 && number(entry.fadeTime) && entry.fadeTime > 0)) continue;
         const location = entry.v3Location || entry.soundSource.position;
         const actor = entry.gameEntity || (entry.gameEntityName && { getName: () => entry.gameEntityName, getv3Location: () => location, shouldBeDestroyed: () => true });
-        this.play(entry.soundName, location, actor);
+        const id = this.play(entry.soundName, location, actor), loop = this.loops.get(id);
+        if (loop && entry.startFadeTime !== undefined) {
+          const duration = Math.min(30, entry.startFadeTime);
+          loop.fade = { duration, until: this.game.globals.gameCurrentTime + Math.min(duration, entry.fadeTime) };
+        }
       }
       this.manager.playInternal = (...args) => {
         const outer = !this.playing;
@@ -64,19 +73,22 @@
       for (const [id, loop] of this.loops) if (loop.fade && loop.fade.until <= time) this.loops.delete(id);
     }
     play(name, location, entity) {
-      if (!sounds.has(name) || !location && !entity) return;
-      const point = Array.from(location || entity.getv3Location()), idName = entity?.getName() || null;
-      if (!position(point) || !entityName(idName)) return;
+      if (!sounds.has(name)) return;
+      const isGlobal = globalSounds.has(name);
+      if (isGlobal ? location || entity : !location && !entity) return;
+      const point = isGlobal ? null : Array.from(location || entity.getv3Location()), idName = entity?.getName() || null;
+      if ((!isGlobal && !position(point)) || !entityName(idName)) return;
       const id = this.append({ op: 'play', name, entity: idName, location: point, fade: 0, target: null });
       if (loops.has(name)) {
         this.loops.set(id, { id, name, entity: idName, location: point, fade: null, actor: entity });
         if (this.loops.size > LIMITS.loops) this.loops.delete(this.loops.keys().next().value);
       }
+      return id;
     }
     stop(name, entity, fade = 0) {
       if (!sounds.has(name)) return;
       const idName = entity?.getName() || null;
-      if (!entityName(idName)) return;
+      if (!entityName(idName) || globalSounds.has(name) && entity) return;
       this.trim(this.game.globals.gameCurrentTime);
       fade = number(fade) ? Math.max(0, Math.min(30, fade)) : 0;
       let target = null;
@@ -108,7 +120,7 @@
     play(record) {
       const before = new Set(this.manager.activeSoundSourceList);
       const actor = this.actor(record);
-      this.manager.playInternal(record.name, [...record.location], actor);
+      this.manager.playInternal(record.name, record.location && [...record.location], actor);
       return this.manager.activeSoundSourceList.find(entry => !before.has(entry) && entry.soundName === record.name);
     }
     stop(entry, fade = 0) {
@@ -149,7 +161,7 @@
       }
     }
   }
-  const api = { SOUNDS, LOOPS, LIMITS, emptyAudio, validateAudio, HostAudio, GuestAudio };
+  const api = { SOUNDS, LOOPS, GLOBAL_SOUNDS, LIMITS, emptyAudio, validateAudio, HostAudio, GuestAudio };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftWorldAudio = api;
 })(globalThis);
