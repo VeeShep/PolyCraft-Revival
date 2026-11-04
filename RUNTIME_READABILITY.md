@@ -6,7 +6,15 @@ The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`
 
 `scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
 
-## Current upstream naming pass — Beta 66
+## Current world-model role names — Beta 69
+
+Four private bindings now have descriptive names tied to the native island/save/simulation code: `Ib` → `GameManager` (11 references), `da` → `GameSpace` (71), `Df` → `GameClock` (4) and `ua` → `LevelPersistence` (53). These are verified role names, **not a claim to have recovered their lost original spelling**. Their manifest entries have `descriptive: true`.
+
+`scripts/name-world-models.cjs` follows the stable factory assigned to `this.globals.gameManager`, the unique factory owner called with the `GameSpace` label, and the clock factory assigned to the created manager. Each constructor requires its native methods and an actual construction resolving to that same binding, preventing a shadowed factory from supplying false evidence. The manager's `saveLevel` must call the same validated Parse/Serialize/SaveLoad namespace for serialization and the original user-data save. Missing, duplicate, conflicting or reassigned roles are rejected by the selector/shared renaming helper.
+
+Only declarations/bound references change. The helper's inverse rename restores the canonical committed Beta 68 syntax tree; initial formatting, earlier pass records, immutable baselines, public properties and save/asset keys stay intact. No game state, serializer filtering, timing algorithm or engine implementation is replaced. Tests exercise role naming, shadow/collision guards, factory ownership, original keys/typed vectors, pause/resume behavior, CLI provenance/baseline/repeat protection, and the actual runtime's player-versus-level serialization filters, geometry and script ownership. The actual serializer check passes before and after the transformation. Full-game and native-platform acceptance remain separate and open.
+
+## Historical upstream naming pass — Beta 66
 
 The private `Fa` binding and its 34 references are now `Camera`, verified against the pinned [Turbulenz Camera source at 2cd2857](https://github.com/turbulenz/webgl_benchmark/blob/2cd2857c3f5f00d1d0f31bcb1577f905eee4c068/jslib/camera.js). The read-only reference is `reference/turbulenz-2cd2857/camera.js`, SHA-256 `b035fbda8c1a87e88fe7225d07321e5082b6c670a9967776f26b8a7412d6d7b8`, covered by the existing complete reference license and excluded from packages. It contains additional upstream CameraController code for context; that class is not substituted or renamed.
 

@@ -803,6 +803,51 @@
       "outputSHA256": "14f20cab1f5cd830469538b29b00efb9adee40a384a2dc84cbab610cf368f506",
       "inputCanonicalSHA256": "8a166857835eee9b72e1b6339720f911208d433510fe8877aa8e555384090f3b",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "world-model-role-names",
+      "names": [
+        {
+          "original": "Ib",
+          "name": "GameManager",
+          "role": "gameManager",
+          "evidence": "stable this.globals.gameManager factory assignment, bound create constructor and native save/world serialization methods",
+          "descriptive": true,
+          "offset": 5949,
+          "references": 11
+        },
+        {
+          "original": "da",
+          "name": "GameSpace",
+          "role": "gameSpace",
+          "evidence": "unique GameSpace-labelled factory owner, bound create constructor and native entity/block/extents methods",
+          "descriptive": true,
+          "offset": 5748,
+          "references": 71
+        },
+        {
+          "original": "Df",
+          "name": "GameClock",
+          "role": "gameClock",
+          "evidence": "gameClock factory assigned to the created gameManager, bound create constructor and native tick/pause/resume/time methods",
+          "descriptive": true,
+          "offset": 5691,
+          "references": 4
+        },
+        {
+          "original": "ua",
+          "name": "LevelPersistence",
+          "role": "levelPersistence",
+          "evidence": "gameManager.saveLevel uses this same Parse/Serialize/SaveLoad namespace for serializePlayerSave and saveLevelToUserData",
+          "descriptive": true,
+          "offset": 1272647,
+          "references": 53
+        }
+      ],
+      "inputSHA256": "14f20cab1f5cd830469538b29b00efb9adee40a384a2dc84cbab610cf368f506",
+      "outputSHA256": "4bf10a559d5c8240d04239b9b67dd36aa39c5d1b468efd4fe3817225f7d5e336",
+      "inputCanonicalSHA256": "db8d0a10e77383778b28fdc6e5dbe799ecf3a9d5c18a2f952e3b5a2b053f02f3",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }

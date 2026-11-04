@@ -179,10 +179,10 @@
   function Af() {}
   function Bf() {}
   function Cf() {}
-  function Df() {}
+  function GameClock() {}
   function td() {}
   function Ef() {}
-  function da() {}
+  function GameSpace() {}
   function Hb() {}
   function B() {}
   function Ff() {}
@@ -192,7 +192,7 @@
   function Ta() {}
   function If() {}
   function PlayerDataModel() {}
-  function Ib() {}
+  function GameManager() {}
   function Kf() {}
   function CampaignScoreInfo() {}
   function Mf() {}
@@ -36029,7 +36029,7 @@
       this.multiplayerManager.setMaxPlayers(this.gameSettings.maxPlayers);
     },
     createGame: function () {
-      var a = Ib.create({
+      var a = GameManager.create({
         globals: this.globals,
         useSplashScreens: this.useSplashScreens,
         autoLoad: this.autoLoad,
@@ -36319,7 +36319,7 @@
     };
     return a;
   };
-  var ua = {
+  var LevelPersistence = {
       createEmptyLevel: function (a) {
         var b = a.versionNumber,
           c = a.saveVersionNumber,
@@ -36337,8 +36337,8 @@
       },
       Parse: {
         parseLevelDataFromLevelAndPlayerSave: function (a, b, c, d) {
-          a = ua.Parse.combineLevelAndPlayerSaveData(a.levelSaveData, a.playerSaveData, c);
-          return ua.Parse.parseLevelData(a, b, c, d);
+          a = LevelPersistence.Parse.combineLevelAndPlayerSaveData(a.levelSaveData, a.playerSaveData, c);
+          return LevelPersistence.Parse.parseLevelData(a, b, c, d);
         },
         areLevelAndPlayerSaveMergeable: function (a, b) {
           var c = a.gameSpaceList.length === b.gameSpaceList.length;
@@ -36356,20 +36356,20 @@
               scriptData: b.scriptData,
               gameSpaceList: a.gameSpaceList
             },
-            b = ua.Parse.getEntityDataMapFromGamespaceList(d),
+            b = LevelPersistence.Parse.getEntityDataMapFromGamespaceList(d),
             g,
             e = d.length,
             m = [];
           for (g = 0; g < e; g += 1) {
             var j = d[g],
-              j = ua.Parse.mergeGameSpaceEntityLists(j, j.entityList, f[g].entityList, b, c);
+              j = LevelPersistence.Parse.mergeGameSpaceEntityLists(j, j.entityList, f[g].entityList, b, c);
             m.push(j);
           }
           a.gameSpaceList = m;
           return a;
         },
         mergeGameSpaceEntityLists: function (a, b, c, d, f) {
-          a.entityList = ua.Parse.combineLevelAndPlayerSaveEntityLists(b, c, d, f);
+          a.entityList = LevelPersistence.Parse.combineLevelAndPlayerSaveEntityLists(b, c, d, f);
           return a;
         },
         combineLevelAndPlayerSaveEntityLists: function (a, b, c, d) {
@@ -36385,13 +36385,13 @@
           a = a.reduce(function (a, c) {
             return a.concat(c.entityList || []);
           }, []);
-          return ua.Parse.getMapFromList(a, "name");
+          return LevelPersistence.Parse.getMapFromList(a, "name");
         },
         getEntityMapFromGameSpaceList: function (a) {
           a = a.reduce(function (a, c) {
             return a.concat(c.entityList || []);
           }, []);
-          return ua.Parse.getMapFromList(a, "name");
+          return LevelPersistence.Parse.getMapFromList(a, "name");
         },
         getMapFromList: function (a, b) {
           return a.reduce(function (a, d) {
@@ -36401,8 +36401,8 @@
         },
         parseLevelData: function (a, b, c, d) {
           var f = a.gameSpaceList,
-            b = ua.Parse.parseGameSpaceDataList(f, null === a.uniqueIndex, b, c, d),
-            f = ua.Parse.deserializeGameSpaceList(b, f);
+            b = LevelPersistence.Parse.parseGameSpaceDataList(f, null === a.uniqueIndex, b, c, d),
+            f = LevelPersistence.Parse.deserializeGameSpaceList(b, f);
           f.forEach(function (a) {
             a.finalizeIfNeeded();
           });
@@ -36419,18 +36419,18 @@
         },
         parseGameSpaceDataList: function (a, b, c, d, f) {
           return a.map(function (a) {
-            return ua.Parse.parseGameSpaceData(a, b, c, d, f);
+            return LevelPersistence.Parse.parseGameSpaceData(a, b, c, d, f);
           });
         },
         parseGameSpaceData: function (a, b, c, d, f) {
-          var g = da.create("GameSpace", f, a.extents, a.m43Transform);
+          var g = GameSpace.create("GameSpace", f, a.extents, a.m43Transform);
           a.blockList.map(function (a) {
-            return ua.Parse.parseBlockData(a, c);
+            return LevelPersistence.Parse.parseBlockData(a, c);
           }).forEach(function (a) {
             a.addToGameSpace(g);
           });
           a = a.entityList.map(function (a) {
-            return ua.Parse.parseEntityData(a, b, d);
+            return LevelPersistence.Parse.parseEntityData(a, b, d);
           });
           g.addEntities(a);
           return g;
@@ -36452,19 +36452,19 @@
           return c;
         },
         deserializeGameSpaceList: function (a, b) {
-          var c = ua.Parse.getEntityMapFromGameSpaceList(a),
+          var c = LevelPersistence.Parse.getEntityMapFromGameSpaceList(a),
             d = a.length,
             f,
             g,
             e;
-          for (f = 0; f < d; f += 1) g = a[f], e = b[f], ua.Parse.deserializeGameSpace(g, e, c);
+          for (f = 0; f < d; f += 1) g = a[f], e = b[f], LevelPersistence.Parse.deserializeGameSpace(g, e, c);
           return a;
         },
         deserializeGameSpace: function (a, b, c) {
           var a = a.getEntityList(),
             d = b.entityList;
           return a.map(function (a, b) {
-            return ua.Parse.deserializeEntity(a, d[b].ecData, c);
+            return LevelPersistence.Parse.deserializeEntity(a, d[b].ecData, c);
           });
         },
         deserializeEntity: function (a, b, c) {
@@ -36474,25 +36474,25 @@
       },
       SaveLoad: {
         saveLevelToUserData: function (a, b, c, d, f) {
-          b = JSON.stringify(b, ua.SaveLoad.typedArrayReplacer);
-          ua.SaveLoad.saveDataToUserData(a, b, c, d, f);
+          b = JSON.stringify(b, LevelPersistence.SaveLoad.typedArrayReplacer);
+          LevelPersistence.SaveLoad.saveDataToUserData(a, b, c, d, f);
         },
         loadLevelFromUserData: function (a, b, c, d) {
-          ua.SaveLoad.loadDataFromUserData(a, b, c, d);
+          LevelPersistence.SaveLoad.loadDataFromUserData(a, b, c, d);
         },
         deleteLevelFromUserData: function (a, b, c, d) {
-          ua.SaveLoad.saveDataToUserData(a, "", b, c, d);
+          LevelPersistence.SaveLoad.saveDataToUserData(a, "", b, c, d);
         },
         loadLevelFromFile: function (a, b, c, d, f) {
           a = c.getURL(a);
-          ua.SaveLoad.loadDataFromLocal(a, b, d, f);
+          LevelPersistence.SaveLoad.loadDataFromLocal(a, b, d, f);
         },
         saveLevelToLocal: function (a, b, c, d, f) {
-          b = JSON.stringify(b, ua.SaveLoad.typedArrayReplacer);
-          ua.SaveLoad.saveDataToLocal(a, b, c, d, f);
+          b = JSON.stringify(b, LevelPersistence.SaveLoad.typedArrayReplacer);
+          LevelPersistence.SaveLoad.saveDataToLocal(a, b, c, d, f);
         },
         loadLevelFromLocal: function (a, b, c, d) {
-          ua.SaveLoad.loadDataFromLocal(a, b, c, d);
+          LevelPersistence.SaveLoad.loadDataFromLocal(a, b, c, d);
         },
         listLocalLevelFiles: function (a, b, c, d) {
           ab.ajax({
@@ -36556,21 +36556,21 @@
       },
       Serialize: {
         serializeLevelIntoLevelAndPlayerSave: function (a, b) {
-          var c = ua.Serialize.serializeLevelSave(a, b),
-            d = ua.Serialize.serializePlayerSave(a, b);
+          var c = LevelPersistence.Serialize.serializeLevelSave(a, b),
+            d = LevelPersistence.Serialize.serializePlayerSave(a, b);
           return {
             levelSaveData: c,
             playerSaveData: d
           };
         },
         serializeLevelSave: function (a, b) {
-          return ua.Serialize.serializeLevel(a, !0, !0, !1, !1, b);
+          return LevelPersistence.Serialize.serializeLevel(a, !0, !0, !1, !1, b);
         },
         serializePlayerSave: function (a, b) {
-          return ua.Serialize.serializeLevel(a, !1, !1, !0, !0, b);
+          return LevelPersistence.Serialize.serializeLevel(a, !1, !1, !0, !0, b);
         },
         serializeLevelIntoSingleSave: function (a, b) {
-          return ua.Serialize.serializeLevel(a, !0, !0, !0, !0, b);
+          return LevelPersistence.Serialize.serializeLevel(a, !0, !0, !0, !0, b);
         },
         serializeLevel: function (a, b, c, d, f, g) {
           var e = a.getGameSpaceList(),
@@ -36581,7 +36581,7 @@
             a = a.uniqueLevelIndex,
             k = 0.001 * new Date().getTime(),
             e = e.map(function (a) {
-              return ua.Serialize.serializeGameSpace(a, b, c, d, g);
+              return LevelPersistence.Serialize.serializeGameSpace(a, b, c, d, g);
             }),
             f = f ? m.serialize() : null;
           return {
@@ -36597,13 +36597,13 @@
         serializeGameSpace: function (a, b, c, d, f) {
           var g = null;
           b && (g = a.getBlockList().map(function (a) {
-            return ua.Serialize.serializeBlock(a);
+            return LevelPersistence.Serialize.serializeBlock(a);
           }));
           b = null;
           if (c || d) b = a.getEntityList().filter(function (a) {
             return a.shouldLevelSave && c || a.shouldPlayerSave && d;
           }).map(function (a) {
-            return ua.Serialize.serializeEntity(a, f);
+            return LevelPersistence.Serialize.serializeEntity(a, f);
           });
           return {
             extents: a.calculateExtents(),
@@ -36621,7 +36621,7 @@
           };
         },
         serializeEntity: function (a, b) {
-          return a.archetypeName ? ua.Serialize.serializeArchetypeEntity(a, b) : ua.Serialize.serializeCustomEntity(a, b);
+          return a.archetypeName ? LevelPersistence.Serialize.serializeArchetypeEntity(a, b) : LevelPersistence.Serialize.serializeCustomEntity(a, b);
         },
         serializeArchetypeEntity: function (a, b) {
           var c = a.name,
@@ -37088,11 +37088,11 @@
   };
   t.Actions.actionMap.enableEditorECDebugDrawing = function (a, b) {
     a.debugDrawFlags.gameSpaces = !0;
-    b.addECDebugDrawMask(Ib.ecDebugDrawMasks.editor);
+    b.addECDebugDrawMask(GameManager.ecDebugDrawMasks.editor);
   };
   t.Actions.actionMap.disableEditorECDebugDrawing = function (a, b) {
     a.debugDrawFlags.gameSpaces = !1;
-    b.removeECDebugDrawMask(Ib.ecDebugDrawMasks.editor);
+    b.removeECDebugDrawMask(GameManager.ecDebugDrawMasks.editor);
   };
   t.Actions.actionMap.buildBlockAABBTree = function (a, b) {
     t.State.aabbTreeBlocks = qa.create(!0);
@@ -37217,8 +37217,8 @@
       f = c.v3BuildZero(),
       d = c.aabbBuildFromCentreHalfExtents(f, d),
       f = c.m43BuildIdentity(),
-      c = ua.createEmptyLevel(b),
-      d = da.create("GameSpace", a, d, f);
+      c = LevelPersistence.createEmptyLevel(b),
+      d = GameSpace.create("GameSpace", a, d, f);
     c.gameSpaceList = [d];
     b.setCurrentLevel(c);
   };
@@ -37474,7 +37474,7 @@
   };
   t.Actions.actionMap.saveLevelToLocalAsSingleFile = function (a, b, c) {
     var d = c.text || t.State.saveAsLevelName,
-      b = ua.Serialize.serializeLevelIntoSingleSave(b, !0),
+      b = LevelPersistence.Serialize.serializeLevelIntoSingleSave(b, !0),
       c = "/local/v1/save/" + a.gameSession.gameSlug,
       c = c + "/" + t.State.saveLevelDirectory,
       c = c + "/",
@@ -37482,15 +37482,15 @@
       c = c + t.State.singleSaveFileNameEnding,
       c = c + ".",
       c = c + t.State.levelFileExtension;
-    ua.SaveLoad.saveLevelToLocal(c, b, a.requestHandler, function () {
+    LevelPersistence.SaveLoad.saveLevelToLocal(c, b, a.requestHandler, function () {
       t.State.currentLevelName = d;
       t.State.saveAsLevelName = d;
     }, function () {});
   };
   t.Actions.actionMap.saveLevelToLocalAsSeparateLevelAndPlayerSave = function (a, b, c) {
     var d = c.text || t.State.saveAsLevelName,
-      c = ua.Serialize.serializeLevelSave(b, !0),
-      b = ua.Serialize.serializePlayerSave(b, !0),
+      c = LevelPersistence.Serialize.serializeLevelSave(b, !0),
+      b = LevelPersistence.Serialize.serializePlayerSave(b, !0),
       f = a.gameSession.gameSlug,
       g;
     g = "/local/v1/save/" + f + "/";
@@ -37513,18 +37513,18 @@
         e += 1;
         2 <= e && (t.State.currentLevelName = d, t.State.saveAsLevelName = d);
       };
-    ua.SaveLoad.saveLevelToLocal(g, c, a, m, function () {});
-    ua.SaveLoad.saveLevelToLocal(f, b, a, m, function () {});
+    LevelPersistence.SaveLoad.saveLevelToLocal(g, c, a, m, function () {});
+    LevelPersistence.SaveLoad.saveLevelToLocal(f, b, a, m, function () {});
   };
   t.Actions.actionMap.loadLevelFromLocalAsSingleFile = function (a, b, c) {
     var d = c.text,
       f = t.State.loadLevelDirectory,
       f = f + "/" + d,
       f = f + ".json";
-    ua.SaveLoad.loadLevelFromLocal(f, a.requestHandler, function (f, e) {
+    LevelPersistence.SaveLoad.loadLevelFromLocal(f, a.requestHandler, function (f, e) {
       var m = b.getBlockFactory(),
         j = b.getEntityFactory(),
-        m = ua.Parse.parseLevelData(e, m, j, a);
+        m = LevelPersistence.Parse.parseLevelData(e, m, j, a);
       b.setCurrentLevel(m);
       t.State.currentLevelName = d;
       t.State.saveAsLevelName = d;
@@ -37548,7 +37548,7 @@
       i = function (f, g, e) {
         var f = b.getBlockFactory(),
           h = b.getEntityFactory(),
-          g = ua.Parse.parseLevelDataFromLevelAndPlayerSave({
+          g = LevelPersistence.Parse.parseLevelDataFromLevelAndPlayerSave({
             levelSaveData: g,
             playerSaveData: e
           }, f, h, a);
@@ -37558,10 +37558,10 @@
         t.Actions.actionMap.buildBlockAABBTree(a, b, c);
         t.Actions.actionMap.buildEntityAABBTree(a, b, c);
       };
-    ua.SaveLoad.loadLevelFromLocal(f, e, function (a, b) {
+    LevelPersistence.SaveLoad.loadLevelFromLocal(f, e, function (a, b) {
       (m = b) && j && i(a, m, j);
     }, function () {});
-    ua.SaveLoad.loadLevelFromLocal(g, e, function (a, b) {
+    LevelPersistence.SaveLoad.loadLevelFromLocal(g, e, function (a, b) {
       j = b;
       m && j && i(a, m, j);
     }, function () {});
@@ -37572,7 +37572,7 @@
     b += "/files";
     b += "/";
     b += t.State.loadLevelDirectory;
-    ua.SaveLoad.listLocalLevelFiles(b, a.requestHandler, function (a, b) {
+    LevelPersistence.SaveLoad.listLocalLevelFiles(b, a.requestHandler, function (a, b) {
       t.State.levelNameList = b.map(function (a) {
         return a.substring(0, a.indexOf("."));
       });
@@ -44491,13 +44491,13 @@
       a[0] < this.getGridSizeX() && 0 <= a[0] && a[1] < this.getGridSizeY() && 0 <= a[1] && (c[a[0]][a[1]] += b);
     },
     setImpassable: function (a) {
-      this.setElementValue(a, da.terrainTypes.terrainTypes.impass);
+      this.setElementValue(a, GameSpace.terrainTypes.terrainTypes.impass);
     },
     setPassable: function (a) {
-      this.setElementValue(a, da.terrainTypes.terrainTypes.pass);
+      this.setElementValue(a, GameSpace.terrainTypes.terrainTypes.pass);
     },
     isPassable: function (a) {
-      return this.getGridArray()[a[0]][a[1]] !== da.terrainTypes.impass;
+      return this.getGridArray()[a[0]][a[1]] !== GameSpace.terrainTypes.impass;
     },
     finalise: function () {
       var a = this.getGridArray();
@@ -44513,7 +44513,7 @@
         j,
         k,
         l;
-      for (k = a[0]; k < e; k += 1) for (l = g; l < i; l += 1) d[k][l] !== da.terrainTypes.impass && (j = c.v2Build(k, l), f.push(j));
+      for (k = a[0]; k < e; k += 1) for (l = g; l < i; l += 1) d[k][l] !== GameSpace.terrainTypes.impass && (j = c.v2Build(k, l), f.push(j));
       return f;
     },
     debugDraw: function (a) {
@@ -44528,7 +44528,7 @@
         k,
         l,
         n;
-      for (k = 0; k < i; k += 1) for (l = 0; l < j; l += 1) g = b[k][l], g !== da.terrainTypes.pass && (d = c.v2Build(k, l), d = this.getV3WorldLocationFromV2GridLocation(d), void 0 !== a && (d[1] = a), n = (k + l) % 2, g = this.getElementColour(g, n), this.drawElement(d, f, g, e));
+      for (k = 0; k < i; k += 1) for (l = 0; l < j; l += 1) g = b[k][l], g !== GameSpace.terrainTypes.pass && (d = c.v2Build(k, l), d = this.getV3WorldLocationFromV2GridLocation(d), void 0 !== a && (d[1] = a), n = (k + l) % 2, g = this.getElementColour(g, n), this.drawElement(d, f, g, e));
     },
     reset: function () {
       var a = this.getGridArray(),
@@ -44536,7 +44536,7 @@
         c = this.getGridSizeY(),
         d,
         f;
-      for (d = 0; d < b; d += 1) for (f = 0; f < c; f += 1) a[d][f] = da.terrainTypes.pass;
+      for (d = 0; d < b; d += 1) for (f = 0; f < c; f += 1) a[d][f] = GameSpace.terrainTypes.pass;
     },
     isV2LocationWithinGrid: function (a) {
       return a[0] < this.getGridSizeX() && 0 <= a[0] && a[1] < this.getGridSizeY() && 0 <= a[1];
@@ -44558,7 +44558,7 @@
         g.v2Sub(i, a, j);
         p = g.v2Dot(j, e);
         p = Math.abs(p);
-        if (1.41 > p && f[k][s] === da.terrainTypes.impass) return i;
+        if (1.41 > p && f[k][s] === GameSpace.terrainTypes.impass) return i;
       }
       return null;
     },
@@ -44574,7 +44574,7 @@
       return this.globals.mathDevice.v2Build(Math.floor(a[0] + b[0]), Math.floor(a[2] + b[2]));
     },
     getElementColour: function (a, b) {
-      return a === da.terrainTypes.impass ? b ? this.v4ElementColourImpassAlt : this.v4ElementColourImpass : a === da.terrainTypes.pass ? b ? this.v4ElementColourPassAlt : this.v4ElementColourPass : b ? this.v4ElementColourTerrainAlt : this.v4ElementColourTerrain;
+      return a === GameSpace.terrainTypes.impass ? b ? this.v4ElementColourImpassAlt : this.v4ElementColourImpass : a === GameSpace.terrainTypes.pass ? b ? this.v4ElementColourPassAlt : this.v4ElementColourPass : b ? this.v4ElementColourTerrainAlt : this.v4ElementColourTerrain;
     },
     drawElement: function (a, b, c, d) {
       this.globals.simpleSpriteRenderer.addSprite({
@@ -44604,7 +44604,7 @@
     g.globals = a;
     g.v3GridToWorldOffset = e.v3Copy(d);
     g.v3WorldToGridOffset = e.v3Copy(f);
-    g.gridArray = jc.create(b, c, da.terrainTypes.pass);
+    g.gridArray = jc.create(b, c, GameSpace.terrainTypes.pass);
     g.sizeX = b;
     g.sizeY = c;
     g.elementTexture = "textures/block.dds";
@@ -63293,7 +63293,7 @@
     c.initialize(b);
     return c;
   };
-  Df.prototype = {
+  GameClock.prototype = {
     tick: function (a, b) {
       var c = this.globals,
         d = c.appTimeStep,
@@ -63349,8 +63349,8 @@
       return this.physTimeStep;
     }
   };
-  Df.create = function (a) {
-    var b = new Df();
+  GameClock.create = function (a) {
+    var b = new GameClock();
     b.currentFrame = 0;
     b.currentTime = null;
     b.startTime = null;
@@ -64047,7 +64047,7 @@
     b.reset();
     return b;
   };
-  da.prototype = {
+  GameSpace.prototype = {
     activate: function () {
       this.getEntityList().map(function (a) {
         a.activate();
@@ -64541,14 +64541,14 @@
         d = this.getV2GridLocationFromV3WorldLocation(d),
         b = this.getV2GridLocationFromV3WorldLocation(b),
         c = a.terrainType,
-        a = da.heroFactionTerrainTypes[c],
-        c = da.enemyFactionTerrainTypes[c],
+        a = GameSpace.heroFactionTerrainTypes[c],
+        c = GameSpace.enemyFactionTerrainTypes[c],
         f = this.getNavGridHeroWeighted(),
         e = this.getNavGridEnemyWeighted(),
         h = this.getHeroRefCountGrid(),
         i = this.getEnemyRefCountGrid();
-      a !== da.terrainTypes.impass ? this.addTerrainCostToNavGridArea(f, d, b, a) : this.setNavGridArea(f, d, b, da.terrainTypes.impass);
-      c !== da.terrainTypes.impass ? this.addTerrainCostToNavGridArea(e, d, b, c) : this.setNavGridArea(e, d, b, da.terrainTypes.impass);
+      a !== GameSpace.terrainTypes.impass ? this.addTerrainCostToNavGridArea(f, d, b, a) : this.setNavGridArea(f, d, b, GameSpace.terrainTypes.impass);
+      c !== GameSpace.terrainTypes.impass ? this.addTerrainCostToNavGridArea(e, d, b, c) : this.setNavGridArea(e, d, b, GameSpace.terrainTypes.impass);
       h.addToArea(d, b, 1);
       i.addToArea(d, b, 1);
     },
@@ -64571,8 +64571,8 @@
         d = this.getV2GridLocationFromV3WorldLocation(d),
         b = this.getV2GridLocationFromV3WorldLocation(b),
         a = a.terrainType,
-        c = da.heroFactionTerrainTypes[a],
-        f = da.enemyFactionTerrainTypes[a],
+        c = GameSpace.heroFactionTerrainTypes[a],
+        f = GameSpace.enemyFactionTerrainTypes[a],
         e = this.getNavGridHeroWeighted(),
         a = this.getNavGridEnemyWeighted(),
         h = this.getHeroRefCountGrid(),
@@ -64582,9 +64582,9 @@
       h.addToArea(d, b, -1);
       i.addToArea(d, b, -1);
       c = h.getGridArray();
-      this.setNavGridAreaForReferenceCount(e, c, d, b, da.terrainTypes.pass, 0);
+      this.setNavGridAreaForReferenceCount(e, c, d, b, GameSpace.terrainTypes.pass, 0);
       c = i.getGridArray();
-      this.setNavGridAreaForReferenceCount(a, c, d, b, da.terrainTypes.pass, 0);
+      this.setNavGridAreaForReferenceCount(a, c, d, b, GameSpace.terrainTypes.pass, 0);
     },
     removeCubeFromHeightGrid: function (a) {
       var b = this.globals.mathDevice,
@@ -64943,49 +64943,49 @@
       this.clearBlocks();
     }
   };
-  da.terrainTypes = {
+  GameSpace.terrainTypes = {
     impass: 0,
     pass: 1
   };
-  da.heroFactionTerrainTypes = {
-    pass: da.terrainTypes.pass,
-    impass: da.terrainTypes.impass,
-    building: da.terrainTypes.impass,
-    wall1: da.terrainTypes.impass,
-    wall2: da.terrainTypes.impass,
-    wall3: da.terrainTypes.impass,
-    wall4: da.terrainTypes.impass,
-    wall5: da.terrainTypes.impass,
-    wall6: da.terrainTypes.impass,
-    wall7: da.terrainTypes.impass,
-    wall8: da.terrainTypes.impass,
-    wall9: da.terrainTypes.impass,
-    wall10: da.terrainTypes.impass,
-    gate1: da.terrainTypes.pass,
-    gate2: da.terrainTypes.pass,
-    gate3: da.terrainTypes.pass,
-    gate4: da.terrainTypes.pass,
-    gate5: da.terrainTypes.pass,
-    gate6: da.terrainTypes.pass,
-    gate7: da.terrainTypes.pass,
-    gate8: da.terrainTypes.pass,
-    gate9: da.terrainTypes.pass,
-    gate10: da.terrainTypes.pass,
-    barricade1: da.terrainTypes.impass,
-    barricade2: da.terrainTypes.impass,
-    barricade3: da.terrainTypes.impass,
-    barricade4: da.terrainTypes.impass,
-    barricade5: da.terrainTypes.impass,
-    barricadeGate1: da.terrainTypes.pass,
-    barricadeGate2: da.terrainTypes.pass,
-    barricadeGate3: da.terrainTypes.pass,
-    barricadeGate4: da.terrainTypes.pass,
-    barricadeGate5: da.terrainTypes.pass,
+  GameSpace.heroFactionTerrainTypes = {
+    pass: GameSpace.terrainTypes.pass,
+    impass: GameSpace.terrainTypes.impass,
+    building: GameSpace.terrainTypes.impass,
+    wall1: GameSpace.terrainTypes.impass,
+    wall2: GameSpace.terrainTypes.impass,
+    wall3: GameSpace.terrainTypes.impass,
+    wall4: GameSpace.terrainTypes.impass,
+    wall5: GameSpace.terrainTypes.impass,
+    wall6: GameSpace.terrainTypes.impass,
+    wall7: GameSpace.terrainTypes.impass,
+    wall8: GameSpace.terrainTypes.impass,
+    wall9: GameSpace.terrainTypes.impass,
+    wall10: GameSpace.terrainTypes.impass,
+    gate1: GameSpace.terrainTypes.pass,
+    gate2: GameSpace.terrainTypes.pass,
+    gate3: GameSpace.terrainTypes.pass,
+    gate4: GameSpace.terrainTypes.pass,
+    gate5: GameSpace.terrainTypes.pass,
+    gate6: GameSpace.terrainTypes.pass,
+    gate7: GameSpace.terrainTypes.pass,
+    gate8: GameSpace.terrainTypes.pass,
+    gate9: GameSpace.terrainTypes.pass,
+    gate10: GameSpace.terrainTypes.pass,
+    barricade1: GameSpace.terrainTypes.impass,
+    barricade2: GameSpace.terrainTypes.impass,
+    barricade3: GameSpace.terrainTypes.impass,
+    barricade4: GameSpace.terrainTypes.impass,
+    barricade5: GameSpace.terrainTypes.impass,
+    barricadeGate1: GameSpace.terrainTypes.pass,
+    barricadeGate2: GameSpace.terrainTypes.pass,
+    barricadeGate3: GameSpace.terrainTypes.pass,
+    barricadeGate4: GameSpace.terrainTypes.pass,
+    barricadeGate5: GameSpace.terrainTypes.pass,
     tile: -0.9
   };
-  da.enemyFactionTerrainTypes = {
-    pass: da.terrainTypes.pass,
-    impass: da.terrainTypes.impass,
+  GameSpace.enemyFactionTerrainTypes = {
+    pass: GameSpace.terrainTypes.pass,
+    impass: GameSpace.terrainTypes.impass,
     building: 120,
     wall1: 10,
     wall2: 12,
@@ -65017,13 +65017,13 @@
     barricadeGate3: 14,
     barricadeGate4: 16,
     barricadeGate5: 18,
-    tile: da.terrainTypes.pass
+    tile: GameSpace.terrainTypes.pass
   };
-  da.create = function (a, b, c, d) {
-    var f = new da(),
+  GameSpace.create = function (a, b, c, d) {
+    var f = new GameSpace(),
       e = b.gameManager,
       h = b.mathDevice;
-    void 0 === da.prototype.globals && (da.prototype.globals = b);
+    void 0 === GameSpace.prototype.globals && (GameSpace.prototype.globals = b);
     f.gsNeighbourList = [];
     f.entityList = [];
     f.newEntityList = [];
@@ -67015,7 +67015,7 @@
     b.init(a);
     return b;
   };
-  Ib.prototype = {
+  GameManager.prototype = {
     globals: void 0,
     MIN_TIME_BETWEEN_LEADERBOARD_UPDATES: 15,
     MAX_TIME_BETWEEN_LEADERBOARD_UPDATES: 20,
@@ -67111,7 +67111,7 @@
     initECMaskDebugDrawUI: function () {
       var a = this.globals,
         a = a.dynamicUI.addGroup("EC Debug Draw Masks", a.debugDrawFlagsUIGroup),
-        b = Ib.ecDebugDrawMasks,
+        b = GameManager.ecDebugDrawMasks,
         c;
       for (c in b) b.hasOwnProperty(c) && this.addDebugDrawMaskUI(b[c], a);
     },
@@ -67442,7 +67442,7 @@
       this.desktopCampaignRewards && this.desktopCampaignRewards.assertHealthy();
       if (this.hasLoadedLevel && (a || this.getSavingEnabled())) {
         var a = this.globals,
-          b = ua.Serialize.serializePlayerSave(this),
+          b = LevelPersistence.Serialize.serializePlayerSave(this),
           c = function () {
             var a;
             this.savingCount -= 1;
@@ -67451,7 +67451,7 @@
           d = function () {
             this.savingCount -= 1;
           }.bind(this);
-        ua.SaveLoad.saveLevelToUserData("AdventureIncGameState", b, a.userDataManager, c, d);
+        LevelPersistence.SaveLoad.saveLevelToUserData("AdventureIncGameState", b, a.userDataManager, c, d);
         this.globals.gameNotificationsManager.onSave();
         this.savingCount += 1;
         this.autoSaveRequested = !1;
@@ -67490,7 +67490,7 @@
         }.bind(this),
         q = function () {
           this.loadingCount += 1;
-          ua.SaveLoad.loadLevelFromFile(e, c, d, p, s);
+          LevelPersistence.SaveLoad.loadLevelFromFile(e, c, d, p, s);
         }.bind(this),
         p = function (a, b) {
           this.loadingCount -= 1;
@@ -67500,14 +67500,14 @@
         s = function () {
           this.loadingCount -= 1;
         }.bind(this);
-      a ? (this.loadingCount += 1, ua.SaveLoad.loadLevelFromUserData("AdventureIncGameState", b, l, n)) : (this.loadingCount += 1, ua.SaveLoad.loadLevelFromFile(e, c, d, p, s));
+      a ? (this.loadingCount += 1, LevelPersistence.SaveLoad.loadLevelFromUserData("AdventureIncGameState", b, l, n)) : (this.loadingCount += 1, LevelPersistence.SaveLoad.loadLevelFromFile(e, c, d, p, s));
       this.loadingCount += 1;
-      ua.SaveLoad.loadLevelFromFile(f, c, d, j, k);
+      LevelPersistence.SaveLoad.loadLevelFromFile(f, c, d, j, k);
     },
     parseAndSetLevel: function (a, b) {
       var c = this.getBlockFactory(),
         d = this.getEntityFactory(),
-        c = ua.Parse.parseLevelDataFromLevelAndPlayerSave({
+        c = LevelPersistence.Parse.parseLevelDataFromLevelAndPlayerSave({
           levelSaveData: a,
           playerSaveData: b
         }, c, d, this.globals);
@@ -67840,7 +67840,7 @@
       this.uniqueSuffix = a;
     },
     appendToNames: function (a) {
-      this.applyFunctionToGameSpaces(da.prototype.appendToNames, a);
+      this.applyFunctionToGameSpaces(GameSpace.prototype.appendToNames, a);
       var b,
         c = this.gameSpaceMap;
       this.gameSpaceMap = {};
@@ -67932,7 +67932,7 @@
         e = a.newGameSpaces,
         a = a.deltaGameSpaces;
       if (void 0 !== f) for (d = 0; d < f.length; d += 1) b = this.gameSpaceMap[f[d]], void 0 !== b && (this.removeGameSpace(b), b.destroy());
-      for (c in e) e.hasOwnProperty(c) && (b = this.gameSpaceMap[c], void 0 === b && (f = e[c].creationParameters, b = da.create(c, this.globals, this, f, !0), this.addGameSpace(b)), b.deserialize(e));
+      for (c in e) e.hasOwnProperty(c) && (b = this.gameSpaceMap[c], void 0 === b && (f = e[c].creationParameters, b = GameSpace.create(c, this.globals, this, f, !0), this.addGameSpace(b)), b.deserialize(e));
       for (c in a) a.hasOwnProperty(c) && (b = this.gameSpaceMap[c], void 0 !== b && b.deserialize(a));
     },
     addGameSpace: function (a) {
@@ -68009,13 +68009,13 @@
       for (d = 0; d < e; d += 1) c = f[d], b.apply(c, a);
     },
     updateGameSpaces: function () {
-      this.applyFunctionToGameSpaces(da.prototype.update);
+      this.applyFunctionToGameSpaces(GameSpace.prototype.update);
     },
     drawGameSpaces: function () {
-      this.applyFunctionToGameSpaces(da.prototype.draw);
+      this.applyFunctionToGameSpaces(GameSpace.prototype.draw);
     },
     drawGameSpacesDebug: function () {
-      this.applyFunctionToGameSpaces(da.prototype.drawDebug, this.ecDebugDrawFlags);
+      this.applyFunctionToGameSpaces(GameSpace.prototype.drawDebug, this.ecDebugDrawFlags);
     },
     drawGameSpacesDebugPhysics: function () {
       this.getCurrentGameSpace() && this.getCurrentGameSpace().drawDebugPhysics();
@@ -68423,7 +68423,7 @@
       window.open("http://wonderstruckgames.com/");
     }
   };
-  Ib.ecDebugDrawMasks = {
+  GameManager.ecDebugDrawMasks = {
     all: {
       uiName: "All",
       allECs: !0
@@ -68448,10 +68448,10 @@
       ECLocationMarker: !0
     }
   };
-  Ib.create = function (a) {
+  GameManager.create = function (a) {
     var b = a.globals;
-    void 0 === Ib.prototype.globals && (Ib.prototype.globals = b);
-    var c = new Ib();
+    void 0 === GameManager.prototype.globals && (GameManager.prototype.globals = b);
+    var c = new GameManager();
     c.eventManager = yf.create();
     c.playerData = PlayerDataModel.create(b);
     c.uniqueIndex = 0;
@@ -68461,7 +68461,7 @@
     c.imgui = Z.create(b, c, c.gameController);
     c.guiManager = zf.create(b, c.gameController);
     c.gameScoresUI = Af.create(b, c.imgui);
-    c.gameClock = Df.create(b);
+    c.gameClock = GameClock.create(b);
     c.scoreInfo = CampaignScoreInfo.create(b);
     c.gameLighting = Hb.create(b, c);
     c.ecDebugDrawFlags = {};
@@ -71384,7 +71384,7 @@
       b.setActive(!0);
       b.setModeDebugNav();
       c.setModeViewScene();
-      a.addECDebugDrawMask(Ib.ecDebugDrawMasks.debugNav);
+      a.addECDebugDrawMask(GameManager.ecDebugDrawMasks.debugNav);
     },
     exitState: function () {},
     update: function () {
