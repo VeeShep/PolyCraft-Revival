@@ -26,7 +26,7 @@ function retiredTurnObserver() {
 }
 async function nativeRoomRenewal(page, { port, secret, retired }) {
   const service = createRoomServer({ turn: { urls: [`turn:127.0.0.1:${port}?transport=udp`], secret, ttl: 60 } });
-  const clients = new Map(), deliveries = new Set();
+  const clients = new Map(), deliveries = new Set(), issuedUsers = new Map();
   let deliveryFailed = false;
   service.server.listen(0, '127.0.0.1'); await once(service.server, 'listening');
   try {
@@ -36,6 +36,11 @@ async function nativeRoomRenewal(page, { port, secret, retired }) {
     await page.evaluate(() => { window.networkRoomListeners = new Map(); });
     await page.exposeFunction('networkRoomRequest', (client, operation, options) => {
       if (!clients.has(client)) clients.set(client, new RoomSocket(event => {
+        const credentials = event.type === 'relay' ? event.data : event.kind === 'renew' && event.data.type === 'credentials' ? event.data.value : null;
+        if (credentials) {
+          const users = issuedUsers.get(client) || new Set(); issuedUsers.set(client, users);
+          for (const server of credentials.iceServers) users.add(server.username);
+        }
         const pending = page.evaluate(({ client, event }) => {
           for (const listener of window.networkRoomListeners.get(client) || []) listener(event);
         }, { client, event }).catch(() => { deliveryFailed = true; }).finally(() => deliveries.delete(pending));
@@ -152,14 +157,18 @@ async function nativeRoomRenewal(page, { port, secret, retired }) {
             check(local.sentSequence === local.testTick && local.receivedSequence === guest.probes && remote.sentSequence === guest.probes && remote.receivedSequence === local.testTick, 'Room renewal reset framing counters.');
           }
           retirement = await window.networkRetiredAllocations(initialUsers);
-          check(retirement.observed === retirement.expected, `Initial TURN allocations were not retired (${retirement.observed}/${retirement.expected}).`);
           check(admissions === count - 1 && resyncs === guests.reduce((total, guest) => total + guest.renewals, 0) && errors.length === 0, 'Room renewal repeated admission/resync or encountered a transport failure.');
           await window.networkVerifyRenewal(settings.room, guests.map(guest => ({ id: guest.entry.id, expires: host.renewals.states.get(guest.entry.id).expires })));
-          return { participants: count, renewalsPerGuest: guests.map(guest => guest.renewals), admissions, resyncs, sameChannels: true, freshAllocations: true, expiryCommitted: true, initialCredentialsExpired: Date.now() > initialExpiry, retiredInitialAllocations: retirement.observed, durationMs: Math.round(performance.now() - started) };
+          return { participants: count, renewalsPerGuest: guests.map(guest => guest.renewals), admissions, resyncs, sameChannels: true, freshAllocations: true, expiryCommitted: true, initialCredentialsExpired: Date.now() > initialExpiry, initialAllocationsRetainedWhileOpen: retirement.expected - retirement.observed, durationMs: Math.round(performance.now() - started) };
         } catch { return { failure: stage, participants: count, renewalsPerGuest: guests.map(guest => guest.renewals || 0), retirement }; }
         finally { for (const controller of controllers) controller.close(); transport.close(); for (const guest of guests) guest.remote.close(); }
       }, { count, url: `ws://127.0.0.1:${service.server.address().port}/signaling` });
-      console.log(JSON.stringify(report)); if (report.failure) failures.push(report); assert.equal(deliveryFailed, false);
+      const users = [...new Set([...issuedUsers].filter(([client]) => client.startsWith(`${count}-`)).flatMap(([, values]) => [...values]))];
+      const cleanupStarted = performance.now(), cleanupDeadline = cleanupStarted + 45000;
+      while (users.some(user => !retired.has(user)) && performance.now() < cleanupDeadline) await new Promise(resolve => setTimeout(resolve, 100));
+      report.postCloseRetirement = { credentials: users.length, retired: users.filter(user => retired.has(user)).length, durationMs: Math.round(performance.now() - cleanupStarted) };
+      if (!users.length || report.postCloseRetirement.retired !== users.length) { report.cleanupFailure = 'TURN allocation teardown could not be verified after peer close.'; report.retirement = retired.summary(users); }
+      console.log(JSON.stringify(report)); if (report.failure || report.cleanupFailure) failures.push(report); assert.equal(deliveryFailed, false);
       for (const socket of clients.values()) socket.close();
       await Promise.all([...deliveries]);
     }
