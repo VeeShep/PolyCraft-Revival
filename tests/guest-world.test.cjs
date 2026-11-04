@@ -517,7 +517,7 @@ test('targeted guest gestures defer selection until release and retain a target 
   const held = targetedWorld(); held.world.clickTarget({ clientX: 0, clientY: 0 });
   held.globals.appCurrentTime = 0.5; held.world.updateGroundDrag(); assert.equal(held.requested.length, 0);
   held.globals.appCurrentTime = 0.501; held.world.updateGroundDrag(); held.world.finishGroundDrag();
-  assert.deepEqual(held.requested.map(value => value.mode), ['click', 'drag', 'release']); assert.equal(held.sent.length, 1); assert.equal(held.world.selectionRequest, null);
+  assert.deepEqual(held.requested.map(value => value.mode), ['click', 'drag', 'release']); assert.deepEqual(held.sent.map(value => value.phase), ['press', 'clear']); assert.equal(held.world.selectionRequest, null);
 });
 test('target gestures resample targets, stop on cancellation and handle release before the next frame', t => {
   let now = 0; t.mock.method(performance, 'now', () => now);
@@ -530,12 +530,16 @@ test('target gestures resample targets, stop on cancellation and handle release 
     if (reason === 'focus') { cancelled.unavailable(); cancelled.world.updateGroundDrag(); }
     else if (reason === 'menu') cancelled.world.cancelLocalMenu();
     else cancelled.world.cancelGroundDrag(true);
-    cancelled.world.finishGroundDrag(); assert.equal(cancelled.sent.length, 1, reason);
+    cancelled.world.finishGroundDrag(); assert.deepEqual(cancelled.sent.map(value => value.phase), ['press', 'clear'], reason);
   }
   const held = targetedWorld(); held.world.clickTarget({ clientX: 0, clientY: 0 }); held.globals.appCurrentTime = 0.501; held.world.finishGroundDrag();
-  assert.deepEqual(held.requested.map(value => value.mode), ['release']); assert.equal(held.sent.length, 1);
+  assert.deepEqual(held.requested.map(value => value.mode), ['release']); assert.deepEqual(held.sent.map(value => value.phase), ['press', 'clear']);
   const changed = targetedWorld(); changed.world.clickTarget({ clientX: 0, clientY: 0 }); changed.world.groundDrag.event = { clientX: 90, clientY: 0 }; changed.world.finishGroundDrag();
   assert.deepEqual(changed.sent.map(value => [value.target, value.phase]), [['tree', 'press'], ['enemy', 'release']]);
+  const reentered = targetedWorld(); reentered.world.clickTarget({ clientX: 0, clientY: 0 });
+  const tree = reentered.world.scene.entities.get('tree').record; tree.location = [999, 999, 0]; reentered.world.updateGroundDrag();
+  tree.location = [0, 0, 0]; now += 100; reentered.world.updateGroundDrag(); reentered.world.finishGroundDrag();
+  assert.deepEqual(reentered.sent.map(value => value.phase), ['press', 'clear', 'press', 'release'], 'reentering a moved target starts a valid host gesture after temporary clearing');
 });
 
 function movementCursor() {

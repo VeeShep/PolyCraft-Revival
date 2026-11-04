@@ -40,7 +40,20 @@
       } else { if (this.tokens < 1) throw new Error('Too many target actions.'); this.tokens--; }
       this.sequence = value.sequence; this.queue.push({ ...value, ...(placement ? { location: [...value.location] } : {}), ...(value.type === 'repair' || buildingUpgrade ? { costs: [...value.costs] } : {}) });
     }
-    stop(hero) { this.targetMode = null; hero.getEC('ECAutoFire')?.disable(); }
+    endFacing(hero) {
+      if (this.facingTarget === undefined) return;
+      this.facingTarget = undefined;
+      this.facingMethods?.endTargetedRanged.call({ getHeroEntity: () => hero });
+    }
+    updateFacing(game, hero, players) {
+      if (this.facingTarget === undefined) return;
+      const target = game.getGameEntityByName(this.facingTarget), life = hero.getEC('ECPlayerLife'), builder = hero.getEC('ECPlayerBuilder');
+      if (!target || !Number.isFinite(this.targetStarted) || this.now() - this.targetStarted > 600 || target.shouldBeDestroyed() || hero.shouldBeDestroyed() || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 ||
+          life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL) || builder.isBuilding() || builder.isThrowing() ||
+          !target.getEC('ECTarget')?.isValidTarget(hero) || !target.getEC('ECHealth') || target.getEC('ECHealth').getHealth() <= 0 || !players.canDamage(target, hero)) { this.endFacing(hero); return; }
+      this.facingMethods?.updateTargetedRanged.call({ getHeroEntity: () => hero, getTargetEntity: () => target });
+    }
+    stop(hero) { this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; hero.getEC('ECAutoFire')?.disable(); }
     updateCombat(game, hero, players) {
       const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
       if (!target) return;
@@ -53,13 +66,19 @@
     apply(game, hero, players, controls) {
       this.updateCombat(game, hero, players);
       const action = this.queue.shift();
-      if (!action) return null;
-      const result = this.execute(game, hero, players, action.target, controls, action.type, action);
+      if (!action) { this.updateFacing(game, hero, players); return null; }
+      let result;
+      try { result = this.execute(game, hero, players, action.target, controls, action.type, action); }
+      finally {
+        if (action.type === 'target' && action.phase === 'release') { this.targetStarted = undefined; this.endFacing(hero); }
+        else this.updateFacing(game, hero, players);
+      }
       return { type: action.type, sequence: action.sequence, ...(typeof result === 'string' ? { message: result } : result) };
     }
     execute(game, hero, players, id, controls, type = 'target', action) {
-      if (type === 'target' && action?.phase === 'press') this.targetMode = null;
-      if (type === 'target' && action?.phase === 'clear') { this.targetMode = null; return 'Target cleared.'; }
+      if (type === 'target' && action?.phase === 'press') { this.endFacing(hero); this.targetMode = null; this.targetStarted = this.now(); }
+      if (type === 'target' && action?.phase === 'clear') { this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; return 'Target cleared.'; }
+      if (type === 'target' && action?.phase === 'update' && (!Number.isFinite(this.targetStarted) || this.now() - this.targetStarted > 600)) return 'Target gesture expired.';
       const target = game.getGameEntityByName(id);
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
@@ -113,6 +132,8 @@
           const mode = methods.targetType.call({ getHeroEntity: () => hero }, target), previous = this.targetMode;
           this.targetMode = action.phase === 'release' ? null : mode;
           rangedTarget = mode === methods.rangedType;
+          if (rangedTarget) { this.facingTarget = id; this.facingMethods = methods.gesture; }
+          else this.endFacing(hero);
           if (rangedTarget && previous === mode || !rangedTarget && action.phase !== 'release') return 'Target selected.';
         } else if (action.phase !== 'release') return 'Target selection unavailable.';
       }

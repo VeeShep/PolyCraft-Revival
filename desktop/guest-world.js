@@ -457,7 +457,7 @@
       }
     }
     cancelLocalMenu() {
-      this.groundDrag = null;
+      this.cancelGroundDrag();
       this.pauseMenu = false;
       this.selectedBuilding = this.demolition = null;
       this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel(); this.quests?.cancel();
@@ -474,8 +474,12 @@
       if (event === (root.PointerEvent ? 'pointerdown' : 'mousedown')) this.guiInput.pendingDown = !this.controls.paused;
       if (event === (root.PointerEvent ? 'pointerup' : 'mouseup')) { this.guiInput.pendingDown = false; this.finishGroundDrag(); }
     }
+    endTargetGesture(drag) {
+      if (drag?.targeted && drag.target && !this.closed && !this.connection?.closed) this.sendTarget('target', drag.target, undefined, 'clear');
+    }
     cancelGroundDrag(stop = false) {
       if (!this.groundDrag) return;
+      this.endTargetGesture(this.groundDrag);
       this.groundDrag = null; this.guiInput.down = this.guiInput.pendingDown = false;
       if (stop) this.movement.cancelWalk();
     }
@@ -486,11 +490,11 @@
       if (drag.targeted) {
         const target = pickTarget(this, drag.event);
         if (drag.hasHeld() || !target && drag.hasHeldOrSwiped()) {
-          drag.targeted = false; this.selectionRequest = null;
+          this.endTargetGesture(drag); drag.targeted = false; this.selectionRequest = null;
           this.movement.requestWalk(this.construction.cursor());
         } else {
           if (target && target !== drag.target && performance.now() - drag.lastTargetSent >= 100) {
-            this.sendTarget('target', target, undefined, 'update'); drag.target = target; drag.lastTargetSent = performance.now();
+            this.sendTarget('target', target, undefined, drag.target ? 'update' : 'press'); drag.target = target; drag.lastTargetSent = performance.now();
           }
           if (!target && drag.target) { this.sendTarget('target', drag.target, undefined, 'clear'); drag.target = null; }
           return;
@@ -503,15 +507,16 @@
       const drag = this.groundDrag;
       if (!drag) return;
       this.groundDrag = null;
-      if (!this.movement.available()) { this.movement.cancelWalk(); return; }
+      if (!this.movement.available()) { this.endTargetGesture(drag); this.movement.cancelWalk(); return; }
       if (drag.targeted && !drag.hasHeld()) {
         const target = pickTarget(this, drag.event);
         if (target) {
           this.selectionRequest = this.sendTarget('target', target);
           return;
         }
-        if (!drag.hasHeldOrSwiped()) return;
+        if (!drag.hasHeldOrSwiped()) { this.endTargetGesture(drag); return; }
       }
+      this.endTargetGesture(drag);
       if ((drag.steered || drag.hasHeldOrSwiped()) && !this.movement.requestWalk(this.construction.cursor(), 'release')) this.movement.cancelWalk();
     }
     updateMenu() {

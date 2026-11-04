@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest movement cursor — Beta 35, 2026-11-03
+## Current held-target facing — Beta 36, 2026-11-03
+
+Host `HostActions` calls original ranged facing/end methods on the assigned hero, following the selected entity's live position independently of the native automatic-fire target. Release/clear/stop and host actor/target/PvP/script/construction changes clear the held pose. A finite active press and 600 ms lifetime prevent orphan updates from retaining facing; release cleanup runs even on classification failure. Guest cancellation and hold-to-move send the existing clear phase, while temporary hover reentry sends a fresh press. Same-type ranged target changes preserve the original automatic-fire identity.
+
+All 333 checks pass, including actual native facing, motion/retarget/release/disconnect, eligibility and lifetime changes, standalone/late update refusal, exception cleanup and hover leave/reentry. Narrow review identified and corrected the lifetime/reentry edge cases; final review found no additional concrete issue. Runtime coop-27 requires Beta 36 peers; world/delta/signaling/save/quest/co-op stay 7/1/2/7/1/4. No game or personal save was opened. Visual/native/physical-network and broader original-gameplay acceptance remain open; see RESTORATION_STATUS.md.
+
+## Previous guest movement cursor — Beta 35, 2026-11-03
 
 Actual original `HeroControllerAction.drawMove` renders guest ground circles/arrows and pulse animation with the original loaded controller texture paths. Its hero facade uses the assigned hero's interpolated pose, locomotion waypoint and final ECNav destination; guest simulation and suspended solo state are not consulted. New required finite/null `camera.pathDestination` is captured only from the assigned host hero and validated through full/delta parsing. World snapshot 7/runtime coop-26 require matching Beta 35 peers; delta/signaling/save/quest/co-op remain 1/2/7/1/4.
 

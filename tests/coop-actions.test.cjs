@@ -219,6 +219,7 @@ test('target phases use native host classification: resources and menus wait for
   send(2, 'tree', 'release'); assert.equal(f.state.collected, 1); assert.equal(menus, 1);
   send(3, 'enemy', 'press'); assert.equal(f.state.fired, 1); assert.equal(menus, 1);
   const other = { ...enemy }; f.game.getGameEntityByName = id => id === 'other' ? other : ({ tree: f.resource, enemy })[id];
+  f.players.canDamage = (target, actor) => { assert.ok(target === enemy || target === other); assert.equal(actor, f.hero); return f.state.permitted; };
   send(4, 'other', 'update'); assert.equal(f.state.fired, 1, 'changing between ranged enemies does not re-enter ranged mode');
   send(5, 'other', 'release'); assert.equal(f.state.fired, 1, 'release must not issue a second original press shot');
   send(6, 'tree', 'press'); assert.equal(f.state.collected, 1, 'cancelled/held presses have no deferred resource effect');
@@ -235,4 +236,60 @@ test('target phases reject malformed fields and preserve release capacity with a
   assert.equal(actions.tokens, 0); assert.equal(actions.pressTokens, 0);
   assert.throws(() => actions.receive({ type: 'target', sequence: 21, target: 'tree', phase: 'press' }), /Too many/);
   assert.equal(actions.sequence, 20);
+});
+
+function rangedFacingFixture() {
+  const f = setup(), ast = require('./runtime-ast.cjs'), types = ast.assignedObject('interactTypes');
+  const enemy = f.game.getGameEntityByName('enemy'), position = [2, 0, 0], otherPosition = [9, 0, 4];
+  enemy.hasEC = name => !!enemy.getEC(name); enemy.getv3Location = () => position;
+  const other = { ...enemy, getv3Location: () => otherPosition }, originalGet = f.hero.getEC;
+  const aim = { look: null, facing: null, disabled: 0, now: 0, script: false, removed: false, automatic: null };
+  enemy.shouldBeDestroyed = () => aim.removed;
+  f.hero.getEC = name => name === 'ECLocomotion' ? { setLookAt: value => { aim.look = [...value]; }, setFacing: value => { aim.facing = [...value]; }, clearLookAt: () => { aim.look = null; }, clearFacing: () => { aim.facing = null; } } : name === 'ECAutoFire' ? {
+    getTargetEntity: () => aim.automatic, isWithinFiringRange: () => true, setTargetEntity: target => { aim.automatic = target; }, disable: () => { aim.automatic = null; aim.disabled++; }
+  } : originalGet(name);
+  f.game.getGameEntityByName = id => ({ enemy, other, tree: f.resource })[id]; f.game.isScriptLocked = () => aim.script;
+  f.players.canDamage = (_target, actor) => { assert.equal(actor, f.hero); return f.state.permitted; };
+  const controls = { movementMethods: { targetType: ast.prototypeWith('getv3WorldGroundLocationFromCoord', { GameInputController: { interactTypes: types } }).getSelectedType,
+    rangedType: types.ENEMY_RANGED, gesture: ast.prototypeWith('updateTargeted') }, demolitionInfo: () => null }, actions = new HostActions(() => aim.now);
+  let sequence = 0;
+  const send = (target, phase) => { actions.receive({ type: 'target', sequence: ++sequence, target, phase }); return actions.apply(f.game, f.hero, f.players, controls); };
+  return { ...f, enemy, aim, actions, controls, send, position, otherPosition };
+}
+test('original held ranged facing follows live assigned targets without changing automatic-fire identity and clears on release or clear', () => {
+  const f = rangedFacingFixture(); f.send('enemy', 'press'); assert.deepEqual(f.aim.look, f.position); assert.deepEqual(f.aim.facing, f.position); assert.equal(f.aim.automatic, f.enemy);
+  f.position[0] = 5; f.actions.apply(f.game, f.hero, f.players, f.controls); assert.equal(f.aim.look[0], 5, 'host facing follows a moving entity without trusting another client position');
+  f.send('other', 'update'); assert.deepEqual(f.aim.look, f.otherPosition); assert.equal(f.aim.automatic, f.enemy); assert.equal(f.state.fired, 1);
+  f.send('other', 'release'); assert.equal(f.aim.look, null); assert.equal(f.aim.facing, null); assert.equal(f.aim.automatic, f.enemy); assert.equal(f.aim.disabled, 0);
+  f.send('enemy', 'press'); f.send('enemy', 'clear'); assert.equal(f.aim.look, null); assert.equal(f.aim.facing, null); assert.equal(f.aim.disabled, 0);
+  f.actions.stop(f.hero); assert.equal(f.aim.automatic, null); assert.equal(f.aim.disabled, 1);
+});
+test('held facing expires or clears on host life, script, construction, target and permission changes', () => {
+  for (const reason of ['timeout', 'script', 'building', 'throwing', 'health', 'removed', 'permission']) {
+    const f = rangedFacingFixture(); f.send('enemy', 'press'); assert.notEqual(f.aim.look, null);
+    if (reason === 'timeout') f.aim.now = 601;
+    if (reason === 'script') f.aim.script = true;
+    if (reason === 'building') f.state.building = true;
+    if (reason === 'throwing') f.state.throwing = true;
+    if (reason === 'health') f.state.health = 0;
+    if (reason === 'removed') f.aim.removed = true;
+    if (reason === 'permission') f.state.permitted = false;
+    f.actions.apply(f.game, f.hero, f.players, f.controls); assert.equal(f.aim.look, null, reason); assert.equal(f.aim.facing, null, reason);
+  }
+});
+
+test('standalone, expired and cancelled target updates cannot resume held facing or attack without another press', () => {
+  for (const reason of ['standalone', 'timeout', 'release', 'clear', 'stop']) {
+    const f = rangedFacingFixture();
+    if (reason !== 'standalone') f.send('enemy', 'press');
+    if (reason === 'timeout') f.aim.now = 601;
+    if (reason === 'release' || reason === 'clear') f.send('enemy', reason);
+    if (reason === 'stop') f.actions.stop(f.hero);
+    const shots = f.state.fired;
+    assert.match(f.send('other', 'update').message, /expired/); f.aim.now = 2000; f.actions.apply(f.game, f.hero, f.players, f.controls);
+    assert.equal(f.aim.look, null, reason); assert.equal(f.aim.facing, null, reason); assert.equal(f.state.fired, shots, reason);
+  }
+  const f = rangedFacingFixture(); f.send('enemy', 'press');
+  const failure = new Error('native classification failure'); f.controls.movementMethods.targetType = () => { throw failure; };
+  assert.throws(() => f.send('enemy', 'release'), error => error === failure); assert.equal(f.aim.look, null); assert.equal(f.aim.facing, null); assert.equal(f.actions.targetStarted, undefined);
 });
