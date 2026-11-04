@@ -244,6 +244,8 @@
         roots: globals.scene.rootNodes.filter(node => node !== game.gameLighting.worldDirectionLightNode && node !== game.gameLighting.heroLightNode)
       };
       const profile = game.getPlayerData();
+      this.original.audio = { music: game.musicString, listener: game.gameSoundManager.listenerv3WorldLocation && Array.from(game.gameSoundManager.listenerv3WorldLocation), matrix: game.gameSoundManager.listenerMatrix && Array.from(game.gameSoundManager.listenerMatrix) };
+      this.lastAudioFrame = performance.now();
       this.original.settings = { shadows: game.gameLighting.getShadowsEnabled(), sounds: game.gameSoundManager.getSoundsEnabled(), music: profile.getMusicEnabled() };
       // Session preferences must never save into the suspended local island.
       this.sessionSettings = Object.assign(Object.create(profile), { settings: { ...profile.settings }, saveSettings() {} });
@@ -450,7 +452,6 @@
         this.game.getGuiManager().addDrawGui('polycraftLogo', { v2ScreenLocation: location(0, -260) }, 'guest-pause-logo');
         if (gui.doButton({ id: 'guest-resume', text: 'Resume', v2ScreenLocation: location(-220, -70), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: 'buttonStart' })) this.cancelLocalMenu();
         this.controls.drawPauseSettings.call({ gameManager: this.game, globals: this.controls.app.globals }, this.sessionSettings);
-        this.game.gameSoundManager.update();
       } else {
         if (gui.doButton({ id: 'guest-fullscreen', text: '', v2ScreenLocation: location(54, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: this.controls.fullscreen ? 'minimize' : 'fullscreen', passive: true })) this.toggleFullscreen();
         if (gui.doButton({ id: 'guest-pause', text: '', v2ScreenLocation: location(116, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: 'pause' })) this.togglePauseMenu();
@@ -558,6 +559,29 @@
         if (health.damage && view.shouldDrawOffScreenIcon()) view.drawOffScreenIcon();
       }
     }
+    updateAudio() {
+      if (this.closed) return;
+      const game = this.game, globals = this.controls.app.globals, state = this.scene.snapshot, now = performance.now(), step = globals.gameTimeStep;
+      try {
+        globals.gameTimeStep = Math.max(0, Math.min(0.1, (now - this.lastAudioFrame) / 1000)); this.lastAudioFrame = now;
+        if (state && !this.resyncing) {
+          game.gameSoundManager.setListenerWorldLocation(this.viewCamera.actor(state.hero).getv3Location());
+          if (this.remoteMusic !== state.music) {
+            if (state.music) game.startMusic(state.music); else game.stopMusic();
+            game.setMusicVolume(this.sessionSettings.getMusicEnabled() ? 1 : 0, 0);
+            this.remoteMusic = state.music;
+          }
+        }
+        game.gameSoundManager.update();
+      } finally { globals.gameTimeStep = step; }
+    }
+    restoreAudio() {
+      const game = this.game, original = this.original.audio, sounds = game.gameSoundManager;
+      if (original.music) game.startMusic(original.music); else game.stopMusic();
+      sounds.listenerv3WorldLocation = original.listener && new Float32Array(original.listener);
+      sounds.listenerMatrix = original.matrix && new Float32Array(original.matrix);
+      sounds.updateListener();
+    }
     drawMovementCursor() {
       if (!this.movement.available() || this.construction.placement || !this.pointerEvent || this.groundDrag?.targeted) return;
       const gui = this.game.getIMGui();
@@ -609,7 +633,7 @@
       this.hud.draw();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       if (!this.pauseMenu) this.updateMenu();
-      this.drawMovementCursor();
+      this.drawMovementCursor(); this.updateAudio();
     }
     close() {
       if (this.closed) return;
@@ -633,6 +657,7 @@
       const camera = game.getGameCamera();
       for (const [key, vector] of Object.entries(original.camera)) camera[key] = new Float32Array(vector);
       camera.currentFOV = original.fov; camera.apply();
+      this.restoreAudio();
       for (const light of original.lights) { light.node.setLocalTransform(new Float32Array(light.transform)); light.node.setDisabled(light.disabled); }
       game.gameClock.prevEngineTime = app.globals.appCurrentTime;
       camera.setShouldSnap(); game.getGameController().clearInputs();

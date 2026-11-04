@@ -25,7 +25,7 @@ const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
   const entity = id => ({ id, archetype: null, interactive: true, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
-  return { version: 7, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
+  return { version: 8, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -198,8 +198,8 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   let shadows = true, sounds = true, music = true;
   game.getPlayerData = () => preferences;
   game.gameLighting.getShadowsEnabled = () => shadows; game.gameLighting.setShadowsEnabled = value => { shadows = value; };
-  game.gameSoundManager = { getSoundsEnabled: () => sounds, setSoundsEnabled: value => { sounds = value; }, update() {} };
-  game.setMusicVolume = value => { music = !!value; };
+  game.gameSoundManager = { getSoundsEnabled: () => sounds, setSoundsEnabled: value => { sounds = value; }, update() {}, updateListener() {}, setListenerWorldLocation(value) { this.listenerv3WorldLocation = [...value]; } };
+  game.setMusicVolume = value => { music = !!value; }; game.startMusic = value => { game.musicString = value; }; game.stopMusic = () => { game.musicString = undefined; };
   globals.gameManager = game;
   const app = { globals, updateGame() { simulations++; } }, controls = new Controls();
   controls.attach(app, [], {});
@@ -577,4 +577,39 @@ test('movement feedback disappears for blocked input, local UI, targeted holds, 
   f.world.groundDrag = { targeted: true }; f.world.drawMovementCursor(); f.world.groundDrag = null;
   f.world.construction.placement = {}; f.world.drawMovementCursor(); f.world.construction.placement = null;
   f.invalidCursor(); f.world.drawMovementCursor(); assert.equal(f.sprites.length, 0);
+});
+
+function guestAudio() {
+  const ast = require('./runtime-ast.cjs'), world = Object.create(GuestWorld.prototype), played = [], sources = [];
+  const math = { v3Copy: value => [...value], m43Copy(value, output = []) { value.forEach((number, i) => { output[i] = number; }); return output; }, m43SetPos(matrix, position) { position.forEach((value, i) => { matrix[9 + i] = value; }); }, saturate: value => Math.max(0, Math.min(1, value)), lerp: (a, b, factor) => a + (b - a) * factor };
+  const globals = { mathDevice: math, gameTimeStep: 9, soundDevice: {}, settings: { volume: 1 }, camera: { matrix: [1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 50, 50] } };
+  const sounds = Object.assign(Object.create(ast.prototypeWith('updateListener')), { globals, activeSoundSourceList: [], soundSourceDepot: [], soundSourceGlobalDepot: [],
+    playInternal(name) { played.push(name); const source = { playing: true, globalSource: true, stop() { this.playing = false; } }; sources.push(source); this.attachSource(source, null, null, name, 1, 0); } });
+  const game = { gameSoundManager: sounds, startMusic: ast.method('startMusic'), stopMusic: ast.method('stopMusic'), setMusicVolume: ast.method('setMusicVolume'), getMusicEnabled: () => false,
+    getHero: () => assert.fail('guest audio must not read the suspended solo hero') };
+  game.startMusic('aud_music_night'); sounds.setListenerWorldLocation([90, 91, 92]); sounds.updateListener();
+  world.original = { audio: { music: game.musicString, listener: [...sounds.listenerv3WorldLocation], matrix: [...sounds.listenerMatrix] } };
+  let music = false, location = [4, 5, 6];
+  Object.assign(world, { controls: { app: { globals } }, game, scene: { snapshot: { hero: 'guest', music: 'aud_music_day' } }, sessionSettings: { getMusicEnabled: () => music }, lastAudioFrame: 0,
+    viewCamera: { actor(id) { assert.equal(id, 'guest'); return { getv3Location: () => location }; } } });
+  return { world, globals, sounds, sources, played, enableMusic: () => { music = true; }, move: value => { location = value; } };
+}
+test('native guest audio advances muted gains and fades every frame, follows the assigned displayed hero and changes music once', t => {
+  let now = 100; t.mock.method(performance, 'now', () => now);
+  const f = guestAudio(); f.world.updateAudio();
+  assert.deepEqual(f.sounds.listenerv3WorldLocation, [4, 5, 6]); assert.deepEqual(f.globals.soundDevice.listenerTransform.slice(9), [4, 5, 6]);
+  assert.equal(f.world.game.musicString, 'aud_music_day'); assert.equal(f.sources.at(-1).gain, 0); assert.equal(f.globals.gameTimeStep, 9);
+  now = 200; f.move([7, 8, 9]); f.world.updateAudio(); assert.deepEqual(f.sounds.listenerv3WorldLocation, [7, 8, 9]); assert.equal(f.played.filter(name => name === 'aud_music_day').length, 1);
+  f.enableMusic(); assert.equal(f.world.game.getMusicEnabled(), false, 'solo mute preference remains unchanged'); f.world.scene.snapshot.music = 'aud_music_battle'; now = 5000; f.world.updateAudio();
+  assert.equal(f.sources.at(-1).gain, 1); assert.equal(f.played.at(-1), 'aud_music_battle'); assert.equal(f.globals.gameTimeStep, 9);
+  f.world.resyncing = true; f.world.scene.snapshot.music = 'aud_music_battle_boss'; f.move([99, 99, 99]); now += 100; f.world.updateAudio();
+  assert.deepEqual(f.sounds.listenerv3WorldLocation, [7, 8, 9]); assert.equal(f.played.at(-1), 'aud_music_battle');
+});
+test('audio teardown restores native solo music/listener and sound update failures cannot leak a guest timestep', t => {
+  t.mock.method(performance, 'now', () => 100);
+  const f = guestAudio(); f.world.updateAudio(); f.world.restoreAudio();
+  assert.equal(f.world.game.musicString, 'aud_music_night'); assert.deepEqual([...f.sounds.listenerv3WorldLocation], [90, 91, 92]); assert.deepEqual([...f.globals.soundDevice.listenerTransform.slice(9)], [90, 91, 92]);
+  const failure = new Error('sound device unavailable'); f.sounds.update = () => { throw failure; };
+  assert.throws(() => f.world.updateAudio(), error => error === failure); assert.equal(f.globals.gameTimeStep, 9);
+  f.world.closed = true; f.world.updateAudio();
 });

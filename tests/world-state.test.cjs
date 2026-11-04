@@ -53,7 +53,7 @@ test('health view parsing rejects missing or unbounded metadata and arbitrary GU
   for (const extra of [{ bar: {} }, { bar: { row: 0, scale: -1, level: 1 } }, { bar: { row: 1001, scale: 1, level: 1 } }, { bar: { row: 0, scale: 1, level: 65 } }, { bar: { row: 0, scale: 1, level: 1.5 } }, { bar: { row: 0, scale: Infinity, level: 1 } }, { damage: { changedAt: NaN, onlyOffscreen: true } }, { damage: { changedAt: 0, onlyOffscreen: 1 } }, { damage: { changedAt: 0, onlyOffscreen: true, icon: 'arbitrary' } }, { bar: undefined }]) {
     const next = structuredClone(base); Object.assign(next.spaces[0].entities[0].health, extra);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, combat: base.combat, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
+    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, combat: base.combat, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
   }
 });
@@ -71,7 +71,7 @@ test('camera context rejects unknown modes/actors, sparse or duplicate interests
   for (const extra of [{ mode: 'editor' }, { dead: 1 }, { buildingAge: -1 }, { timeHeld: Infinity }, { heroes: [] }, { heroes: ['missing'] }, { heroes: ['hero', 'hero'] }, { enemies: Array(1) }, { center: [0, NaN, 0] }, { destination: [0, 0, 0] }, { lookAhead: [0, 0, 0] }, { save: true }]) {
     const next = structuredClone(base); Object.assign(next.camera, extra); const before = JSON.stringify(base);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, combat: base.combat, torch: base.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, combat: base.combat, torch: base.torch, camera: next.camera, spaces: [] };
     assert.throws(() => applyDelta(base, delta), /Invalid world snapshot/); assert.equal(JSON.stringify(base), before);
   }
 });
@@ -214,7 +214,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 7); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 8); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');
@@ -251,7 +251,24 @@ test('full and delta parsers reject missing, sparse, nonfinite or authority-bear
   for (const value of [undefined, [1, 2], Array(3), [1, NaN, 3], [1, 2, Infinity], { location: [1, 2, 3], speed: 99 }]) {
     const next = structuredClone(base); next.tick++; next.camera.pathDestination = value;
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 1, baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/); assert.equal(base.camera.pathDestination, null);
+  }
+});
+
+test('host music capture and delta restoration use only the five original soundtrack archetypes', () => {
+  const f = fixture(), ast = require('./runtime-ast.cjs');
+  for (const name of ['aud_music_theme', 'aud_music_day', 'aud_music_night', 'aud_music_battle', 'aud_music_battle_boss']) {
+    assert.ok(ast.assignedObject(name).path, name); f.game.musicString = name; const state = captureSnapshot(f.game); assert.equal(state.music, name);
+    const next = structuredClone(state); next.tick++; next.music = null; assert.deepEqual(applyDelta(state, createDelta(state, next)), next);
+  }
+});
+test('music metadata rejects arbitrary paths, objects and missing values in complete snapshots and updates', () => {
+  const base = captureSnapshot(fixture().game);
+  for (const music of [undefined, '', 'sounds/arbitrary.ogg', 'aud_music_unknown', {}, ['aud_music_day']]) {
+    const next = structuredClone(base); next.tick++; next.music = music;
+    assert.throws(() => validateSnapshot(next), /music/);
+    const delta = { version: 1, baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
+    assert.throws(() => applyDelta(base, delta), /music/); assert.equal(base.music, null);
   }
 });

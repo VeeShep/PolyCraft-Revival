@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current optional temporary relay credentials — Beta 37, 2026-11-03
+## Current guest music/listener maintenance — Beta 38, 2026-11-03
+
+World snapshot 8 adds a strict five-track/null music selection to full/delta headers. Guest rendering updates native sound sources every frame with a bounded/restored elapsed step, assigned interpolated-hero listener position and current camera orientation. Music changes run original native methods once per selection and always apply session volume, independently of the preserved solo preference. Resync retains the last valid selection/listener while fades continue. Closing restores original music/listener after restoring the solo camera and clock context.
+
+All 344 checks pass, including actual native soundtrack inventory/music/source/listener methods on silent devices, metadata refusal/delta round trips, mute independence, interpolation, transition deduplication, resync and restoration/error cleanup. Narrow camera review identified and corrected the solo-profile mute interaction; follow-up found no further concrete issue. Runtime coop-28/world 8 require matching Beta 38 games; room protocol 3 and save formats are unchanged. Audible/visible/native/physical-network acceptance remains open, including full sound-effect replication and stale local-source isolation. See RESTORATION_STATUS.md.
+
+## Previous optional temporary relay credentials — Beta 37, 2026-11-03
 
 Room protocol 3 advertises optional server-side coturn issuance. After earlier routes fail, an approved host requests distinct expiring credentials for its pending pair; the service enforces owner/guest/STUN-stage/commit/replay/quota checks. Private secrets remain server-only. Direct attempts receive STUN settings only; issued credentials are passed per pair to the TURN attempt and cleared from room caches after use/close. The credential wait is bounded within the existing join deadline. Invalid or stalled offer preparation fails that join without ending room signaling.
 

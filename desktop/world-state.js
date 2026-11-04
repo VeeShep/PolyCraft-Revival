@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
-  const VERSION = 7;
+  const VERSION = 8;
+  const MUSIC = new Set(['aud_music_theme', 'aud_music_day', 'aud_music_night', 'aud_music_battle', 'aud_music_battle_boss']);
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];
   const meshFields = ['path', 'transform', 'visible', 'skin'];
@@ -15,6 +16,7 @@
   function validateHeader(value) {
     requireValue(Number.isSafeInteger(value.tick) && value.tick >= 0 && number(value.time) && value.time >= 0, 'invalid simulation time.');
     requireValue(number(value.dayTime) && value.dayTime >= 0 && value.dayTime <= 24 && name(value.hero), 'invalid island clock or hero.');
+    requireValue(value.music === null || MUSIC.has(value.music), 'invalid island music.');
     requireValue(value.torch === null || (keys(value.torch, ['transform', 'visible']) && vector(value.torch.transform, 12) && typeof value.torch.visible === 'boolean'), 'invalid hero light.');
     requireValue(value.combat === null || keys(value.combat, ['target', 'inDamageRange']) && name(value.combat.target) && typeof value.combat.inDamageRange === 'boolean', 'invalid combat target.');
     const camera = value.camera;
@@ -53,7 +55,7 @@
     }
   }
   function validateSnapshot(snapshot, assets) {
-    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'combat', 'spaces']), 'missing or unexpected fields.');
+    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'music', 'torch', 'camera', 'combat', 'spaces']), 'missing or unexpected fields.');
     requireValue(snapshot.version === VERSION, 'incompatible version.');
     validateHeader(snapshot);
     requireValue(Array.isArray(snapshot.spaces) && snapshot.spaces.length > 0 && snapshot.spaces.length <= LIMITS.spaces, 'invalid space count.');
@@ -84,6 +86,7 @@
       time: game.globals.gameCurrentTime,
       dayTime: game.getGameDayTime(),
       hero: hero.name,
+      music: game.musicString || null,
       torch: torch ? { transform: Array.from(torch.transform), visible: torch.visible } : null,
       spaces: game.getGameSpaceList().map(space => ({
         extents: Array.from(space.calculateExtents()), transform: Array.from(space.getM43FullTransform()),
@@ -143,10 +146,10 @@
       }
       return patch.remove.length || patch.entities.length || Object.keys(patch).length > 3 ? [patch] : [];
     });
-    return structuredClone({ version: 1, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, torch: next.torch, camera: next.camera, combat: next.combat, spaces });
+    return structuredClone({ version: 1, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, torch: next.torch, camera: next.camera, combat: next.combat, spaces });
   }
   function validateDelta(delta, assets) {
-    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'combat', 'spaces']) && delta.version === 1, 'invalid world update.');
+    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'music', 'torch', 'camera', 'combat', 'spaces']) && delta.version === 1, 'invalid world update.');
     validateHeader(delta);
     requireValue(Number.isSafeInteger(delta.baseTick) && delta.baseTick >= 0 && delta.tick > delta.baseTick, 'invalid update base.');
     requireValue(Array.isArray(delta.spaces) && delta.spaces.length <= LIMITS.spaces, 'invalid changed spaces.');
@@ -175,7 +178,7 @@
       const error = new Error('World update lost synchronization; requesting a fresh snapshot.'); error.code = 'WORLD_BASE_MISMATCH'; throw error;
     }
     const result = structuredClone(previous);
-    for (const key of ['tick', 'time', 'dayTime', 'hero', 'torch', 'camera', 'combat']) result[key] = structuredClone(delta[key]);
+    for (const key of ['tick', 'time', 'dayTime', 'hero', 'music', 'torch', 'camera', 'combat']) result[key] = structuredClone(delta[key]);
     for (const patch of delta.spaces) {
       requireValue(patch.index < result.spaces.length, 'unknown space update.');
       const space = result.spaces[patch.index], entities = new Map(space.entities.map(entity => [entity.id, entity]));
