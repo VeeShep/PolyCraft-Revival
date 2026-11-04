@@ -13,6 +13,10 @@ class NativePeer extends EventTarget {
   async setLocalDescription(value) {
     if (value.type === 'rollback') { this.localDescription = this.oldLocal; this.signalingState = 'stable'; return; }
     this.oldLocal = this.localDescription; this.localDescription = value; this.signalingState = value.type === 'offer' ? 'have-local-offer' : 'stable';
+    if (this.iceGatheringState === 'complete') {
+      this.iceGatheringState = 'gathering'; this.dispatchEvent(new Event('icegatheringstatechange'));
+      this.iceGatheringState = 'complete'; this.dispatchEvent(new Event('icegatheringstatechange'));
+    }
   }
   async setRemoteDescription(value) {
     if (value.type === 'rollback') { this.remoteDescription = this.oldRemote; this.signalingState = 'stable'; return; }
@@ -72,4 +76,18 @@ test('an old or unobservable selected ICE generation cannot complete renewal', a
   link.pc.getStats = async () => new Map([['transport', { type: 'transport', selectedCandidatePairId: 'old' }], ['old', { state: 'succeeded', localCandidateId: 'local', remoteCandidateId: 'remote' }], ['local', { usernameFragment: 'peer1' }], ['remote', { usernameFragment: 'peer1' }]]);
   const checking = link.confirmRestart(); await new Promise(resolve => setImmediate(resolve)); assert.throws(() => link.finishRestart(), /pending/);
   t.mock.timers.tick(8000); await assert.rejects(checking, /generation did not connect/); await link.cancelRestart(); assert.equal(link.closed, false);
+});
+test('restart gathering waits for the new native cycle when local-description completion still reports the old complete state', async t => {
+  const { link } = fixture(t);
+  link.pc.setLocalDescription = async value => {
+    link.pc.localDescription = value; link.pc.signalingState = 'have-local-offer';
+  };
+  let returned = false;
+  const pending = link.restartOffer(servers).then(value => { returned = true; return value; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(returned, false, 'Old complete state must not release candidate-free restart SDP.');
+  link.pc.iceGatheringState = 'gathering'; link.pc.dispatchEvent(new Event('icegatheringstatechange'));
+  await new Promise(resolve => setImmediate(resolve)); assert.equal(returned, false);
+  link.pc.iceGatheringState = 'complete'; link.pc.dispatchEvent(new Event('icegatheringstatechange'));
+  assert.equal(await pending, sdp('AA', 2)); await link.cancelRestart();
 });

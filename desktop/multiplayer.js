@@ -224,14 +224,14 @@
     }
     async gatherRestart(context) {
       this.checkRestart(context);
-      if (this.pc.iceGatheringState === 'complete') return;
+      if (context.gatheringChanged && this.pc.iceGatheringState === 'complete') return;
       await new Promise((resolve, reject) => {
         const finish = error => {
           clearTimeout(timer); this.pc.removeEventListener('icegatheringstatechange', changed);
           this.abort.signal.removeEventListener('abort', aborted); context.signal?.removeEventListener('abort', aborted);
           error ? reject(error) : resolve();
         };
-        const changed = () => { if (this.pc.iceGatheringState === 'complete') finish(); };
+        const changed = () => { if (context.gatheringChanged && this.pc.iceGatheringState === 'complete') finish(); };
         const aborted = () => finish(new Error('ICE renewal cancelled.'));
         const timer = setTimeout(() => finish(new Error('ICE renewal gathering timed out.')), 8000);
         this.pc.addEventListener('icegatheringstatechange', changed); this.abort.signal.addEventListener('abort', aborted, { once: true }); context.signal?.addEventListener('abort', aborted, { once: true });
@@ -239,14 +239,24 @@
       });
       this.checkRestart(context);
     }
+    async setRestartDescription(description, context) {
+      // Native completion can precede the new gathering cycle; the old "complete" is not enough.
+      const changed = () => { context.gatheringChanged = true; };
+      this.pc.addEventListener('icegatheringstatechange', changed);
+      try {
+        await this.pc.setLocalDescription(description);
+        if (description.type === 'answer') context.answerApplied = true;
+        this.checkRestart(context); await this.gatherRestart(context); this.checkRestart(context);
+        return this.pc.localDescription.sdp;
+      } finally { this.pc.removeEventListener('icegatheringstatechange', changed); }
+    }
     async restartOffer(servers, signal) {
       requireValue(this.role === 'host', 'Only the host initiates ICE renewal.');
       const context = this.beginRestart(servers, signal); context.busy++;
       try {
         const offer = await this.pc.createOffer({ iceRestart: true }); this.checkRestart(context);
         this.sameRestartTransport(offer.sdp, this.pc.localDescription?.sdp);
-        await this.pc.setLocalDescription(offer); this.checkRestart(context);
-        await this.gatherRestart(context); this.checkRestart(context); return this.pc.localDescription.sdp;
+        return await this.setRestartDescription(offer, context);
       } catch (error) { context.cancelled = true; throw error; }
       finally { context.busy--; if (context.cancelled || context.signal?.aborted) await this.cancelRestart(); }
     }
@@ -258,8 +268,7 @@
         await this.pc.setRemoteDescription({ type: 'offer', sdp }); this.checkRestart(context);
         const answer = await this.pc.createAnswer(); this.checkRestart(context);
         this.sameRestartTransport(answer.sdp, this.pc.localDescription?.sdp);
-        await this.pc.setLocalDescription(answer); context.answerApplied = true; this.checkRestart(context);
-        await this.gatherRestart(context); this.checkRestart(context); return this.pc.localDescription.sdp;
+        return await this.setRestartDescription(answer, context);
       } catch (error) { context.cancelled = true; throw error; }
       finally { context.busy--; if (context.cancelled || context.signal?.aborted) await this.cancelRestart(); }
     }
