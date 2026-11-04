@@ -55,11 +55,12 @@ app.on('window-all-closed', () => app.quit());`);
       const username = `${Math.floor(Date.now() / 1000) + 180}:${randomUUID()}`;
       return [{ urls: [`turn:127.0.0.1:${port}?transport=udp`], username, credential: createHmac('sha1', secret).update(username).digest('base64') }];
     }
+    const failures = [];
     for (const count of [2, 4]) {
       for (const relay of [false, true]) {
         console.log(`Checking ${count} participants, ${relay ? 'forced relay' : 'direct'}, using disposable network-only peers.`);
         const report = await page.evaluate(async ({ count, relay, initial, fresh }) => {
-          let stage = 'joining', generationFailure;
+          let stage = 'joining', generationFailure, signaledCandidates;
           const check = (value, message) => { if (!value) { stage = message; throw new Error(message); } };
           const wait = async predicate => {
             const deadline = performance.now() + 12000;
@@ -101,6 +102,12 @@ app.on('window-all-closed', () => app.quit());`);
               await local.send('update', { tick: 2 });
               stage = 'creating a restart answer';
               const answer = await remote.restartAnswer(offer, fresh, abort.signal);
+              const candidateSummary = sdp => {
+                const fragment = sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
+                const candidates = sdp.split(/\r?\n/).filter(line => line.startsWith('a=candidate:'));
+                return { count: candidates.length, matchingGeneration: candidates.filter(line => line.split(' ufrag ')[1]?.split(' ')[0] === fragment).length };
+              };
+              signaledCandidates = { offer: candidateSummary(offer), answer: candidateSummary(answer) };
               stage = 'applying the restart answer';
               await local.acceptRestartAnswer(answer);
               stage = 'confirming the selected new generation';
@@ -132,13 +139,14 @@ app.on('window-all-closed', () => app.quit());`);
             }
             check(errors.length === 0, 'Native transport reported an error.');
             return { participants: count, links: summaries };
-          } catch { return { failure: stage, participants: count, relay, generationFailure }; }
+          } catch { return { failure: stage, participants: count, relay, generationFailure, signaledCandidates }; }
           finally { host.close(); for (const guest of guests) guest.link.close(); }
         }, { count, relay, initial: relay ? credentials() : [], fresh: relay ? credentials() : [] });
         console.log(JSON.stringify(report));
-        assert.equal(report.failure, undefined, 'The sanitized network report above identifies the failed step.');
+        if (report.failure) failures.push(report);
       }
     }
+    assert.deepEqual(failures, [], 'The sanitized network reports above identify failed steps.');
   } finally {
     if (application) await application.close();
     if (turn?.pid && turn.exitCode === null) {
