@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const VERSION = 3, MAX_MESSAGE = 192 * 1024;
+  const VERSION = 4, MAX_MESSAGE = 192 * 1024;
   const STAGES = ['forward', 'upnp', 'stun', 'turn'];
   function roomName(value) {
     if (typeof value !== 'string') throw new Error('Enter a room name.');
@@ -20,7 +20,15 @@
     return url.href;
   }
   function signal(value) {
-    if (!value || typeof value !== 'object' || Array.isArray(value) || !['offer', 'answer', 'candidate', 'reject', 'route', 'relay'].includes(value.kind)) throw new Error('Invalid room connection message.');
+    if (!value || typeof value !== 'object' || Array.isArray(value) || !['offer', 'answer', 'candidate', 'reject', 'route', 'relay', 'renew'].includes(value.kind)) throw new Error('Invalid room connection message.');
+    if (value.kind === 'renew') {
+      const r = value.data, withValue = ['credentials', 'offer', 'answer', 'failed'];
+      if (!r || typeof r !== 'object' || Array.isArray(r) || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.id) || !['request', 'ready', 'connected', 'complete', ...withValue].includes(r.type) || Object.keys(r).length !== (withValue.includes(r.type) ? 3 : 2) || Object.keys(r).some(key => !['id', 'type', 'value'].includes(key))) throw new Error('Invalid relay renewal message.');
+      if (r.type === 'credentials') relayCredentials(r.value);
+      if (['offer', 'answer'].includes(r.type) && (typeof r.value !== 'string' || !r.value.startsWith('v=0') || r.value.length > 128 * 1024)) throw new Error('Invalid relay renewal SDP.');
+      if (r.type === 'failed' && (typeof r.value !== 'string' || r.value.length > 256)) throw new Error('Invalid relay renewal failure.');
+      return value;
+    }
     if (value.kind === 'relay') {
       if (value.data !== 'request') throw new Error('Invalid relay request.');
       return value;

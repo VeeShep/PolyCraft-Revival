@@ -24,10 +24,20 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
     if (!rate || now - rate.at > 60000) { rate = { at: now, count: 0 }; rates.set(ip, rate); }
     return ++rate.count <= 30;
   }
+  function endRenewal(room, id, guest, message) {
+    const renewal = guest.renewal;
+    if (!renewal) return;
+    clearTimeout(renewal.timer); guest.lastRenewalId = renewal.id; guest.renewal = null;
+    if (message !== undefined) {
+      const data = { id: renewal.id, type: 'failed', value: message };
+      send(guest, { type: 'signal', kind: 'renew', data });
+      send(room.host, { type: 'signal', kind: 'renew', from: id, data });
+    }
+  }
   function endRoom(room) {
     if (rooms.get(room.name) !== room) return;
     rooms.delete(room.name);
-    for (const guest of room.guests.values()) { send(guest, { type: 'room-ended' }); guest.close(1000, 'Room ended'); }
+    for (const [id, guest] of room.guests) { endRenewal(room, id, guest); send(guest, { type: 'room-ended' }); guest.close(1000, 'Room ended'); }
     room.host.close(1000, 'Room ended'); room.guests.clear();
   }
   server.on('upgrade', (request, socket, head) => {
@@ -80,9 +90,42 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
           if (msg.kind === 'relay') {
             const guest = room.guests.get(msg.to);
             check(role === 'host' && issueTurn && guest && guest.route?.stage === 'stun' && !guest.routeLocked && !guest.relayIssued && quota(ip), 'Relay credentials are unavailable for this join.');
-            guest.relayIssued = true;
-            send(guest, { type: 'relay', data: issueTurn(room.expires) });
-            send(socket, { type: 'relay', from: msg.to, data: issueTurn(room.expires) });
+            const guestValue = issueTurn(room.expires), hostValue = issueTurn(room.expires);
+            guest.relayIssued = true; guest.lastRelayIssue = Date.now();
+            guest.relayExpires = guestValue && hostValue ? Math.min(guestValue.expires, hostValue.expires) : null;
+            send(guest, { type: 'relay', data: guestValue });
+            send(socket, { type: 'relay', from: msg.to, data: hostValue });
+            return;
+          }
+          if (msg.kind === 'renew') {
+            const guest = role === 'host' ? room.guests.get(msg.to) : socket, r = msg.data;
+            if (role === 'host' && r.type === 'failed' && !guest) return;
+            check(guest && guest.route?.stage === 'turn' && guest.routeLocked && guest.routeAck && guest.relayIssued && guest.relayExpires, 'Relay renewal requires an admitted service-relayed guest.');
+            check((role === 'host' ? ['request', 'offer', 'complete', 'failed'] : ['ready', 'answer', 'connected', 'failed']).includes(r.type), 'This player cannot send that relay renewal control.');
+            if (r.type === 'request') {
+              const now = Date.now();
+              const unavailable = reason => send(socket, { type: 'signal', kind: 'renew', from: msg.to, data: { id: r.id, type: 'failed', value: reason } });
+              if (!issueTurn || r.id === guest.lastRenewalId || guest.renewal || guest.relayExpires - now > 60000 || now - guest.lastRelayIssue < 15000 || !quota(ip)) { unavailable('Relay renewal is not available yet.'); return; }
+              const guestValue = issueTurn(room.expires), hostValue = issueTurn(room.expires);
+              if (!guestValue || !hostValue) { unavailable('The room is too close to expiry to renew its relay.'); return; }
+              guest.lastRelayIssue = now;
+              const renewal = guest.renewal = { id: r.id, phase: 'credentials', expires: Math.min(guestValue.expires, hostValue.expires), deadline: now + 30000 };
+              renewal.timer = setTimeout(() => { if (guest.renewal === renewal) endRenewal(room, msg.to, guest, 'Relay renewal timed out.'); }, 30000); renewal.timer.unref();
+              send(guest, { type: 'signal', kind: 'renew', data: { id: r.id, type: 'credentials', value: guestValue } });
+              send(socket, { type: 'signal', kind: 'renew', from: msg.to, data: { id: r.id, type: 'credentials', value: hostValue } });
+              return;
+            }
+            if (r.id === guest.lastRenewalId) return;
+            const renewal = guest.renewal;
+            check(renewal && renewal.id === r.id, 'Unexpected relay renewal attempt.');
+            if (Date.now() >= renewal.deadline) { endRenewal(room, role === 'host' ? msg.to : guestId, guest, 'Relay renewal timed out.'); return; }
+            if (r.type === 'failed') { endRenewal(room, role === 'host' ? msg.to : guestId, guest, r.value); return; }
+            const next = { ready: ['credentials', 'ready'], offer: ['ready', 'offer'], answer: ['offer', 'answer'], connected: ['answer', 'connected'], complete: ['connected', 'complete'] }[r.type];
+            check(renewal.phase === next[0], 'Relay renewal control arrived out of order.');
+            renewal.phase = next[1];
+            if (r.type === 'complete') { guest.relayExpires = renewal.expires; endRenewal(room, msg.to, guest); }
+            if (role === 'host') send(guest, { type: 'signal', kind: 'renew', data: r });
+            else send(room.host, { type: 'signal', kind: 'renew', from: guestId, data: r });
             return;
           }
           if (msg.kind === 'route') {
@@ -124,7 +167,7 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
       clearTimeout(timer);
       if (!room) return;
       if (role === 'host') endRoom(room);
-      else if (room.guests.get(guestId) === socket) { room.guests.delete(guestId); send(room.host, { type: 'left', id: guestId }); }
+      else if (room.guests.get(guestId) === socket) { endRenewal(room, guestId, socket); room.guests.delete(guestId); send(room.host, { type: 'left', id: guestId }); }
     });
   });
   const cleanup = setInterval(() => {
@@ -134,6 +177,7 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
   }, 30000); cleanup.unref();
   async function close() {
     clearInterval(cleanup);
+    for (const room of rooms.values()) for (const [id, guest] of room.guests) endRenewal(room, id, guest);
     for (const client of wss.clients) client.terminate();
     await new Promise(resolve => wss.close(resolve));
     if (server.listening) await new Promise(resolve => server.close(resolve));

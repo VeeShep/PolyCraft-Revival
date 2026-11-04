@@ -93,7 +93,7 @@
       this.trickle = trickle; this.candidates = []; this.candidateCount = 0;
       this.pc = new RTCPeerConnection({ iceServers: validateIceServers(iceServers) });
       if (trickle) this.pc.onicecandidate = event => {
-        if (!event.candidate || this.closed) return;
+        if (!event.candidate || this.closed || this.iceRenewal) return;
         onCandidate?.(event.candidate.toJSON(), this);
       };
       this.pc.onconnectionstatechange = () => {
@@ -193,6 +193,122 @@
     async remoteDescription(description) {
       await this.pc.setRemoteDescription(description); this.remoteReady = true;
       for (const candidate of this.candidates.splice(0)) await this.pc.addIceCandidate(candidate);
+    }
+    sameRestartTransport(sdp, previous) {
+      requireValue(typeof sdp === 'string' && sdp.length <= 128 * 1024 && sdp.startsWith('v=0') && typeof previous === 'string', 'Invalid ICE restart description.');
+      const identity = text => {
+        const lines = text.split(/\r?\n/), media = lines.filter(line => line.startsWith('m='));
+        requireValue(media.length === 1 && /^m=application \d+ (?:UDP\/DTLS\/SCTP|DTLS\/SCTP) webrtc-datachannel$/.test(media[0]), 'ICE restart must retain the data transport.');
+        const fingerprints = lines.filter(line => line.startsWith('a=fingerprint:'));
+        requireValue(fingerprints.length > 0 && fingerprints.every(line => /^a=fingerprint:sha-256 (?:[A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}$/.test(line)), 'Invalid ICE restart identity.');
+        return JSON.stringify([...fingerprints.map(line => line.toLowerCase()), ...lines.filter(line => /^a=(?:mid:|sctp-port:)/.test(line))].sort());
+      };
+      requireValue(identity(sdp) === identity(previous), 'ICE restart cannot change the authenticated peer or data transport.');
+      const ice = text => ['ufrag', 'pwd'].map(key => {
+        const values = text.split(/\r?\n/).filter(line => line.startsWith('a=ice-' + key + ':'));
+        requireValue(values.length === 1 && new RegExp('^a=ice-' + key + ':[A-Za-z0-9+/]{' + (key === 'ufrag' ? 4 : 22) + ',256}$').test(values[0]), 'Invalid ICE renewal parameters.'); return values[0];
+      });
+      const nextIce = ice(sdp), oldIce = ice(previous);
+      requireValue(nextIce.every((value, index) => value !== oldIce[index]), 'ICE renewal must replace both ICE credentials.');
+    }
+    beginRestart(servers, signal) {
+      requireValue(!this.closed && !this.probing && this.state === 'connected' && this.channel?.readyState === 'open' && this.pc?.signalingState === 'stable' && !this.iceRenewal && !signal?.aborted, 'The existing game connection is not ready for ICE renewal.');
+      const context = { signal, config: this.pc.getConfiguration(), busy: 0, cancelled: false, answerApplied: false };
+      this.iceRenewal = context;
+      try { this.pc.setConfiguration({ ...context.config, iceServers: validateIceServers(servers) }); }
+      catch (error) { this.iceRenewal = null; throw error; }
+      return context;
+    }
+    checkRestart(context) {
+      requireValue(!this.closed && this.iceRenewal === context && !context.cancelled && !context.signal?.aborted, 'ICE renewal cancelled.');
+    }
+    async gatherRestart(context) {
+      this.checkRestart(context);
+      if (this.pc.iceGatheringState === 'complete') return;
+      await new Promise((resolve, reject) => {
+        const finish = error => {
+          clearTimeout(timer); this.pc.removeEventListener('icegatheringstatechange', changed);
+          this.abort.signal.removeEventListener('abort', aborted); context.signal?.removeEventListener('abort', aborted);
+          error ? reject(error) : resolve();
+        };
+        const changed = () => { if (this.pc.iceGatheringState === 'complete') finish(); };
+        const aborted = () => finish(new Error('ICE renewal cancelled.'));
+        const timer = setTimeout(() => finish(new Error('ICE renewal gathering timed out.')), 8000);
+        this.pc.addEventListener('icegatheringstatechange', changed); this.abort.signal.addEventListener('abort', aborted, { once: true }); context.signal?.addEventListener('abort', aborted, { once: true });
+        if (this.closed || context.cancelled || context.signal?.aborted) aborted(); else changed();
+      });
+      this.checkRestart(context);
+    }
+    async restartOffer(servers, signal) {
+      requireValue(this.role === 'host', 'Only the host initiates ICE renewal.');
+      const context = this.beginRestart(servers, signal); context.busy++;
+      try {
+        const offer = await this.pc.createOffer({ iceRestart: true }); this.checkRestart(context);
+        this.sameRestartTransport(offer.sdp, this.pc.localDescription?.sdp);
+        await this.pc.setLocalDescription(offer); this.checkRestart(context);
+        await this.gatherRestart(context); this.checkRestart(context); return this.pc.localDescription.sdp;
+      } catch (error) { context.cancelled = true; throw error; }
+      finally { context.busy--; if (context.cancelled || context.signal?.aborted) await this.cancelRestart(); }
+    }
+    async restartAnswer(sdp, servers, signal) {
+      requireValue(this.role === 'guest', 'Only guests answer ICE renewal.');
+      this.sameRestartTransport(sdp, this.pc.remoteDescription?.sdp);
+      const context = this.beginRestart(servers, signal); context.busy++;
+      try {
+        await this.pc.setRemoteDescription({ type: 'offer', sdp }); this.checkRestart(context);
+        const answer = await this.pc.createAnswer(); this.checkRestart(context);
+        this.sameRestartTransport(answer.sdp, this.pc.localDescription?.sdp);
+        await this.pc.setLocalDescription(answer); context.answerApplied = true; this.checkRestart(context);
+        await this.gatherRestart(context); this.checkRestart(context); return this.pc.localDescription.sdp;
+      } catch (error) { context.cancelled = true; throw error; }
+      finally { context.busy--; if (context.cancelled || context.signal?.aborted) await this.cancelRestart(); }
+    }
+    async acceptRestartAnswer(sdp) {
+      const context = this.iceRenewal;
+      requireValue(this.role === 'host' && context && !context.busy && this.pc.signalingState === 'have-local-offer', 'ICE renewal has no pending offer.'); this.checkRestart(context);
+      this.sameRestartTransport(sdp, this.pc.remoteDescription?.sdp); context.busy++;
+      try { await this.pc.setRemoteDescription({ type: 'answer', sdp }); context.answerApplied = true; this.checkRestart(context); }
+      finally { context.busy--; if (context.cancelled || context.signal?.aborted) await this.cancelRestart(); }
+    }
+    async confirmRestart() {
+      const context = this.iceRenewal;
+      requireValue(context?.answerApplied && !context.busy && this.pc.signalingState === 'stable', 'ICE renewal is still pending.'); this.checkRestart(context);
+      const fragment = description => description.sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
+      const local = fragment(this.pc.localDescription), remote = fragment(this.pc.remoteDescription);
+      await new Promise((resolve, reject) => {
+        let pollTimer, finished = false;
+        const finish = error => {
+          if (finished) return; finished = true; clearTimeout(timer); clearTimeout(pollTimer);
+          this.abort.signal.removeEventListener('abort', aborted); context.signal?.removeEventListener('abort', aborted); error ? reject(error) : resolve();
+        };
+        const aborted = () => finish(new Error('ICE renewal cancelled.'));
+        const poll = async () => {
+          try {
+            this.checkRestart(context); const stats = await this.pc.getStats(); if (finished) return; this.checkRestart(context);
+            const transport = [...stats.values()].find(row => row.type === 'transport' && row.selectedCandidatePairId), pair = transport && stats.get(transport.selectedCandidatePairId);
+            if (pair?.state === 'succeeded' && stats.get(pair.localCandidateId)?.usernameFragment === local && stats.get(pair.remoteCandidateId)?.usernameFragment === remote && this.pc.connectionState === 'connected' && ['connected', 'completed'].includes(this.pc.iceConnectionState) && this.channel?.readyState === 'open') { context.confirmed = true; finish(); }
+            else pollTimer = setTimeout(poll, 100);
+          } catch (error) { finish(error); }
+        };
+        const timer = setTimeout(() => finish(new Error('The new ICE generation did not connect.')), 8000);
+        this.abort.signal.addEventListener('abort', aborted, { once: true }); context.signal?.addEventListener('abort', aborted, { once: true }); poll();
+      });
+    }
+    finishRestart() { const context = this.iceRenewal; requireValue(context?.confirmed && !context.busy, 'ICE renewal is still pending.'); this.checkRestart(context); this.iceRenewal = null; }
+    async cancelRestart() {
+      const context = this.iceRenewal; if (!context) return; context.cancelled = true;
+      if (context.busy) return;
+      if (context.cleaning) return context.cleaning;
+      context.cleaning = (async () => { try {
+        if (!this.closed) {
+          if (this.pc.signalingState === 'have-local-offer') await this.pc.setLocalDescription({ type: 'rollback' });
+          else if (this.pc.signalingState === 'have-remote-offer') await this.pc.setRemoteDescription({ type: 'rollback' });
+          if (!context.answerApplied) this.pc.setConfiguration(context.config);
+        }
+      } catch { /* A native rollback failure must not close an otherwise usable data channel. */ }
+      finally { if (this.iceRenewal === context) this.iceRenewal = null; }
+      })();
+      return context.cleaning;
     }
     async makeInvitation() {
       requireValue(this.role === 'host' && this.state === 'new' && !this.closed, 'This connection already has an invitation.');
@@ -316,6 +432,7 @@
     close(reason = 'Connection closed.') {
       if (this.closed) return;
       this.closed = true;
+      this.cancelRestart().catch(() => {});
       this.trafficEnded = performance.now();
       for (const timer of [this.connectionTimer, this.expiryTimer, this.disconnectTimer, this.transferTimer]) clearTimeout(timer);
       this.incoming = null;

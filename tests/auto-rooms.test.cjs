@@ -29,7 +29,14 @@ async function fixture(t, { works = 'stun', upnp = false, turn = false, guestTur
       return { peer, invitation: (['forward', 'upnp'].includes(stage) ? 'polycraft-direct1.' : '') + peer };
     }, async acceptReply() {} };
   function makeLink(peer, role) {
-    return { peer, role, probing: true, state: 'waiting', closed: false, async addCandidate() {}, close() {
+    return { peer, role, probing: true, state: 'waiting', closed: false, async addCandidate() {},
+      async diagnostics() { return { path: this.testPath || (this.stage === 'turn' ? 'relayed' : 'direct') }; },
+      async restartOffer(servers, signal) { assert.equal(this.probing, false); assert.equal(signal.aborted, false); assert.ok(hasTurn(servers)); order.push('renew-offer'); return 'v=0\r\nrenewal-offer'; },
+      async restartAnswer(sdp, servers, signal) { assert.equal(sdp, 'v=0\r\nrenewal-offer'); assert.equal(this.probing, false); assert.equal(signal.aborted, false); assert.ok(hasTurn(servers)); order.push('renew-answer'); return 'v=0\r\nrenewal-answer'; },
+      async acceptRestartAnswer(sdp) { assert.equal(sdp, 'v=0\r\nrenewal-answer'); order.push('renew-accepted'); },
+      async confirmRestart() { order.push('renew-checked-' + role); },
+      finishRestart() { order.push('renew-finished-' + role); }, async cancelRestart() { order.push('renew-cancelled-' + role); },
+      close() {
       if (this.closed) return; this.closed = true; this.state = 'closed'; this.onState?.('closed', {});
       if (role === 'host') { hostTransport.peers.delete(peer); hostTransport.watchers.get(peer)?.('closed', {}); this.guest?.close(); }
     } };
@@ -47,7 +54,7 @@ async function fixture(t, { works = 'stun', upnp = false, turn = false, guestTur
   function room(role) {
     const handlers = new Set(), native = new RoomSocket(event => { for (const handler of handlers) handler(event); });
     const session = { notify(value) { this.message = value; }, changed() {}, addGuest() { return 'saved-hero'; }, transport: hostTransport,
-      world: role === 'host' ? { async admitConnectedPlayer(id, link) { assert.equal(id, 'saved-hero'); assert.equal(link.probing, true); assert.equal(link.guest.attached, true); link.guest.onMessage({ kind: 'welcome' }, link.guest); order.push('admit'); link.probing = false; } } : null,
+      world: role === 'host' ? { requestResync(link, value) { assert.equal(link.probing, false); assert.deepEqual(value, { version: 1, tick: 0 }); order.push('renew-resync'); }, async admitConnectedPlayer(id, link) { assert.equal(id, 'saved-hero'); assert.equal(link.probing, true); assert.equal(link.guest.attached, true); link.guest.onMessage({ kind: 'welcome' }, link.guest); order.push('admit'); link.probing = false; } } : null,
       async attachGuest(link) { assert.equal(this.world, null); order.push('attach'); this.world = {}; this.connection = link; link.attached = true; link.probing = false; } };
     const runtime = { desktop: { onRoom(fn) { handlers.add(fn); return () => handlers.delete(fn); }, room: async (op, opts) => native.request(op, opts) },
       PolycraftMultiplayer: { RUNTIME, PeerLink: Peer }, PolycraftDirect: { DirectPeer: Peer }, polycraft: { checkpoint: async () => {}, runAction: fn => fn() } };
@@ -142,4 +149,50 @@ test('failed or stalled direct-offer preparation rejects only that join without 
     assert.deepEqual(f.order, ['stun']); assert.equal(f.host.connected, true); assert.equal(f.service.rooms.size, 1);
     assert.match(f.host.session.message, /setup failed before a relay/); assert.equal(f.guest.session.world, null);
   }
+});
+function renewalWindow(f) {
+  const guest = [...f.service.rooms.values()][0].guests.get(f.entry.id), state = f.host.renewals.states.get(f.entry.id);
+  assert.ok(state); clearTimeout(state.timer); guest.lastRelayIssue = Date.now() - 16000;
+  guest.relayExpires = state.expires = Date.now() + 30000; return { guest, state };
+}
+test('automatic service renewal completes both selected generations over a real local room socket without readmitting heroes', async t => {
+  const f = await fixture(t, { works: 'turn', relayService: true, forward: false });
+  await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  const link = f.entry.route.link, guestLink = f.guest.session.connection, { guest, state } = renewalWindow(f), previous = state.expires;
+  await f.host.renewals.start(state);
+  await until(() => f.order.includes('renew-finished-guest') && f.order.includes('renew-resync'));
+  assert.ok(state.expires > previous); assert.equal(guest.relayExpires, state.expires); assert.equal(guest.renewal, null);
+  assert.equal(f.hostTransport.peers.get(link.peer), link); assert.equal(f.guest.session.connection, guestLink);
+  assert.equal(link.closed, false); assert.equal(guestLink.closed, false); assert.equal(f.order.filter(value => value === 'admit').length, 1); assert.equal(f.order.filter(value => value === 'attach').length, 1);
+  assert.ok(f.order.indexOf('renew-checked-host') < f.order.indexOf('renew-finished-host')); assert.ok(f.order.indexOf('renew-checked-guest') < f.order.indexOf('renew-finished-host'));
+});
+test('an existing direct ICE path never requests fresh relay credentials', async t => {
+  const f = await fixture(t, { works: 'turn', relayService: true, forward: false }); await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  const { guest, state } = renewalWindow(f), issued = guest.lastRelayIssue; f.entry.route.link.testPath = 'direct';
+  await f.host.renewals.start(state); await new Promise(resolve => setTimeout(resolve, 15));
+  assert.equal(guest.lastRelayIssue, issued); assert.equal(guest.renewal, undefined); assert.equal(state.tx, undefined); assert.equal(f.order.includes('renew-offer'), false);
+});
+test('failed renewal preserves live peers and prior expiry, clears both transactions and never exposes native SDP errors', async t => {
+  const f = await fixture(t, { works: 'turn', relayService: true, forward: false }); await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  const { guest, state } = renewalWindow(f), expires = guest.relayExpires;
+  f.entry.route.link.restartOffer = async () => { throw new Error('private-SDP-and-credential'); };
+  await f.host.renewals.start(state); await until(() => state.failures === 1 && !f.guest.renewals.guest && guest.renewal === null);
+  assert.equal(guest.relayExpires, expires); assert.equal(state.expires, expires); assert.equal(f.host.connected, true); assert.equal(f.guest.connected, true);
+  assert.equal(f.entry.route.link.closed, false); assert.equal(f.guest.session.connection.closed, false); assert.doesNotMatch(f.host.session.message, /private|SDP|credential/);
+});
+test('room shutdown cancels an in-flight renewal and suppresses a late offer without closing its admitted data channel', async t => {
+  const f = await fixture(t, { works: 'turn', relayService: true, forward: false }); await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  const { state } = renewalWindow(f); let release;
+  f.entry.route.link.restartOffer = () => new Promise(resolve => { release = () => resolve('v=0\r\nlate-offer'); });
+  await f.host.renewals.start(state); await until(() => !!release); const tx = state.tx;
+  f.host.close(); release(); await tx.running; assert.equal(tx.controller.signal.aborted, true); assert.equal(f.entry.route.link.closed, false); assert.equal(f.order.includes('renew-accepted'), false);
+});
+test('native peer closure clears renewal work immediately and suppresses its late offer while signaling remains available', async t => {
+  const f = await fixture(t, { works: 'turn', relayService: true, forward: false }); await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  const { state } = renewalWindow(f); let release;
+  f.entry.route.link.restartOffer = () => new Promise(resolve => { release = () => resolve('v=0\r\nlate-offer'); });
+  await f.host.renewals.start(state); await until(() => !!release); const tx = state.tx;
+  f.entry.route.link.close(); release(); await tx.running;
+  assert.equal(f.host.renewals.states.size, 0); assert.equal(f.guest.renewals.guest, null); assert.equal(tx.controller.signal.aborted, true);
+  assert.equal(f.host.connected, true); assert.equal(f.guest.connected, true); assert.equal(f.order.includes('renew-accepted'), false);
 });

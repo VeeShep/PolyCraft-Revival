@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current transient-disconnect recovery — Beta 56, 2026-11-04
+## Current service-issued relay renewal — Beta 57, 2026-11-04
+
+Room signaling now uses protocol 4; update both room-code clients and the service. Manual game runtime coop-38/world 15/delta 2 and save envelope 8 remain unchanged. Initial direct-first joining is retained. The creating host renews only a committed service-issued TURN pair near known expiry, with per-guest cooldown, existing quotas and bounded in-memory transaction state. Direct selected paths request none; manual TURN credentials are not managed automatically.
+
+New credentials drive ICE restart on the same authenticated RTCPeerConnection/data channel. Fingerprint, media/mid and SCTP identity stay fixed; both ICE parameters change. Both sides must observe succeeded selected pairs with the new candidate username fragments before guest connected/host complete. Framing/action counters and hero admission remain intact, followed by a full world snapshot. Requests and native operations recheck exact live ownership, deadlines cancel/rollback pending work, three-attempt retries are bounded, and peer/room loss clears work. Crossing completed/failed/departed-peer controls cannot terminate a healthy room. No arbitrary gameplay state travels through the service.
+
+466 full and 35 focused checks pass. Local WebSocket tests exercise the complete renewal protocol; native API tests use mocked peer/candidate statistics. Packaged Mac runtime passes 113 selected checks with source/architecture/signature verification. Actual browser statistics, coturn allocation/expiry, sustained two/four-player operation and native/physical-network acceptance remain unverified. Six-hour default credentials/12-hour rooms are not uptime guarantees. Detailed evidence, incident recovery for Beta 56 CI and next native-acceptance work are in RESTORATION_STATUS.md and server/README.md.
+
+## Previous transient-disconnect recovery — Beta 56, 2026-11-04
 
 The host stream no longer converts a brief disconnected state into a fatal hero-lookup/capture error. It retains one idle timer, skips captures during the transport's existing disconnect grace and sends a full snapshot on return using the same binding and data channel. A boundary-time disconnect yields no snapshot; short state changes mark the next transfer full. Replaced peers and host shutdown stop obsolete streams. Genuine capture/transfer failures and sustained/failed ICE still close normally.
 
