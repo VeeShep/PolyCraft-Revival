@@ -52,7 +52,7 @@ The game remembers only that server URL. Room names/passwords and TURN credentia
 
 ## Player flow
 
-1. Both players use Beta 37 builds and an updated room service (signaling protocol 3; earlier services are incompatible) and enter disposable islands through **Play**.
+1. Both players use compatible game builds listed in the project README and a protocol-3 room service (Beta 37 service or newer; earlier protocols are incompatible) and enter disposable islands through **Play**.
 2. Open **Multiplayer** and enter the same room-server address.
 3. The host chooses a room name such as `poopedpants123`, enters a password such as `giggle shits`, then clicks **Host room** and accepts the development warning.
 4. The guest enters that room name/password and a guest name, clicks **Join room**, then accepts the warning. Room names are case-insensitive; passwords preserve spaces and capitals exactly.
@@ -95,6 +95,14 @@ Check `/health` as above, then use disposable islands for physical acceptance on
 
 STUN can discover a public IP to try with a **separately configured external TCP port**; a successful STUN reply does not prove a forward is reachable. STUN's mapped UDP port is not the native TCP listener's port. Beta 7 adds a manual native address-discovery button using the chosen UDP STUN server (Google by default), with a three-second deadline and no TCP-port changes. Beta 8 uses this discovery automatically when the room host address is blank, keeps manual address overrides, and attempts TCP using the separately selected port. UPnP is disabled by default and requires the host checkbox; an existing port mapping is left alone. Router operations have a bounded wait, but the underlying mapper cannot abort HTTP: late results are cleaned up when they finish, and crash recovery relies on the finite 20-minute lease. No real router has been tested.
 
-## Playtest diagnostics · Beta 9
+## Relay lifetime and connection recovery
 
-Players can copy a local connection report from Multiplayer before leaving. Its roomTraffic totals count signaling JSON separately from game frames. They reveal neither credentials nor message contents, omit transport/retransmission overhead and do not measure total server traffic or provider billing. Reports do not upload automatically; request them alongside observed route/failure details during controlled testing. The signaling protocol remains 2, compatible with Beta 8; the report feature requires the Beta 9 client. Physical load/cost and internet acceptance remain open.
+Service-issued credentials default to six hours, configurable from 60 to 21,600 seconds and capped by the remaining room lifetime (rooms default to 12 hours). Issuance occurs only after an approved guest's STUN-direct attempt fails; direct connections request none. These are credential limits, not a guarantee of uninterrupted gameplay. Automatic credential renewal is not implemented. Short configured lifetimes and late joins need explicit long-session testing.
+
+Renewal must coordinate a fresh authenticated ICE negotiation/allocation. TURN requires subsequent requests for an allocation to retain its original username ([RFC 8656 section 5](https://datatracker.ietf.org/doc/html/rfc8656#section-5)); newly issued timestamp/UUID usernames cannot simply replace the old allocation's credentials. Preserve the same admitted hero, data-channel action/frame sequences and coherent world state when implementing restart. Keep this separate from selecting a different transport or automatically upgrading relay connections to direct.
+
+Beta 56 lets an already admitted connection recover from brief ICE disconnection without the host's snapshot loop closing it immediately. The world keeps simulating, guest actions wait for connectivity, and recovery sends a fresh full snapshot on the existing connection. The transport's existing 15-second disconnect grace remains; failed ICE, prolonged outages, actual capture failures and transfer/backpressure bounds still close normally. This is covered by mocked transport/host regression checks. Native browser, router, relay-expiry and physical-network acceptance remain open.
+
+## Historical diagnostics introduction · Beta 9
+
+Players can copy a local connection report from Multiplayer before leaving. Its roomTraffic totals count signaling JSON separately from game frames. They reveal neither credentials nor message contents, omit transport/retransmission overhead and do not measure total server traffic or provider billing. Reports do not upload automatically; request them alongside observed route/failure details during controlled testing. At Beta 9, signaling protocol 2 remained compatible with Beta 8. Current room signaling uses protocol 3; the report feature is retained. Physical load/cost and internet acceptance remain open.

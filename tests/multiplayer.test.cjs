@@ -38,6 +38,20 @@ function link(t, role = 'host', options = {}) {
   t.after(() => connection.close());
   return connection;
 }
+test('transient ICE loss retains the data channel and frame counters within grace, then closes a sustained outage', async t => {
+  mock(t); t.mock.timers.enable({ apis: ['setTimeout'] });
+  const states = [], connection = link(t, 'host', { onState: state => states.push(state) }), channel = connection.channel;
+  connection.pc.connectionState = 'connected'; await connection.connected();
+  await connection.send('snapshot', { tick: 1 }); const sequence = connection.sentSequence, transfer = connection.sentTransfer;
+  connection.pc.connectionState = 'disconnected'; connection.pc.onconnectionstatechange();
+  t.mock.timers.tick(14999); assert.equal(connection.closed, false); assert.equal(connection.state, 'disconnected');
+  connection.pc.connectionState = 'connected'; connection.pc.onconnectionstatechange(); await new Promise(resolve => setImmediate(resolve));
+  t.mock.timers.tick(2); assert.equal(connection.closed, false); assert.equal(connection.state, 'connected'); assert.equal(connection.channel, channel);
+  await connection.send('snapshot', { tick: 2 }); assert.equal(connection.sentSequence, sequence + 1); assert.equal(connection.sentTransfer, transfer + 1);
+  assert.deepEqual(states, ['connected', 'disconnected', 'connected']);
+  connection.pc.connectionState = 'disconnected'; connection.pc.onconnectionstatechange(); t.mock.timers.tick(15000);
+  assert.equal(connection.closed, true); assert.equal(channel.readyState, 'closed');
+});
 test('invitations round-trip, survive wrapping and reject incompatible, expired, malformed or wrong-kind data', () => {
   const original = packet();
   const encoded = encodeInvitation(original);

@@ -246,6 +246,64 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
   await new Promise(resolve => setImmediate(resolve));
   await world.close(); assert.equal(world.streams.size, 0);
 });
+test('brief peer disconnection suspends world captures, preserves its stream and resumes with a full snapshot', async t => {
+  const { controls, transport, events } = setup(t), world = await startHostingWorld(controls, transport);
+  t.after(() => { delete world.players; return world.close(); });
+  const sent = [], failures = []; let captures = 0, stoppedInput = 0;
+  const connection = { peer: 'recovering', state: 'connected', closed: false, send: async (kind, state) => sent.push({ kind, state }), fail: error => failures.push(error) };
+  const binding = { id: 'guest', ready: true, joined: true, connection, input: { apply() {}, stop() { stoppedInput++; } }, actions: { apply() {}, stop() {} } };
+  world.players = { active: new Map([['guest', { hero: {} }]]), flushRefreshes() {} };
+  world.peerPlayers.set(connection.peer, binding); transport.peers.set(connection.peer, connection);
+  world.snapshot = async link => { world.playerFor(link); return worldSnapshot(++captures); };
+  world.streamTo(connection); await new Promise(resolve => setImmediate(resolve)); const stream = world.streams.get(connection);
+  assert.equal(sent.length, 1); connection.state = 'disconnected';
+  world.beginTick(); world.endTick(); assert.equal(stoppedInput, 1); assert.ok(events.includes('simulation'));
+  await new Promise(resolve => setTimeout(resolve, 250));
+  assert.equal(captures, 1, 'disconnected guests cannot accumulate snapshots'); assert.equal(sent.length, 1); assert.deepEqual(failures, []);
+  assert.equal(world.streams.get(connection), stream); connection.state = 'connected';
+  await new Promise(resolve => setTimeout(resolve, 150));
+  assert.equal(sent[1].kind, 'snapshot'); assert.equal(world.peerPlayers.get(connection.peer), binding); assert.equal(binding.joined, true);
+  assert.equal(world.streams.get(connection), stream); assert.deepEqual(failures, []);
+  const count = captures; transport.peers.delete(connection.peer); await new Promise(resolve => setTimeout(resolve, 150));
+  assert.equal(captures, count); assert.equal(world.streams.size, 0, 'replaced connections cannot keep a stale stream');
+  delete world.players; await world.close();
+});
+test('a disconnect between capture request and simulation boundary yields no snapshot rather than failing a valid peer', async t => {
+  const { controls, transport } = setup(t), world = await startHostingWorld(controls, transport);
+  t.after(() => { delete world.players; return world.close(); });
+  const connection = { peer: 'boundary', state: 'connected', closed: false, close() { this.closed = true; } };
+  transport.peers.set(connection.peer, connection); world.players = { active: new Map([['guest', { hero: {} }]]) };
+  world.peerPlayers.set(connection.peer, { id: 'guest', ready: true, connection });
+  let release; const gate = new Promise(resolve => { release = resolve; });
+  world.atBoundary = async read => { await gate; return read(); };
+  const pending = world.snapshot(connection); connection.state = 'disconnected'; release(); assert.equal(await pending, null);
+  delete world.players; await world.close();
+});
+test('a peer replaced while its snapshot is pending cannot receive the captured state', async t => {
+  const { controls, transport } = setup(t), world = await startHostingWorld(controls, transport); t.after(() => world.close());
+  const sent = [], connection = { peer: 'replaced', state: 'connected', closed: false, send: async () => sent.push('obsolete'), fail: error => { throw error; }, close() { this.closed = true; } };
+  let release; world.snapshot = () => new Promise(resolve => { release = () => resolve(worldSnapshot(1)); });
+  transport.peers.set(connection.peer, connection); world.streamTo(connection);
+  transport.peers.set(connection.peer, { ...connection }); release(); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(sent, []); assert.equal(world.streams.size, 0); await world.close();
+});
+test('authenticated in-flight actions survive a disconnected peer without applying until recovery or bypassing identity validation', async t => {
+  const { controls, transport } = setup(t), world = await startHostingWorld(controls, transport);
+  t.after(() => { delete world.players; return world.close(); });
+  const { HostActions } = require('../desktop/coop-actions.js'), actions = new HostActions(); let applied = 0;
+  actions.apply = () => { if (actions.queue.shift()) applied++; return null; };
+  const connection = { peer: 'in-flight', state: 'disconnected', closed: false, close() { this.closed = true; } }, hero = { getEC: () => null };
+  const binding = { id: 'guest', ready: true, joined: true, connection, input: { apply() {}, stop() {} }, actions };
+  world.players = { active: new Map([['guest', { hero }]]) }; world.peerPlayers.set(connection.peer, binding); transport.peers.set(connection.peer, connection);
+  const message = { kind: 'action', payload: { type: 'life', sequence: 1, target: 'own-hero' } };
+  world.receiveMessage(message, connection); assert.equal(actions.queue.length, 1); world.beginTick(); assert.equal(applied, 0);
+  assert.throws(() => world.receiveMessage(message, { ...connection }), /no assigned/);
+  assert.throws(() => world.receiveMessage({ kind: 'action', payload: { ...message.payload, sequence: 2, xp: 999 } }, connection), /Invalid/);
+  const stream = { resyncRequestedAt: -Infinity, forceFull: false, stop: () => world.streams.delete(connection) }; world.streams.set(connection, stream);
+  world.receiveMessage({ kind: 'resync', payload: { version: 1, tick: 1 } }, connection); assert.equal(stream.forceFull, true);
+  connection.state = 'connected'; world.beginTick(); world.beginTick(); assert.equal(applied, 1); assert.equal(actions.sequence, 1);
+  delete world.players; await world.close();
+});
 
 function worldSnapshot(tick) {
   return { version: 15, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },

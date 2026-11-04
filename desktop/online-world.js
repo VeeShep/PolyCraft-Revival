@@ -125,6 +125,10 @@
       this.transport.onState = (peer, state, details) => {
         if (!this.closed) {
           if (state === 'connected' && !this.transport.peers.get(peer)?.probing) this.connectPlayer(peer).catch(error => this.transport.peers.get(peer)?.fail(error));
+          if (state === 'disconnected') {
+            const stream = this.streams.get(this.transport.peers.get(peer));
+            if (stream) { stream.forceFull = true; stream.initial = null; }
+          }
           if (state === 'closed') {
             const binding = this.peerPlayers.get(peer);
             if (binding) this.releasePlayer(binding).catch(error => this.transport.onError?.(peer, error));
@@ -170,7 +174,8 @@
     }
     playerFor(connection) {
       const binding = this.peerPlayers.get(connection.peer);
-      if (this.closed || this.closing || connection.closed || connection.state !== 'connected' || this.transport.peers.get(connection.peer) !== connection || binding?.connection !== connection || !binding.ready || binding.releasing) throw new Error('This connection has no assigned co-op hero.');
+      // Reliable in-flight intents retain their binding; beginTick waits for connectivity.
+      if (this.closed || this.closing || connection.closed || !['connected', 'disconnected'].includes(connection.state) || this.transport.peers.get(connection.peer) !== connection || binding?.connection !== connection || !binding.ready || binding.releasing) throw new Error('This connection has no assigned co-op hero.');
       const entry = this.players.active.get(binding.id);
       if (!entry) throw new Error('The assigned hero is not active.');
       return { id: binding.id, ...entry };
@@ -236,6 +241,7 @@
     }
     snapshot(connection) {
       return this.atBoundary(() => {
+        if (connection?.state === 'disconnected') return null;
         const player = connection && this.players ? this.playerFor(connection) : null;
         const snapshot = captureSnapshot(this.game, player?.hero);
         return snapshot;
@@ -243,7 +249,7 @@
     }
     requestResync(connection, value) {
       const stream = this.streams.get(connection);
-      if (this.closed || this.closing || !stream || connection.closed || connection.state !== 'connected' || this.transport.peers.get(connection.peer) !== connection) throw new Error('Resynchronizing requires this guest\'s active world stream.');
+      if (this.closed || this.closing || !stream || connection.closed || !['connected', 'disconnected'].includes(connection.state) || this.transport.peers.get(connection.peer) !== connection) throw new Error('Resynchronizing requires this guest\'s active world stream.');
       if (!value || Object.keys(value).length !== 2 || value.version !== 1 || !Number.isSafeInteger(value.tick) || value.tick < 0) throw new Error('Invalid world resync request.');
       const now = performance.now();
       if (now - stream.resyncRequestedAt >= 1000) { stream.resyncRequestedAt = now; stream.forceFull = true; }
@@ -255,11 +261,13 @@
       stream.stop = stop;
       this.streams.set(connection, stream);
       const send = async () => {
-        if (stream.stopped || this.closed || connection.closed) { stop(); return; }
+        if (stream.stopped || this.closing || this.closed || connection.closed || this.transport.peers.get(connection.peer) !== connection) { stop(); return; }
         try {
+          if (connection.state === 'disconnected') { stream.forceFull = true; stream.initial = null; return; }
           const state = stream.initial || await this.snapshot(connection);
           stream.initial = null;
-          if (stream.stopped || this.closed || connection.closed) { stop(); return; }
+          if (stream.stopped || this.closing || this.closed || connection.closed || this.transport.peers.get(connection.peer) !== connection) { stop(); return; }
+          if (state === null || connection.state === 'disconnected') { stream.forceFull = true; return; }
           const full = stream.forceFull || performance.now() - stream.lastFull >= 5000;
           stream.forceFull = false;
           const delta = !full && stream.previous && createDelta(stream.previous, state);
@@ -271,9 +279,10 @@
           stop();
           if (!cancelled) connection.fail(error);
           return;
+        } finally {
+          // Keep one idle timer during the transport's recovery grace; never queue world snapshots.
+          if (!stream.stopped) stream.timer = setTimeout(send, 100);
         }
-        // Wait for transfer completion before the next capture, so slow guests cannot accumulate world snapshots.
-        if (!stream.stopped) stream.timer = setTimeout(send, 100);
       };
       send();
       return stop;

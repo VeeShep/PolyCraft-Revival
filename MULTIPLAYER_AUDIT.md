@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current maintenance and original save-boundary audit — Beta 55, 2026-11-04
+## Current transient-disconnect recovery — Beta 56, 2026-11-04
+
+The host stream no longer converts a brief disconnected state into a fatal hero-lookup/capture error. It retains one idle timer, skips captures during the transport's existing disconnect grace and sends a full snapshot on return using the same binding and data channel. A boundary-time disconnect yields no snapshot; short state changes mark the next transfer full. Replaced peers and host shutdown stop obsolete streams. Genuine capture/transfer failures and sustained/failed ICE still close normally.
+
+Valid reliable in-flight actions and bounded resync requests remain authenticated to the exact active connection/hero while disconnected. beginTick stops guest input/combat and defers action execution until recovery; no counter or admission is reset. Malformed, replayed and wrong-identity requests remain rejected. All three new host regressions failed before the fix. A pending-peer replacement regression also failed before adding the post-capture identity check. Five new checks plus existing regressions pass: 440 full and 104 selected packaged runtime checks. Review found no concrete must-fix issue. Runtime coop-38/world 15/delta 2/room 3/save 8 remain unchanged; Beta 51–56 peers are compatible.
+
+Credential renewal remains separate: current service credentials are one-time, six-hour default and room-expiry capped. New usernames require coordinated ICE/allocation handling; no automatic renewal or relay-to-direct upgrade is claimed. Actual network drops/expiry and native browser behavior remain open alongside visible/native/physical-network acceptance. See RESTORATION_STATUS.md and server/README.md for evidence, source references and next steps.
+
+## Previous maintenance and original save-boundary audit — Beta 55, 2026-11-04
 
 The private SceneNode constructor and 71 references now use the original name verified from a pinned Turbulenz reference (unique 57-method inventory and seven exact canonical bodies). Inverse AST proof reproduces committed Beta 54 input. No implementation is replaced, and gameplay/wire/save formats remain unchanged: coop-38/world 15/delta 2/room 3, with envelope 8 for tracked campaign rewards. Beta 51–55 peers remain compatible. 435 full checks and 65 packaged runtime checks pass; evidence and license provenance are in RESTORATION_STATUS.md and RUNTIME_READABILITY.md.
 
