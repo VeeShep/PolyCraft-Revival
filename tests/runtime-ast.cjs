@@ -68,6 +68,11 @@ function healthDrawing() {
   return { healthMethods: evaluate(health, { [drawingDependency(drawHealth, 'healthMid')]: colors }), drawProgressBar: evaluate(drawBar, {
     [drawingDependency(drawBar, 'progressBarTexturePath')]: { progressBarTexturePath: 'textures/block.dds' }, [drawingDependency(drawBar, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth' } } }, [drawingDependency(drawBar, 'outline')]: colors }) };
 }
+function audioSourceMethods() {
+  const create = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === '_createBufferNode' && a.left.object.property?.name === 'prototype'), 'audio buffer source');
+  const owner = create.left.object.object.name;
+  return Object.fromEntries(['pause', 'resume', 'destroy'].map(name => [name, evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name && a.left.object.property?.name === 'prototype' && a.left.object.object.name === owner), 'audio source ' + name).right)]));
+}
 function movementDrawing() {
   const draw = one(properties.filter(p => key(p) === 'drawMove'), 'movement drawing').value;
   return evaluate(draw, { [drawingDependency(draw, 'outlineSoft')]: objectWith('healthFull'),
@@ -85,4 +90,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, cameraMethods, taskGroupMethods };
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, audioSourceMethods, cameraMethods, taskGroupMethods };

@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest music/listener maintenance — Beta 38, 2026-11-03
+## Current guest audio isolation — Beta 39, 2026-11-04
+
+A separate native manager facade owns guest active sources and listener buffers while original solo sources are parked using SDK pause. Idle channels are borrowed; private replacements preserve capacity for parked sources without rerunning archetype normalization. Teardown stops guest playback, destroys only replacements and resumes parked solo sources at their saved offsets. Allocation rollback restores the guest boundary without writing solo saves; individual cleanup failures cannot skip manager restoration.
+
+347 checks pass, including final boundary rollback verification (also covered by the 28 focused checks), using actual native HTML-audio/WebAudio pause/resume/destroy methods on silent devices. Independent read-only review found no concrete issues. Mac ARM64 ZIP integrity, ad-hoc signing and packaged Node ownership/teardown checks pass. Runtime coop-28/world 8 stays compatible with Beta 38; room/save formats are unchanged. Full world-SFX event/loop replication and audible/native/network acceptance remain open. The native hook audit and next scope are recorded in RESTORATION_STATUS.md.
+
+## Previous guest music/listener maintenance — Beta 38, 2026-11-03
 
 World snapshot 8 adds a strict five-track/null music selection to full/delta headers. Guest rendering updates native sound sources every frame with a bounded/restored elapsed step, assigned interpolated-hero listener position and current camera orientation. Music changes run original native methods once per selection and always apply session volume, independently of the preserved solo preference. Resync retains the last valid selection/listener while fades continue. Closing restores original music/listener after restoring the solo camera and clock context.
 

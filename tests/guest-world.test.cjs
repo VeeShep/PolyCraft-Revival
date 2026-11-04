@@ -318,6 +318,16 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(controls.ready(), true); app.updateGame(); assert.equal(simulations, 0);
   controls.paused = false; app.updateGame(); assert.equal(simulations, 1);
   assert.equal(connection.closed, true); world.close();
+  const originalSounds = game.gameSoundManager, failure = new Error('audio allocation failed'), resumed = [];
+  const source = { globalSource: true, playing: true, paused: false, pause() { this.paused = true; }, resume() { this.paused = false; resumed.push(this); } };
+  originalSounds.activeSoundSourceList = [{ soundSource: source }];
+  globals.soundDevice = { createGlobalSource() { throw failure; } };
+  const failedConnection = { ...connection, closed: false };
+  assert.throws(() => new GuestWorld(controls, failedConnection), error => error === failure);
+  assert.equal(game.gameSoundManager, originalSounds); assert.deepEqual(resumed, [source]); assert.equal(failedConnection.closed, true);
+  assert.deepEqual(roots, [originalRoot]); assert.equal(app.updateGame, update); assert.equal(game.draw, draw); assert.equal(game.saveLevel, save);
+  assert.equal(game.getGameCamera, getCamera); assert.equal(game.imgui.controller, guiController); assert.equal(controls.ready(), true);
+  assert.equal(saves, 0, 'failed audio admission does not write the solo island');
 });
 test('an unanswered guest resync times out without repeatedly requesting snapshots or editing progress', async t => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
@@ -612,4 +622,66 @@ test('audio teardown restores native solo music/listener and sound update failur
   const failure = new Error('sound device unavailable'); f.sounds.update = () => { throw failure; };
   assert.throws(() => f.world.updateAudio(), error => error === failure); assert.equal(f.globals.gameTimeStep, 9);
   f.world.closed = true; f.world.updateAudio();
+});
+
+function isolatedAudio() {
+  const ast = require('./runtime-ast.cjs'), sourceMethods = ast.audioSourceMethods(), created = [], world = Object.create(GuestWorld.prototype);
+  function source(globalSource, playing = false, paused = false) {
+    const calls = { pause: 0, resume: 0, disconnect: 0, stop: 0 };
+    const value = Object.assign(Object.create(sourceMethods), { globalSource, playing, paused, gain: 1, calls,
+      audio: { currentTime: 12, pause() { calls.pause++; }, play() { calls.resume++; } },
+      sd: { addPlayingSource() {}, removePlayingSource() {} }, _gainNode: { disconnect() { calls.disconnect++; } },
+      stop() { if (!this.playing) return false; this.playing = this.paused = false; calls.stop++; return true; } });
+    return value;
+  }
+  const music = source(true, true), worker = source(false, true), paused = source(true, true, true), finished = source(false), idle = source(false), idleGlobal = source(true);
+  const device = { createSource(options) { assert.deepEqual(options, { minDistance: 1, maxDistance: 30, rollOff: 1 }); const value = source(false); created.push(value); return value; },
+    createGlobalSource() { const value = source(true); created.push(value); return value; } };
+  const manager = Object.assign(Object.create(ast.prototypeWith('updateListener')), { activeSoundSourceList: [music, worker, paused, finished].map(soundSource => ({ soundSource })),
+    soundSourceDepot: [idle], soundSourceGlobalDepot: [idleGlobal], listenerMatrix: new Float32Array(identity()), listenerv3WorldLocation: new Float32Array([1, 2, 3]), soundExtension: '.mp3',
+    initialize() { assert.fail('Isolation must not renormalize native sound archetype paths'); } });
+  world.controls = { app: { globals: { soundDevice: device } } }; world.game = { gameSoundManager: manager, musicString: 'aud_music_day' };
+  world.original = { audio: { manager, music: world.game.musicString } };
+  return { world, manager, device, created, music, worker, paused, finished, idle, idleGlobal };
+}
+test('guest audio parks original native sources, preserves pool capacity and resumes exact solo sources without guest leakage', () => {
+  const f = isolatedAudio(), active = f.manager.activeSoundSourceList, spatial = f.manager.soundSourceDepot, globalPool = f.manager.soundSourceGlobalDepot;
+  f.world.isolateAudio(); const session = f.world.game.gameSoundManager;
+  assert.notEqual(session, f.manager); assert.equal(session.activeSoundSourceList.length, 0); assert.equal(session.soundExtension, '.mp3');
+  assert.equal(f.music.paused, true); assert.equal(f.worker.paused, true); assert.equal(f.paused.calls.pause, 0); assert.equal(f.finished.calls.pause, 0);
+  assert.equal(session.soundSourceDepot.length, 3); assert.equal(session.soundSourceGlobalDepot.length, 3); assert.equal(f.created.length, 4);
+  assert.equal(f.manager.activeSoundSourceList, active); assert.equal(f.manager.soundSourceDepot, spatial); assert.equal(f.manager.soundSourceGlobalDepot, globalPool);
+  assert.notEqual(session.listenerMatrix, f.manager.listenerMatrix); assert.notEqual(session.listenerv3WorldLocation, f.manager.listenerv3WorldLocation);
+  session.listenerMatrix[9] = 99; session.listenerv3WorldLocation[0] = 99; assert.equal(f.manager.listenerMatrix[9], 0); assert.equal(f.manager.listenerv3WorldLocation[0], 1);
+  assert.equal(f.world.game.musicString, undefined, 'the host may start the same soundtrack on its independent manager');
+  const borrowed = session.soundSourceDepot.shift(); borrowed.playing = true; borrowed.soundName = 'guest-effect'; session.attachSource(borrowed, null, null, 'guest-effect', 1, 0);
+  f.world.releaseAudio(); assert.equal(f.world.game.gameSoundManager, f.manager); assert.equal(f.world.game.musicString, 'aud_music_day');
+  assert.equal(borrowed.playing, false); assert.equal(borrowed.soundName, null); assert.equal(f.music.paused, false); assert.equal(f.worker.paused, false);
+  assert.equal(f.music.audio.currentTime, 12); assert.equal(f.music.calls.resume, 1); assert.equal(f.paused.paused, true); assert.equal(f.paused.calls.resume, 0);
+  assert.ok(f.created.every(value => value.calls.disconnect === 1)); assert.equal(f.manager.getSoundSource(), borrowed);
+  f.world.releaseAudio(); assert.equal(f.music.calls.resume, 1, 'teardown is idempotent');
+});
+test('audio allocation and teardown failures preserve original manager and resume paused solo sources', t => {
+  const f = isolatedAudio(), failure = new Error('audio capacity exhausted');
+  f.device.createSource = () => { throw failure; };
+  assert.throws(() => f.world.isolateAudio(), error => error === failure);
+  assert.equal(f.world.game.gameSoundManager, f.manager); assert.equal(f.world.game.musicString, 'aud_music_day'); assert.equal(f.music.paused, false); assert.equal(f.worker.paused, false);
+  assert.ok(f.created.every(value => value.calls.disconnect === 1)); assert.equal(f.world.sessionAudio, null);
+  const cleanup = isolatedAudio(); cleanup.world.isolateAudio(); const session = cleanup.world.game.gameSoundManager, borrowed = session.soundSourceDepot.shift();
+  borrowed.playing = true; borrowed.stop = () => { throw failure; }; session.attachSource(borrowed, null, null, 'guest-effect', 1, 0);
+  const logged = []; t.mock.method(console, 'error', (...args) => logged.push(args)); cleanup.world.releaseAudio();
+  assert.equal(cleanup.world.game.gameSoundManager, cleanup.manager); assert.equal(cleanup.music.paused, false); assert.equal(cleanup.worker.paused, false);
+  assert.equal(borrowed.gain, 0); assert.equal(logged.length, 1); assert.ok(cleanup.created.every(value => value.calls.disconnect === 1));
+});
+
+test('native WebAudio sources resume at the parked offset after a long co-op session', () => {
+  const methods = require('./runtime-ast.cjs').audioSourceMethods(), calls = [];
+  const source = Object.assign(Object.create(methods), { playing: true, paused: false, audio: null,
+    audioContext: { currentTime: 10 }, playStart: 4, sound: { buffer: { duration: 100 } },
+    bufferNode: { stop: () => calls.push('stop'), disconnect: () => calls.push('disconnect') },
+    sd: { removePlayingSource: () => calls.push('remove'), addPlayingSource: () => calls.push('add') },
+    _createBufferNode() { return { loop: false, start: (...args) => calls.push(args) }; } });
+  source.pause(); source.audioContext.currentTime = 100; source.resume();
+  assert.deepEqual(calls, ['stop', 'disconnect', 'remove', [0, 6, 94], 'add']);
+  assert.equal(source.playStart, 94); assert.equal(source.paused, false);
 });

@@ -244,7 +244,7 @@
         roots: globals.scene.rootNodes.filter(node => node !== game.gameLighting.worldDirectionLightNode && node !== game.gameLighting.heroLightNode)
       };
       const profile = game.getPlayerData();
-      this.original.audio = { music: game.musicString, listener: game.gameSoundManager.listenerv3WorldLocation && Array.from(game.gameSoundManager.listenerv3WorldLocation), matrix: game.gameSoundManager.listenerMatrix && Array.from(game.gameSoundManager.listenerMatrix) };
+      this.original.audio = { manager: game.gameSoundManager, music: game.musicString, listener: game.gameSoundManager.listenerv3WorldLocation && Array.from(game.gameSoundManager.listenerv3WorldLocation), matrix: game.gameSoundManager.listenerMatrix && Array.from(game.gameSoundManager.listenerMatrix) };
       this.lastAudioFrame = performance.now();
       this.original.settings = { shadows: game.gameLighting.getShadowsEnabled(), sounds: game.gameSoundManager.getSoundsEnabled(), music: profile.getMusicEnabled() };
       // Session preferences must never save into the suspended local island.
@@ -325,6 +325,7 @@
         this.original.onState?.(state, details);
       };
       this.movement = new GuestMovement(this);
+      try { this.isolateAudio(); } catch (error) { this.close(); throw error; }
     }
     requestResync() {
       if (this.closed || this.resyncing || !this.scene.snapshot) return;
@@ -559,6 +560,41 @@
         if (health.damage && view.shouldDrawOffScreenIcon()) view.drawOffScreenIcon();
       }
     }
+    isolateAudio() {
+      const original = this.original.audio.manager, device = this.controls.app.globals.soundDevice;
+      const manager = Object.assign(Object.create(original), {
+        activeSoundSourceList: [], soundSourceDepot: [...original.soundSourceDepot || []], soundSourceGlobalDepot: [...original.soundSourceGlobalDepot || []],
+        listenerv3WorldLocation: original.listenerv3WorldLocation && new Float32Array(original.listenerv3WorldLocation),
+        listenerMatrix: original.listenerMatrix && new Float32Array(original.listenerMatrix)
+      });
+      const session = this.sessionAudio = { manager, paused: [], created: [] };
+      try {
+        for (const entry of original.activeSoundSourceList || []) {
+          const source = entry.soundSource;
+          if (source.playing && !source.paused) { session.paused.push(source); source.pause(); }
+          const isGlobal = !!source.globalSource;
+          const replacement = isGlobal ? device?.createGlobalSource({}) : device?.createSource({ minDistance: 1, maxDistance: 30, rollOff: 1 });
+          if (replacement) {
+            if (isGlobal) replacement.globalSource = true;
+            session.created.push(replacement);
+            (isGlobal ? manager.soundSourceGlobalDepot : manager.soundSourceDepot).push(replacement);
+          }
+        }
+        this.game.gameSoundManager = manager; this.game.musicString = undefined;
+      } catch (error) { this.releaseAudio(); throw error; }
+    }
+    releaseAudio() {
+      const session = this.sessionAudio;
+      if (!session) return;
+      this.sessionAudio = null;
+      let failure;
+      const clean = action => { try { action(); } catch (error) { failure ??= error; } };
+      for (const entry of session.manager.activeSoundSourceList) clean(() => { entry.soundSource.gain = 0; entry.soundSource.stop(); entry.soundSource.soundName = null; });
+      for (const source of session.created) clean(() => source.destroy());
+      this.game.gameSoundManager = this.original.audio.manager; this.game.musicString = this.original.audio.music;
+      for (const source of session.paused) clean(() => source.resume());
+      if (failure) console.error('Guest audio cleanup failed.', failure);
+    }
     updateAudio() {
       if (this.closed) return;
       const game = this.game, globals = this.controls.app.globals, state = this.scene.snapshot, now = performance.now(), step = globals.gameTimeStep;
@@ -576,6 +612,7 @@
       } finally { globals.gameTimeStep = step; }
     }
     restoreAudio() {
+      this.releaseAudio();
       const game = this.game, original = this.original.audio, sounds = game.gameSoundManager;
       if (original.music) game.startMusic(original.music); else game.stopMusic();
       sounds.listenerv3WorldLocation = original.listener && new Float32Array(original.listener);
