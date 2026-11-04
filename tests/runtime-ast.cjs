@@ -68,6 +68,35 @@ function healthDrawing() {
   return { healthMethods: evaluate(health, { [drawingDependency(drawHealth, 'healthMid')]: colors }), drawProgressBar: evaluate(drawBar, {
     [drawingDependency(drawBar, 'progressBarTexturePath')]: { progressBarTexturePath: 'textures/block.dds' }, [drawingDependency(drawBar, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth' } } }, [drawingDependency(drawBar, 'outline')]: colors }) };
 }
+function visualEffectMethods(names) {
+  const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'buildKeyframeList')), 'visual effect prototype');
+  const owner = definition.left.object.name, build = definition.right.properties.find(p => key(p) === 'buildTweens').value;
+  const namespace = drawingDependency(build, 'Easing'), sprite = drawingDependency(build, 'blendStyle'), tweens = {};
+  tweens.Easing = assignedObject('Easing', { [namespace]: tweens }); tweens.Interpolation = assignedObject('Interpolation', { [namespace]: tweens });
+  const constructor = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.name === namespace && a.left.property.name === 'Tween'), 'tween constructor');
+  tweens.Tween = evaluate(constructor.right, { [namespace]: tweens }); tweens.Create = value => new tweens.Tween(value);
+  function Factory() {}
+  Factory.prototype = evaluate(definition.right, { [namespace]: tweens, [sprite]: { prototype: { blendStyle: { NORMAL: 'normal' } } } });
+  Factory.create = staticMethod(owner, 'create', { [owner]: Factory });
+  const definitions = assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.property?.name === 'archetypes' && a.left.object.object?.name === owner && names.includes(a.left.property.name) && a.right.type === 'ObjectExpression');
+  const adapters = [];
+  traverse(ast, { CallExpression(p) { if (p.node.callee.property?.name === 'attach' && p.node.callee.object.property?.name === 'PolycraftControls') adapters.push(p.node.arguments.at(-1)); } });
+  const adapter = one(adapters, 'desktop effect adapter');
+  for (const [name, binding, member] of [['create', owner, 'create'], ['factory', owner], ['archetypes', owner, 'archetypes'], ['tweens', namespace]]) {
+    const value = one(adapter.properties.filter(p => key(p) === name), 'effect adapter ' + name).value;
+    if (member ? value.object?.name !== binding || value.property?.name !== member : value.name !== binding) throw new Error('Incorrect desktop effect adapter ' + name);
+  }
+  const colours = {};
+  traverse(ast, { ReferencedIdentifier(p) {
+    if (!definitions.some(a => p.node.start >= a.right.start && p.node.end <= a.right.end)) return;
+    const binding = p.scope.getBinding(p.node.name);
+    if (!binding || Object.hasOwn(colours, p.node.name)) return;
+    const assigned = one(binding.constantViolations.filter(p => p.node.type === 'AssignmentExpression').map(p => p.node.right), 'visual colour ' + p.node.name);
+    colours[p.node.name] = evaluate(assigned);
+  } });
+  const archetypes = Object.fromEntries(definitions.map(a => [a.left.property.name, evaluate(a.right, colours)]));
+  return { create: Factory.create, factory: Factory, archetypes, tweens };
+}
 function soundManagerMethods() {
   const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'updateListener')), 'sound manager prototype');
   const owner = definition.left.object.name, archetypes = {};
@@ -96,4 +125,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, soundManagerMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

@@ -8,6 +8,7 @@
   const { HostConstruction } = typeof module !== 'undefined' ? require('./coop-construction.js') : root.PolycraftCoopConstruction;
   const { QuestRewards } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
   const { HostAudio } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
+  const { HostEffects } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -23,7 +24,9 @@
       this.actionSaves = new Set();
       this.closed = false;
       const game = this.game, clock = game.gameClock, controller = game.getGameController();
-      this.audio = new HostAudio(game); game.desktopAudio = this.audio;
+      this.effects = new HostEffects(game, controls.effectMethods);
+      try { this.audio = new HostAudio(game); } catch (error) { this.effects.close(); throw error; }
+      game.desktopEffects = this.effects; game.desktopAudio = this.audio;
       this.original = { pause: clock.pause, controllerUpdate: controller.update, simulation: game.updateSimulation };
       clock.pause = () => {};
       clock.resume();
@@ -284,6 +287,7 @@
         }
         this.closed = true;
         this.audio.close(); delete this.game.desktopAudio;
+        this.effects.close(); delete this.game.desktopEffects;
         const game = this.game, clock = game.gameClock, controller = game.getGameController();
         clock.pause = this.original.pause;
         controller.update = this.original.controllerUpdate;

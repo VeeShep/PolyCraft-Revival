@@ -10,6 +10,8 @@
 
   const { GuestAudio } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
 
+  const { GuestEffects } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
+
   const same = (a, b) => a === b || !!(a && b && a.length === b.length && a.every((value, index) => value === b[index]));
   function transformParts(math, transform) {
     const normalized = new Float32Array(transform), scale = [0, 3, 6].map(offset => Math.hypot(...transform.slice(offset, offset + 3)));
@@ -289,7 +291,10 @@
           }
           // A rank-up recreates the entity; the assigned saved player identity stays unchanged.
           if (this.identity) this.identity.entity = this.scene.snapshot.hero;
-          if (!this.resyncing) this.effects.receive(this.scene.snapshot.audio, this.scene.snapshot.time);
+          if (!this.resyncing) {
+            this.effects.receive(this.scene.snapshot.audio, this.scene.snapshot.time);
+            this.visuals.receive(this.scene.snapshot.effects, this.scene.snapshot.time);
+          }
         }
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
@@ -328,7 +333,7 @@
         this.original.onState?.(state, details);
       };
       this.movement = new GuestMovement(this);
-      try { this.isolateAudio(); this.effects = new GuestAudio(game.gameSoundManager, this.scene); } catch (error) { this.close(); throw error; }
+      try { this.isolateAudio(); this.effects = new GuestAudio(game.gameSoundManager, this.scene); this.visuals = new GuestEffects(controls.effectMethods, this.scene, globals); } catch (error) { this.close(); throw error; }
     }
     requestResync() {
       if (this.closed || this.resyncing || !this.scene.snapshot) return;
@@ -674,10 +679,12 @@
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       if (!this.pauseMenu) this.updateMenu();
       this.drawMovementCursor(); this.updateAudio();
+      try { this.visuals.update(state.time + Math.min(0.25, Math.max(0, (performance.now() - this.scene.receivedAt) / 1000))); }
+      catch (error) { this.connection.fail(error); }
     }
     close() {
       if (this.closed) return;
-      this.quests?.close();
+      this.quests?.close(); this.visuals?.close();
       this.closed = true;
       this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive');
       clearTimeout(this.resyncTimer); this.resyncing = false;

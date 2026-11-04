@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current shared battle cues and existing fades — Beta 41, 2026-11-04
+## Current original world visuals — Beta 42, 2026-11-04
+
+A verified native adapter exposes the original visual-only creator, definitions and tween namespace. Host recording captures 33 whitelisted world visuals with copied bounded parameters, skipping screen-local effects. Guest-owned roots and chains advance under a temporary scheduler/clock context restored in `finally`; no original solo main tween is advanced or cleared. Event sequence/history prevents initial/stale hit replay, while current state retains the two native 40-second building decals for late join/resync/expiry. Factory rollback and close preserve ownership; audio/shake are not replayed through the special-effect path.
+
+371 checks pass using actual original visual/keyframe/tween methods and silent sprite sinks, including structural adapter resolution, multi-stage chains, unchanged solo queues/clocks, failures/cleanup, decal phase/expiry and full/delta/count/parser checks. Read-only native review found no concrete issues. Runtime coop-31/world 11 require matching Beta 42 peers; room/save formats stay unchanged. This covers a bounded visual subset: other original VFX, pre-host effects, full campaign/menu parity and visual/native/physical-network acceptance remain open. Exact package/build evidence and next work are in RESTORATION_STATUS.md.
+
+## Previous shared battle cues and existing fades — Beta 41, 2026-11-04
 
 Two native global-only victory/defeat cues complement the 34 spatial world sounds. Native preparation is a local campaign menu cue and numbered success stings include purchase audio, so these remain outside shared playback. Parsing restricts cue scope; original guest SFX mute and replicated-source ownership apply. Hosting also captures remaining fades on existing spatial loops without restarting the host source, excluding expired/invalid/global sources.
 

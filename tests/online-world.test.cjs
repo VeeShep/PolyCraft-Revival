@@ -246,7 +246,7 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
 });
 
 function worldSnapshot(tick) {
-  return { version: 10, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },
+  return { version: 11, effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },
     spaces: [{ extents: [-10, -10, -10, 10, 10, 10], transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], blocks: [],
       entities: [{ id: 'hero', archetype: null, interactive: true, location: [tick, 0, 0], scale: [1, 1, 1], rotation: 0, mesh: null, health: null }] }] };
 }
@@ -369,4 +369,12 @@ test('hosting installs one world-audio recorder and closing restores original na
   game.gameSoundManager.playInternal('aud_shotgunshot', [1, 2, 3]); assert.equal(game.desktopAudio.capture().events.length, 1);
   await world.close(); assert.equal(game.desktopAudio, undefined);
   assert.equal(game.gameSoundManager.playInternal, original.play); assert.equal(game.gameSoundManager.stopInternal, original.stop);
+});
+
+test('failed host audio initialization restores an already-installed original visual factory without publishing world hooks', async t => {
+  const { controls, transport, game } = setup(t), create = () => {}, factory = { create }, failure = new Error('invalid audio source');
+  controls.effectMethods = { factory, archetypes: {} };
+  game.gameSoundManager.activeSoundSourceList = [{ get soundName() { throw failure; } }];
+  await assert.rejects(startHostingWorld(controls, transport), error => error === failure);
+  assert.equal(factory.create, create); assert.equal(game.desktopEffects, undefined); assert.equal(controls.onlineWorld, undefined);
 });
