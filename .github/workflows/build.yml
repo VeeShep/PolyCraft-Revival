@@ -43,6 +43,24 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: npm test
 
+  native-network:
+    name: Native WebRTC and coturn renewal (no game)
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y coturn xvfb
+      - run: npm ci
+      - name: Test disposable two/four-participant direct and forced-relay links
+        run: xvfb-run -a node tests/webrtc-renewal-smoke.cjs
+
   package:
     name: Package ${{ matrix.id }}
     needs: checks
