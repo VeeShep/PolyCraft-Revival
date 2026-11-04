@@ -776,6 +776,33 @@
       "outputSHA256": "a4dae607d8f8e4ef28208e5b8fd8219db4e15cc3f226d1cb8ea9aebc35030b62",
       "inputCanonicalSHA256": "0c7ffaf3d278958170d3888f88b450d0878f3f5925b3926c14b6ac2e6f2a1578",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "upstream-camera-name",
+      "names": [
+        {
+          "original": "Fa",
+          "name": "Camera",
+          "role": "upstream Camera",
+          "descriptive": false,
+          "evidence": "14 matching core method names, exact canonical updateFrustumPlanes body and factory syntax after local-name normalization; game extensions and other bodies are not asserted identical",
+          "upstream": {
+            "commit": "2cd2857c3f5f00d1d0f31bcb1577f905eee4c068",
+            "path": "jslib/camera.js",
+            "sha256": "b035fbda8c1a87e88fe7225d07321e5082b6c670a9967776f26b8a7412d6d7b8"
+          },
+          "matchingMethods": [
+            "updateFrustumPlanes"
+          ],
+          "matchingFactory": "create",
+          "offset": 520183,
+          "references": 34
+        }
+      ],
+      "inputSHA256": "a4dae607d8f8e4ef28208e5b8fd8219db4e15cc3f226d1cb8ea9aebc35030b62",
+      "outputSHA256": "14f20cab1f5cd830469538b29b00efb9adee40a384a2dc84cbab610cf368f506",
+      "inputCanonicalSHA256": "8a166857835eee9b72e1b6339720f911208d433510fe8877aa8e555384090f3b",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }

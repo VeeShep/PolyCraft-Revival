@@ -36,4 +36,4 @@ function selectSceneNode(ast) {
 }
 function nameSceneNode(source) { return renameBindings(source, selectSceneNode); }
 if (require.main === module) writeNamingPass('upstream-scene-node-name', nameSceneNode);
-module.exports = { nameSceneNode };
+module.exports = { nameSceneNode, prototypes };

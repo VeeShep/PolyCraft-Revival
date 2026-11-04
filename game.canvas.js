@@ -15097,7 +15097,7 @@
     return c;
   };
   cc.version = 1;
-  var Fa = function () {
+  var Camera = function () {
     this.viewOffsetY = this.viewOffsetX = 0;
     this.recipViewWindowY = this.recipViewWindowX = 1;
     this.parallel = this.infinite = !1;
@@ -15105,7 +15105,7 @@
     this.nearPlane = 1;
     this.farPlane = 1E3;
   };
-  Fa.prototype.lookAt = function (a, b, c) {
+  Camera.prototype.lookAt = function (a, b, c) {
     var d = this.md,
       a = d.v3Sub(c, a);
     d.v3Normalize(a, a);
@@ -15114,7 +15114,7 @@
     var f = d.v3Cross(a, b);
     this.matrix = d.m43Build(b, f, a, c, this.matrix);
   };
-  Fa.prototype.updateProjectionMatrix = function () {
+  Camera.prototype.updateProjectionMatrix = function () {
     var a = this.recipViewWindowX,
       b = this.recipViewWindowY * this.aspectRatio,
       c = a * this.viewOffsetX,
@@ -15127,13 +15127,13 @@
     this.parallel ? (m = -2 * h, g = -(f + g) * h, f = 0, h = 1) : (m = this.infinite ? -1 : -(f + g) * h, g = -(2 * f * g * h), f = -1, h = 0);
     this.projectionMatrix = this.md.m44Build(a, 0, 0, 0, 0, b, 0, 0, -c, -d, m, f, 0, 0, g, h, this.projectionMatrix);
   };
-  Fa.prototype.updateViewMatrix = function () {
+  Camera.prototype.updateViewMatrix = function () {
     this.viewMatrix = this.md.m43InverseOrthonormal(this.matrix, this.viewMatrix);
   };
-  Fa.prototype.updateViewProjectionMatrix = function () {
+  Camera.prototype.updateViewProjectionMatrix = function () {
     this.viewProjectionMatrix = this.md.m43MulM44(this.viewMatrix, this.projectionMatrix, this.viewProjectionMatrix);
   };
-  Fa.prototype.extractFrustumPlanes = function (a, b) {
+  Camera.prototype.extractFrustumPlanes = function (a, b) {
     var c = this.md,
       d = a[0],
       f = a[1],
@@ -15166,25 +15166,25 @@
     z[5] = c.planeNormalize(u, z[5]);
     return z;
   };
-  Fa.prototype.updateFrustumPlanes = function () {
+  Camera.prototype.updateFrustumPlanes = function () {
     this.frustumPlanes = this.extractFrustumPlanes(this.viewProjectionMatrix, this.frustumPlanes);
   };
-  Fa.prototype.isVisiblePoint = function (a) {
+  Camera.prototype.isVisiblePoint = function (a) {
     return this.md.isInsidePlanesPoint(a, this.frustumPlanes);
   };
-  Fa.prototype.isVisibleSphere = function (a, b) {
+  Camera.prototype.isVisibleSphere = function (a, b) {
     return this.md.isInsidePlanesSphere(a, b, this.frustumPlanes);
   };
-  Fa.prototype.isVisibleBox = function (a, b) {
+  Camera.prototype.isVisibleBox = function (a, b) {
     return this.md.isInsidePlanesBox(a, b, this.frustumPlanes);
   };
-  Fa.prototype.isVisibleAABB = function (a) {
+  Camera.prototype.isVisibleAABB = function (a) {
     return this.md.aabbIsInsidePlanes(a, this.frustumPlanes);
   };
-  Fa.prototype.isFullyInsideAABB = function (a) {
+  Camera.prototype.isFullyInsideAABB = function (a) {
     return this.md.aabbIsFullyInsidePlanes(a, this.frustumPlanes);
   };
-  Fa.prototype.getFrustumPoints = function (a, b, c) {
+  Camera.prototype.getFrustumPoints = function (a, b, c) {
     var d = this.md,
       f = this.viewOffsetX,
       g = this.viewOffsetY,
@@ -15254,7 +15254,7 @@
     }
     return c;
   };
-  Fa.prototype.getFrustumFarPoints = function (a, b) {
+  Camera.prototype.getFrustumFarPoints = function (a, b) {
     var c = this.md,
       d = this.viewOffsetX,
       f = this.viewOffsetY,
@@ -15312,8 +15312,8 @@
     }
     return v;
   };
-  Fa.prototype.getFrustumExtents = function (a, b, c) {
-    for (var b = this.getFrustumPoints(b, c, Fa._frustumPoints), d = b[0], c = d[0], f = d[1], g = d[2], h = c, m = f, e = g, v = 1; 8 > v; v += 1) {
+  Camera.prototype.getFrustumExtents = function (a, b, c) {
+    for (var b = this.getFrustumPoints(b, c, Camera._frustumPoints), d = b[0], c = d[0], f = d[1], g = d[2], h = c, m = f, e = g, v = 1; 8 > v; v += 1) {
       var d = b[v],
         l = d[0],
         n = d[1],
@@ -15329,8 +15329,8 @@
     a[4] = m;
     a[5] = e;
   };
-  Fa.create = function (a) {
-    var b = new Fa();
+  Camera.create = function (a) {
+    var b = new Camera();
     b.md = a;
     b.matrix = a.m43BuildIdentity();
     b.viewMatrix = a.m43BuildIdentity();
@@ -15340,8 +15340,8 @@
     b.updateFrustumPlanes();
     return b;
   };
-  Fa.version = 1;
-  Fa._frustumPoints = [];
+  Camera.version = 1;
+  Camera._frustumPoints = [];
   var xa = function () {};
   xa.prototype.updateShader = function () {};
   xa.prototype.sortRenderablesAndLights = function (a, b) {
@@ -28291,7 +28291,7 @@
     l = c.halfExtents;
     var n = a.shadowMapInfo;
     n || (n = {
-      camera: Fa.create(b),
+      camera: Camera.create(b),
       target: b.v3BuildZero()
     }, a.shadowMapInfo = n);
     h = n.target;
@@ -33533,30 +33533,30 @@
   A.applyPatches = function (a) {
     for (var b in A) A.hasOwnProperty(b) && !a.hasOwnProperty(b) && (a[b] = A[b]);
   };
-  Fa.prototype.scratchpad = {};
-  Fa.prototype.setFOV = function (a) {
+  Camera.prototype.scratchpad = {};
+  Camera.prototype.setFOV = function (a) {
     this.recipViewWindowY = this.recipViewWindowX = 1 / Math.tan(0.5 * a);
     a !== this.fov && this.updateProjectionMatrix();
     this.fov = a;
   };
-  Fa.prototype.getFOV = function () {
+  Camera.prototype.getFOV = function () {
     return void 0 !== this.fov ? this.fov : this.fov = 2 * Math.atan(1 / this.recipViewWindowX);
   };
-  Fa.prototype.extractSmallestFOV = function () {
+  Camera.prototype.extractSmallestFOV = function () {
     return this.recipViewWindowY * this.aspectRatio > this.recipViewWindowX ? 2 * Math.atan(1 / (this.recipViewWindowY * this.aspectRatio)) : this.getFOV();
   };
-  Fa.prototype.setGlobals = function (a) {
+  Camera.prototype.setGlobals = function (a) {
     this.globals = a;
   };
-  Fa.prototype.normalisedToScreen = function (a, b) {
+  Camera.prototype.normalisedToScreen = function (a, b) {
     var c = this.globals.graphicsDevice;
     return this.md.vec2Build(a[0] * c.width, a[1] * c.height, b);
   };
-  Fa.prototype.screenToNormalised = function (a, b) {
+  Camera.prototype.screenToNormalised = function (a, b) {
     var c = this.globals.graphicsDevice;
     return this.md.vec2Build(a[0] / c.width, a[1] / c.height, b);
   };
-  Fa.prototype.screenRadiusToWorldRadius = function (a, b) {
+  Camera.prototype.screenRadiusToWorldRadius = function (a, b) {
     var c = this.md,
       d = this.globals.graphicsDevice.width,
       f = this.getFOV(),
@@ -33564,13 +33564,13 @@
       c = c.v3Distance(a, g);
     return Math.sin(f * b / d) * c;
   };
-  Fa.prototype.getv3Location = function () {
+  Camera.prototype.getv3Location = function () {
     return this.md.m43Pos(this.matrix);
   };
-  Fa.prototype.getv3Forward = function () {
+  Camera.prototype.getv3Forward = function () {
     return this.md.m43At(this.matrix);
   };
-  Fa.prototype.screenToWorld = function (a, b, c) {
+  Camera.prototype.screenToWorld = function (a, b, c) {
     var d = this.md,
       a = d.vec2Build(a, b),
       a = this.screenToNormalised(a),
@@ -33578,8 +33578,8 @@
     if (!this.prevViewProjectionMatrix || !d.m44Equal(this.prevViewProjectionMatrix, this.viewProjectionMatrix)) this.invViewProjectionMatrix = d.m44Inverse(this.viewProjectionMatrix, this.invViewProjectionMatrix), this.prevViewProjectionMatrix = d.m44Copy(this.viewProjectionMatrix, this.prevViewProjectionMatrix);
     return 0 < this.invViewProjectionMatrix.length ? (a = d.m44Transform(this.invViewProjectionMatrix, a), a = d.v3Build(a[0], a[1], a[2]), b = d.v3Sub(a, d.m43Pos(this.matrix)), d.v3Normalize(b, b), d.v3Add(a, d.v3ScalarMul(b, c))) : null;
   };
-  Fa.prototype.worldToScreen = function (a, b) {
-    var c = Fa.prototype.scratchpad,
+  Camera.prototype.worldToScreen = function (a, b) {
+    var c = Camera.prototype.scratchpad,
       d = this.md,
       f = this.viewProjectionMatrix,
       g = c.v4World = d.v4Build(a[0], a[1], a[2], 1, c.v4World),
@@ -35955,7 +35955,7 @@
       g = Wd.create();
       a.scene = b;
       a.sceneLoader = g;
-      f = Fa.create(f);
+      f = Camera.create(f);
       a.camera = f;
       f.setGlobals(a);
       f = vc.createFromGlobals(a);
