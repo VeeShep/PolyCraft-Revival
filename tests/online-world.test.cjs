@@ -362,6 +362,7 @@ test('the host dispatcher keeps walking, directional cancellation and constructi
     send({ type: 'campaignStart', sequence: 2, target: 'banner', campaign: 'campaign_tutorial_01' });
     send({ type: 'campaignClose', sequence: 3, target: 'banner', campaign: 'campaign_tutorial_01' });
     assert.deepEqual(actions.queue.slice(1).map(action => action.type), ['campaignStart', 'campaignClose']); assert.equal(input.sequence, 3);
+    send({ type: 'skipPrepare', sequence: 4, target: 'guest', episode: 7 }); assert.equal(actions.queue.at(-1).type, 'skipPrepare'); assert.equal(input.sequence, 3);
 
   } finally { world.peerPlayers.clear(); transport.peers.clear(); delete world.players; await world.close(); }
 });

@@ -308,7 +308,7 @@
         else if (message.kind === 'result') {
           const value = message.payload;
           const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud', 'quests', 'campaign'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (value.type === 'life' && Object.hasOwn(value, 'life') !== Object.hasOwn(value, 'hud')) throw new Error('Incomplete hero status.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
@@ -354,7 +354,7 @@
     }
     clickTarget(event) {
       const gui = this.game.getIMGui();
-      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen')) return;
+      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare')) return;
       const target = pickTarget(this, event);
       this.selectionRequest = null;
       if (target || this.movement.requestWalk(this.construction.cursor())) {
@@ -640,7 +640,7 @@
     drawMovementCursor() {
       if (!this.movement.available() || this.construction.placement || !this.pointerEvent || this.groundDrag?.targeted) return;
       const gui = this.game.getIMGui();
-      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || !this.groundDrag && pickTarget(this, this.pointerEvent)) return;
+      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare') || !this.groundDrag && pickTarget(this, this.pointerEvent)) return;
       const cursor = this.construction.cursor();
       if (!cursor) return;
       const globals = this.controls.app.globals, controller = this.game.getGameController(), drag = this.groundDrag;
@@ -696,6 +696,7 @@
       this.drawCombatTarget();
       this.hud.draw(); this.drawBattleNotices();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
+      this.campaign.drawPreparation();
       if (!this.pauseMenu) this.updateMenu();
       this.drawMovementCursor(); this.updateAudio();
       try { this.visuals.update(state.time + Math.min(0.25, Math.max(0, (performance.now() - this.scene.receivedAt) / 1000))); }

@@ -127,3 +127,70 @@ test('all 82 original campaign definitions produce finite original preview rewar
     assert.ok(rendered.numberOfBattlesText.startsWith(definition.battleList.length + ' '), name);
   }
 });
+
+function preparationFixture() {
+  const f = fixture();
+  f.state.phase = 'PlayStatePrepareForBattle'; f.state.skip = true;
+  let phase = { playStateName: f.state.phase };
+  const playing = { name: 'GamestatePlaying', setPlayState: name => { f.events.push(['phase', name]); f.state.phase = name; phase = { playStateName: name }; } };
+  f.game.getActiveGameState = () => ({ ...playing, name: f.state.screen }); f.game.getPlayState = () => phase; f.game.getPlayFlags = () => ({ displaySkipPrepareButton: f.state.skip });
+  f.game.getGameEntityByName = id => id === 'guest' ? f.hero : f.source;
+  const original = f.hero.getEC;
+  f.hero.getEC = name => name === 'ECPlayerData' ? { getResource: () => 1, getResourceCap: () => 500, getSoftCurrency: () => 0, getXP: () => 0, getUpgradePoints: () => 0 } : name === 'ECPlayerLife' ? { state: f.state.dead ? 1 : 0, states: { NORMAL: 0, DYING: 1 }, respawnTime: undefined, deathTime: 0, globals: { gameCurrentTime: 0 }, getDeathAnimationDuration: () => 1 } : original(name);
+  const view = () => f.actions.preparationView(f.game);
+  const skip = (episode, target = 'guest') => f.actions.execute(f.game, f.hero, {}, target, f.controls, 'skipPrepare', { episode });
+  return { ...f, view, skip, next: () => { phase = { playStateName: 'PlayStatePrepareForBattle' }; f.state.phase = phase.playStateName; } };
+}
+test('preparation commands require the assigned live actor and its exact issued host phase; duplicate or competing skips never start twice', () => {
+  const f = preparationFixture(), other = new HostActions();
+  assert.equal(typeof f.skip(1), 'string', 'No issued phase cannot be skipped');
+  assert.equal(typeof f.skip(undefined), 'string', 'An omitted ID cannot match an unissued phase');
+  const view = f.view(); assert.deepEqual(f.view(), view);
+  const otherView = other.preparationView(f.game);
+  assert.equal(typeof f.skip(view.episode, 'banner'), 'string');
+  assert.equal(f.skip(view.episode).save, true); assert.deepEqual(f.events, [['phase', 'PlayStateBattle']]);
+  assert.equal(typeof f.skip(view.episode), 'string');
+  assert.equal(typeof other.execute(f.game, f.hero, {}, 'guest', f.controls, 'skipPrepare', otherView), 'string'); assert.equal(f.events.length, 1);
+  f.next(); const next = f.view(); assert.notEqual(next.episode, view.episode); assert.equal(typeof f.skip(view.episode), 'string'); assert.equal(f.events.length, 1);
+  assert.equal(f.skip(next.episode).save, true); assert.equal(f.events.length, 2);
+});
+test('phase replacement, hidden controls, host menus, script locks, death and disconnect invalidate stale preparation choices', () => {
+  for (const [key, value] of [['skip', false], ['screen', 'GamestatePaused'], ['script', true], ['dead', true], ['health', 0]]) {
+    const f = preparationFixture(), view = f.view(); f.state[key] = value;
+    assert.equal(typeof f.skip(view.episode), 'string', key); assert.equal(f.events.length, 0, key);
+  }
+  const f = preparationFixture(), old = f.view(); f.next(); assert.equal(typeof f.skip(old.episode), 'string'); assert.equal(f.events.length, 0);
+  const current = f.view(); f.actions.stop(f.hero); assert.equal(typeof f.skip(current.episode), 'string'); assert.ok(f.view().episode > current.episode);
+  for (const episode of [undefined, null, 0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, '1']) assert.throws(() => new HostActions().receive({ type: 'skipPrepare', sequence: 1, target: 'guest', episode }), /Invalid/);
+  const actions = new HostActions(); actions.receive({ type: 'skipPrepare', sequence: 1, target: 'guest', episode: 1 }); assert.throws(() => actions.receive({ type: 'skipPrepare', sequence: 1, target: 'guest', episode: 1 }), /repeated/);
+});
+test('guest preparation button matches original artwork, location and sizing and sends only one phase-bound intent', t => {
+  let now = 1000; t.mock.method(performance, 'now', () => now);
+  const f = guestFixture(), world = f.world, buttons = []; let clicked = true;
+  world.hud = { state: { preparation: { episode: 7 } }, receivedAt: 1000 }; world.identity = { entity: 'guest' }; world.lifeState = { phase: 'normal' }; world.localMenu = () => false;
+  world.controls.guiTypes = { BUTTON_IN_GAME: { width: 60, height: 60 } };
+  world.game.getIMGui = () => ({ doButton: options => { buttons.push(options); return clicked; } });
+  const original = ast.preparationButton(world.controls.app.globals.guiRenderer, world.controls.guiTypes);
+  f.guest.drawPreparation(); const rendered = buttons[0];
+  assert.equal(rendered.guiArchetype, original.guiArchetype); assert.equal(rendered.buttonType, original.buttonType); assert.deepEqual(rendered.v2ScreenLocation, Array.from(original.v2ScreenLocation)); assert.equal(rendered.id, 'guest-skip-prepare');
+  assert.deepEqual(f.sent, [{ kind: 'action', payload: { type: 'skipPrepare', sequence: 1, target: 'guest', episode: 7 } }]);
+  f.guest.drawPreparation(); assert.equal(f.sent.length, 1); assert.equal(buttons.length, 1);
+  f.guest.receive({ type: 'skipPrepare', sequence: 99 }); assert.equal(f.guest.prepareRequest, 1);
+  f.guest.receive({ type: 'skipPrepare', sequence: 1 }); assert.equal(f.guest.prepareRequest, null); assert.equal(world.lastLifeQuery, -Infinity);
+  clicked = false; buttons.length = 0; now = 3001; f.guest.drawPreparation(); assert.equal(buttons.length, 0);
+  now = 1000;
+  for (const change of [() => { world.resyncing = true; }, () => { world.controls.paused = true; }, () => { world.movement.nativeFocused = false; }, () => { world.lifeState.phase = 'waiting'; }, () => { world.localMenu = () => true; }, () => { world.connection.closed = true; }, () => { world.connection.state = 'closed'; }, () => { world.closed = true; }]) {
+    world.resyncing = world.controls.paused = false; world.movement.nativeFocused = true; world.lifeState.phase = 'normal'; world.localMenu = () => false; world.connection.closed = world.closed = false; world.connection.state = 'connected';
+    change(); f.guest.drawPreparation(); assert.equal(buttons.length, 0);
+  }
+});
+
+test('own-hero life queries issue preparation metadata only when controls and actor are available', () => {
+  const f = preparationFixture(), life = () => f.actions.execute(f.game, f.hero, {}, 'guest', f.controls, 'life');
+  const view = life(); assert.equal(view.life.phase, 'normal'); assert.deepEqual(view.hud.preparation, { episode: 1 });
+  assert.equal(f.skip(view.hud.preparation.episode).save, true); assert.equal(life().hud.preparation, null);
+  f.next(); const next = life(); assert.ok(next.hud.preparation.episode > view.hud.preparation.episode);
+  for (const [key, value] of [['skip', false], ['screen', 'GamestatePaused'], ['script', true], ['dead', true], ['health', 0]]) {
+    const old = f.state[key]; f.state[key] = value; assert.equal(life().hud.preparation, null, key); f.state[key] = old;
+  }
+});

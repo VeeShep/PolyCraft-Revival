@@ -7,7 +7,7 @@ const playerDataMethods = ast.component('ECPlayerData', { kd: ranks });
 const scoreMethods = ast.prototypeWith('drawResourceBar', { Za: [{ barGUI: 'lumber', string: 'Lumber' }, { barGUI: 'stone', string: 'Stone' }], e: { archetypes: { a_melee: { familyName: 'melee' } } } });
 const { captureHud, GuestHud } = require('../desktop/hud.js');
 const { HostActions } = require('../desktop/coop-actions.js');
-const profile = () => ({ resources: [100, 50], caps: [500, 1000], amber: 10, xp: 0, points: 0, quests: null, island: { hq: null, prepare: null, invasion: null, upcoming: null }, flags: { resources: true, amber: true, rank: true } });
+const profile = () => ({ preparation: null, resources: [100, 50], caps: [500, 1000], amber: 10, xp: 0, points: 0, quests: null, island: { hq: null, prepare: null, invasion: null, upcoming: null }, flags: { resources: true, amber: true, rank: true } });
 function guest() {
   const drawn = [], globals = { appCurrentTime: 10, simpleFontRenderer: { numberToCommaString: String }, mathDevice: { lerp: (a, b, t) => a + (b - a) * t, saturate: value => Math.max(0, Math.min(1, value)) } };
   globals.guiRenderer = { getv2RenderLocation: (x, y) => [x, y] };
@@ -111,4 +111,13 @@ test('island HUD validation rejects malformed health, phases, quantities and arb
   const f = guest(); f.receive(); const before = JSON.stringify(f.hud.state), blank = profile().island;
   for (const value of [null, {}, { ...blank, save: true }, { ...blank, prepare: NaN }, { ...blank, prepare: -1 }, { ...blank, hq: { current: Infinity, maximum: 100, changedAgo: 0 } }, { ...blank, hq: { current: 1, maximum: -1, changedAgo: 0 } }, { ...blank, hq: { current: 1, maximum: 2, changedAgo: -1 } }, { ...blank, invasion: { killed: 1.5, total: 10 } }, { ...blank, invasion: { killed: 1, total: -1 } }, { ...blank, upcoming: Array(1) }, { ...blank, upcoming: Array(65).fill({ archetype: 'a_melee', count: 1 }) }, { ...blank, upcoming: [{ archetype: 'gui/evil.svg', count: 1 }] }, { ...blank, upcoming: [{ archetype: 'a_melee', count: -1 }] }, { ...blank, upcoming: [{ archetype: 'a_melee', count: 1, sprite: 'bad' }] }, { ...blank, upcoming: Array(2).fill({ archetype: 'a_melee', count: 1 }) }]) assert.throws(() => f.receive({ ...profile(), island: value }), /Invalid (island HUD|upcoming invasion)/);
   assert.equal(JSON.stringify(f.hud.state), before);
+});
+
+test('HUD preparation views accept only bounded phase identifiers and only the expected status packet', () => {
+  const f = guest(); f.receive(); const before = JSON.stringify(f.hud.state);
+  for (const preparation of [undefined, {}, [], { episode: 0 }, { episode: -1 }, { episode: 1.5 }, { episode: Infinity }, { episode: '1' }, { episode: Number.MAX_SAFE_INTEGER + 1 }, { episode: 1, rewards: 999 }]) assert.throws(() => f.receive({ ...profile(), preparation }), /Invalid preparation view/);
+  assert.equal(JSON.stringify(f.hud.state), before);
+  f.receive({ ...profile(), preparation: { episode: 7 } }, 99); assert.equal(f.hud.state.preparation, null);
+  const value = { ...profile(), preparation: { episode: 7 } }; f.receive(value); value.preparation.episode = 99; assert.equal(f.hud.state.preparation.episode, 7);
+  f.receive(); assert.equal(f.hud.state.preparation, null);
 });

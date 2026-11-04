@@ -118,6 +118,11 @@ function campaignRuntime(playing, features, panels) {
   Prepare.prototype = evaluate(source.definition, { [source.playing]: playing, [source.panels]: panels });
   return { archetypes: source.archetypes, create: staticMethod(source.create.object.name, 'create', { [source.create.object.name]: Prepare }), enabled: evaluate(source.enabled, { [source.features]: features }), startPanel: evaluate(source.start, { [source.namespace]: source.archetypes, [source.flag.name]: source.flagValues, [source.panelHelpers]: panels }) };
 }
+function preparationButton(renderer, types) {
+  const buttons = []; traverse(ast, { CallExpression(p) { if (p.node.callee.property?.name === 'doButton' && p.node.arguments[0]?.type === 'ObjectExpression' && p.node.arguments[0].properties.some(property => key(property) === 'id' && property.value.value === 'SKIP PREPARE')) buttons.push(p.node.arguments[0]); } });
+  const button = one(buttons, 'native preparation button');
+  return evaluate(button, { [drawingDependency(button, 'getv2RenderLocation')]: renderer, [drawingDependency(button, 'BUTTON_IN_GAME')]: types });
+}
 function guiManagerMethods(tweens) {
   const definition = one(assignments.filter(a => a.left.property?.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'addGameMessage')), 'GUI manager prototype').right;
   const fade = one(definition.properties.filter(p => key(p) === 'fadeInTween'), 'GUI fade').value;
@@ -167,4 +172,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

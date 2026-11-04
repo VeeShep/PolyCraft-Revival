@@ -20,6 +20,11 @@
     const view = validateCampaign({ source: source.name, region, campaign: war.getCampaignArchetypeName(region), battles: war.getNumberOfBattlesInCampaign(region), enemies: Object.entries(war.getNextBattleArchetypeQuantities(region)).map(([archetype, count]) => ({ archetype, count })) }, controls, game);
     return { owner, view };
   }
+  function preparationState(game) {
+    if (!game.getPlayFlags?.()?.displaySkipPrepareButton || game.getActiveGameState().name !== 'GamestatePlaying') return null;
+    const state = game.getPlayState();
+    return state?.playStateName === 'PlayStatePrepareForBattle' ? state : null;
+  }
   class GuestCampaign {
     constructor(world) { this.world = world; }
     receive(value, selected) {
@@ -32,6 +37,7 @@
           this.world.movement.flush();
         }
       } else if (selected) this.cancel(false);
+      if (value.type === 'skipPrepare' && value.sequence === this.prepareRequest) { this.prepareRequest = null; this.world.lastLifeQuery = -Infinity; }
       if (['campaignStart', 'campaignClose'].includes(value.type) && value.sequence === this.pending) { this.pending = null; this.world.lastLifeQuery = -Infinity; }
     }
     send(type, menu) {
@@ -42,6 +48,15 @@
     cancel(notify = true) {
       const menu = this.menu; this.menu = null;
       if (menu && notify && !this.world.closed && !this.world.resyncing && !this.world.connection.closed && this.world.connection.state === 'connected') this.pending = this.send('campaignClose', menu);
+    }
+    drawPreparation() {
+      const world = this.world, preparation = world.hud.state?.preparation;
+      if (!preparation || world.closed || world.connection.closed || world.connection.state !== 'connected' || this.prepareRequest || !world.identity || world.resyncing || world.controls.paused || !world.movement.nativeFocused || world.lifeState?.phase !== 'normal' || world.localMenu() || performance.now() - world.hud.receivedAt > 2000) return;
+      const globals = world.controls.app.globals;
+      if (world.game.getIMGui().doButton({ id: 'guest-skip-prepare', text: undefined, v2ScreenLocation: globals.guiRenderer.getv2RenderLocation(85, 174, 'topLeft'), buttonType: world.controls.guiTypes.BUTTON_IN_GAME, guiArchetype: 'skipPrepare' })) {
+        this.prepareRequest = ++world.targetSequence;
+        world.connection.send('action', { type: 'skipPrepare', sequence: this.prepareRequest, target: world.identity.entity, episode: preparation.episode }).catch(error => { if (!world.connection.closed) world.connection.fail(error); });
+      }
     }
     update() {
       if (!this.menu) return false;
@@ -59,7 +74,7 @@
       return true;
     }
   }
-  const api = { validateCampaign, campaignContext, GuestCampaign };
+  const api = { preparationState, validateCampaign, campaignContext, GuestCampaign };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftCampaign = api;
 })(globalThis);

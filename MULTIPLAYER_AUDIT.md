@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest campaign previews and authoritative start — Beta 49, 2026-11-04
+## Current original preparation skipping — Beta 50, 2026-11-04
+
+Guests receive a nullable preparation control in their own life/HUD status, using a per-binding monotonically numbered ID tied by WeakMap to the exact native preparation object. The original skipPrepare button artwork, position and size are retained. A fresh, focused, living guest with no local menu can send one pending intent; resync, stale HUD, closed/disconnected sessions and other menus suppress it. The control captures pointer input rather than moving the hero beneath it.
+
+The host rechecks the assigned actor, health/life/script state, global Playing screen, native visibility flag, current preparation object and issued ID, consumes that ID, then calls the original Playing.setPlayState('PlayStateBattle') transition. Old or replaced phases, competing requests, hidden controls and stopped bindings cannot skip a later wave. Fresh-checkpoint acknowledgement follows the existing action path. No new save format, reward, resource grant or pause behavior is introduced.
+
+410 checks pass, including actual life/HUD issuance, strict parsing, phase replacement, replay/concurrency/actor guards, the actual native button description, guest suppression/pending acknowledgements and guest/host dispatcher composition. Focused review found no concrete issue; package evidence is in RESTORATION_STATUS.md. Runtime coop-37/world 15/delta 2 requires matching Beta 50 game peers; room/save formats remain unchanged. Native source confirms usePrepareForWarScreenBetweenInvasions is false and displayFightButton is false in all three standard play flags; these dormant flows remain unchanged. The active between-wave preparation/countdown now has guest skip parity. Campaign result presentation/award ownership and live UI/network/native acceptance remain open.
+
+## Previous guest campaign previews and authoritative start — Beta 49, 2026-11-04
 
 Enabled campaign banners open the original preparation panel locally for guests. Native campaign definitions, text, flags, maximum rewards and enemy artwork remain local; the host supplies a strictly bounded campaign/enemy view. Guest preview never emits CampaignStarterInteract, enters the host menu or pauses the world. Original preparation audio is local, and panel buttons have guest IDs. Cancel/blur closes locally; resync/disconnect cannot emit further menu actions.
 

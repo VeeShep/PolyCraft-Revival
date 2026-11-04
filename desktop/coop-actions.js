@@ -2,7 +2,7 @@
 (function (root) {
   const { totemMenu, upgradeTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
   const { captureHud } = typeof module !== 'undefined' ? require('./hud.js') : root.PolycraftHud;
-  const { campaignContext } = typeof module !== 'undefined' ? require('./campaign.js') : root.PolycraftCampaign;
+  const { campaignContext, preparationState } = typeof module !== 'undefined' ? require('./campaign.js') : root.PolycraftCampaign;
   function lifeStatus(life) {
     const phase = life.respawnTime !== undefined ? 'waiting' : life.state === life.states.DYING ? 'dying' : 'normal';
     const remaining = phase === 'waiting' ? Math.max(0, life.getTimeToRespawn()) : phase === 'dying' ? Math.max(0, life.getDeathAnimationDuration() - (life.globals.gameCurrentTime - life.deathTime)) : 0;
@@ -10,17 +10,17 @@
     return { phase, remaining, episode: phase === 'normal' ? null : life.deathTime, option, affordable: !!(option && life.canAffordToRevive(option === 'amber' ? 10 : 0, option === 'lumber' ? 50 : 0)) };
   }
   class HostActions {
-    constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); this.pressTokens = 10; this.pressTokenTime = this.tokenTime; this.cameraTokens = 2; this.cameraTokenTime = this.tokenTime; }
+    constructor(now = () => performance.now()) { this.now = now; this.sequence = 0; this.queue = []; this.tokens = 10; this.tokenTime = now(); this.pressTokens = 10; this.pressTokenTime = this.tokenTime; this.prepareEpisodes = new WeakMap(); this.prepareSequence = 0; this.cameraTokens = 2; this.cameraTokenTime = this.tokenTime; }
     receive(value) {
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
       const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
       const quest = ['questOpen', 'questReward'].includes(value?.type), campaign = ['campaignStart', 'campaignClose'].includes(value?.type);
       const held = value?.archetype !== undefined, targeted = value?.type === 'target';
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest || campaign ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest || campaign || value?.type === 'skipPrepare' ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
       if (campaign && (typeof value.campaign !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.campaign))) throw new Error('Invalid campaign request.');
       if (quest && (typeof value.quest !== 'string' || !/^taskId(?:crit|fill)_\d{1,4}$/.test(value.quest))) throw new Error('Invalid quest request.');
       if ((buildingUpgrade || cancelUpgrade) && (typeof value.next !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.next))) throw new Error('Invalid building upgrade.');
-      if (cancelUpgrade && (!Number.isSafeInteger(value.episode) || value.episode < 1)) throw new Error('Invalid upgrade episode.');
+      if ((cancelUpgrade || value.type === 'skipPrepare') && (!Number.isSafeInteger(value.episode) || value.episode < 1)) throw new Error('Invalid action episode.');
       if (targeted && !['press', 'update', 'clear', 'release'].includes(value.phase)) throw new Error('Invalid target phase.');
       if ((value.type === 'repair' || buildingUpgrade) && (!Array.isArray(value.costs) || value.costs.length !== 2 || ![0, 1].every(index => typeof value.costs[index] === 'number' && Number.isFinite(value.costs[index]) && value.costs[index] >= 0 && value.costs[index] <= 2147483647))) throw new Error('Invalid resource quote.');
       if (revive && (typeof value.amber !== 'boolean' || typeof value.episode !== 'number' || !Number.isFinite(value.episode) || Math.abs(value.episode) > 1e9)) throw new Error('Invalid revive choice.');
@@ -55,7 +55,7 @@
           !target.getEC('ECTarget')?.isValidTarget(hero) || !target.getEC('ECHealth') || target.getEC('ECHealth').getHealth() <= 0 || !players.canDamage(target, hero)) { this.endFacing(hero); return; }
       this.facingMethods?.updateTargetedRanged.call({ getHeroEntity: () => hero, getTargetEntity: () => target });
     }
-    stop(hero) { this.campaignOffer = null; this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; hero.getEC('ECAutoFire')?.disable(); }
+    stop(hero) { this.prepareEpisodes = new WeakMap(); this.campaignOffer = null; this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; hero.getEC('ECAutoFire')?.disable(); }
     updateCombat(game, hero, players) {
       const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
       if (!target) return;
@@ -77,6 +77,12 @@
       }
       return { type: action.type, sequence: action.sequence, ...(typeof result === 'string' ? { message: result } : result) };
     }
+    preparationView(game) {
+      const state = preparationState(game);
+      if (!state) return null;
+      if (!this.prepareEpisodes.has(state)) this.prepareEpisodes.set(state, ++this.prepareSequence);
+      return { episode: this.prepareEpisodes.get(state) };
+    }
     execute(game, hero, players, id, controls, type = 'target', action) {
       if (type === 'target' && action?.phase === 'press') { this.endFacing(hero); this.targetMode = null; this.targetStarted = this.now(); }
       if (type === 'target' && action?.phase === 'clear') { this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; return 'Target cleared.'; }
@@ -95,6 +101,13 @@
         game.eventManager.notify('RotateCamera', {});
         return { message: 'Camera rotation recorded.' };
       }
+      if (type === 'skipPrepare') {
+        const preparation = preparationState(game), episode = preparation && this.prepareEpisodes.get(preparation);
+        if (target !== hero || incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0 || !episode || episode !== action.episode) return 'Preparation changed or is unavailable. Wait for a refresh.';
+        this.prepareEpisodes.delete(preparation);
+        game.getActiveGameState().setPlayState('PlayStateBattle');
+        return { message: 'Battle started and saved.', save: true };
+      }
       if (type === 'questOpen' || type === 'questReward') {
         const quests = game.desktopQuestRewards;
         if (!quests || target !== hero || incapacitated || game.isScriptLocked() || hero.getEC('ECHealth').getHealth() <= 0) return 'Quest interaction is not available.';
@@ -111,7 +124,7 @@
       if (type === 'life' || type === 'revive') {
         if (target !== hero || !life) return 'Only your own hero can be revived.';
         const status = lifeStatus(life);
-        if (type === 'life') return { message: 'Hero life state.', life: status, hud: captureHud(game, hero) };
+        if (type === 'life') return { message: 'Hero life state.', life: status, hud: captureHud(game, hero, status.phase === 'normal' && game.getPlayFlags().displaySkipPrepareButton && hero.getEC('ECHealth').getHealth() > 0 && !game.isScriptLocked() ? this.preparationView(game) : null) };
         if (game.isScriptLocked() || !status.option || action.episode !== status.episode || action.amber !== (status.option === 'amber') || !status.affordable) return 'Revive choice changed or resources are unavailable. Wait for a refresh.';
         if (!life.payToRevive(action.amber ? 10 : 0, action.amber ? 0 : 50, action.amber)) return 'Revival is already in progress or unavailable.';
         return { message: 'Revive purchased and saved.', save: true, life: lifeStatus(life) };
