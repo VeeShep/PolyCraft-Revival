@@ -18,5 +18,7 @@ test('TURN retirement evidence requires final session teardown and handles split
   observer.write(`session 3: closed (2nd stage), user <${failed}> realm <test>\n`); assert.equal(observer.has(failed), false);
   observer.write('x'.repeat(20000)); observer.write(`\nsession 2: closed (2nd stage), user <not-a-test-credential>\n`);
   assert.equal(observer.has(user), true); assert.equal(observer.has('not-a-test-credential'), false);
-  assert.deepEqual(Object.keys(observer).sort(), ['has', 'write']);
+  assert.deepEqual(observer.summary([user, failed]).allocations, [{ allocated: true, closed: true, active: 0 }, { allocated: false, closed: true, active: 0 }]);
+  assert.equal(JSON.stringify(observer.summary([user, failed])).includes(user), false);
+  assert.deepEqual(Object.keys(observer).sort(), ['has', 'summary', 'write']);
 });

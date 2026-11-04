@@ -72,13 +72,13 @@ jobs:
       matrix:
         include:
           - id: mac-arm64
-            os: macos-15-intel
-            runnerArch: x64
+            os: macos-15
             platform: darwin
             arch: arm64
             arguments: --mac zip --arm64
           - id: mac-x64
-            os: macos-15-intel
+            os: macos-15
+            runnerArch: arm64
             platform: darwin
             arch: x64
             arguments: --mac zip --x64

@@ -6,12 +6,13 @@ const { createRoomServer } = require('../server/rooms.cjs');
 const { RoomSocket } = require('../desktop/room-socket.cjs');
 
 function retiredTurnObserver() {
-  let pending = '';
+  let pending = '', lineCount = 0;
   const users = new Map();
   return {
     write(chunk) {
       const lines = (pending + chunk).split('\n'); pending = lines.pop().slice(-8192);
       for (const line of lines) {
+        lineCount++;
         const user = line.match(/user <(\d+:[a-f0-9-]{36})>/)?.[1], session = line.match(/session (\d+)(?::|\))/)?.[1];
         if (!user || !session) continue;
         const state = users.get(user) || { allocated: false, active: new Set(), closed: false }; users.set(user, state);
@@ -19,7 +20,8 @@ function retiredTurnObserver() {
         if (line.includes('closed (2nd stage)')) { state.closed = true; state.active.delete(session); }
       }
     },
-    has: user => { const state = users.get(user); return !!state?.allocated && state.closed && state.active.size === 0; }
+    has: user => { const state = users.get(user); return !!state?.allocated && state.closed && state.active.size === 0; },
+    summary: requested => ({ lines: lineCount, recognizedUsers: users.size, allocations: requested.map(user => { const state = users.get(user); return { allocated: !!state?.allocated, closed: !!state?.closed, active: state?.active.size || 0 }; }) })
   };
 }
 async function nativeRoomRenewal(page, { port, secret, retired }) {
@@ -41,7 +43,7 @@ async function nativeRoomRenewal(page, { port, secret, retired }) {
       }));
       return clients.get(client).request(operation, options);
     });
-    await page.exposeFunction('networkRetiredAllocations', users => ({ expected: users.length, observed: users.filter(user => retired.has(user)).length }));
+    await page.exposeFunction('networkRetiredAllocations', users => ({ expected: users.length, observed: users.filter(user => retired.has(user)).length, details: retired.summary(users) }));
     await page.exposeFunction('networkVerifyRenewal', (name, values) => {
       const room = service.rooms.get(name); assert.ok(room);
       for (const value of values) {
@@ -49,10 +51,11 @@ async function nativeRoomRenewal(page, { port, secret, retired }) {
         assert.equal(guest?.relayExpires, value.expires); assert.equal(guest?.renewal, null); assert.equal(guest?.routeAck, true);
       }
     });
+    const failures = [];
     for (const count of [2, 4]) {
       console.log(`Checking ${count} participants through real room signaling and repeated automatic renewal beyond initial credential expiry.`);
       const report = await page.evaluate(async ({ count, url }) => {
-        let stage = 'opening room';
+        let stage = 'opening room', retirement;
         const controllers = [], guests = [], hostMessages = [], errors = [];
         const check = (value, message) => { if (!value) { stage = message; throw new Error(message); } };
         const wait = async condition => {
@@ -148,18 +151,19 @@ async function nativeRoomRenewal(page, { port, secret, retired }) {
             check(hostMessages.filter(row => row.peer === local.peer).every((row, index) => row.message.payload.id === index + 1), 'Room renewal lost or duplicated guest actions.');
             check(local.sentSequence === local.testTick && local.receivedSequence === guest.probes && remote.sentSequence === guest.probes && remote.receivedSequence === local.testTick, 'Room renewal reset framing counters.');
           }
-          const retirement = await window.networkRetiredAllocations(initialUsers);
+          retirement = await window.networkRetiredAllocations(initialUsers);
           check(retirement.observed === retirement.expected, `Initial TURN allocations were not retired (${retirement.observed}/${retirement.expected}).`);
           check(admissions === count - 1 && resyncs === guests.reduce((total, guest) => total + guest.renewals, 0) && errors.length === 0, 'Room renewal repeated admission/resync or encountered a transport failure.');
           await window.networkVerifyRenewal(settings.room, guests.map(guest => ({ id: guest.entry.id, expires: host.renewals.states.get(guest.entry.id).expires })));
           return { participants: count, renewalsPerGuest: guests.map(guest => guest.renewals), admissions, resyncs, sameChannels: true, freshAllocations: true, expiryCommitted: true, initialCredentialsExpired: Date.now() > initialExpiry, retiredInitialAllocations: retirement.observed, durationMs: Math.round(performance.now() - started) };
-        } catch { return { failure: stage, participants: count }; }
+        } catch { return { failure: stage, participants: count, renewalsPerGuest: guests.map(guest => guest.renewals || 0), retirement }; }
         finally { for (const controller of controllers) controller.close(); transport.close(); for (const guest of guests) guest.remote.close(); }
       }, { count, url: `ws://127.0.0.1:${service.server.address().port}/signaling` });
-      console.log(JSON.stringify(report)); assert.equal(report.failure, undefined); assert.equal(deliveryFailed, false);
+      console.log(JSON.stringify(report)); if (report.failure) failures.push(report); assert.equal(deliveryFailed, false);
       for (const socket of clients.values()) socket.close();
       await Promise.all([...deliveries]);
     }
+    assert.deepEqual(failures, [], 'Sanitized room reports above identify failed acceptance checks.');
   } finally { for (const socket of clients.values()) socket.close(); await service.close(); await Promise.all([...deliveries]); }
 }
 module.exports = { nativeRoomRenewal, retiredTurnObserver };
