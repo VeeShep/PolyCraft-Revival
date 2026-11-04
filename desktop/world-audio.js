@@ -1,8 +1,19 @@
 'use strict';
 (function (root) {
   const LOOPS = Object.freeze(['aud_amb_e_berserker', 'aud_amb_e_death', 'aud_amb_fire', 'aud_amb_s_cave', 'aud_amb_s_runningwater', 'aud_amb_s_waves']);
-  const GLOBAL_SOUNDS = Object.freeze(['aud_sting_success_battle', 'aud_sting_fail_battle']);
-  const SOUNDS = Object.freeze([...LOOPS, ...GLOBAL_SOUNDS, 'aud_hero_rankup', 'aud_healing', 'aud_crt_e_bannerling', 'aud_attack_death', 'aud_hit_generic',
+  const GLOBAL_SOUNDS = Object.freeze(['aud_sting_success_battle', 'aud_sting_fail_battle', 'combatWaveApproaching']);
+  const SOUNDS = Object.freeze([...LOOPS, ...GLOBAL_SOUNDS,
+    'footStep', 'healStart', 'healEnd', 'speechExclaim', 'speechWelcomeBack',
+    'buildingPickup', 'buildingReady', 'buildingPlace', 'buildingCancel', 'pickupWood',
+    'pickupStone', 'pickupSoftCurrency', 'depositWoodStart', 'depositStoneStart', 'depositWoodEnd',
+    'depositStoneEnd', 'bubbleNegative', 'bubblePositive', 'chop', 'mine',
+    'pistolcock', 'pistolreload', 'pistoldryfire', 'pistolshot', 'arrowshot',
+    'punch', 'stomp', 'explosion', 'explosionBig', 'explosionBarrel',
+    'explosionMine', 'horn', 'mortar', 'thud', 'ouch',
+    'battleEffort', 'roar', 'mini_wildling_roar', 'dartFly', 'dartHit',
+    'spit', 'dartHitFlesh', 'collectBig', 'spawnHero', 'appear',
+    'wilhelm', 'openDoor', 'barrel', 'switch', 'stoneDoor',
+    'aud_hero_rankup', 'aud_healing', 'aud_crt_e_bannerling', 'aud_attack_death', 'aud_hit_generic',
     'aud_hit_e_berserker', 'aud_dth_e_death', 'aud_hit_e_treasure', 'aud_amb_amber', 'aud_amb_xp', 'aud_dst_xp', 'aud_dynamite',
     'aud_dth_building', 'aud_scenery_mushroom', 'aud_hit_mushroom', 'aud_dst_fire', 'aud_explosion', 'aud_explosionBerserker',
     'aud_explosionBarrel', 'aud_explosionMine', 'aud_shotguncock', 'aud_shotgunreload', 'aud_shotgundryfire', 'aud_shotgunshot',

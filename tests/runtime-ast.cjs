@@ -101,8 +101,20 @@ function visualEffectMethods(names) {
 function soundManagerMethods() {
   const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'updateListener')), 'sound manager prototype');
   const owner = definition.left.object.name, archetypes = {};
-  for (const a of assignments) if (a.left.type === 'MemberExpression' && a.left.object.property?.name === 'archetypes' && a.left.object.object?.name === owner && a.right.type === 'ObjectExpression') archetypes[a.left.property.name] = evaluate(a.right);
+  for (const a of assignments) if (a.left.type === 'MemberExpression' && a.left.object.property?.name === 'archetypes' && a.left.object.object?.name === owner && a.right.type === 'ObjectExpression') archetypes[a.left.property.name ?? a.left.property.value] = evaluate(a.right);
   return { archetypes, methods: evaluate(definition.right, { [owner]: { archetypes } }) };
+}
+function audioActionMethods() {
+  const result = {};
+  traverse(ast, { CallExpression(p) {
+    if (p.node.callee.property?.name !== 'registerAction' || !['SoundEffect', 'StopSoundEffect'].includes(p.node.arguments[0]?.value)) return;
+    const argument = p.node.arguments[1], binding = p.scope.getBinding(argument.name), initializer = binding.path.node.init;
+    if (initializer?.callee?.property?.name !== 'bind' || initializer.callee.object.type !== 'FunctionExpression') throw new Error('Unexpected original audio action handler');
+    if (Object.hasOwn(result, p.node.arguments[0].value)) throw new Error('Ambiguous original audio action handler');
+    result[p.node.arguments[0].value] = evaluate(initializer.callee.object);
+  } });
+  if (Object.keys(result).length !== 2) throw new Error('Missing original audio actions');
+  return result;
 }
 function audioSourceMethods() {
   const create = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === '_createBufferNode' && a.left.object.property?.name === 'prototype'), 'audio buffer source');
@@ -126,4 +138,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

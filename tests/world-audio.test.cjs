@@ -15,6 +15,7 @@ function fixture() {
   const manager = Object.assign(Object.create(native.methods), { globals, activeSoundSourceList: [], soundSourceDepot: Array.from({ length: 50 }, source), soundSourceGlobalDepot: Array.from({ length: 20 }, () => source(true)),
     soundManager: { isSoundLoaded: () => loaded, isSoundMissing: () => !loaded, get: path => path } });
   const game = { globals, gameSoundManager: manager }, entity = { getName: () => 'hero', getv3Location: () => location, shouldBeDestroyed: () => false };
+  manager.gameManager = game;
   return { game, manager, entity, location, played, sources, unloaded: () => { loaded = false; } };
 }
 const play = (id, name = 'aud_shotgunshot', entity = 'hero') => ({ id, op: 'play', name, entity, location: [1, 2, 3], fade: 0, time: 1, target: null });
@@ -25,7 +26,7 @@ test('world sound whitelist matches original archetypes and loop flags and exclu
     const definition = native.archetypes[name]; assert.ok(definition, name);
     for (const value of definition.sounds || [definition]) assert.equal(!!value.loop, LOOPS.includes(name), name);
   }
-  assert.deepEqual(GLOBAL_SOUNDS, ['aud_sting_success_battle', 'aud_sting_fail_battle']);
+  assert.deepEqual(GLOBAL_SOUNDS, ['aud_sting_success_battle', 'aud_sting_fail_battle', 'combatWaveApproaching']);
   for (const name of ['aud_test', 'aud_music_day', 'aud_music_day_preview', 'aud_amber_spend', 'aud_alert', 'aud_newquest', 'aud_badge_complete']) assert.equal(SOUNDS.includes(name), false);
 });
 test('host captures original entity/action/effect intents independently of mute or missing assets and restores native hooks', () => {
@@ -144,9 +145,9 @@ test('shared battle results use original global sources once while preparation, 
   for (const name of GLOBAL_SOUNDS) f.manager.playInternal(name);
   f.manager.playInternal('aud_sting_prepare_battle'); f.manager.playInternal('aud_sting_success_2'); f.manager.playInternal('aud_badge_complete');
   f.manager.playInternal('aud_sting_success_battle', [1, 2, 3]);
-  const state = host.capture(); assert.equal(state.events.length, 2); validateAudio(state, 1);
+  const state = host.capture(); assert.equal(state.events.length, GLOBAL_SOUNDS.length); validateAudio(state, 1);
   assert.ok(state.events.every(event => event.location === null && event.entity === null));
-  guest.receive(state, 1); guest.receive(structuredClone(state), 1); assert.equal(local.played.length, 2);
+  guest.receive(state, 1); guest.receive(structuredClone(state), 1); assert.equal(local.played.length, GLOBAL_SOUNDS.length);
   assert.ok(local.played.every(value => value.source.globalSource)); assert.ok(local.played.every(value => value.source.gain === 0), 'guest SFX mute applies to shared cues');
   assert.deepEqual(local.played.map(value => value.sound), GLOBAL_SOUNDS.map(name => native.archetypes[name].path));
   const late = fixture(), lateGuest = new GuestAudio(late.manager, { entities: new Map() }); lateGuest.receive(state, 1); assert.equal(late.played.length, 0);
@@ -170,4 +171,61 @@ test('hosting seeds remaining native loop fades without restarting expired or gl
   assert.equal(guest.loops.get(1).entry.fadeTime, 0.75); assert.equal(guest.loops.get(1).entry.startFadeTime, 2);
   f.game.globals.gameCurrentTime = 1.8; assert.equal(host.capture().loops.length, 0);
   guest.receive(host.capture(), 1.8); assert.equal(local.played[0].source.playing, false); host.close();
+});
+
+test('original pistol component, entity and queued sound action reach guest spatial playback with native volume', () => {
+  const ast = require('./runtime-ast.cjs'), base = ast.component('ECBase'), entityMethods = ast.prototypeWith('isOwnedByAPlayer'), firearm = ast.component('ECFirearm'), actions = ast.audioActionMethods();
+  const f = fixture(), host = new HostAudio(f.game), queued = [];
+  f.game.getGameSoundManager = () => f.manager; f.game.actionManager = { addAction: (type, payload) => queued.push({ type, payload }) }; f.game.globals.isHost = true;
+  const actor = Object.assign(Object.create(entityMethods), f.entity, { globals: f.game.globals, gameManager: f.game });
+  const weapon = Object.assign(Object.create(firearm), ast.assignedObject('wp_h_pistol'), { entity: actor, playSound: base.playSound });
+  weapon.playFire(); assert.equal(queued.length, 1); assert.equal(queued[0].type, 'SoundEffect'); assert.equal(queued[0].payload.soundName, 'pistolshot'); assert.equal(host.capture().events.length, 0);
+  actions.SoundEffect.call({ gameManager: f.game }, queued[0].payload); const state = host.capture();
+  assert.equal(state.events.length, 1); assert.equal(state.events[0].name, 'pistolshot'); assert.equal(state.events[0].entity, 'hero');
+  const local = fixture(), guest = new GuestAudio(local.manager, { entities: new Map([['hero', { displayLocation: [1, 2, 3] }]]) }); guest.receive(emptyAudio(), 1); guest.receive(state, 1);
+  assert.equal(local.played.length, 1); assert.equal(local.played[0].source.globalSource, false);
+  const definition = native.archetypes.pistolshot.sounds.find(value => value.path === local.played[0].sound); assert.ok(definition); assert.equal(local.played[0].source.gain, definition.volume);
+  actor.stopSound('pistolshot', 0); const stop = queued.at(-1); assert.equal(stop.type, 'StopSoundEffect'); actions.StopSoundEffect.call({ gameManager: f.game }, stop.payload); guest.receive(host.capture(), 1);
+  assert.equal(local.played[0].source.playing, false); host.close();
+});
+
+test('all audited legacy world sound definitions retain original local paths, spatial scope and gain', () => {
+  const legacy = Object.keys(native.archetypes).filter(name => !name.startsWith('aud_'));
+  const local = name => /^(ui|imgui)/.test(name) || ['scorePulse', 'chargeImpact', 'dartHitFleshCharged'].includes(name);
+  assert.deepEqual(SOUNDS.filter(name => !name.startsWith('aud_')).sort(), legacy.filter(name => !local(name)).sort());
+  assert.ok(native.archetypes.switch); assert.equal(Object.hasOwn(native.archetypes, 'undefined'), false, 'computed string keys retain their original spelling');
+  const f = fixture(), host = new HostAudio(f.game), listeners = fixture(), guest = new GuestAudio(listeners.manager, { entities: new Map() }); guest.receive(emptyAudio(), 1);
+  const spatial = legacy.filter(name => !local(name) && !GLOBAL_SOUNDS.includes(name));
+  for (const name of spatial) f.manager.playInternal(name, [1, 2, 3]);
+  const state = host.capture(); assert.equal(state.events.length, spatial.length); guest.receive(state, 1); assert.equal(listeners.played.length, spatial.length);
+  for (let i = 0; i < spatial.length; i++) {
+    const actual = listeners.played[i], definition = native.archetypes[spatial[i]], variant = (definition.sounds || [definition]).find(value => value.path === actual.sound);
+    assert.ok(variant, spatial[i]); assert.equal(actual.source.globalSource, false); assert.deepEqual(actual.source.position, [1, 2, 3]); assert.equal(actual.source.gain, variant.volume);
+  }
+  host.close();
+});
+
+test('native spatial pool exhaustion stops the lowest-priority spatial voice while preserving global music and pool ownership', () => {
+  const f = fixture(), music = f.manager.soundSourceGlobalDepot.pop(), high = f.manager.soundSourceDepot.pop(), low = f.manager.soundSourceDepot.pop(), medium = f.manager.soundSourceDepot.pop();
+  for (const source of [music, high, low, medium]) source.playing = true;
+  for (const [source, name, priority] of [[music, 'aud_music_day', 100], [high, 'explosion', 9], [low, 'footStep', 0], [medium, 'pistolshot', 5]]) f.manager.attachSource(source, null, null, name, 1, priority);
+  f.manager.soundSourceDepot.length = 0; assert.equal(f.manager.getSoundSource(), low);
+  assert.equal(low.playing, false); assert.equal(music.playing, true); assert.equal(high.playing, true); assert.equal(medium.playing, true);
+  assert.deepEqual(f.manager.activeSoundSourceList.map(entry => entry.soundName), ['aud_music_day', 'explosion', 'pistolshot']);
+  f.manager.activeSoundSourceList = f.manager.activeSoundSourceList.filter(entry => entry.soundSource === music);
+  const globalSlots = f.manager.soundSourceGlobalDepot.length;
+  assert.equal(f.manager.getSoundSource(), null); assert.equal(f.manager.activeSoundSourceList.length, 1); assert.equal(f.manager.soundSourceGlobalDepot.length, globalSlots); assert.equal(music.playing, true);
+});
+
+test('native delayed music previews return failed parent channels and never leak global capacity across fallback cycles', () => {
+  const f = fixture(), parent = native.archetypes.aud_music_day, preview = native.archetypes[parent.preview], capacity = f.manager.soundSourceGlobalDepot.length;
+  assert.ok(preview); f.manager.soundManager.isSoundLoaded = path => path === preview.path;
+  for (let i = 0; i < capacity + 5; i++) {
+    f.manager.playInternal('aud_music_day'); assert.equal(f.manager.activeSoundSourceList.length, 1);
+    assert.equal(f.manager.soundSourceGlobalDepot.length, capacity - 1); const entry = f.manager.activeSoundSourceList[0];
+    assert.equal(entry.soundName, parent.preview); assert.equal(entry.parentSoundName, 'aud_music_day'); assert.equal(f.played.at(-1).sound, preview.path);
+    entry.soundSource.stop(); f.manager.removeActiveSoundByIndex(0); assert.equal(f.manager.soundSourceGlobalDepot.length, capacity);
+  }
+  f.manager.soundManager.isSoundLoaded = () => false; f.manager.playInternal('aud_music_day');
+  assert.equal(f.manager.activeSoundSourceList.length, 0); assert.equal(f.manager.soundSourceGlobalDepot.length, capacity);
 });

@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current pre-host visual history — Beta 44, 2026-11-04
+## Current legacy world audio and native channel fixes — Beta 45, 2026-11-04
+
+The original pistol, worker/resource, creature and construction/door sounds extend the explicit inventory to 84 spatial names, plus three global battle cues. Native firearm/entity/queued handlers now carry pistolshot into guest playback with original variants/gain. Actual battle entry emits combatWaveApproaching globally; local menu/preparation/purchase/achievement sounds remain excluded. Native pool fallback now chooses/stops only the lowest-priority spatial voice (including priority zero), preserving global music. Preview recursion returns the failed parent channel first, avoiding capacity leaks.
+
+381 checks pass, with pistol coverage, wrong-priority eviction and preview capacity all failing before their fixes. All fifty legacy spatial names preserve original paths/volumes; repeated preview and global-only exhaustion cases preserve ownership/capacity. Read-only review confirmed both root fixes. Runtime coop-33/world 13 require matching Beta 45 peers; room/save formats remain unchanged. Event-journal bandwidth, unresolved original references, local UI/campaign, audible/native/physical-network acceptance remain open. See RESTORATION_STATUS.md for exact evidence and next work.
+
+## Previous pre-host visual history — Beta 44, 2026-11-04
 
 Controls owns loaded-island visual history before hosting; host sessions borrow it and preserve it through failed setup, exit and later hosting. Native clearGameSpaces teardown clears history/releases references in `finally`, including destruction effects and errors. Manager/list replacement or backwards time also clears stale state while sequence identity remains monotonic. Guest recording/capture is suspended until original solo clocks are restored; reattach restores old hooks. This history remains bounded and in memory, without changing saves or activating gameplay.
 

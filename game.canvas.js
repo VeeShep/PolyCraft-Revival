@@ -66069,8 +66069,8 @@
         d,
         f,
         e;
-      for (d = 0; d < c; d += 1) if (!f || b.priority < f) f = b.priority, e = d;
-      return void 0 !== e ? (this.removeActiveSoundByIndex(e), a.pop()) : null;
+      for (d = 0; d < c; d += 1) if (!b[d].soundSource.globalSource && (void 0 === f || b[d].priority < f)) f = b[d].priority, e = d;
+      return void 0 !== e ? (b[e].soundSource.stop(), this.removeActiveSoundByIndex(e), a.pop()) : null;
     },
     getGlobalSoundSource: function () {
       var a = this.soundSourceGlobalDepot;
@@ -66098,8 +66098,8 @@
         var i;
         e || (i = b || c.getv3Location());
         if (this.playSoundOnSource(h, f.path, f.volume, f.loop, e, i)) this.attachSource(h, b, c, a, f.volume, f.priority, d), h.soundName = a;else {
-          if (f.preview) return this.playInternal(f.preview, b, c, a);
           this.returnSoundSource(h);
+          if (f.preview) return this.playInternal(f.preview, b, c, a);
         }
       }
     },
