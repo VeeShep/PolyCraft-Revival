@@ -161,6 +161,7 @@ app.on('window-all-closed', () => app.quit());`);
       }
     }
     assert.deepEqual(failures, [], 'The sanitized network reports above identify failed steps.');
+    await require('./native-room-renewal.cjs').nativeRoomRenewal(page, { port, secret });
   } finally {
     if (application) await application.close();
     if (turn?.pid && turn.exitCode === null) {
