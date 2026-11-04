@@ -53,7 +53,7 @@ test('health view parsing rejects missing or unbounded metadata and arbitrary GU
   for (const extra of [{ bar: {} }, { bar: { row: 0, scale: -1, level: 1 } }, { bar: { row: 1001, scale: 1, level: 1 } }, { bar: { row: 0, scale: 1, level: 65 } }, { bar: { row: 0, scale: 1, level: 1.5 } }, { bar: { row: 0, scale: Infinity, level: 1 } }, { damage: { changedAt: NaN, onlyOffscreen: true } }, { damage: { changedAt: 0, onlyOffscreen: 1 } }, { damage: { changedAt: 0, onlyOffscreen: true, icon: 'arbitrary' } }, { bar: undefined }]) {
     const next = structuredClone(base); Object.assign(next.spaces[0].entities[0].health, extra);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
+    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
   }
 });
@@ -71,7 +71,7 @@ test('camera context rejects unknown modes/actors, sparse or duplicate interests
   for (const extra of [{ mode: 'editor' }, { dead: 1 }, { buildingAge: -1 }, { timeHeld: Infinity }, { heroes: [] }, { heroes: ['missing'] }, { heroes: ['hero', 'hero'] }, { enemies: Array(1) }, { center: [0, NaN, 0] }, { destination: [0, 0, 0] }, { lookAhead: [0, 0, 0] }, { save: true }]) {
     const next = structuredClone(base); Object.assign(next.camera, extra); const before = JSON.stringify(base);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: next.camera, spaces: [] };
     assert.throws(() => applyDelta(base, delta), /Invalid world snapshot/); assert.equal(JSON.stringify(base), before);
   }
 });
@@ -214,7 +214,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 13); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 14); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');
@@ -251,7 +251,7 @@ test('full and delta parsers reject missing, sparse, nonfinite or authority-bear
   for (const value of [undefined, [1, 2], Array(3), [1, NaN, 3], [1, 2, Infinity], { location: [1, 2, 3], speed: 99 }]) {
     const next = structuredClone(base); next.tick++; next.camera.pathDestination = value;
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 1, baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/); assert.equal(base.camera.pathDestination, null);
   }
 });
@@ -268,7 +268,7 @@ test('music metadata rejects arbitrary paths, objects and missing values in comp
   for (const music of [undefined, '', 'sounds/arbitrary.ogg', 'aud_music_unknown', {}, ['aud_music_day']]) {
     const next = structuredClone(base); next.tick++; next.music = music;
     assert.throws(() => validateSnapshot(next), /music/);
-    const delta = { version: 1, baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
     assert.throws(() => applyDelta(base, delta), /music/); assert.equal(base.music, null);
   }
 });
@@ -284,7 +284,7 @@ test('world audio is captured coherently and carried through full/delta validati
   assert.deepEqual(applyDelta(before, delta), next); delta.audio.events[0].name = 'aud_music_day';
   assert.throws(() => validateDelta(delta), /Invalid world audio/);
   const missing = structuredClone(next); delete missing.audio; assert.throws(() => validateSnapshot(missing), /Invalid world snapshot/);
-  const old = structuredClone(next); old.version = 12; assert.throws(() => validateSnapshot(old), /incompatible version/);
+  const old = structuredClone(next); old.version = 13; assert.throws(() => validateSnapshot(old), /incompatible version/);
 });
 
 test('original visual effects are owned at capture and full/delta headers reject arbitrary effect authority', () => {
@@ -293,4 +293,85 @@ test('original visual effects are owned at capture and full/delta headers reject
   assert.equal(before.effects.events[0].location[0], 1); game.gameClock.getFrameIndex = () => 18;
   const next = captureSnapshot(game), delta = createDelta(before, next); assert.deepEqual(applyDelta(before, delta), next);
   delta.effects.events[0].name = 'textures/arbitrary.dds'; assert.throws(() => validateDelta(delta), /Invalid world visual effects/);
+});
+
+function journalState() {
+  const state = captureSnapshot(fixture().game);
+  state.audio = { sequence: 3, events: [1, 3].map(id => ({ id, op: 'play', name: 'aud_shotgunshot', entity: 'hero', location: [1, 2, 3], fade: 0, time: 0.5, target: null })), loops: [] };
+  state.effects = { sequence: 3, events: [1, 3].map(id => ({ id, time: 0.5, name: 'vfx_hit_e_generic1', location: [1, 2, 3], direction: null, entity: 'hero', scale: 1, dilation: 1 })), active: [] };
+  return validateSnapshot(state);
+}
+test('journal deltas reconstruct sparse retained histories, changed records, expiry and resets without aliasing', () => {
+  let base = journalState();
+  for (const change of [
+    next => {},
+    next => { next.audio.events[0].location[0] = 9; next.effects.events[0].scale = 2; },
+    next => { next.audio.events.shift(); next.effects.events.shift(); },
+    next => { next.audio.events = []; next.effects.events = []; },
+    next => { next.audio.sequence = next.effects.sequence = 0; }
+  ]) {
+    const next = structuredClone(base); next.tick++; change(next);
+    const before = JSON.stringify(base), delta = createDelta(base, next);
+    assert.deepEqual(delta.audio.events, next.audio.events.filter(event => JSON.stringify(event) !== JSON.stringify(base.audio.events.find(old => old.id === event.id))));
+    assert.deepEqual(delta.effects.events, next.effects.events.filter(event => JSON.stringify(event) !== JSON.stringify(base.effects.events.find(old => old.id === event.id))));
+    const restored = applyDelta(base, JSON.parse(JSON.stringify(delta)));
+    assert.deepEqual(restored, next); assert.equal(JSON.stringify(base), before);
+    if (restored.audio.events.length) { restored.audio.events[0].location[0] = 99; assert.notEqual(next.audio.events[0].location[0], 99); assert.notEqual(delta.audio.events[0]?.location[0], 99); }
+    base = next;
+  }
+});
+test('journal cache misses request full repair without partially editing the last world', () => {
+  for (const field of ['audio', 'effects']) {
+    const base = journalState(), next = structuredClone(base); next.tick++;
+    const delta = createDelta(base, next); base[field].events.shift(); const before = JSON.stringify(base);
+    assert.throws(() => applyDelta(base, delta), { code: 'WORLD_BASE_MISMATCH' });
+    assert.equal(JSON.stringify(base), before);
+    assert.deepEqual(applyDelta(next, createDelta(next, { ...next, tick: next.tick + 1 })), { ...next, tick: next.tick + 1 });
+  }
+});
+test('delta retention lists reject malformed IDs, overflow, omitted records and obsolete encodings', () => {
+  const base = journalState(), next = structuredClone(base); next.tick++;
+  for (const field of ['audioKeep', 'effectsKeep']) {
+    for (const keep of [undefined, {}, Array(1), ['1'], [NaN], [Infinity], [1.5], [0], [-1], [4], [1, 1], [3, 1], Array.from({ length: 129 }, (_, i) => i + 1)]) {
+      const delta = createDelta(base, next); delta[field] = keep;
+      assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
+    }
+    const delta = createDelta(captureSnapshot(fixture().game), next); delta[field] = [];
+    assert.throws(() => validateDelta(delta), /not retained/);
+  }
+  const delta = createDelta(base, next); delta.version = 1; assert.throws(() => validateDelta(delta), /invalid world update/);
+});
+test('ten-hertz event journal workload preserves exact state while reducing serialized delta bytes', t => {
+  let base = journalState(), cached = structuredClone(base), oldBytes = 0, newBytes = 0;
+  for (let frame = 1; frame <= 100; frame++) {
+    const next = structuredClone(base); next.tick++; next.time += 0.1; next.spaces[0].entities[0].location[0] += 0.1;
+    for (const field of ['audio', 'effects']) {
+      for (let count = 0; count < 2; count++) {
+        const event = structuredClone(base[field].events.at(-1) || journalState()[field].events[0]);
+        event.id = ++next[field].sequence; event.time = next.time; next[field].events.push(event);
+      }
+      next[field].events = next[field].events.filter(event => next.time - event.time <= 2).slice(-128);
+    }
+    const delta = createDelta(base, next), old = { ...delta, version: 1, audio: next.audio, effects: next.effects };
+    delete old.audioKeep; delete old.effectsKeep;
+    oldBytes += Buffer.byteLength(JSON.stringify(old)); newBytes += Buffer.byteLength(JSON.stringify(delta));
+    cached = applyDelta(cached, JSON.parse(JSON.stringify(delta))); assert.deepEqual(cached, next);
+    if (frame % 50 === 0) { const full = JSON.stringify(next); oldBytes += Buffer.byteLength(full); newBytes += Buffer.byteLength(full); cached = JSON.parse(full); }
+    base = next;
+  }
+  t.diagnostic(`Synthetic 10Hz/100-update journals plus two full snapshots: ${oldBytes} -> ${newBytes} JSON bytes (${(100 * (1 - newBytes / oldBytes)).toFixed(1)}% reduction)`);
+  assert.ok(newBytes < oldBytes * 0.25);
+});
+
+test('journal deltas preserve complete loop and persistent decal state independently of recent history', () => {
+  const base = journalState();
+  base.audio.loops = [{ id: 2, name: 'aud_amb_fire', entity: null, location: [1, 2, 3], fade: null }];
+  base.effects.active = [{ ...base.effects.events[0], id: 2, name: 'vfx_exp_decal' }];
+  validateSnapshot(base);
+  const next = structuredClone(base); next.tick++; next.time = 3;
+  next.audio.events = []; next.effects.events = []; next.audio.loops[0].location[0] = 4;
+  next.audio.loops[0].fade = { duration: 2, until: 5 };
+  const delta = createDelta(base, next), restored = applyDelta(base, delta);
+  assert.deepEqual(restored, next); assert.deepEqual(delta.audio.loops, next.audio.loops); assert.deepEqual(delta.effects.active, next.effects.active);
+  delta.effects.active[0].location[0] = 99; assert.equal(restored.effects.active[0].location[0], 1);
 });

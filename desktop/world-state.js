@@ -1,8 +1,8 @@
 'use strict';
 (function (root) {
-  const { emptyAudio, validateAudio } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
-  const { emptyEffects, validateEffects } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
-  const VERSION = 13;
+  const { emptyAudio, validateAudio, LIMITS: AUDIO_LIMITS } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
+  const { emptyEffects, validateEffects, LIMITS: EFFECT_LIMITS } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
+  const VERSION = 14;
   const MUSIC = new Set(['aud_music_theme', 'aud_music_day', 'aud_music_night', 'aud_music_battle', 'aud_music_battle_boss']);
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];
@@ -129,6 +129,22 @@
     return validateSnapshot(snapshot);
   }
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  function journalChanges(previous, next) {
+    const records = new Map(previous.events.map(event => [event.id, event]));
+    return { ...next, events: next.events.filter(event => !same(records.get(event.id), event)) };
+  }
+  function validateRetention(journal, keep, limit) {
+    requireValue(Array.isArray(keep) && keep.length <= limit && Array.from(keep).every((id, index) => Number.isSafeInteger(id) && id > 0 && id <= journal.sequence && (!index || keep[index - 1] < id)), 'invalid journal retention.');
+    const retained = new Set(keep);
+    requireValue(journal.events.every(event => retained.has(event.id)), 'updated event is not retained.');
+  }
+  function lostBase() {
+    const error = new Error('World update lost synchronization; requesting a fresh snapshot.'); error.code = 'WORLD_BASE_MISMATCH'; return error;
+  }
+  function restoreJournal(previous, update, keep) {
+    const records = new Map([...previous.events, ...update.events].map(event => [event.id, event]));
+    return structuredClone({ ...update, events: keep.map(id => { if (!records.has(id)) throw lostBase(); return records.get(id); }) });
+  }
   function createDelta(previous, next) {
     validateSnapshot(previous); validateSnapshot(next);
     requireValue(next.tick > previous.tick, 'updates must advance the tick.');
@@ -152,11 +168,13 @@
       }
       return patch.remove.length || patch.entities.length || Object.keys(patch).length > 3 ? [patch] : [];
     });
-    return structuredClone({ version: 1, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, audio: next.audio, effects: next.effects, torch: next.torch, camera: next.camera, combat: next.combat, spaces });
+    return structuredClone({ version: 2, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, audio: journalChanges(previous.audio, next.audio), audioKeep: next.audio.events.map(event => event.id), effects: journalChanges(previous.effects, next.effects), effectsKeep: next.effects.events.map(event => event.id), torch: next.torch, camera: next.camera, combat: next.combat, spaces });
   }
   function validateDelta(delta, assets) {
-    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'music', 'audio', 'effects', 'torch', 'camera', 'combat', 'spaces']) && delta.version === 1, 'invalid world update.');
+    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'music', 'audio', 'audioKeep', 'effects', 'effectsKeep', 'torch', 'camera', 'combat', 'spaces']) && delta.version === 2, 'invalid world update.');
     validateHeader(delta);
+    validateRetention(delta.audio, delta.audioKeep, AUDIO_LIMITS.events);
+    validateRetention(delta.effects, delta.effectsKeep, EFFECT_LIMITS.events);
     requireValue(Number.isSafeInteger(delta.baseTick) && delta.baseTick >= 0 && delta.tick > delta.baseTick, 'invalid update base.');
     requireValue(Array.isArray(delta.spaces) && delta.spaces.length <= LIMITS.spaces, 'invalid changed spaces.');
     const seen = new Set(); let changes = 0, blocks = 0;
@@ -180,11 +198,11 @@
   function applyDelta(previous, delta, assets) {
     validateDelta(delta, assets);
     requireValue(previous, 'a world snapshot is required before updates.');
-    if (delta.baseTick !== previous.tick) {
-      const error = new Error('World update lost synchronization; requesting a fresh snapshot.'); error.code = 'WORLD_BASE_MISMATCH'; throw error;
-    }
+    if (delta.baseTick !== previous.tick) throw lostBase();
     const result = structuredClone(previous);
-    for (const key of ['tick', 'time', 'dayTime', 'hero', 'music', 'audio', 'effects', 'torch', 'camera', 'combat']) result[key] = structuredClone(delta[key]);
+    for (const key of ['tick', 'time', 'dayTime', 'hero', 'music', 'torch', 'camera', 'combat']) result[key] = structuredClone(delta[key]);
+    result.audio = restoreJournal(previous.audio, delta.audio, delta.audioKeep);
+    result.effects = restoreJournal(previous.effects, delta.effects, delta.effectsKeep);
     for (const patch of delta.spaces) {
       requireValue(patch.index < result.spaces.length, 'unknown space update.');
       const space = result.spaces[patch.index], entities = new Map(space.entities.map(entity => [entity.id, entity]));

@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current preview music controls — Beta 46, 2026-11-04
+## Current journal delta compression — Beta 47, 2026-11-04
+
+World updates send new or changed audio/visual journal records plus sorted bounded retention IDs, reconstructing the exact complete journals on the guest. Retention removes expired/capped/reset entries without resending old payloads. Complete current loops, fades and active decals remain in every update; full snapshots keep complete journals. A missing retained record raises the existing base-mismatch resync path before world mutation or playback. IDs detect missing records, not arbitrary cached-content corruption; periodic full snapshots still repair stale content.
+
+389 checks pass, including sparse retention, changed same-ID records, expiry/reset, alias isolation, malformed/oversized lists, complete persistent state and actual GuestWorld cache-loss/recovery. A 100-update synthetic 10Hz workload (two audio and two visual records per update, two-second history, moving hero, two periodic full snapshots) reduces JSON payloads from 1,085,405 to 157,805 bytes (85.5%) with exact canonical state reconstruction. This is not measured real-session traffic or relay billing. Independent read-only review found no concrete issues. Matching Beta 47 game peers use coop-34/world 14/delta 2; room/save/quest/co-op remain 3/7/1/4. Audible/visible/native and physical-network acceptance remain open. See RESTORATION_STATUS.md.
+
+## Previous preview music controls — Beta 46, 2026-11-04
 
 Native stop/volume requests now follow preview parent names. Declared preview families stop all their current parts; ordinary SFX remain first-match. Full-track promotion copies the preview's current/old/target volume and fade clocks, applies gain immediately and starts preview exit only after channel allocation succeeds. No-channel retries preserve the preview. Solo preference storage and network/save formats are unchanged.
 
