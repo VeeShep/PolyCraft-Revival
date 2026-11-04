@@ -59,7 +59,7 @@ app.on('window-all-closed', () => app.quit());`);
       for (const relay of [false, true]) {
         console.log(`Checking ${count} participants, ${relay ? 'forced relay' : 'direct'}, using disposable network-only peers.`);
         const report = await page.evaluate(async ({ count, relay, initial, fresh }) => {
-          let stage = 'joining';
+          let stage = 'joining', generationFailure;
           const check = (value, message) => { if (!value) { stage = message; throw new Error(message); } };
           const wait = async predicate => {
             const deadline = performance.now() + 12000;
@@ -106,8 +106,16 @@ app.on('window-all-closed', () => app.quit());`);
               stage = 'confirming the selected new generation';
               try { await Promise.all([local.confirmRestart(), remote.confirmRestart()]); }
               catch {
-                const selected = await pairInfo(local);
-                check(false, `Selected new ICE generation was not confirmed (local fragment observable: ${typeof selected.local?.usernameFragment === 'string'}, remote: ${typeof selected.remote?.usernameFragment === 'string'}).`);
+                generationFailure = await Promise.all([local, remote].map(async link => {
+                  const selected = await pairInfo(link);
+                  const fragment = description => description.sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
+                  const nativePair = link.pc.sctp?.transport?.iceTransport?.getSelectedCandidatePair();
+                  return { role: link.role, connected: link.pc.connectionState === 'connected', iceConnected: ['connected', 'completed'].includes(link.pc.iceConnectionState), channelOpen: link.channel?.readyState === 'open',
+                    confirmed: !!link.iceRenewal?.confirmed, localObservable: typeof selected.local?.usernameFragment === 'string', remoteObservable: typeof selected.remote?.usernameFragment === 'string',
+                    localMatches: selected.local?.usernameFragment === fragment(link.pc.localDescription), remoteMatches: selected.remote?.usernameFragment === fragment(link.pc.remoteDescription),
+                    nativeLocalMatches: nativePair?.local.usernameFragment === fragment(link.pc.localDescription), nativeRemoteMatches: nativePair?.remote.usernameFragment === fragment(link.pc.remoteDescription) };
+                }));
+                check(false, 'Selected new ICE generation was not confirmed.');
               }
               local.finishRestart(); remote.finishRestart();
               const selected = await pairInfo(local);
@@ -124,7 +132,7 @@ app.on('window-all-closed', () => app.quit());`);
             }
             check(errors.length === 0, 'Native transport reported an error.');
             return { participants: count, links: summaries };
-          } catch { return { failure: stage, participants: count, relay }; }
+          } catch { return { failure: stage, participants: count, relay, generationFailure }; }
           finally { host.close(); for (const guest of guests) guest.link.close(); }
         }, { count, relay, initial: relay ? credentials() : [], fresh: relay ? credentials() : [] });
         console.log(JSON.stringify(report));
