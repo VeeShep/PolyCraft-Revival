@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const VERSION = 2, MAX_MESSAGE = 192 * 1024;
+  const VERSION = 3, MAX_MESSAGE = 192 * 1024;
   const STAGES = ['forward', 'upnp', 'stun', 'turn'];
   function roomName(value) {
     if (typeof value !== 'string') throw new Error('Enter a room name.');
@@ -20,7 +20,11 @@
     return url.href;
   }
   function signal(value) {
-    if (!value || typeof value !== 'object' || Array.isArray(value) || !['offer', 'answer', 'candidate', 'reject', 'route'].includes(value.kind)) throw new Error('Invalid room connection message.');
+    if (!value || typeof value !== 'object' || Array.isArray(value) || !['offer', 'answer', 'candidate', 'reject', 'route', 'relay'].includes(value.kind)) throw new Error('Invalid room connection message.');
+    if (value.kind === 'relay') {
+      if (value.data !== 'request') throw new Error('Invalid relay request.');
+      return value;
+    }
     if (value.kind === 'route') {
       const r = value.data;
       if (!r || typeof r !== 'object' || Array.isArray(r) || Object.keys(r).some(key => !['attempt', 'stage', 'type', 'value'].includes(key)) || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.attempt) || !STAGES.includes(r.stage) || !['offer', 'answer', 'candidate', 'ready', 'commit', 'ack', 'failed', 'cancel'].includes(r.type)) throw new Error('Invalid route attempt.');
@@ -38,7 +42,14 @@
     } else if (typeof value.data !== 'string' || !value.data.length || value.data.length > (value.kind === 'reject' ? 256 : 128 * 1024)) throw new Error('Invalid room offer, reply or rejection.');
     return value;
   }
-  const api = { VERSION, MAX_MESSAGE, STAGES, roomName, password, serverUrl, signal };
+  function relayCredentials(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length !== 2 || !Object.hasOwn(value, 'expires') || !Object.hasOwn(value, 'iceServers') || !Number.isSafeInteger(value.expires) || value.expires <= Date.now() || value.expires > Date.now() + 21660000) throw new Error('Invalid temporary relay credentials.');
+    const network = typeof module !== 'undefined' ? require('./multiplayer.js') : root.PolycraftMultiplayer;
+    const servers = network.validateIceServers(value.iceServers);
+    if (servers.length !== 1 || !servers[0].urls.every(url => /^turns?:/.test(url))) throw new Error('Invalid temporary relay servers.');
+    return { expires: value.expires, iceServers: servers };
+  }
+  const api = { VERSION, MAX_MESSAGE, STAGES, roomName, password, serverUrl, signal, relayCredentials };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftRoomProtocol = api;
 })(globalThis);

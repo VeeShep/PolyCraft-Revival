@@ -183,3 +183,50 @@ test('native signaling traffic counts only JSON bytes, stays redacted and freeze
   h.native.close(); await until(() => h.events.some(event => event.type === 'closed'));
   const frozen = h.native.stats(); await new Promise(resolve => setTimeout(resolve, 5)); assert.deepEqual(h.native.stats(), frozen);
 });
+
+test('coturn credentials use the documented temporary HMAC scheme, owned URLs and bounded room/lifetime limits', () => {
+  const { createTurnIssuer } = require('../server/turn-credentials.cjs'), { createHmac } = require('node:crypto');
+  const secret = 'test-only-secret-that-is-over-32-bytes', urls = ['turn:relay.example:3478'], issue = createTurnIssuer({ urls, secret, ttl: 60 });
+  urls[0] = 'turn:changed.example'; const value = issue(Date.now() + 120000), server = value.iceServers[0];
+  assert.equal(server.urls[0], 'turn:relay.example:3478'); assert.equal(Number(server.username.split(':')[0]) * 1000, value.expires);
+  assert.equal(server.credential, createHmac('sha1', secret).update(server.username).digest('base64'));
+  assert.notEqual(issue(Date.now() + 120000).iceServers[0].username, server.username);
+  assert.equal(issue(Date.now() + 1000), null); assert.equal(JSON.stringify(value).includes(secret), false);
+  for (const config of [{ urls, secret: 'short' }, { urls, secret, ttl: 59 }, { urls, secret, ttl: 21601 }, { urls: ['stun:bad'], secret }]) assert.throws(() => createTurnIssuer(config));
+  for (const bad of [{ ...value, expires: Date.now() - 1 }, { ...value, expires: Date.now() + 30000000 }, { ...value, secret }, { ...value, iceServers: [{ ...server, urls: ['stun:bad'] }] }]) assert.throws(() => rules.relayCredentials(bad));
+});
+test('relay issuance requires host approval and failed-direct stage context and cannot be requested by a guest', async t => {
+  const s = await service(t, { turn: { urls: ['turn:relay.example'], secret: 'test-only-secret-that-is-over-32-bytes' } }), h = client(t), g = client(t);
+  const host = await h.native.open({ ...settings(s.url), type: 'create' }); assert.equal(host.relay, true);
+  const guest = await g.native.open({ ...settings(s.url), type: 'join', name: 'Guest' });
+  await g.native.send({ id: guest.id, kind: 'relay', data: 'request' });
+  await until(() => g.events.some(value => value.type === 'error'));
+  assert.equal(g.events.some(value => value.type === 'relay'), false); assert.equal(h.events.some(value => value.type === 'relay'), false);
+});
+
+test('temporary relay credentials cannot be issued before approval context or more than once per guest', async t => {
+  const turn = { urls: ['turn:relay.example'], secret: 'test-only-secret-that-is-over-32-bytes' };
+  for (const beforeOffer of [true, false]) {
+    const s = await service(t, { turn }), h = client(t), g = client(t);
+    const host = await h.native.open({ ...settings(s.url), type: 'create' });
+    await g.native.open({ ...settings(s.url), type: 'join', name: 'Guest' });
+    await until(() => h.events.some(value => value.type === 'request')); const id = h.events.find(value => value.type === 'request').id;
+    if (!beforeOffer) {
+      await h.native.send({ id: host.id, to: id, kind: 'route', data: { attempt: require('node:crypto').randomUUID(), stage: 'stun', type: 'offer', value: 'opaque-probe-offer' } });
+      await h.native.send({ id: host.id, to: id, kind: 'relay', data: 'request' });
+      await until(() => h.events.some(value => value.type === 'relay') && g.events.some(value => value.type === 'relay'));
+      assert.notEqual(h.events.find(value => value.type === 'relay').data.iceServers[0].username, g.events.find(value => value.type === 'relay').data.iceServers[0].username);
+    }
+    await h.native.send({ id: host.id, to: id, kind: 'relay', data: 'request' });
+    await until(() => h.events.some(value => value.type === 'error'));
+    assert.equal(h.events.filter(value => value.type === 'relay').length, beforeOffer ? 0 : 1);
+    assert.equal(g.events.filter(value => value.type === 'relay').length, beforeOffer ? 0 : 1);
+  }
+});
+
+test('older room services produce an explicit upgrade message instead of an unexplained invalid-reply error', async t => {
+  const { WebSocketServer } = require('ws'), old = new WebSocketServer({ port: 0, host: '127.0.0.1' });
+  await once(old, 'listening'); t.after(() => new Promise(resolve => old.close(resolve)));
+  old.on('connection', socket => socket.once('message', () => socket.send(JSON.stringify({ v: 2, type: 'error', message: 'Incompatible room protocol.' }))));
+  const c = client(t); await assert.rejects(c.native.open({ ...settings('ws://127.0.0.1:' + old.address().port + '/signaling'), type: 'create' }), /Update both games and the room service/);
+});

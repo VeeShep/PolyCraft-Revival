@@ -14,13 +14,14 @@ async function until(check) {
   const deadline = Date.now() + 3000;
   while (!check()) { if (Date.now() > deadline) throw new Error('Automatic room check timed out'); await new Promise(resolve => setTimeout(resolve, 3)); }
 }
-async function fixture(t, { works = 'stun', upnp = false, turn = false, guestTurn = false, forward = true, delayOffer = false } = {}) {
-  const service = createRoomServer(); service.server.listen(0, '127.0.0.1'); await once(service.server, 'listening');
-  const order = [], links = new Map(), sessions = [], hostTransport = { peers: new Map(), watchers: new Map(), forwardEndpoint: { host: forward ? '127.0.0.1' : '' }, nativeOptions: { upnp }, nativeReady: true,
+async function fixture(t, { works = 'stun', upnp = false, turn = false, guestTurn = false, forward = true, delayOffer = false, relayService = false, failOffer = false } = {}) {
+  const service = createRoomServer({ turn: relayService ? { urls: ['turn:relay.example:3478'], secret: 'test-only-secret-that-is-over-32-bytes', ttl: 60 } : undefined }); service.server.listen(0, '127.0.0.1'); await once(service.server, 'listening');
+  const iceUsed = [], order = [], links = new Map(), sessions = [], hostTransport = { peers: new Map(), watchers: new Map(), forwardEndpoint: { host: forward ? '127.0.0.1' : '' }, nativeOptions: { upnp }, nativeReady: true,
     iceServers: turn ? [{ urls: ['turn:relay'], username: 'u', credential: 'p' }] : [{ urls: ['stun:custom'] }],
     async map() { order.push('map'); this.endpoint = { mapped: true }; },
-    async offer(stage, onCreated) {
-      order.push(stage); if (delayOffer === true) await new Promise(resolve => setTimeout(resolve, 100));
+    async offer(stage, onCreated, relayServers) {
+      iceUsed.push({ role: 'host', stage, servers: relayServers || (stage === 'stun' ? stunOnly(this.iceServers) : this.iceServers) });
+      order.push(stage); if (failOffer && stage === 'stun') throw new Error('Offer preparation failed'); if (delayOffer === true) await new Promise(resolve => setTimeout(resolve, 100));
       const peer = randomUUID(), link = makeLink(peer, 'host'); link.stage = stage;
       this.peers.set(peer, link); links.set(peer, link);
       onCreated?.(link);
@@ -34,7 +35,8 @@ async function fixture(t, { works = 'stun', upnp = false, turn = false, guestTur
     } };
   }
   const Peer = { async join(invitation, options) {
-    const peer = invitation.replace('polycraft-direct1.', ''), host = links.get(peer), link = makeLink(peer, 'guest'); host.guest = link; link.onState = options.onState;
+    const peer = invitation.replace('polycraft-direct1.', ''), host = links.get(peer), link = makeLink(peer, 'guest');
+    iceUsed.push({ role: 'guest', stage: host.stage, servers: options.iceServers }); host.guest = link; link.onState = options.onState;
     options.onCreated(link); link.onMessage = options.onMessage;
     if (host.stage === works) setImmediate(() => {
       if (link.closed || host.closed) return;
@@ -57,7 +59,7 @@ async function fixture(t, { works = 'stun', upnp = false, turn = false, guestTur
   const settings = { url: 'ws://127.0.0.1:' + service.server.address().port + '/signaling', room: 'poopedpants123', password: 'giggle shits', name: 'Guest' };
   await host.open('host', settings); await guest.open('guest', settings); await until(() => host.requests.size === 1);
   const entry = [...host.requests.values()][0];
-  return { host, guest, entry, order, hostTransport, sessions, service };
+  return { host, guest, entry, order, hostTransport, sessions, service, iceUsed };
 }
 test('route envelopes reject malformed attempts, stages, controls, candidates and extra fields', () => {
   const valid = { attempt: randomUUID(), stage: 'stun', type: 'offer', value: 'offer' };
@@ -106,4 +108,38 @@ test('setup history records bounded redacted outcomes, copies defensively and pr
   report.attempts[0].outcome = 'modified'; assert.equal(f.host.diagnostics().attempts[0].outcome, 'timed out');
   for (let i = 0; i < 70; i++) { const attempt = { stage: 'stun', started: performance.now() }; f.host.record(attempt, 'failed'); f.host.record(attempt, 'duplicate'); }
   assert.equal(f.host.diagnostics().attempts.length, 64); assert.ok(f.host.diagnostics().attempts.every(value => value.outcome === 'failed'));
+});
+
+test('configured room service issues distinct temporary credentials only after direct failure and supplies them only to the TURN stage', async t => {
+  const f = await fixture(t, { works: 'turn', forward: false, relayService: true });
+  await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  assert.deepEqual(f.order, ['stun', 'turn', 'attach', 'admit']);
+  for (const role of ['host', 'guest']) {
+    assert.equal(hasTurn(f.iceUsed.find(value => value.role === role && value.stage === 'stun').servers), false);
+    const servers = f.iceUsed.find(value => value.role === role && value.stage === 'turn').servers;
+    assert.equal(hasTurn(servers), true); assert.equal(servers[0].urls[0], 'turn:relay.example:3478');
+  }
+  const credentials = f.iceUsed.filter(value => value.stage === 'turn').map(value => value.servers[0]);
+  assert.notEqual(credentials[0].username, credentials[1].username); assert.notEqual(credentials[0].credential, credentials[1].credential);
+  assert.equal(f.entry.relayServers, undefined); assert.equal(f.guest.relayServers, undefined);
+  assert.equal(JSON.stringify(f.host.diagnostics()).includes(credentials[0].credential), false);
+  const direct = await fixture(t, { works: 'stun', forward: false, relayService: true }); await direct.host.approve(direct.entry.id, 'saved-hero'); await direct.entry.running;
+  assert.deepEqual(direct.order, ['stun', 'attach', 'admit']); assert.equal([...direct.service.rooms.values()][0].guests.values().next().value.relayIssued, undefined);
+});
+
+test('temporary credential waiting is bounded even if sending stalls and cancellation releases the waiter', async () => {
+  const room = Object.create(AutoRoomSession.prototype); room.send = () => new Promise(() => {});
+  const expired = { id: randomUUID(), deadline: Date.now() + 20 };
+  await assert.rejects(room.requestRelay(expired), /timed out/); assert.equal(expired.relayWait, null);
+  const cancelled = { id: randomUUID(), deadline: Date.now() + 1000 }, waiting = room.requestRelay(cancelled);
+  cancelled.relayWait.finish(null); assert.equal(await waiting, null); assert.equal(cancelled.relayWait, null);
+});
+
+test('failed or stalled direct-offer preparation rejects only that join without requesting credentials or closing its room', async t => {
+  for (const options of [{ failOffer: true }, { delayOffer: 'hang' }]) {
+    const f = await fixture(t, { ...options, relayService: true, forward: false });
+    await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+    assert.deepEqual(f.order, ['stun']); assert.equal(f.host.connected, true); assert.equal(f.service.rooms.size, 1);
+    assert.match(f.host.session.message, /setup failed before a relay/); assert.equal(f.guest.session.world, null);
+  }
 });

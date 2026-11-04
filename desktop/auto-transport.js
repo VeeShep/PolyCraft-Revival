@@ -28,14 +28,14 @@
       if (!this.nativeOptions.upnp || !this.nativeReady) throw new Error('UPnP is disabled or the native listener is unavailable.');
       this.endpoint = await this.desktop.direct('map'); return this.endpoint;
     }
-    async offer(stage, onCreated) {
+    async offer(stage, onCreated, relayServers) {
       if (stage === 'forward' || stage === 'upnp') {
         if (!this.nativeReady || !(stage === 'forward' ? this.forwardEndpoint?.host : this.endpoint?.host)) throw new Error('No usable native endpoint.');
         const offer = await super.createInvitation({ onCreated: link => { link.probing = true; onCreated?.(link); } });
         if (stage === 'forward') { const packet = direct.invitation(offer.invitation); packet.host = this.forwardEndpoint.host; offer.invitation = direct.PREFIX + btoa(JSON.stringify(packet)); }
         return offer;
       }
-      return network.HostSession.prototype.createInvitation.call(this, { iceServers: stage === 'stun' ? stunOnly(this.iceServers) : this.iceServers, probing: true, onCreated });
+      return network.HostSession.prototype.createInvitation.call(this, { iceServers: stage === 'stun' ? stunOnly(this.iceServers) : relayServers || this.iceServers, probing: true, onCreated });
     }
     async acceptReply(text) { return network.HostSession.prototype.acceptReply.call(this, text); }
     close() { this.watchers.clear(); super.close(); }

@@ -4,9 +4,11 @@ const { randomBytes, randomUUID, scrypt: derive, timingSafeEqual } = require('no
 const { promisify } = require('node:util');
 const { WebSocketServer } = require('ws');
 const protocol = require('../desktop/room-protocol.js');
+const { createTurnIssuer } = require('./turn-credentials.cjs');
 const scrypt = promisify(derive);
 function check(value, message) { if (!value) throw new Error(message); }
-function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12 * 3600000, trustProxy = false } = {}) {
+function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12 * 3600000, trustProxy = false, turn } = {}) {
+  const issueTurn = turn ? createTurnIssuer(turn) : null;
   const rooms = new Map(), rates = new Map(); let authenticating = 0;
   const server = http.createServer((request, response) => {
     response.writeHead(request.url === '/health' ? 200 : 404, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' }); response.end(request.url === '/health' ? 'PolyCraft room service ready\n' : 'Not found\n');
@@ -59,7 +61,7 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
               const salt = randomBytes(16), hash = await scrypt(password, salt, 32);
               check(socket.readyState === 1 && !rooms.has(name) && rooms.size < maxRooms, 'Room name unavailable or connection closed.');
               room = { name, salt, hash, runtime: msg.runtime, host: socket, guests: new Map(), expires: Date.now() + roomLifetime };
-              role = 'host'; rooms.set(name, room); send(socket, { type: 'created', room: name });
+              role = 'host'; rooms.set(name, room); send(socket, { type: 'created', room: name, relay: !!issueTurn });
             } else {
               const existing = rooms.get(name), salt = existing?.salt || randomBytes(16), hash = await scrypt(password, salt, 32);
               check(socket.readyState === 1 && existing && rooms.get(name) === existing && existing.expires > Date.now() && timingSafeEqual(hash, existing.hash), 'Room name or password is incorrect, or the room has expired.');
@@ -67,7 +69,7 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
               check(existing.guests.size < 3, 'This room already has three guests or pending joins.');
               check(typeof msg.name === 'string' && msg.name.trim().length > 0 && msg.name.length <= 80, 'Enter a guest name.');
               room = existing; role = 'guest'; guestId = randomUUID(); room.guests.set(guestId, socket);
-              send(socket, { type: 'joined', room: name, id: guestId });
+              send(socket, { type: 'joined', room: name, id: guestId, relay: !!issueTurn });
               send(room.host, { type: 'request', id: guestId, name: msg.name.trim(), relay: msg.relay === true });
             }
             clearTimeout(timer);
@@ -75,6 +77,14 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
         } else {
           check(msg.type === 'signal' && rooms.get(room.name) === room && room.expires > Date.now(), 'Room is no longer available.');
           protocol.signal(msg);
+          if (msg.kind === 'relay') {
+            const guest = room.guests.get(msg.to);
+            check(role === 'host' && issueTurn && guest && guest.route?.stage === 'stun' && !guest.routeLocked && !guest.relayIssued && quota(ip), 'Relay credentials are unavailable for this join.');
+            guest.relayIssued = true;
+            send(guest, { type: 'relay', data: issueTurn(room.expires) });
+            send(socket, { type: 'relay', from: msg.to, data: issueTurn(room.expires) });
+            return;
+          }
           if (msg.kind === 'route') {
             const guest = role === 'host' ? room.guests.get(msg.to) : socket, r = msg.data;
             check(guest, 'This guest has left.');
@@ -132,7 +142,9 @@ function createRoomServer({ maxRooms = 200, maxClients = 1000, roomLifetime = 12
   return { server, close, rooms };
 }
 if (require.main === module) {
-  const service = createRoomServer({ trustProxy: process.env.POLYCRAFT_TRUST_PROXY === '1' });
+  const urls = process.env.POLYCRAFT_TURN_URLS, secret = process.env.POLYCRAFT_TURN_SECRET;
+  check(!!urls === !!secret, 'Set both POLYCRAFT_TURN_URLS and POLYCRAFT_TURN_SECRET.');
+  const service = createRoomServer({ trustProxy: process.env.POLYCRAFT_TRUST_PROXY === '1', turn: urls ? { urls: urls.split(',').map(url => url.trim()), secret, ttl: Number(process.env.POLYCRAFT_TURN_TTL || 21600) } : undefined });
   const port = Number(process.env.PORT || 37842);
   check(Number.isInteger(port) && port >= 1024 && port <= 65535, 'Invalid PORT.');
   service.server.listen(port, '127.0.0.1', () => console.log('PolyCraft room service listening on 127.0.0.1:' + port));

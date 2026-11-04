@@ -46,16 +46,24 @@
           await this.send('reject', 'No usable connection. Check forwarding, STUN/TURN settings or try again.', id).catch(() => {});
           this.requests.delete(id);
         }
-      }).finally(() => { entry.approving = false; this.session.changed(); });
+      }).finally(() => { entry.approving = false; entry.relayServers = undefined; this.session.changed(); });
     }
     active(entry) { return !this.closed && this.connected && !this.session.stopping && this.requests.get(entry.id) === entry && !this.session.transport.closed; }
     async reject(id) {
       const entry = this.requests.get(id); if (!entry) throw new Error('Choose a guest request.');
-      this.requests.delete(id);
+      this.requests.delete(id); entry.relayWait?.finish(null);
       entry.route?.finish(new Error('The host cancelled joining.'), 'cancelled');
       this.session.transport.peers.get(entry.peer)?.close('The host removed this guest.');
       if (this.connected) await this.send('reject', 'The host declined this join request.', id);
       this.session.changed();
+    }
+    async requestRelay(entry) {
+      const waiting = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { entry.relayWait = null; reject(new Error('Temporary relay credentials timed out.')); }, Math.max(1, Math.min(2000, entry.deadline - Date.now())));
+        entry.relayWait = { finish: value => { clearTimeout(timer); entry.relayWait = null; resolve(value); } };
+      });
+      try { return await Promise.race([waiting, this.send('relay', 'request', entry.id).then(() => waiting)]); }
+      finally { entry.relayWait?.finish(null); }
     }
     async runHost(entry) {
       entry.deadline = Date.now() + this.budgets.total;
@@ -74,8 +82,12 @@
         if (transport.endpoint?.mapped && await attempt('upnp')) return;
       }
       if (await attempt('stun')) return;
-      if ((hasTurn(transport.iceServers) || entry.relay) && await attempt('turn')) return;
-      throw new Error('Direct routes failed' + (hasTurn(transport.iceServers) || entry.relay ? ' and TURN could not connect.' : '; no TURN relay is configured.'));
+      if (!hasTurn(transport.iceServers) && !entry.relay && this.relayService) {
+        if (!entry.route?.offered) throw new Error('WebRTC setup failed before a relay could be requested. Retry joining.');
+        entry.relayServers = (await this.requestRelay(entry))?.iceServers;
+      }
+      if ((hasTurn(transport.iceServers) || entry.relay || entry.relayServers) && await attempt('turn')) return;
+      throw new Error('Direct routes failed' + (hasTurn(transport.iceServers) || entry.relay || entry.relayServers ? ' and TURN could not connect.' : '; no TURN relay is configured.'));
     }
     async attemptHost(entry, stage) {
       const transport = this.session.transport, a = entry.route = { id: crypto.randomUUID(), stage, locked: false, started: performance.now() };
@@ -93,7 +105,7 @@
       deadline(this.budgets[stage]);
       try {
         this.session.notify('Checking ' + stage + ' connection for ' + entry.name + '…');
-        const creating = transport.offer(stage, link => { a.link = link; if (a.done || !this.active(entry)) link.close('Route attempt expired.'); });
+        const creating = transport.offer(stage, link => { a.link = link; if (a.done || !this.active(entry)) link.close('Route attempt expired.'); }, stage === 'turn' ? entry.relayServers : undefined);
         creating.then(offer => { if (a.done && !a.admitted) transport.peers.get(offer.peer)?.close('Route attempt expired.'); }).catch(() => {});
         const offer = await Promise.race([creating, waiting]);
         if (!this.active(entry) || a.done) throw new Error('Join cancelled.');
@@ -123,17 +135,25 @@
       await this.route(entry, a, 'commit');
     }
     async handle(event) {
+      if (event.type === 'relay') {
+        if (!this.relayService) throw new Error('Unexpected relay credentials.');
+        const value = event.data === null ? null : rules.relayCredentials(event.data);
+        if (this.role === 'host') this.requests.get(event.from)?.relayWait?.finish(value);
+        else this.relayServers = value?.iceServers;
+        return;
+      }
       if (event.type === 'signal' && event.kind === 'route') {
         rules.signal(event);
         if (this.role === 'host') return this.hostSignal(event);
         return this.guestSignal(event.data);
       }
       if (['closed', 'error', 'room-ended'].includes(event.type)) {
-        for (const entry of this.requests.values()) if (entry.route && !entry.route.admitted) entry.route.finish(new Error('Room signaling ended.'));
+        for (const entry of this.requests.values()) { entry.relayWait?.finish(null); if (entry.route && !entry.route.admitted) entry.route.finish(new Error('Room signaling ended.')); }
         if (this.guestAttempt && !this.guestAttempt.selected) this.cancelGuest(this.guestAttempt);
       }
       if (event.type === 'left') {
         const entry = this.requests.get(event.id);
+        entry?.relayWait?.finish(null);
         if (entry?.route && !entry.route.admitted) entry.route.finish(new Error('Guest left.'));
       }
       return super.handle(event);
@@ -187,7 +207,7 @@
       const native = a.stage === 'forward' || a.stage === 'upnp';
       if (native !== invitation.startsWith('polycraft-direct1.')) throw new Error('Route invitation does not match its transport.');
       const Peer = native ? this.runtime.PolycraftDirect.DirectPeer : this.runtime.PolycraftMultiplayer.PeerLink;
-      const joined = await Peer.join(invitation, { desktop: this.runtime.desktop, trickle: true, iceServers: a.stage === 'stun' ? stunOnly(this.options.iceServers) : this.options.iceServers,
+      const joined = await Peer.join(invitation, { desktop: this.runtime.desktop, trickle: true, iceServers: a.stage === 'stun' ? stunOnly(this.options.iceServers) : this.relayServers || this.options.iceServers,
         onCreated: link => { a.link = link; link.probing = true; },
         onCandidate: (value, link) => this.candidate(value, link),
         onMessage: (_message, link) => { if (link.probing) throw new Error('Game data arrived before route admission.'); },
@@ -198,6 +218,7 @@
           if (state === 'closed') this.failGuest(a, new Error('Guest route connection ended.'));
         } });
       if (a.cancelled || this.closed || this.guestAttempt !== a) { joined.connection.close('Stale route attempt.'); return; }
+      if (a.stage === 'turn') this.relayServers = undefined;
       if (joined.reply) await this.route(null, a, 'answer', joined.reply);
       a.answered = true;
       for (const value of a.local.splice(0)) await this.route(null, a, 'candidate', value);
@@ -214,7 +235,8 @@
     }
     cancelGuest(a) { this.record(a, 'cancelled'); a.cancelled = true; a.local = []; a.remote = []; a.link?.close('Route attempt cancelled.'); }
     close() {
-      for (const entry of this.requests.values()) if (entry.route && !entry.route.admitted) entry.route.finish(new Error('Room closed.'));
+      for (const entry of this.requests.values()) { entry.relayWait?.finish(null); entry.relayServers = undefined; if (entry.route && !entry.route.admitted) entry.route.finish(new Error('Room closed.')); }
+      this.relayServers = undefined;
       if (this.guestAttempt && !this.guestAttempt.selected) this.cancelGuest(this.guestAttempt);
       super.close();
     }

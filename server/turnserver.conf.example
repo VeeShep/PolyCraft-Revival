@@ -1,0 +1,31 @@
+# Local deployment template; configure secret, domain, addresses and TLS before use.
+listening-port=3478
+tls-listening-port=5349
+fingerprint
+realm=turn.example.invalid
+use-auth-secret
+# Set this to the same private value as POLYCRAFT_TURN_SECRET (never commit it).
+#static-auth-secret=
+#cert=/path/to/fullchain.pem
+#pkey=/path/to/privkey.pem
+# Behind NAT, set external-ip according to the coturn documentation.
+min-port=49160
+max-port=49259
+# Bounded initial test deployment; tune against real allocation/bandwidth measurements.
+user-quota=4
+total-quota=24
+no-cli
+no-multicast-peers
+# WebRTC uses UDP relay allocations even when the client reaches TURN over TCP/TLS.
+no-tcp-relay
+# Prevent authenticated relay clients from reaching private/local networks on this host.
+denied-peer-ip=0.0.0.0-0.255.255.255
+denied-peer-ip=10.0.0.0-10.255.255.255
+denied-peer-ip=100.64.0.0-100.127.255.255
+denied-peer-ip=127.0.0.0-127.255.255.255
+denied-peer-ip=169.254.0.0-169.254.255.255
+denied-peer-ip=172.16.0.0-172.31.255.255
+denied-peer-ip=192.168.0.0-192.168.255.255
+denied-peer-ip=::1
+denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff

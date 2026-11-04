@@ -19,12 +19,14 @@ class RoomSocket {
         traffic.receivedBytes += bytes.length; traffic.receivedMessages++;
         try {
           const message = JSON.parse(bytes.toString());
-          if (binary || !message || message.v !== protocol.VERSION || !['created', 'joined', 'request', 'signal', 'left', 'room-ended', 'error'].includes(message.type)) throw new Error('Invalid room server reply.');
+          if (message && Object.hasOwn(message, 'v') && message.v !== protocol.VERSION) throw new Error('Room protocol is incompatible. Update both games and the room service together.');
+          if (binary || !message || message.v !== protocol.VERSION || !['created', 'joined', 'request', 'signal', 'left', 'room-ended', 'error', 'relay'].includes(message.type)) throw new Error('Invalid room server reply.');
           if (message.type === 'signal') protocol.signal(message);
+          if (message.type === 'relay' && message.data !== null) message.data = protocol.relayCredentials(message.data);
           if (message.type === 'error') throw new Error(typeof message.message === 'string' ? message.message.slice(0, 256) : 'Room server rejected the request.');
           if (!ready) {
             if (message.type !== (options.type === 'create' ? 'created' : 'joined') || message.room !== room) throw new Error('Unexpected room server reply.');
-            ready = true; clearTimeout(timer); resolve({ id, room });
+            ready = true; clearTimeout(timer); resolve({ id, room, relay: message.relay === true });
           } else this.emit({ ...message, connectionId: id });
         } catch (error) { if (!ready) reject(error); else this.emit({ connectionId: id, type: 'error', message: error.message }); this.close(); }
       });

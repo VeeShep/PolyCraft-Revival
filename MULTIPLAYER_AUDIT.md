@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current held-target facing — Beta 36, 2026-11-03
+## Current optional temporary relay credentials — Beta 37, 2026-11-03
+
+Room protocol 3 advertises optional server-side coturn issuance. After earlier routes fail, an approved host requests distinct expiring credentials for its pending pair; the service enforces owner/guest/STUN-stage/commit/replay/quota checks. Private secrets remain server-only. Direct attempts receive STUN settings only; issued credentials are passed per pair to the TURN attempt and cleared from room caches after use/close. The credential wait is bounded within the existing join deadline. Invalid or stalled offer preparation fails that join without ending room signaling.
+
+All 340 checks pass using real local sockets and mocked game peers, including HMAC/expiry, distinct credentials, direct success with no issuance, role/stage/replay refusal, configuration isolation and cancellation/deadline paths. Narrow review identified and corrected early-preparation room termination; follow-up found no further concrete issue. Game runtime/world remain coop-27/7 (Beta 36 manual-compatible), while room-name clients and service must both use protocol 3. See `server/README.md` for the optional coturn test template. No service was deployed; actual relay/browser ICE, physical networks, native gameplay, long-session renewal and provider-specific APIs remain open.
+
+## Previous held-target facing — Beta 36, 2026-11-03
 
 Host `HostActions` calls original ranged facing/end methods on the assigned hero, following the selected entity's live position independently of the native automatic-fire target. Release/clear/stop and host actor/target/PvP/script/construction changes clear the held pose. A finite active press and 600 ms lifetime prevent orphan updates from retaining facing; release cleanup runs even on classification failure. Guest cancellation and hold-to-move send the existing clear phase, while temporary hover reentry sends a fresh press. Same-type ranged target changes preserve the original automatic-fire identity.
 

@@ -15,7 +15,7 @@
       try {
         const connected = await this.runtime.desktop.room('open', { ...settings, room: rules.roomName(settings.room), password: rules.password(settings.password), type: role === 'host' ? 'create' : 'join', relay: (this.options?.iceServers || []).some(server => (Array.isArray(server.urls) ? server.urls : [server.urls]).some(url => /^turns?:/.test(url))), runtime: this.runtime.PolycraftMultiplayer.RUNTIME });
         if (this.closed) throw new Error('Room connection cancelled.');
-        this.id = connected.id; this.name = connected.room; this.connected = true;
+        this.id = connected.id; this.name = connected.room; this.connected = true; this.relayService = connected.relay === true;
         this.session.notify(role === 'host' ? 'Room “' + this.name + '” is open. Guests enter its name and password; approve each guest below.' : 'Waiting for the host to approve joining “' + this.name + '”.');
         for (const event of this.early.splice(0)) this.receive(event);
       } catch (error) { this.close(); throw error; }
