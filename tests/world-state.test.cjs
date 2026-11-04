@@ -214,7 +214,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 6); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 7); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');
@@ -236,4 +236,22 @@ test('combat headers reject malformed or unavailable targets and survive owned d
   const removed = createDelta(base, next); removed.spaces = [{ index: 0, remove: ['pickup'], entities: [] }];
   assert.throws(() => applyDelta(base, removed), /combat target/);
   assert.throws(() => validateSnapshot({ ...base, version: 5 }), /version/);
+});
+
+test('path cursor state captures only the assigned hero final navigation destination and preserves ownership through deltas', () => {
+  const f = fixture(), actor = f.entities[1], previous = actor.getEC, destination = [30, 3, 40]; let active = true;
+  actor.getEC = name => name === 'ECNav' ? { isOnPath: () => active, getv3Destination: () => { assert.equal(active, true); return destination; } } : previous(name);
+  const state = captureSnapshot(f.game, actor); assert.deepEqual(state.camera.pathDestination, destination); assert.equal(state.camera.destination, null);
+  destination[0] = 999; assert.equal(state.camera.pathDestination[0], 30); assert.equal(captureSnapshot(f.game).camera.pathDestination, null, 'host hero path must not leak into the assigned guest cursor');
+  active = false; const next = captureSnapshot(f.game, actor); next.tick++;
+  assert.equal(next.camera.pathDestination, null); assert.deepEqual(applyDelta(state, createDelta(state, next)), next);
+});
+test('full and delta parsers reject missing, sparse, nonfinite or authority-bearing path cursor fields', () => {
+  const base = captureSnapshot(fixture().game);
+  for (const value of [undefined, [1, 2], Array(3), [1, NaN, 3], [1, 2, Infinity], { location: [1, 2, 3], speed: 99 }]) {
+    const next = structuredClone(base); next.tick++; next.camera.pathDestination = value;
+    assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
+    const delta = { version: 1, baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
+    assert.throws(() => validateDelta(delta), /Invalid world snapshot/); assert.equal(base.camera.pathDestination, null);
+  }
 });

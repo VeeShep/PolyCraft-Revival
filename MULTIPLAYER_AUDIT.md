@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current targeted gesture timing — Beta 34, 2026-11-03
+## Current guest movement cursor — Beta 35, 2026-11-03
+
+Actual original `HeroControllerAction.drawMove` renders guest ground circles/arrows and pulse animation with the original loaded controller texture paths. Its hero facade uses the assigned hero's interpolated pose, locomotion waypoint and final ECNav destination; guest simulation and suspended solo state are not consulted. New required finite/null `camera.pathDestination` is captured only from the assigned host hero and validated through full/delta parsing. World snapshot 7/runtime coop-26 require matching Beta 35 peers; delta/signaling/save/quest/co-op remain 1/2/7/1/4.
+
+All 330 checks pass, including actual native sprite drawing, path-versus-waypoint preference, interpolation height, absence/invalid data, no mutation and input/menu/placement/targeted-gesture hiding. Existing health drawing now shares its structural dependency lookup with this fixture. Narrow camera review found no concrete must-fix issues. Physical cursor placement/terrain/UI and broader gameplay/native/real-network acceptance remain open; see RESTORATION_STATUS.md.
+
+## Previous targeted gesture timing — Beta 34, 2026-11-03
 
 Target intents now include press/update/clear/release phases with strict shape/enum/sequence checks. The host uses the original selected-type method against its assigned hero and live entity. Only ranged entry runs on press or interaction-type change; resource/menu interactions run on release. Same-type ranged target changes retain the original automatic-fire target rather than issuing another shot. Guest target holds use native `hasHeld`, then existing ground navigation/steering/release; swipes retain a target until it is lost. Release re-evaluates the pointed target, including when it arrives before another render update.
 

@@ -198,7 +198,7 @@
       if (!this.actors.has(id)) {
         const world = this.world, entry = () => world.scene.entities.get(id), context = () => world.scene.snapshot.camera;
         this.actors.set(id, { get v3Location() { return entry().displayLocation || entry().record.location; }, getv3Location() { return this.v3Location; },
-          getEC: name => name === 'ECPlayerLife' ? { isDead: () => context().dead } : name === 'ECPlayerBuilder' ? { getTimeSinceBuilding: () => context().buildingAge } : name === 'ECLocomotion' ? {
+          getEC: name => name === 'ECNav' ? { isOnPath: () => context().pathDestination !== null, getv3Destination: () => context().pathDestination } : name === 'ECPlayerLife' ? { isDead: () => context().dead } : name === 'ECPlayerBuilder' ? { getTimeSinceBuilding: () => context().buildingAge } : name === 'ECLocomotion' ? {
             getDestination: () => context().destination, getLookAhead: () => context().lookAhead && context().lookAhead.map((value, index) => value + (entry().displayLocation || entry().record.location)[index] - entry().record.location[index]), getTimeHeld: () => context().timeHeld
           } : null });
       }
@@ -466,6 +466,7 @@
     }
     pointer(event, value) {
       const canvas = this.movement.canvas, bounds = canvas.getBoundingClientRect(), device = this.controls.app.globals.graphicsDevice;
+      this.pointerEvent = value;
       this.guiInput.position = [(value.clientX - bounds.left) * device.width / bounds.width, (value.clientY - bounds.top) * device.height / bounds.height];
       this.construction.pointer(event, value);
       if (this.groundDrag) this.groundDrag.event = value;
@@ -552,6 +553,20 @@
         if (health.damage && view.shouldDrawOffScreenIcon()) view.drawOffScreenIcon();
       }
     }
+    drawMovementCursor() {
+      if (!this.movement.available() || this.construction.placement || !this.pointerEvent || this.groundDrag?.targeted) return;
+      const gui = this.game.getIMGui();
+      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || !this.groundDrag && pickTarget(this, this.pointerEvent)) return;
+      const cursor = this.construction.cursor();
+      if (!cursor) return;
+      const globals = this.controls.app.globals, controller = this.game.getGameController(), drag = this.groundDrag;
+      const view = Object.assign(Object.create(this.controls.movementMethods.gesture), {
+        globals, prevDown: !!drag, downTime: drag?.downTime ?? globals.appCurrentTime, downv2ScreenCoord: drag?.downv2ScreenCoord || this.guiInput.position,
+        getv3WorldCursorLocation: () => cursor, getHeroEntity: () => this.viewCamera.actor(this.scene.snapshot.hero),
+        crashMobController: { getv2ScreenCoord: () => this.guiInput.position, bigCircleTexturePath: controller.bigCircleTexturePath, bigArrowTexturePath: controller.bigArrowTexturePath }
+      });
+      view.drawMove();
+    }
     drawCombatTarget() {
       if (this.resyncing) return;
       const combat = this.scene.snapshot?.combat, target = combat && this.scene.entities.get(combat.target);
@@ -589,6 +604,7 @@
       this.hud.draw();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       if (!this.pauseMenu) this.updateMenu();
+      this.drawMovementCursor();
     }
     close() {
       if (this.closed) return;

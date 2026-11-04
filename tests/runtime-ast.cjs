@@ -55,18 +55,23 @@ function taskManagerFactory({ manager, renderer, groups, badges, tasks, window }
   return evaluate(factory.right, { [owner]: manager, [assigned('taskRenderer').right.callee.object.name]: renderer, [group.right.callee.object.name]: groups,
     [assigned('badgeTaskGroup').right.callee.object.name]: badges, [group.right.arguments[2].object.name]: tasks, window });
 }
+function drawingDependency(node, property) {
+  const names = new Set();
+  traverse(ast, { MemberExpression(p) { if (p.node.start >= node.start && p.node.end <= node.end && p.node.property.name === property) { let base = p.node.object; while (base.type === 'MemberExpression') base = base.object; names.add(base.name); } } });
+  return one([...names], 'public renderer dependency ' + property);
+}
 function healthDrawing() {
   const health = one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === 'ECHealth')), 'health component');
   const drawHealth = health.properties.find(p => key(p) === 'drawHealthBar').value;
   const drawBar = one(properties.filter(p => key(p) === 'drawProgressBarFromFraction'), 'world bar').value;
-  const owner = (node, property) => {
-    const names = new Set();
-    traverse(ast, { MemberExpression(p) { if (p.node.start >= node.start && p.node.end <= node.end && p.node.property.name === property) { let base = p.node.object; while (base.type === 'MemberExpression') base = base.object; names.add(base.name); } } });
-    return one([...names], 'public renderer dependency ' + property);
-  };
   const colors = objectWith('healthFull');
-  return { healthMethods: evaluate(health, { [owner(drawHealth, 'healthMid')]: colors }), drawProgressBar: evaluate(drawBar, {
-    [owner(drawBar, 'progressBarTexturePath')]: { progressBarTexturePath: 'textures/block.dds' }, [owner(drawBar, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth' } } }, [owner(drawBar, 'outline')]: colors }) };
+  return { healthMethods: evaluate(health, { [drawingDependency(drawHealth, 'healthMid')]: colors }), drawProgressBar: evaluate(drawBar, {
+    [drawingDependency(drawBar, 'progressBarTexturePath')]: { progressBarTexturePath: 'textures/block.dds' }, [drawingDependency(drawBar, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth' } } }, [drawingDependency(drawBar, 'outline')]: colors }) };
+}
+function movementDrawing() {
+  const draw = one(properties.filter(p => key(p) === 'drawMove'), 'movement drawing').value;
+  return evaluate(draw, { [drawingDependency(draw, 'outlineSoft')]: objectWith('healthFull'),
+    [drawingDependency(draw, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth', NORMAL: 'normal' } } } });
 }
 function cameraMethods(zoomer) {
   const prototype = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'buildSphereCentreAndExtents')), 'camera prototype').right;
@@ -80,4 +85,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, cameraMethods, taskGroupMethods };
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, cameraMethods, taskGroupMethods };

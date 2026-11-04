@@ -17,7 +17,7 @@ function fixture(t) {
   const rendered = [], display = { extractSmallestFOV: () => Math.PI / 3, setFOV() {}, lookAt: (...args) => rendered.push(args), updateViewMatrix() {}, updateViewProjectionMatrix() {}, updateFrustumPlanes() {} };
   const globals = { mathDevice: math, camera: display, gameAppTimeStep: 1 / 30, guiRenderer: { getScaleFactor: () => 1 }, debugDrawFlags: {}, dynamicUI: { addGroup() { throw new Error('Guest init must not create debug UI'); } } };
   const solo = Object.assign(Object.create(methods), { globals: { ...globals, dynamicUI: null }, camera: display }); solo.init(); solo.heroEntity = { id: 'solo' }; solo.zoomerBlend = true; solo.zoomerPosition = { keep: true };
-  const context = { mode: 'explore', dead: false, buildingAge: 100, destination: [20, 0, 0], lookAhead: [12, 0, 0], timeHeld: 0, heroes: ['guest', 'friend'], enemies: ['enemy'], center: [0, 0, 0] };
+  const context = { mode: 'explore', dead: false, buildingAge: 100, destination: [20, 0, 0], pathDestination: null, lookAhead: [12, 0, 0], timeHeld: 0, heroes: ['guest', 'friend'], enemies: ['enemy'], center: [0, 0, 0] };
   const entities = new Map(['guest', 'friend', 'enemy'].map((id, i) => [id, { record: { id, location: [i * 3, 0, 0] }, displayLocation: [i * 3 + 1, 0, 0] }]));
   const state = { hero: 'guest', camera: context, spaces: [{ extents: [-100, -100, -100, 100, 100, 100], entities: [...entities.values()].map(entry => entry.record) }] };
   const world = { controls: { app: { globals } }, scene: { snapshot: state, entities }, game: { getGameCamera: () => solo, getHero: () => { throw new Error('Solo hero must not be read'); } } };

@@ -1,6 +1,6 @@
 'use strict';
 (function (root) {
-  const VERSION = 6;
+  const VERSION = 7;
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];
   const meshFields = ['path', 'transform', 'visible', 'skin'];
@@ -18,8 +18,9 @@
     requireValue(value.torch === null || (keys(value.torch, ['transform', 'visible']) && vector(value.torch.transform, 12) && typeof value.torch.visible === 'boolean'), 'invalid hero light.');
     requireValue(value.combat === null || keys(value.combat, ['target', 'inDamageRange']) && name(value.combat.target) && typeof value.combat.inDamageRange === 'boolean', 'invalid combat target.');
     const camera = value.camera;
-    requireValue(keys(camera, ['mode', 'dead', 'buildingAge', 'destination', 'lookAhead', 'timeHeld', 'heroes', 'enemies', 'center']) && ['explore', 'war', 'building', 'dead'].includes(camera.mode) && typeof camera.dead === 'boolean' && number(camera.buildingAge) && camera.buildingAge >= 0 && number(camera.timeHeld) && camera.timeHeld >= 0 && vector(camera.center, 3), 'invalid camera context.');
+    requireValue(keys(camera, ['mode', 'dead', 'buildingAge', 'destination', 'pathDestination', 'lookAhead', 'timeHeld', 'heroes', 'enemies', 'center']) && ['explore', 'war', 'building', 'dead'].includes(camera.mode) && typeof camera.dead === 'boolean' && number(camera.buildingAge) && camera.buildingAge >= 0 && number(camera.timeHeld) && camera.timeHeld >= 0 && vector(camera.center, 3), 'invalid camera context.');
     requireValue(camera.destination === null && camera.lookAhead === null || vector(camera.destination, 3) && vector(camera.lookAhead, 3), 'invalid camera movement.');
+    requireValue(camera.pathDestination === null || vector(camera.pathDestination, 3), 'invalid path destination.');
     for (const list of [camera.heroes, camera.enemies]) requireValue(Array.isArray(list) && list.length <= LIMITS.entities && Array.from(list).every(name) && new Set(list).size === list.length, 'invalid camera actors.');
   }
   function validateBlock(block, assets) {
@@ -110,10 +111,10 @@
     const ids = new Set(snapshot.spaces.flatMap(space => space.entities.map(entity => entity.id))), heroes = new Set([hero.name]), enemies = new Set();
     game.applyToHeroEntities(entity => { if (ids.has(entity.name)) heroes.add(entity.name); });
     game.getFactionManager().applyToEnemies(hero, entity => { if (ids.has(entity.name)) enemies.add(entity.name); });
-    const builder = hero.getEC('ECPlayerBuilder'), life = hero.getEC('ECPlayerLife'), movement = hero.getEC('ECLocomotion'), destination = movement?.getDestination();
+    const builder = hero.getEC('ECPlayerBuilder'), life = hero.getEC('ECPlayerLife'), movement = hero.getEC('ECLocomotion'), destination = movement?.getDestination(), navigation = hero.getEC('ECNav');
     const mode = game.getPlayFlags().cameraMode;
     snapshot.camera = { mode: ['explore', 'war', 'building', 'dead'].includes(mode) ? mode : 'explore', dead: !!life?.isDead(), buildingAge: builder ? Math.max(0, builder.getTimeSinceBuilding()) : 1e9,
-      destination: destination ? Array.from(destination) : null, lookAhead: destination ? Array.from(movement.getLookAhead()) : null, timeHeld: movement?.getTimeHeld() || 0, heroes: [...heroes], enemies: [...enemies], center: Array.from(hero.getGameSpace().getv3Location()) };
+      destination: destination ? Array.from(destination) : null, pathDestination: navigation?.isOnPath() ? Array.from(navigation.getv3Destination()) : null, lookAhead: destination ? Array.from(movement.getLookAhead()) : null, timeHeld: movement?.getTimeHeld() || 0, heroes: [...heroes], enemies: [...enemies], center: Array.from(hero.getGameSpace().getv3Location()) };
     const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
     snapshot.combat = target && target !== hero && !target.shouldBeDestroyed() && ids.has(target.name) ? { target: target.name, inDamageRange: !!automatic.isWithinDamageRange(target.getv3Location()) } : null;
     return validateSnapshot(snapshot);

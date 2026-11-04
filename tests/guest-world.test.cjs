@@ -25,7 +25,7 @@ const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
   const entity = id => ({ id, archetype: null, interactive: true, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
-  return { version: 6, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
+  return { version: 7, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -536,4 +536,41 @@ test('target gestures resample targets, stop on cancellation and handle release 
   assert.deepEqual(held.requested.map(value => value.mode), ['release']); assert.equal(held.sent.length, 1);
   const changed = targetedWorld(); changed.world.clickTarget({ clientX: 0, clientY: 0 }); changed.world.groundDrag.event = { clientX: 90, clientY: 0 }; changed.world.finishGroundDrag();
   assert.deepEqual(changed.sent.map(value => [value.target, value.phase]), [['tree', 'press'], ['enemy', 'release']]);
+});
+
+function movementCursor() {
+  const { GuestCamera } = require('../desktop/guest-world.js'), ast = require('./runtime-ast.cjs'), world = Object.create(GuestWorld.prototype), sprites = [];
+  const math = { v3Copy: a => [...a], v3BuildYAxis: () => [0, 1, 0], v3Sub: (a, b) => a.map((value, i) => value - b[i]),
+    v3ToAngle: a => Math.atan2(a[0], a[2]), v4Build: (...values) => values, v2DistanceSq: (a, b) => a.reduce((sum, value, i) => sum + (value - b[i]) ** 2, 0) };
+  let available = true, captured = false, cursor = [12, 4, 14];
+  world.controls = { app: { globals: { mathDevice: math, appCurrentTime: 1, simpleSpriteRenderer: { addSprite: value => sprites.push(structuredClone(value)) },
+    graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: location => location } } },
+    movementMethods: { gesture: { ...ast.prototypeWith('hasHeldOrSwiped'), drawMove: ast.movementDrawing() } } };
+  world.game = { getHero: () => assert.fail('cursor must not use the suspended solo hero'), getIMGui: () => ({ hasCapturedInput: () => captured, isHot: () => false }),
+    getGameController: () => ({ bigCircleTexturePath: 'textures/bigcircle.dds', bigArrowTexturePath: 'textures/bigarrow.dds' }) };
+  world.identity = { entity: 'guest' }; world.guiInput = { position: [50, 50] }; world.pointerEvent = { clientX: 50, clientY: 50 };
+  world.movement = { available: () => available }; world.construction = { cursor: () => cursor };
+  world.scene = { snapshot: { hero: 'guest', camera: { pathDestination: [40, 3, 50], destination: [5, 3, 6] } },
+    entities: new Map([['guest', { record: { id: 'guest', location: [2, 3, 4] }, displayLocation: [3, 4, 5] }]]) };
+  world.viewCamera = Object.assign(Object.create(GuestCamera.prototype), { world, actors: new Map() });
+  return { world, sprites, unavailable: value => { available = !value; }, capture: value => { captured = value; }, invalidCursor: () => { cursor = null; } };
+}
+test('guest movement cursor uses actual original circles/arrows and final host path at the interpolated assigned hero height', () => {
+  const f = movementCursor(); f.world.drawMovementCursor();
+  assert.deepEqual(f.sprites.map(value => value.texture), ['textures/bigcircle.dds', 'textures/bigcircle.dds', 'textures/bigarrow.dds']);
+  assert.deepEqual(f.sprites.map(value => value.blendStyle), ['no-depth', 'normal', 'no-depth']);
+  assert.deepEqual(f.sprites[0].v3Location, [12, 3.9, 14]); assert.deepEqual(f.sprites[2].v3Location, [40, 3.9, 50]);
+  assert.deepEqual(f.world.scene.snapshot.camera.pathDestination, [40, 3, 50]);
+  f.sprites.length = 0; f.world.scene.snapshot.camera.pathDestination = null; f.world.drawMovementCursor(); assert.deepEqual(f.sprites[2].v3Location, [5, 3.9, 6]);
+  f.world.scene.snapshot.camera.destination = null; f.sprites.length = 0; f.world.drawMovementCursor(); assert.equal(f.sprites.length, 2);
+  f.world.groundDrag = { downTime: 0.4, downv2ScreenCoord: [50, 50], targeted: false }; f.sprites.length = 0; f.world.drawMovementCursor();
+  assert.equal(f.sprites.length, 4); assert.equal(f.sprites[0].texture, 'textures/bigarrow.dds'); assert.equal(f.sprites[0].v4color[3], 0.5);
+});
+test('movement feedback disappears for blocked input, local UI, targeted holds, placement and invalid projection', () => {
+  const f = movementCursor();
+  f.unavailable(true); f.world.drawMovementCursor(); f.unavailable(false);
+  f.capture(true); f.world.drawMovementCursor(); f.capture(false);
+  f.world.groundDrag = { targeted: true }; f.world.drawMovementCursor(); f.world.groundDrag = null;
+  f.world.construction.placement = {}; f.world.drawMovementCursor(); f.world.construction.placement = null;
+  f.invalidCursor(); f.world.drawMovementCursor(); assert.equal(f.sprites.length, 0);
 });
