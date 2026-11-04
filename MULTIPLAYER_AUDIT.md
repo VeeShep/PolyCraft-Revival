@@ -2,7 +2,11 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current original guest campaign results — Beta 51, 2026-11-04
+## Current maintenance checkpoint — Beta 52, 2026-11-04
+
+Three private native play-state constructors now use names verified from their literal labels and matching factory registrations. Scoped identifier edits preserve the original behavior; a canonical inverse rename reproduces the committed Beta 51 input. The naming helper rejects ambiguous/dynamic/global scope and records hashes without changing the immutable baseline. 422 full-suite checks, seven readability checks and 63 selected packaged Mac runtime checks pass. Runtime coop-38/world 15/delta 2 and all room/save formats remain unchanged; Beta 51 and Beta 52 peers are compatible. No new multiplayer behavior or graphical/network/native acceptance is claimed. Package and continuation evidence is in RESTORATION_STATUS.md. Campaign XP ownership remains a saved question; host reward collection is unchanged.
+
+## Previous original guest campaign results — Beta 51, 2026-11-04
 
 Host end-of-tick capture observes native completed star-array replacement after all simulation/task updates and before coherent admission/save captures. The scored criteria-array identity selects the original campaign even after its banner is replaced. A copied latest result survives quick host screen dismissal during the hosting session; pre-host/pre-admission results are filtered, manager replacement clears retained data, and IDs remain monotonic. Startup failure and close restore prior host hooks/state. No scoring or grant method is wrapped or replaced.
 

@@ -42,3 +42,59 @@ test('the naming command preserves baseline bytes and existing reports and refus
   const repeated = run(); assert.notEqual(repeated.status, 0); assert.match(repeated.stderr, /already recorded/); assert.equal(fs.readFileSync(runtime, 'utf8'), output); assert.equal(fs.readFileSync(report, 'utf8'), manifestText);
   fs.writeFileSync(baselinePath, 'damaged test fixture'); const damaged = run(); assert.notEqual(damaged.status, 0); assert.match(damaged.stderr, /Immutable Beta 1 baseline changed/); assert.equal(fs.readFileSync(runtime, 'utf8'), output); assert.equal(fs.readFileSync(report, 'utf8'), manifestText);
 });
+const { namePlayStates } = require('../scripts/name-play-states.cjs');
+const playSource = `(function () {
+  function Base() {}
+  Base.prototype.playStateCreationMap = {};
+  Base.extend = function (definition) { function State() {} State.prototype = definition; return State; };
+  var a = Base.extend({ playStateName: 'PlayStateBattle', asset: 'assets/a.dds' });
+  a.create = function () { return new a(); };
+  Base.prototype.playStateCreationMap[a.prototype.playStateName] = a;
+  var b = Base.extend({ playStateName: 'PlayStateNormal', a: 'a' });
+  b.create = function () { return new b(); };
+  Base.prototype.playStateCreationMap[b.prototype.playStateName] = b;
+  var c = Base.extend({ playStateName: 'PlayStatePrepareForBattle' });
+  c.create = function () { return new c(); };
+  Base.prototype.playStateCreationMap[c.prototype.playStateName] = c;
+  function shadow(a) { return a; }
+  globalThis.result = { states: Object.keys(Base.prototype.playStateCreationMap).map(function (name) { return Base.prototype.playStateCreationMap[name].create().playStateName; }), key: b.create().a, shadow: shadow('original'), asset: a.create().asset };
+})();`;
+test('literal play-state naming preserves factory lookup, public properties, assets and shadowed locals with inverse proof', () => {
+  const result = namePlayStates(playSource), before = {}, after = {};
+  vm.runInNewContext(playSource, before); vm.runInNewContext(result.output, after);
+  assert.equal(JSON.stringify(after.result), JSON.stringify(before.result));
+  assert.deepEqual(result.names.map(entry => [entry.original, entry.name, entry.descriptive]), [['a', 'PlayStateBattle', false], ['b', 'PlayStateNormal', false], ['c', 'PlayStatePrepareForBattle', false]]);
+  assert.equal(result.output.split('\n').length, playSource.split('\n').length); assert.match(result.output, /function shadow\(a\)/);
+  assert.match(result.proof, /canonical input/); assert.throws(() => namePlayStates(result.output), /already named/);
+});
+test('play-state naming rejects missing/duplicate labels, mismatched registrations, reassignment and captured names', () => {
+  for (const source of [
+    playSource.replace("playStateName: 'PlayStateNormal'", "playStateName: 'PlayStateBattle'"),
+    playSource.replace('Base.prototype.playStateCreationMap[b.prototype.playStateName] = b;', ''),
+    playSource.replace('Base.prototype.playStateCreationMap[b.prototype.playStateName] = b;', 'Base.prototype.playStateCreationMap[a.prototype.playStateName] = b;'),
+    playSource.replace('function shadow(a)', 'a = function () {}; function shadow(a)'),
+    playSource.replace('function shadow(a)', 'var PlayStateBattle = 1; function shadow(a)'),
+    playSource.replace('function shadow(a)', 'globalThis.external = PlayStateBattle; function shadow(a)'),
+    playSource.replace('function shadow(a)', 'function nested() { var PlayStateBattle = 1; return a.create(); } function shadow(a)'),
+    playSource.replace('function shadow(a)', 'globalThis.publicObject = { a }; function shadow(a)'),
+    playSource.replace('function shadow(a)', 'eval("a.create()"); function shadow(a)'),
+    playSource.replace('function shadow(a)', 'with (globalThis) { a.create(); } function shadow(a)'),
+    playSource.replace('(function () {', '').replace('})();', '')
+  ]) assert.throws(() => namePlayStates(source), /constructor|registration|Conflicting|Changes beyond|Generated syntax|Dynamic|private/);
+});
+test('play-state CLI preserves baseline and earlier reports and refuses a repeated or damaged-baseline pass', t => {
+  const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), crypto = require('node:crypto'), { spawnSync } = require('node:child_process');
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-play-names-')); t.after(() => fs.rmSync(folder, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(folder, 'scripts')); fs.mkdirSync(path.join(folder, 'reference/beta-1'), { recursive: true });
+  const baseline = Buffer.from('immutable baseline'), baselinePath = path.join(folder, 'reference/beta-1/game.canvas.js'), runtime = path.join(folder, 'game.canvas.js'), report = path.join(folder, 'scripts/runtime-names.json');
+  fs.writeFileSync(baselinePath, baseline); fs.writeFileSync(runtime, playSource);
+  const oldPass = { id: 'previous', inputSHA256: 'preserved' };
+  fs.writeFileSync(report, JSON.stringify({ baselineSHA256: crypto.createHash('sha256').update(baseline).digest('hex'), names: [{ name: 'ExistingVerifiedName' }], passes: [oldPass] }));
+  const run = () => spawnSync(process.execPath, [path.join(__dirname, '../scripts/name-play-states.cjs')], { cwd: folder, encoding: 'utf8' });
+  const first = run(); assert.equal(first.status, 0, first.stderr); assert.deepEqual(fs.readFileSync(baselinePath), baseline);
+  const output = fs.readFileSync(runtime, 'utf8'), manifestText = fs.readFileSync(report, 'utf8'), manifest = JSON.parse(manifestText);
+  assert.deepEqual(manifest.passes[0], oldPass); assert.deepEqual(manifest.names, [{ name: 'ExistingVerifiedName' }]); assert.equal(manifest.passes[1].names.length, 3);
+  assert.notEqual(run().status, 0); assert.equal(fs.readFileSync(runtime, 'utf8'), output); assert.equal(fs.readFileSync(report, 'utf8'), manifestText);
+  fs.writeFileSync(baselinePath, 'damaged'); const damaged = run(); assert.notEqual(damaged.status, 0); assert.match(damaged.stderr, /Immutable Beta 1 baseline changed/);
+  assert.equal(fs.readFileSync(runtime, 'utf8'), output); assert.equal(fs.readFileSync(report, 'utf8'), manifestText);
+});

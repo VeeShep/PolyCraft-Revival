@@ -71036,7 +71036,7 @@
   Vb.createFromName = function (a, b, c, d) {
     return Vb.prototype.playStateCreationMap[a].create(b, c, d);
   };
-  var ci = Vb.extend({
+  var PlayStateBattle = Vb.extend({
     playStateName: "PlayStateBattle",
     playStateCreationMap: [],
     playFlagName: "playFlagsWar",
@@ -71102,11 +71102,11 @@
       b.sendGameMetric("campaignEnded_" + a, [c.wasVictory ? 1 : 0, c.grade, d[H.LUMBER], d[H.STONE]]);
     }
   });
-  ci.create = function (a, b, c) {
-    return new ci(a, b, c);
+  PlayStateBattle.create = function (a, b, c) {
+    return new PlayStateBattle(a, b, c);
   };
-  Vb.prototype.playStateCreationMap[ci.prototype.playStateName] = ci;
-  var di = Vb.extend({
+  Vb.prototype.playStateCreationMap[PlayStateBattle.prototype.playStateName] = PlayStateBattle;
+  var PlayStateNormal = Vb.extend({
     playStateName: "PlayStateNormal",
     playStateCreationMap: [],
     playFlagName: "playFlagsNormal",
@@ -71133,11 +71133,11 @@
       this._super();
     }
   });
-  di.create = function (a, b, c) {
-    return new di(a, b, c);
+  PlayStateNormal.create = function (a, b, c) {
+    return new PlayStateNormal(a, b, c);
   };
-  Vb.prototype.playStateCreationMap[di.prototype.playStateName] = di;
-  var ei = Vb.extend({
+  Vb.prototype.playStateCreationMap[PlayStateNormal.prototype.playStateName] = PlayStateNormal;
+  var PlayStatePrepareForBattle = Vb.extend({
     playStateName: "PlayStatePrepareForBattle",
     playStateCreationMap: [],
     playFlagName: "playFlagsPrepareForWar",
@@ -71174,10 +71174,10 @@
     },
     draw2D: function () {}
   });
-  ei.create = function (a, b, c) {
-    return new ei(a, b, c);
+  PlayStatePrepareForBattle.create = function (a, b, c) {
+    return new PlayStatePrepareForBattle(a, b, c);
   };
-  Vb.prototype.playStateCreationMap[ei.prototype.playStateName] = ei;
+  Vb.prototype.playStateCreationMap[PlayStatePrepareForBattle.prototype.playStateName] = PlayStatePrepareForBattle;
   GamestateBuildingInfoPanel.prototype = {
     name: "GamestateBuildingInfoPanel",
     enterState: function () {

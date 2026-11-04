@@ -672,6 +672,42 @@
       "outputSHA256": "f7dd9194c3c72434034f8a0e7013f82b3f98fd4a444a305d1b1d36f792c247ee",
       "inputCanonicalSHA256": "fd1ace447d63ab380bccf98e9449dc04c75801d5783b2f0503cec5a22890e716",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "play-state-literal-names",
+      "names": [
+        {
+          "original": "ci",
+          "name": "PlayStateBattle",
+          "role": "PlayStateBattle",
+          "descriptive": false,
+          "evidence": "literal playStateName and matching prototype factory registration",
+          "offset": 2569143,
+          "references": 4
+        },
+        {
+          "original": "di",
+          "name": "PlayStateNormal",
+          "role": "PlayStateNormal",
+          "descriptive": false,
+          "evidence": "literal playStateName and matching prototype factory registration",
+          "offset": 2573115,
+          "references": 4
+        },
+        {
+          "original": "ei",
+          "name": "PlayStatePrepareForBattle",
+          "role": "PlayStatePrepareForBattle",
+          "descriptive": false,
+          "evidence": "literal playStateName and matching prototype factory registration",
+          "offset": 2574241,
+          "references": 4
+        }
+      ],
+      "inputSHA256": "20583073c4683e22452dc3f00bf11672734fd60eb84989b5773c342e671bba75",
+      "outputSHA256": "7ed89c484b385f407bf436b0380e02538c5f9a427c17257502aa01a0b0eeeac4",
+      "inputCanonicalSHA256": "fd4ff03865e2df01b8808d6d7bf74fb979bb4b32cdaeb2089f7a64246eb68cc7",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }
