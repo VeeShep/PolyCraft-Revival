@@ -98,6 +98,15 @@ function visualEffectMethods(names) {
   const archetypes = Object.fromEntries(definitions.map(a => [a.left.property.name, evaluate(a.right, colours)]));
   return { create: Factory.create, factory: Factory, archetypes, tweens, allNames: allDefinitions.map(a => a.left.property.name) };
 }
+function guiManagerMethods(tweens) {
+  const definition = one(assignments.filter(a => a.left.property?.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'addGameMessage')), 'GUI manager prototype').right;
+  const fade = one(definition.properties.filter(p => key(p) === 'fadeInTween'), 'GUI fade').value;
+  return evaluate(definition, { [drawingDependency(fade, 'Easing')]: tweens });
+}
+function battleNoticeArchetype(name) {
+  const definition = one(assignments.filter(a => a.left.property?.name === name && a.right.type === 'ObjectExpression'), name).right;
+  return evaluate(definition, { [drawingDependency(definition, 'menuButtonFont')]: { menuButtonFont: 24 }, [drawingDependency(definition, 'strings')]: objectWith('healthFull') });
+}
 function soundManagerMethods() {
   const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'updateListener')), 'sound manager prototype');
   const owner = definition.left.object.name, archetypes = {};
@@ -138,4 +147,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

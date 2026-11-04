@@ -144,3 +144,64 @@ test('Controls retains pre-host native decals and reattachment restores the prev
   native.factory.create(f.globals, native.archetypes.vfx_exp_decal, [4, 5, 6]); assert.equal(controls.effectHistory.sequence, 1); assert.equal(f.solo.length, 2);
   controls.effectHistory.close(); assert.equal(native.factory.create, factory);
 });
+
+test('original GUI battle notice starts native screen effects only in the guest queue and preserves app-time lifetimes', () => {
+  const f = fixture(), ast = require('./runtime-ast.cjs'), api = visualEffectMethods(['vfx_gui_wavestarted']), scheduler = api.tweens, drawTweens = [];
+  scheduler.add = f.api.tweens.add; scheduler.remove = f.api.tweens.remove; scheduler.getAll = f.api.tweens.getAll;
+  scheduler.adddraw = tween => drawTweens.push(tween); scheduler.removedraw = tween => { const index = drawTweens.indexOf(tween); if (index >= 0) drawTweens.splice(index, 1); }; scheduler.globals = f.globals;
+  f.globals.camera.screenToWorld = (x, y, depth) => [x, y, depth];
+  const guest = new GuestEffects(api, f.scene, f.globals), sounds = [];
+  const definition = ast.battleNoticeArchetype('newsflashBattleStarted');
+  const sfx = ast.assignedObject('sfx_gui_wavestarted');
+  f.globals.guiRenderer = { getGuiInfo: () => definition, getScaleFactor: () => 1 };
+  f.globals.gameManager = { getEffectFactory: () => ({ play(name, position, entity, direction, screen) {
+    assert.equal(name, definition.beginSFX.name);
+    for (const name of sfx.visualEffectArchetypeList) api.factory.create(f.globals, api.archetypes[name], position, direction, entity, [...screen]);
+    sounds.push(sfx.soundEffectArchetype);
+  } }) };
+  const manager = Object.assign(Object.create(ast.guiManagerMethods(scheduler)), { globals: f.globals, prevDrawGuiMap: {}, drawGuiMap: {} });
+  guest.current = 42; guest.active.add(42);
+  guest.present(() => manager.drawGui('newsflashBattleStarted', { v2ScreenLocation: [0, 100] }, 'guest-wave'));
+  assert.equal(guest.queue.length, 1); assert.equal(f.solo.length, 0); assert.equal(guest.owners.get(guest.queue[0]), null); assert.equal(guest.current, 42);
+  assert.deepEqual(sounds, ['aud_res_full']); assert.equal(drawTweens.length, 0); assert.equal(guest.drawQueue.length, 1, 'original GUI fade stays guest-owned');
+  guest.receive(emptyEffects(), 100); assert.equal(guest.queue.length, 1, 'clearing world decals must not remove local interface effects');
+  f.globals.appCurrentTime = 202; guest.update(100); assert.ok(f.sprites.length > 0); assert.deepEqual(f.sprites[0].v3Location, [0, 140, 1]); assert.ok(Number.isFinite(f.sprites[0].size));
+  f.globals.appCurrentTime = 205; guest.update(100); assert.equal(guest.queue.length, 0, 'screen effects expire on app time even with no new simulation tick');
+  assert.equal(f.globals.gameCurrentTime, 100); assert.equal(f.solo.length, 0); guest.close();
+});
+test('guest interface effect context restores scheduler and ownership after exceptions and drops pending effects on close', () => {
+  const f = fixture(), guest = new GuestEffects(f.api, f.scene, f.globals), before = { add: f.api.tweens.add, remove: f.api.tweens.remove, getAll: f.api.tweens.getAll }, failure = new Error('GUI failure');
+  guest.current = 7;
+  assert.throws(() => guest.present(() => { f.api.create(f.globals, f.api.archetypes.vfx_hit_e_generic1, [1, 2, 3]); f.globals.gameCurrentTime = -1; throw failure; }), error => error === failure);
+  assert.equal(guest.current, 7); assert.equal(f.globals.gameCurrentTime, 100); assert.equal(f.solo.length, 0); assert.equal(guest.queue.length, 1);
+  for (const key of Object.keys(before)) assert.equal(f.api.tweens[key], before[key]);
+  guest.close(); assert.equal(guest.queue.length, 0); assert.equal(guest.owners.size, 0);
+});
+
+test('native notice fade-out is session-owned, progresses without a world tick and cannot render after disconnect', () => {
+  const f = fixture(), ast = require('./runtime-ast.cjs'), guest = new GuestEffects(f.api, f.scene, f.globals), soloDraw = [], rendered = [];
+  const scheduler = f.api.tweens;
+  scheduler.adddraw = tween => soloDraw.push(tween); scheduler.removedraw = tween => { const index = soloDraw.indexOf(tween); if (index >= 0) soloDraw.splice(index, 1); };
+  f.globals.gameManager = { getEffectFactory: () => ({}) };
+  const soloTween = { update: () => assert.fail('Suspended solo interface cannot advance') }; soloDraw.push(soloTween);
+  f.globals.guiRenderer = { begin() {}, end() {}, flush() {}, getGuiInfo: () => ({}), render: (name, args) => rendered.push({ name, scale: args.scale }) };
+  const manager = Object.assign(Object.create(ast.guiManagerMethods(scheduler)), { globals: f.globals, drawList: [], prevDrawGuiMap: {}, drawGuiMap: {}, getLayer: () => 1 });
+  const frame = visible => {
+    manager.clearDrawList(); if (visible) manager.addDrawGui('newsflashBattleStarted', { v2ScreenLocation: [0, 100] }, 'guest-wave');
+    guest.draw(100); guest.present(() => manager.completeDraw());
+  };
+  frame(true); assert.equal(guest.drawQueue.length, 1); assert.deepEqual(soloDraw, [soloTween]);
+  f.globals.appCurrentTime += 1; frame(true); assert.equal(manager.prevDrawGuiMap['guest-wave'].scale, 1);
+  frame(false); assert.equal(guest.drawQueue.length, 1, 'Native fade-out remains guest-owned');
+  f.globals.appCurrentTime += 0.01; rendered.length = 0; guest.draw(100); assert.equal(rendered.length, 1); assert.ok(rendered[0].scale > 0 && rendered[0].scale < 1);
+  guest.close(); rendered.length = 0; f.globals.appCurrentTime += 10; guest.draw(100); guest.update(100);
+  assert.equal(rendered.length, 0); assert.equal(guest.drawQueue.length, 0); assert.deepEqual(soloDraw, [soloTween]); assert.equal(f.solo.length, 0);
+});
+test('main and draw interface effects share the existing total capacity limit', () => {
+  const f = fixture(), guest = new GuestEffects(f.api, f.scene, f.globals);
+  guest.queue = Array(LIMITS.tweens - 1).fill({});
+  guest.present(() => f.api.tweens.adddraw({})); assert.equal(guest.drawQueue.length, 1);
+  assert.throws(() => guest.present(() => f.api.tweens.adddraw({})), /Too many guest visual effects/);
+  assert.throws(() => guest.present(() => f.api.tweens.add({})), /Too many guest visual effects/);
+  guest.close(); assert.equal(guest.queue.length + guest.drawQueue.length, 0);
+});

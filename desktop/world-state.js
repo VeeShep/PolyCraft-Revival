@@ -2,8 +2,16 @@
 (function (root) {
   const { emptyAudio, validateAudio, LIMITS: AUDIO_LIMITS } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
   const { emptyEffects, validateEffects, LIMITS: EFFECT_LIMITS } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
-  const VERSION = 14;
+  const VERSION = 15;
   const MUSIC = new Set(['aud_music_theme', 'aud_music_day', 'aud_music_night', 'aud_music_battle', 'aud_music_battle_boss']);
+  const BATTLE_NOTICES = Object.freeze({ idPlayStateBattleStarted: 'newsflashBattleStarted', idPlayStateBattleEnded: 'newsflashBattleEnded', idPlayStateBattleBegun: 'newsflashBattleCountdown' });
+  function captureBattleNotices(game) {
+    const messages = game.getGuiManager?.().gameMessages || {};
+    return Object.entries(BATTLE_NOTICES).flatMap(([id, style]) => {
+      const message = messages[id], remaining = message?.endTime - game.globals.appCurrentTime;
+      return message?.guiArchetype === style && remaining > 0 ? [{ id, text1: message.text1, text2: message.text2, remaining: Math.min(id === 'idPlayStateBattleBegun' ? 0.1 : 3, remaining) }] : [];
+    });
+  }
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
   const entityFields = ['archetype', 'interactive', 'location', 'scale', 'rotation', 'mesh', 'health'];
   const meshFields = ['path', 'transform', 'visible', 'skin'];
@@ -19,6 +27,12 @@
     requireValue(Number.isSafeInteger(value.tick) && value.tick >= 0 && number(value.time) && value.time >= 0, 'invalid simulation time.');
     requireValue(number(value.dayTime) && value.dayTime >= 0 && value.dayTime <= 24 && name(value.hero), 'invalid island clock or hero.');
     requireValue(value.music === null || MUSIC.has(value.music), 'invalid island music.');
+    requireValue(Array.isArray(value.notices) && value.notices.length <= 3, 'invalid battle notices.');
+    const notices = new Set();
+    for (const notice of value.notices) {
+      requireValue(keys(notice, ['id', 'text1', 'text2', 'remaining']) && typeof notice.id === 'string' && Object.hasOwn(BATTLE_NOTICES, notice.id) && !notices.has(notice.id) && [notice.text1, notice.text2].every(text => typeof text === 'string' && text.length <= 256) && number(notice.remaining) && notice.remaining > 0 && notice.remaining <= (notice.id === 'idPlayStateBattleBegun' ? 0.1 : 3), 'invalid battle notice.');
+      notices.add(notice.id);
+    }
     validateAudio(value.audio, value.time);
     validateEffects(value.effects, value.time);
     requireValue(value.torch === null || (keys(value.torch, ['transform', 'visible']) && vector(value.torch.transform, 12) && typeof value.torch.visible === 'boolean'), 'invalid hero light.');
@@ -59,7 +73,7 @@
     }
   }
   function validateSnapshot(snapshot, assets) {
-    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'music', 'audio', 'effects', 'torch', 'camera', 'combat', 'spaces']), 'missing or unexpected fields.');
+    requireValue(keys(snapshot, ['version', 'tick', 'time', 'dayTime', 'hero', 'music', 'notices', 'audio', 'effects', 'torch', 'camera', 'combat', 'spaces']), 'missing or unexpected fields.');
     requireValue(snapshot.version === VERSION, 'incompatible version.');
     validateHeader(snapshot);
     requireValue(Array.isArray(snapshot.spaces) && snapshot.spaces.length > 0 && snapshot.spaces.length <= LIMITS.spaces, 'invalid space count.');
@@ -91,6 +105,7 @@
       dayTime: game.getGameDayTime(),
       hero: hero.name,
       music: game.musicString || null,
+      notices: captureBattleNotices(game),
       audio: game.desktopAudio?.capture() || emptyAudio(),
       effects: game.desktopEffects?.capture() || emptyEffects(),
       torch: torch ? { transform: Array.from(torch.transform), visible: torch.visible } : null,
@@ -168,10 +183,10 @@
       }
       return patch.remove.length || patch.entities.length || Object.keys(patch).length > 3 ? [patch] : [];
     });
-    return structuredClone({ version: 2, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, audio: journalChanges(previous.audio, next.audio), audioKeep: next.audio.events.map(event => event.id), effects: journalChanges(previous.effects, next.effects), effectsKeep: next.effects.events.map(event => event.id), torch: next.torch, camera: next.camera, combat: next.combat, spaces });
+    return structuredClone({ version: 2, baseTick: previous.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, notices: next.notices, audio: journalChanges(previous.audio, next.audio), audioKeep: next.audio.events.map(event => event.id), effects: journalChanges(previous.effects, next.effects), effectsKeep: next.effects.events.map(event => event.id), torch: next.torch, camera: next.camera, combat: next.combat, spaces });
   }
   function validateDelta(delta, assets) {
-    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'music', 'audio', 'audioKeep', 'effects', 'effectsKeep', 'torch', 'camera', 'combat', 'spaces']) && delta.version === 2, 'invalid world update.');
+    requireValue(keys(delta, ['version', 'baseTick', 'tick', 'time', 'dayTime', 'hero', 'music', 'notices', 'audio', 'audioKeep', 'effects', 'effectsKeep', 'torch', 'camera', 'combat', 'spaces']) && delta.version === 2, 'invalid world update.');
     validateHeader(delta);
     validateRetention(delta.audio, delta.audioKeep, AUDIO_LIMITS.events);
     validateRetention(delta.effects, delta.effectsKeep, EFFECT_LIMITS.events);
@@ -200,7 +215,7 @@
     requireValue(previous, 'a world snapshot is required before updates.');
     if (delta.baseTick !== previous.tick) throw lostBase();
     const result = structuredClone(previous);
-    for (const key of ['tick', 'time', 'dayTime', 'hero', 'music', 'torch', 'camera', 'combat']) result[key] = structuredClone(delta[key]);
+    for (const key of ['tick', 'time', 'dayTime', 'hero', 'music', 'notices', 'torch', 'camera', 'combat']) result[key] = structuredClone(delta[key]);
     result.audio = restoreJournal(previous.audio, delta.audio, delta.audioKeep);
     result.effects = restoreJournal(previous.effects, delta.effects, delta.effectsKeep);
     for (const patch of delta.spaces) {
@@ -223,7 +238,7 @@
     }
     return validateSnapshot(result, assets);
   }
-  const api = { VERSION, LIMITS, captureSnapshot, validateSnapshot, createDelta, validateDelta, applyDelta };
+  const api = { VERSION, BATTLE_NOTICES, LIMITS, captureSnapshot, validateSnapshot, createDelta, validateDelta, applyDelta };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftWorldState = api;
 })(globalThis);

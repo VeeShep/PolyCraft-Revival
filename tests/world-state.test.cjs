@@ -53,7 +53,7 @@ test('health view parsing rejects missing or unbounded metadata and arbitrary GU
   for (const extra of [{ bar: {} }, { bar: { row: 0, scale: -1, level: 1 } }, { bar: { row: 1001, scale: 1, level: 1 } }, { bar: { row: 0, scale: 1, level: 65 } }, { bar: { row: 0, scale: 1, level: 1.5 } }, { bar: { row: 0, scale: Infinity, level: 1 } }, { damage: { changedAt: NaN, onlyOffscreen: true } }, { damage: { changedAt: 0, onlyOffscreen: 1 } }, { damage: { changedAt: 0, onlyOffscreen: true, icon: 'arbitrary' } }, { bar: undefined }]) {
     const next = structuredClone(base); Object.assign(next.spaces[0].entities[0].health, extra);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
+    const delta = { version: 2, notices: [], audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: base.camera, spaces: [{ index: 0, remove: [], entities: [{ id: base.hero, health: next.spaces[0].entities[0].health }] }] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
   }
 });
@@ -71,7 +71,7 @@ test('camera context rejects unknown modes/actors, sparse or duplicate interests
   for (const extra of [{ mode: 'editor' }, { dead: 1 }, { buildingAge: -1 }, { timeHeld: Infinity }, { heroes: [] }, { heroes: ['missing'] }, { heroes: ['hero', 'hero'] }, { enemies: Array(1) }, { center: [0, NaN, 0] }, { destination: [0, 0, 0] }, { lookAhead: [0, 0, 0] }, { save: true }]) {
     const next = structuredClone(base); Object.assign(next.camera, extra); const before = JSON.stringify(base);
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 2, notices: [], audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: base.tick + 1, time: base.time, dayTime: base.dayTime, hero: base.hero, music: base.music, audio: base.audio, effects: base.effects, combat: base.combat, torch: base.torch, camera: next.camera, spaces: [] };
     assert.throws(() => applyDelta(base, delta), /Invalid world snapshot/); assert.equal(JSON.stringify(base), before);
   }
 });
@@ -214,7 +214,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 14); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 15); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');
@@ -251,7 +251,7 @@ test('full and delta parsers reject missing, sparse, nonfinite or authority-bear
   for (const value of [undefined, [1, 2], Array(3), [1, NaN, 3], [1, 2, Infinity], { location: [1, 2, 3], speed: 99 }]) {
     const next = structuredClone(base); next.tick++; next.camera.pathDestination = value;
     assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
-    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 2, notices: [], audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music: next.music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/); assert.equal(base.camera.pathDestination, null);
   }
 });
@@ -268,7 +268,7 @@ test('music metadata rejects arbitrary paths, objects and missing values in comp
   for (const music of [undefined, '', 'sounds/arbitrary.ogg', 'aud_music_unknown', {}, ['aud_music_day']]) {
     const next = structuredClone(base); next.tick++; next.music = music;
     assert.throws(() => validateSnapshot(next), /music/);
-    const delta = { version: 2, audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
+    const delta = { version: 2, notices: [], audioKeep: [], effectsKeep: [], baseTick: base.tick, tick: next.tick, time: next.time, dayTime: next.dayTime, hero: next.hero, music, audio: next.audio, effects: next.effects, combat: next.combat, torch: next.torch, camera: next.camera, spaces: [] };
     assert.throws(() => applyDelta(base, delta), /music/); assert.equal(base.music, null);
   }
 });
@@ -284,7 +284,7 @@ test('world audio is captured coherently and carried through full/delta validati
   assert.deepEqual(applyDelta(before, delta), next); delta.audio.events[0].name = 'aud_music_day';
   assert.throws(() => validateDelta(delta), /Invalid world audio/);
   const missing = structuredClone(next); delete missing.audio; assert.throws(() => validateSnapshot(missing), /Invalid world snapshot/);
-  const old = structuredClone(next); old.version = 13; assert.throws(() => validateSnapshot(old), /incompatible version/);
+  const old = structuredClone(next); old.version = 14; assert.throws(() => validateSnapshot(old), /incompatible version/);
 });
 
 test('original visual effects are owned at capture and full/delta headers reject arbitrary effect authority', () => {
@@ -374,4 +374,37 @@ test('journal deltas preserve complete loop and persistent decal state independe
   const delta = createDelta(base, next), restored = applyDelta(base, delta);
   assert.deepEqual(restored, next); assert.deepEqual(delta.audio.loops, next.audio.loops); assert.deepEqual(delta.effects.active, next.effects.active);
   delta.effects.active[0].location[0] = 99; assert.equal(restored.effects.active[0].location[0], 1);
+});
+
+function nativeBattleFixture() {
+  const f = fixture(), ast = require('./runtime-ast.cjs'), gui = { globals: { appCurrentTime: 20 }, gameMessages: {}, addGameMessage: ast.method('addGameMessage') };
+  f.game.globals.appCurrentTime = 20; f.game.getGuiManager = () => gui;
+  const war = { getActiveCampaignRegionName: () => 'N', getNumberOfBattlesInCampaign: () => 4, getCurrentBattleIndex: () => 1 };
+  const state = { gameManager: f.game, globals: { currentLanguage: { CAMPAIGN_BATTLE_BEGIN_NEWFLASH: 'Wave started!', CAMPAIGN_BATTLE_END_NEWFLASH: 'Wave ended!', CAMPAIGN_BATTLE_COUNT_NEWSFLASH: 'Wave', CAMPAIGN_COUNTDOWN_NEWSFLASH_TITLE: 'Ready' } }, ecWarManager: war, BATTLE_NEWSFLASH_DURATION: 3 };
+  return { ...f, gui, state, ast };
+}
+test('actual original battle notices cross full/delta snapshots with remaining app-clock lifetime and owned text', () => {
+  const f = nativeBattleFixture(), before = captureSnapshot(f.game);
+  for (const name of ['displayBattleStartNewsFlash', 'displayBattleEndNewsFlash']) f.ast.method(name).call(f.state);
+  f.ast.method('displayBattleCountdown').call(f.state, 2);
+  f.gui.addGameMessage('solo-task', 'Private quest', '', 3, 'newsflashBattleStarted');
+  const source = JSON.stringify(f.gui.gameMessages); f.game.gameClock.getFrameIndex = () => 18;
+  const next = captureSnapshot(f.game), delta = createDelta(before, next);
+  assert.deepEqual(next.notices.map(notice => notice.text1), ['Wave started!', 'Wave ended!', 'READY']);
+  assert.deepEqual(next.notices.map(notice => notice.text2), ['Wave 2/4', 'Wave 2/4', '2 s']);
+  assert.equal(next.notices.length, 3); assert.deepEqual(applyDelta(before, JSON.parse(JSON.stringify(delta))), next);
+  f.game.globals.appCurrentTime = 20.5; const later = captureSnapshot(f.game);
+  assert.equal(later.notices.length, 2); assert.equal(later.notices[0].remaining, 2.5);
+  f.gui.gameMessages.idPlayStateBattleStarted.text1 = 'Changed'; assert.equal(next.notices[0].text1, 'Wave started!');
+  f.gui.gameMessages.idPlayStateBattleStarted.text1 = 'Wave started!'; assert.equal(JSON.stringify(f.gui.gameMessages), source);
+  f.game.globals.appCurrentTime = 24; assert.deepEqual(captureSnapshot(f.game).notices, []);
+});
+test('battle notices reject arbitrary artwork, text/clock authority, duplicate or sparse rows in full and delta parsers', () => {
+  const base = captureSnapshot(fixture().game), good = { id: 'idPlayStateBattleStarted', text1: 'Wave started!', text2: 'Wave 1/4', remaining: 3 };
+  for (const notices of [undefined, {}, Array(1), [good, good], [null], [{ ...good, id: ['idPlayStateBattleStarted'] }], [{ ...good, id: {} }], [{ ...good, id: '__proto__' }], [{ ...good, id: 'solo-task' }], [{ ...good, text1: 'a'.repeat(257) }], [{ ...good, text2: {} }], [{ ...good, remaining: 0 }], [{ ...good, remaining: NaN }], [{ ...good, remaining: 3.1 }], [{ ...good, id: 'idPlayStateBattleBegun', remaining: 0.2 }], [{ ...good, guiArchetype: 'anything' }]]) {
+    const next = { ...base, tick: base.tick + 1, notices };
+    assert.throws(() => validateSnapshot(next), /battle notice/);
+    const delta = createDelta(base, { ...next, notices: [] }); delta.notices = notices;
+    assert.throws(() => applyDelta(base, delta), /battle notice/); assert.deepEqual(base.notices, []);
+  }
 });

@@ -25,7 +25,7 @@ const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
   const entity = id => ({ id, archetype: null, interactive: true, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
-  return { version: 14, effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
+  return { version: 15, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -210,7 +210,21 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const requests = [];
   const connection = { role: 'guest', pvp: false, state: 'connected', send: async (kind, payload) => requests.push({ kind, payload }),
     onMessage() { forwarded++; }, close() { this.closed = true; this.onState?.('closed', {}); } };
+  const soloGui = { drawList: [{ id: 'solo' }], drawGuiMap: { solo: {} }, prevDrawGuiMap: { previous: {} } };
+  Object.assign(game.guiManager, soloGui);
+  const scheduler = {}; controls.effectMethods = { tweens: scheduler };
+  game.updateInterfaceTweens = () => assert.fail('Guest must not advance the suspended solo interface scheduler');
+  game.imgui.draw2D = () => {}; globals.simpleFontRenderer.render = () => {};
+  game.getGuiManager = () => game.guiManager;
+  game.guiManager.completeDraw = () => scheduler.adddraw({ update: () => true });
   const world = new GuestWorld(controls, connection);
+  assert.notEqual(game.guiManager.drawList, soloGui.drawList); assert.notEqual(game.guiManager.prevDrawGuiMap, soloGui.prevDrawGuiMap);
+  game.draw2D(); assert.equal(world.visuals.drawQueue.length, 1);
+  const complete = game.guiManager.completeDraw, renderingFailure = new Error('Interface failed'); let reported;
+  connection.fail = error => { reported = error; };
+  game.guiManager.completeDraw = () => { throw renderingFailure; }; game.draw2D();
+  assert.equal(reported, renderingFailure); game.guiManager.completeDraw = complete;
+
   assert.equal(controls.ready(), false); assert.equal(roots.includes(originalRoot), false); assert.equal(controls.effectHistory.suspended, true);
   assert.notEqual(world.sessionSettings.settings, preferences.settings);
   world.sessionSettings.settings.music = false; world.sessionSettings.saveSettings();
@@ -320,6 +334,8 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   connection.onMessage({ kind: 'result', payload: { type: 'enterFullscreen', sequence: 14, message: 'Recorded.' } }); assert.equal(world.uiRequests.size, 0); assert.equal(world.lastTargetResult, cameraFeedback); assert.equal(world.lastLifeQuery, 0);
   assert.equal(game.imgui.controller, world.guiInput);
   connection.onState('closed', {});
+  for (const key of Object.keys(soloGui)) assert.equal(game.guiManager[key], soloGui[key]);
+  assert.equal(world.visuals.drawQueue.length, 0);
   assert.equal(shadows && sounds && music, true, 'original local presentation preferences restored');
   assert.deepEqual(roots, [originalRoot]); assert.equal(originalRoot.destroyed, false);
   assert.equal(app.updateGame, update); assert.equal(game.draw, draw); assert.equal(game.saveLevel, save);
@@ -696,4 +712,20 @@ test('native WebAudio sources resume at the parked offset after a long co-op ses
   source.pause(); source.audioContext.currentTime = 100; source.resume();
   assert.deepEqual(calls, ['stop', 'disconnect', 'remove', [0, 6, 94], 'add']);
   assert.equal(source.playStart, 94); assert.equal(source.paused, false);
+});
+
+test('guest battle notices use original styles and stacking, expire locally and never update solo messages', t => {
+  let now = 1000; t.mock.method(performance, 'now', () => now);
+  const world = Object.create(GuestWorld.prototype), drawn = [];
+  const notices = [{ id: 'idPlayStateBattleStarted', text1: 'Wave started!', text2: 'Wave 1/4', remaining: 3 }, { id: 'idPlayStateBattleBegun', text1: 'READY', text2: '2 s', remaining: 0.1 }];
+  world.scene = { snapshot: { notices }, receivedAt: 1000 };
+  world.controls = { app: { globals: { guiRenderer: { getv2RenderLocation: (x, y, anchor) => { assert.equal(anchor, 'top'); return [x, y]; } } } } };
+  world.game = { getGuiManager: () => ({ addDrawGui: (...args) => drawn.push(args), addGameMessage: () => assert.fail('Guest must not change solo message ownership') }) };
+  const before = JSON.stringify(notices); world.drawBattleNotices();
+  assert.deepEqual(drawn.map(row => [row[0], row[1].v2ScreenLocation, row[2]]), [['newsflashBattleStarted', [0, 100], 'guest-idPlayStateBattleStarted'], ['newsflashBattleCountdown', [0, 300], 'guest-idPlayStateBattleBegun']]);
+  assert.equal(drawn[0][1].text1, 'Wave started!'); assert.equal(drawn[1][1].text2, '2 s'); assert.equal(drawn[0][1].layer, 1);
+  now = 1200; drawn.length = 0; world.drawBattleNotices(); assert.equal(drawn.length, 1);
+  world.resyncing = true; drawn.length = 0; world.drawBattleNotices(); assert.equal(drawn.length, 0);
+  world.resyncing = false; now = 4000; world.drawBattleNotices(); assert.equal(drawn.length, 0);
+  assert.equal(JSON.stringify(notices), before);
 });

@@ -1,7 +1,7 @@
 'use strict';
 (function (root) {
   const { GuestTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
-  const { validateSnapshot, validateDelta, applyDelta } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
+  const { validateSnapshot, validateDelta, applyDelta, BATTLE_NOTICES } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   const { GuestConstruction } = typeof module !== 'undefined' ? require('./guest-construction.js') : root.PolycraftGuestConstruction;
@@ -247,6 +247,8 @@
         onMessage: connection.onMessage, onState: connection.onState,
         roots: globals.scene.rootNodes.filter(node => node !== game.gameLighting.worldDirectionLightNode && node !== game.gameLighting.heroLightNode)
       };
+      this.original.gui = Object.fromEntries(['drawList', 'drawGuiMap', 'prevDrawGuiMap'].map(key => [key, game.guiManager[key]]));
+      game.guiManager.drawList = []; game.guiManager.drawGuiMap = {}; game.guiManager.prevDrawGuiMap = {};
       const profile = game.getPlayerData();
       this.original.audio = { manager: game.gameSoundManager, music: game.musicString, listener: game.gameSoundManager.listenerv3WorldLocation && Array.from(game.gameSoundManager.listenerv3WorldLocation), matrix: game.gameSoundManager.listenerMatrix && Array.from(game.gameSoundManager.listenerMatrix) };
       this.lastAudioFrame = performance.now();
@@ -264,7 +266,10 @@
       this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this); this.hud = new GuestHud(this); this.quests = new GuestQuests(this);
       game.imgui.controller = this.guiInput;
       game.draw = () => {};
-      game.draw2D = () => { game.imgui.draw2D(); game.updateInterfaceTweens(); game.getGuiManager().completeDraw(); globals.simpleFontRenderer.render(); };
+      game.draw2D = () => {
+        try { game.imgui.draw2D(); this.visuals.draw(globals.gameCurrentTime); this.visuals.present(() => game.getGuiManager().completeDraw()); globals.simpleFontRenderer.render(); }
+        catch (error) { connection.fail(error); }
+      };
       game.saveLevel = () => { throw new Error('The host saves this online island.'); };
       game.getGameController().clearInputs();
       connection.onMessage = (message, link) => {
@@ -649,6 +654,15 @@
       this.controls.drawTargetCross.call({ gameManager: this.game, isWithinDamageRange: () => combat.inDamageRange,
         targetEntity: { getName: () => combat.target, getv3Location: () => target.displayLocation || target.record.location } });
     }
+    drawBattleNotices() {
+      if (this.resyncing || !this.scene.snapshot?.notices.length) return;
+      const globals = this.controls.app.globals, elapsed = Math.max(0, (performance.now() - this.scene.receivedAt) / 1000);
+      const point = globals.guiRenderer.getv2RenderLocation(0, 100, 'top'), gui = this.game.getGuiManager();
+      for (const notice of this.scene.snapshot.notices) if (elapsed < notice.remaining) {
+        gui.addDrawGui(BATTLE_NOTICES[notice.id], { text1: notice.text1, text2: notice.text2, v2ScreenLocation: [...point], layer: 1 }, 'guest-' + notice.id);
+        point[1] += 200;
+      }
+    }
     updateTorch() {
       const lighting = this.game.gameLighting, node = lighting.heroLightNode, state = this.scene.torch;
       if (!node) return;
@@ -676,7 +690,7 @@
       this.hasFrame = true;
       this.drawHealth();
       this.drawCombatTarget();
-      this.hud.draw();
+      this.hud.draw(); this.drawBattleNotices();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       if (!this.pauseMenu) this.updateMenu();
       this.drawMovementCursor(); this.updateAudio();
@@ -699,6 +713,7 @@
       this.connection.onMessage = original.onMessage; this.connection.onState = original.onState;
       this.connection.close(); this.scene.close();
       for (const node of original.roots) app.globals.scene.addRootNode(node);
+      Object.assign(game.guiManager, original.gui);
       app.updateGame = original.update; game.draw = original.draw; game.draw2D = original.draw2D; game.saveLevel = original.save;
       app.globals.gameCurrentTime = original.time; game.gameDayTime = original.dayTime; game.applyDayNightTime(true);
       game.getGameCamera = original.getCamera;

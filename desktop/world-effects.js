@@ -120,16 +120,23 @@
     }
   }
   class GuestEffects {
-    constructor(api, scene, globals) { this.api = api; this.scene = scene; this.globals = globals; this.queue = []; this.owners = new Map(); this.active = new Set(); this.sequence = null; }
+    constructor(api, scene, globals) { this.api = api; this.scene = scene; this.globals = globals; this.queue = []; this.drawQueue = []; this.owners = new Map(); this.active = new Set(); this.sequence = null; }
     context(time, action) {
       if (!this.api?.tweens) throw new Error('Original visual effect support is unavailable.');
-      const scheduler = this.api.tweens, original = { add: scheduler.add, remove: scheduler.remove, getAll: scheduler.getAll }, clock = this.globals.gameCurrentTime;
-      scheduler.add = tween => { if (this.queue.length >= LIMITS.tweens) throw new Error('Too many guest visual effects.'); this.queue.push(tween); this.owners.set(tween, this.current); };
+      const scheduler = this.api.tweens, original = { add: scheduler.add, remove: scheduler.remove, getAll: scheduler.getAll, adddraw: scheduler.adddraw, removedraw: scheduler.removedraw }, clock = this.globals.gameCurrentTime;
+      scheduler.add = tween => { if (this.queue.length + this.drawQueue.length >= LIMITS.tweens) throw new Error('Too many guest visual effects.'); this.queue.push(tween); this.owners.set(tween, this.current); };
       scheduler.remove = tween => { const index = this.queue.indexOf(tween); if (index >= 0) this.queue.splice(index, 1); this.owners.delete(tween); };
+      scheduler.adddraw = tween => { if (this.queue.length + this.drawQueue.length >= LIMITS.tweens) throw new Error('Too many guest visual effects.'); this.drawQueue.push(tween); };
+      scheduler.removedraw = tween => { const index = this.drawQueue.indexOf(tween); if (index >= 0) this.drawQueue.splice(index, 1); };
       scheduler.getAll = () => this.queue;
       this.globals.gameCurrentTime = time;
       try { return action(); }
       finally { Object.assign(scheduler, original); this.globals.gameCurrentTime = clock; }
+    }
+    present(action) {
+      const previous = this.current; this.current = null;
+      try { return this.context(this.globals.gameCurrentTime, action); }
+      finally { this.current = previous; }
     }
     receive(state, time) {
       if (this.closed) throw new Error('Guest visual effects have closed.');
@@ -152,13 +159,15 @@
       this.active = desired;
       this.sequence = state.sequence;
     }
-    update(time) {
-      if (this.closed || !this.queue.length) return;
+    update(time) { this.advance(this.queue, time, 'remove'); }
+    draw(time) { this.advance(this.drawQueue, time, 'removedraw'); }
+    advance(queue, time, remove) {
+      if (this.closed || !queue.length) return;
       this.context(time, () => {
-        for (const tween of [...this.queue]) { this.current = this.owners.get(tween); if (this.queue.includes(tween) && !tween.update(time * 1000, this.globals.appCurrentTime * 1000)) this.api.tweens.remove(tween); }
+        for (const tween of [...queue]) { this.current = this.owners.get(tween); if (queue.includes(tween) && !tween.update(time * 1000, this.globals.appCurrentTime * 1000)) this.api.tweens[remove](tween); }
       });
     }
-    close() { this.closed = true; this.queue.length = 0; this.owners.clear(); this.active.clear(); }
+    close() { this.closed = true; this.queue.length = 0; this.drawQueue.length = 0; this.owners.clear(); this.active.clear(); }
   }
   const api = { NAMES, PERSISTENT, DURATIONS, LIMITS, emptyEffects, validateEffects, HostEffects, GuestEffects };
   if (typeof module !== 'undefined') module.exports = api;

@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current journal delta compression — Beta 47, 2026-11-04
+## Current original battle notices and interface isolation — Beta 48, 2026-11-04
+
+Guests receive only the three original battle-start/end/countdown notices, with bounded text and remaining native app-clock lifetime in full snapshots and delta headers. Native styles and message IDs are selected locally from a fixed map; private solo/task messages and arbitrary GUI styles never cross the wire. Local expiry prevents frozen notices during a stalled stream; resync suppresses them until a full world repair.
+
+Original GUI start effects and both native animation queues are session-owned. Guest draw frames advance only their own draw tweens, leaving the suspended solo interface scheduler untouched. Native GUI draw lists/maps are swapped for guest-owned structures and exact originals restored on disconnect. A focused review caught a separate native draw-tween queue: capturing only main tweens would leave fade-out callbacks rendering over solo after disconnect. Both queues now share the existing total limit and are dropped without completion callbacks on close; follow-up review found no additional concrete issues.
+
+Tests use original battle notification methods, original GUI completeDraw/fadeIn/fadeOut and screen-effect factory/tweens, plus the actual GuestWorld draw/disconnect boundary. Full-suite/package results are recorded in RESTORATION_STATUS.md. Matching Beta 48 game peers use coop-35/world 15/delta 2; room/save/quest/co-op remain 3/7/1/4. This implements battle notices and local interface ownership, not complete campaign preparation/results screens. Visual/audio/native and physical-network acceptance remain open.
+
+## Previous journal delta compression — Beta 47, 2026-11-04
 
 World updates send new or changed audio/visual journal records plus sorted bounded retention IDs, reconstructing the exact complete journals on the guest. Retention removes expired/capped/reset entries without resending old payloads. Complete current loops, fades and active decals remain in every update; full snapshots keep complete journals. A missing retained record raises the existing base-mismatch resync path before world mutation or playback. IDs detect missing records, not arbitrary cached-content corruption; periodic full snapshots still repair stale content.
 
