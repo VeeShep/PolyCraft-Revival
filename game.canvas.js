@@ -71789,7 +71789,16 @@
       a.getGuiManager().addDrawGui("bgPattern", {
         v2ScreenLocation: c.getv2RenderLocation(0, 0)
       }, "idBackgroundPatternImage");
-      if (b = wa.doCampaignStartBookend(a, this.globals, this.warManager, this.campaignRegionName)) "confirm" === b ? (this.warManager.getEC("ECWarManager").beginCampaign(this.campaignRegionName), b = GamestatePlaying.create(a, this.globals), b.setPlayState("PlayStatePrepareForBattle"), a.setGameState(b), this.sendBeginCampaignMetric()) : (b = GamestatePlaying.create(a, this.globals), b.setPlayState("PlayStateNormal"), a.setGameState(b));
+      if (b = wa.doCampaignStartBookend(a, this.globals, this.warManager, this.campaignRegionName)) "confirm" === b ? this.confirmCampaign() : (b = GamestatePlaying.create(a, this.globals), b.setPlayState("PlayStateNormal"), a.setGameState(b));
+    },
+    confirmCampaign: function (afterTransition) {
+      var game = this.gameManager;
+      this.warManager.getEC("ECWarManager").beginCampaign(this.campaignRegionName);
+      var playing = GamestatePlaying.create(game, this.globals);
+      playing.setPlayState("PlayStatePrepareForBattle");
+      game.setGameState(playing);
+      if (afterTransition) afterTransition();
+      this.sendBeginCampaignMetric();
     },
     sendBeginCampaignMetric: function () {
       var a = this.globals.metricsManager,
@@ -145045,7 +145054,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L });
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L }, { archetypes: ca, enabled: function () { return Sb.campaignsEnabled; }, create: GamestatePrepareForCampaign.create });
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };

@@ -17,12 +17,12 @@
     };
   }
   class Controls {
-    attach(app, xpTable, guiTypes, infoPanels, upgradeMethods, playerDataMethods, healthMethods, drawProgressBar, drawPauseSettings, drawTargetCross, movementMethods, effectMethods) {
+    attach(app, xpTable, guiTypes, infoPanels, upgradeMethods, playerDataMethods, healthMethods, drawProgressBar, drawPauseSettings, drawTargetCross, movementMethods, effectMethods, campaignMethods) {
       this.effectHistory?.close();
       this.app = app;
       this.xpTable = xpTable;
       this.guiTypes = guiTypes;
-      this.infoPanels = infoPanels; this.upgradeMethods = upgradeMethods;
+      this.infoPanels = infoPanels; this.campaignMethods = campaignMethods; this.upgradeMethods = upgradeMethods;
       this.playerDataMethods = playerDataMethods;
       this.healthMethods = healthMethods; this.drawProgressBar = drawProgressBar; this.drawPauseSettings = drawPauseSettings; this.drawTargetCross = drawTargetCross; this.movementMethods = movementMethods; this.effectMethods = effectMethods;
       this.effectHistory = effectMethods?.factory ? new HostEffects(() => this.app?.globals?.gameManager, effectMethods) : null;

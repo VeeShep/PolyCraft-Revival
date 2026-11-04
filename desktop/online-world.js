@@ -138,7 +138,7 @@
       if (message.kind === 'resync') { this.requestResync(connection, message.payload); return; }
       if (message.kind === 'action') {
         const directional = message.payload.type === 'move' && Object.hasOwn(message.payload, 'move');
-        if (!directional && ['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(message.payload.type)) binding.actions.receive(message.payload);
+        if (!directional && ['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(message.payload.type)) binding.actions.receive(message.payload);
         else binding.input.receive(message.payload);
         return;
       }

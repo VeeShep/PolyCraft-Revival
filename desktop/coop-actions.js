@@ -2,6 +2,7 @@
 (function (root) {
   const { totemMenu, upgradeTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
   const { captureHud } = typeof module !== 'undefined' ? require('./hud.js') : root.PolycraftHud;
+  const { campaignContext } = typeof module !== 'undefined' ? require('./campaign.js') : root.PolycraftCampaign;
   function lifeStatus(life) {
     const phase = life.respawnTime !== undefined ? 'waiting' : life.state === life.states.DYING ? 'dying' : 'normal';
     const remaining = phase === 'waiting' ? Math.max(0, life.getTimeToRespawn()) : phase === 'dying' ? Math.max(0, life.getDeathAnimationDuration() - (life.globals.gameCurrentTime - life.deathTime)) : 0;
@@ -13,9 +14,10 @@
     receive(value) {
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
       const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
-      const quest = ['questOpen', 'questReward'].includes(value?.type);
+      const quest = ['questOpen', 'questReward'].includes(value?.type), campaign = ['campaignStart', 'campaignClose'].includes(value?.type);
       const held = value?.archetype !== undefined, targeted = value?.type === 'target';
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest || campaign ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (campaign && (typeof value.campaign !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.campaign))) throw new Error('Invalid campaign request.');
       if (quest && (typeof value.quest !== 'string' || !/^taskId(?:crit|fill)_\d{1,4}$/.test(value.quest))) throw new Error('Invalid quest request.');
       if ((buildingUpgrade || cancelUpgrade) && (typeof value.next !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.next))) throw new Error('Invalid building upgrade.');
       if (cancelUpgrade && (!Number.isSafeInteger(value.episode) || value.episode < 1)) throw new Error('Invalid upgrade episode.');
@@ -53,7 +55,7 @@
           !target.getEC('ECTarget')?.isValidTarget(hero) || !target.getEC('ECHealth') || target.getEC('ECHealth').getHealth() <= 0 || !players.canDamage(target, hero)) { this.endFacing(hero); return; }
       this.facingMethods?.updateTargetedRanged.call({ getHeroEntity: () => hero, getTargetEntity: () => target });
     }
-    stop(hero) { this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; hero.getEC('ECAutoFire')?.disable(); }
+    stop(hero) { this.campaignOffer = null; this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; hero.getEC('ECAutoFire')?.disable(); }
     updateCombat(game, hero, players) {
       const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
       if (!target) return;
@@ -143,6 +145,23 @@
       if (type === 'move') return game.desktopConstruction?.move(hero, target) || 'Construction is not ready.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
       if (type === 'upgrade') return upgradeTotem(game, hero, players, target, action, controls);
+      if (type === 'campaignStart' || type === 'campaignClose') {
+        const offer = this.campaignOffer;
+        this.campaignOffer = null;
+        if (!offer || offer.entity !== target || offer.source !== id || offer.campaign !== action.campaign) return 'That campaign preview changed. Select the banner again.';
+        if (type === 'campaignClose') { game.eventManager.notify('CampaignPrepareScreenExited'); return { message: 'Campaign preview closed.', save: true }; }
+        const current = campaignContext(game, target, controls);
+        if (!current || current.view.campaign !== offer.campaign || current.view.region !== offer.region) return 'That campaign changed or another player already started it.';
+        const panel = controls.campaignMethods.create(game, game.globals);
+        panel.warManager = current.owner; panel.setCampaignRegionName(current.view.region);
+        panel.confirmCampaign(() => game.eventManager.notify('CampaignPrepareScreenExited'));
+        return { message: 'Campaign started and saved.', save: true };
+      }
+      if (type === 'target' && !rangedTarget && target.getEC('ECCampaignStarter')) {
+        const current = campaignContext(game, target, controls);
+        this.campaignOffer = current ? { source: id, region: current.view.region, campaign: current.view.campaign, entity: target } : null;
+        return current ? { message: 'Choose whether to begin this campaign.', campaign: current.view } : 'This campaign is not available right now.';
+      }
       const totem = type === 'target' && !rangedTarget ? totemMenu(hero, target, controls) : null;
       if (totem) return { message: 'Choose a hero upgrade. Escape cancels.', totem };
       const construction = type === 'target' && !rangedTarget ? game.desktopConstruction?.menu(hero, target, controls) : null;

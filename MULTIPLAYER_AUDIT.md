@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current original battle notices and interface isolation — Beta 48, 2026-11-04
+## Current guest campaign previews and authoritative start — Beta 49, 2026-11-04
+
+Enabled campaign banners open the original preparation panel locally for guests. Native campaign definitions, text, flags, maximum rewards and enemy artwork remain local; the host supplies a strictly bounded campaign/enemy view. Guest preview never emits CampaignStarterInteract, enters the host menu or pauses the world. Original preparation audio is local, and panel buttons have guest IDs. Cancel/blur closes locally; resync/disconnect cannot emit further menu actions.
+
+A host offer binds to the actual live banner object, source name, region and campaign. Confirmation consumes one offer and rechecks feature flag, active interactable/banner, normal play/global screen, live outpost, authoritative host war owner and region map, campaign identity, actor state and no existing active campaign. No new level/payment requirement is added. Two guests cannot reset shared scoring twice. Banner replacement with identical name/campaign failed a regression before exact-object binding was added. Native confirmation is extracted into one shared method used by solo and host validation; transition, CampaignStarted/exit events and original metrics retain their order. Acknowledgement uses the existing fresh-checkpoint path.
+
+405 checks pass, including nine campaign checks, actual GuestWorld result/disconnect integration and host action-stream routing. Native tests derive all 82 original campaign definitions and the real preparation factory/panel methods through structural AST roles. Focused read-only review found no blocker; exact-object replacement protection was strengthened during main review. Runtime coop-36/world 15/delta 2 requires matching Beta 49 game peers; room/save/quest/co-op remain 3/7/1/4. Campaign results/between-wave screens, visible/audio and physical-network acceptance remain open. Exact package/build evidence is in RESTORATION_STATUS.md.
+
+## Previous original battle notices and interface isolation — Beta 48, 2026-11-04
 
 Guests receive only the three original battle-start/end/countdown notices, with bounded text and remaining native app-clock lifetime in full snapshots and delta headers. Native styles and message IDs are selected locally from a fixed map; private solo/task messages and arbitrary GUI styles never cross the wire. Local expiry prevents frozen notices during a stalled stream; resync suppresses them until a full world repair.
 

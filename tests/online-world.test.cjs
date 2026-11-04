@@ -359,6 +359,10 @@ test('the host dispatcher keeps walking, directional cancellation and constructi
     assert.throws(() => send({ type: 'move', sequence: 4, move: [0, 0], target: 'forged hero' }), /Invalid/);
     assert.equal(input.sequence, 3); assert.equal(actions.sequence, 1);
     assert.throws(() => transport.onMessage({ kind: 'action', payload: { type: 'move', sequence: 4, move: [0, 0] } }, { ...connection }), /no assigned/);
+    send({ type: 'campaignStart', sequence: 2, target: 'banner', campaign: 'campaign_tutorial_01' });
+    send({ type: 'campaignClose', sequence: 3, target: 'banner', campaign: 'campaign_tutorial_01' });
+    assert.deepEqual(actions.queue.slice(1).map(action => action.type), ['campaignStart', 'campaignClose']); assert.equal(input.sequence, 3);
+
   } finally { world.peerPlayers.clear(); transport.peers.clear(); delete world.players; await world.close(); }
 });
 

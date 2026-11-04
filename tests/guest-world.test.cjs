@@ -333,6 +333,15 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   controls.fullscreenChanged(true); assert.equal(requests.at(-1).payload.type, 'enterFullscreen'); assert.equal(world.uiRequests.get('enterFullscreen'), 14);
   connection.onMessage({ kind: 'result', payload: { type: 'enterFullscreen', sequence: 14, message: 'Recorded.' } }); assert.equal(world.uiRequests.size, 0); assert.equal(world.lastTargetResult, cameraFeedback); assert.equal(world.lastLifeQuery, 0);
   assert.equal(game.imgui.controller, world.guiInput);
+  controls.campaignMethods = { archetypes: { campaign_tutorial_01: {} } };
+  game.getEntityFactory = () => ({ getArchetypeList: () => ['a_melee'] });
+  let preparationCues = 0; game.gameSoundManager.playInternal = () => { preparationCues++; };
+  world.targetSequence = world.selectionRequest = 15;
+  const campaign = { source: 'banner', region: 'N', campaign: 'campaign_tutorial_01', battles: 1, enemies: [{ archetype: 'a_melee', count: 4 }] };
+  connection.onMessage({ kind: 'result', payload: { type: 'target', sequence: 15, message: 'Campaign preview.', campaign } });
+  assert.deepEqual(world.campaign.menu, campaign); assert.equal(world.localMenu(), true); assert.equal(preparationCues, 1);
+  assert.throws(() => connection.onMessage({ kind: 'result', payload: { type: 'campaignStart', sequence: 15, message: 'Forged.', campaign } }), /Invalid campaign result/);
+  assert.deepEqual(world.campaign.menu, campaign);
   connection.onState('closed', {});
   for (const key of Object.keys(soloGui)) assert.equal(game.guiManager[key], soloGui[key]);
   assert.equal(world.visuals.drawQueue.length, 0);

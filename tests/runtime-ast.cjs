@@ -81,7 +81,7 @@ function visualEffectMethods(names) {
   const allDefinitions = assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.property?.name === 'archetypes' && a.left.object.object?.name === owner && a.right.type === 'ObjectExpression');
   const definitions = allDefinitions.filter(a => names.includes(a.left.property.name));
   const adapters = [];
-  traverse(ast, { CallExpression(p) { if (p.node.callee.property?.name === 'attach' && p.node.callee.object.property?.name === 'PolycraftControls') adapters.push(p.node.arguments.at(-1)); } });
+  traverse(ast, { CallExpression(p) { if (p.node.callee.property?.name === 'attach' && p.node.callee.object.property?.name === 'PolycraftControls') adapters.push(p.node.arguments.find(argument => argument.type === 'ObjectExpression' && argument.properties.some(property => key(property) === 'tweens'))); } });
   const adapter = one(adapters, 'desktop effect adapter');
   for (const [name, binding, member] of [['create', owner, 'create'], ['factory', owner], ['archetypes', owner, 'archetypes'], ['tweens', namespace]]) {
     const value = one(adapter.properties.filter(p => key(p) === name), 'effect adapter ' + name).value;
@@ -97,6 +97,26 @@ function visualEffectMethods(names) {
   } });
   const archetypes = Object.fromEntries(definitions.map(a => [a.left.property.name, evaluate(a.right, colours)]));
   return { create: Factory.create, factory: Factory, archetypes, tweens, allNames: allDefinitions.map(a => a.left.property.name) };
+}
+let campaignSource;
+function campaignRuntime(playing, features, panels) {
+  if (!campaignSource) {
+    const calls = []; traverse(ast, { CallExpression(p) { if (p.node.callee.object?.property?.name === 'PolycraftControls' && p.node.callee.property?.name === 'attach') calls.push(p.node); } });
+    const adapter = one(calls, 'desktop adapters').arguments.find(argument => argument.type === 'ObjectExpression' && argument.properties.some(property => key(property) === 'enabled'));
+    const get = name => one(adapter.properties.filter(property => key(property) === name), name).value;
+    const archetypes = {}, balance = objectWith('campaign_tutorial_01'), namespace = get('archetypes').name;
+    for (const assignment of assignments) if (assignment.left.object?.name === namespace && assignment.right.type === 'ObjectExpression') archetypes[assignment.left.property.name] = evaluate(assignment.right, { WarBalance: balance });
+    const definition = one(assignments.filter(assignment => assignment.left.property?.name === 'prototype' && assignment.right.type === 'ObjectExpression' && assignment.right.properties.some(property => key(property) === 'confirmCampaign')), 'campaign preparation').right;
+    const confirm = definition.properties.find(property => key(property) === 'confirmCampaign').value, update = definition.properties.find(property => key(property) === 'update').value;
+    const start = one(properties.filter(property => key(property) === 'doCampaignStartBookend'), 'campaign bookend').value;
+    const flag = one(properties.filter(property => key(property) === 'flagGuiArchetype' && property.start > start.start && property.end < start.end), 'campaign flag lookup').value.object;
+    let flagDefinition; traverse(ast, { ReferencedIdentifier(p) { if (p.node.start === flag.start) flagDefinition = p.scope.getBinding(p.node.name).path.node.init; } });
+    campaignSource = { archetypes, namespace, definition, start, flag, flagValues: evaluate(flagDefinition), create: get('create'), enabled: get('enabled'), playing: drawingDependency(confirm, 'create'), panels: drawingDependency(update, 'doCampaignStartBookend'), panelHelpers: drawingDependency(start, 'doInfoPanel'), features: drawingDependency(get('enabled'), 'campaignsEnabled') };
+  }
+  const source = campaignSource;
+  function Prepare() {}
+  Prepare.prototype = evaluate(source.definition, { [source.playing]: playing, [source.panels]: panels });
+  return { archetypes: source.archetypes, create: staticMethod(source.create.object.name, 'create', { [source.create.object.name]: Prepare }), enabled: evaluate(source.enabled, { [source.features]: features }), startPanel: evaluate(source.start, { [source.namespace]: source.archetypes, [source.flag.name]: source.flagValues, [source.panelHelpers]: panels }) };
 }
 function guiManagerMethods(tweens) {
   const definition = one(assignments.filter(a => a.left.property?.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'addGameMessage')), 'GUI manager prototype').right;
@@ -147,4 +167,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

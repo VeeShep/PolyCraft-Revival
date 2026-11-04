@@ -139,7 +139,7 @@
     update() {
       const world = this.world, now = performance.now(), elapsed = Math.min(0.25, Math.max(0, (now - this.lastFrame) / 1000)); this.lastFrame = now;
       if (!this.state?.visible || world.controls.paused || !world.movement.nativeFocused || world.resyncing) { this.cancel(); return false; }
-      if (world.pauseMenu || world.selectedBuilding || world.demolition || world.construction?.menu || world.totem?.menu) return false;
+      if (world.pauseMenu || world.selectedBuilding || world.demolition || world.construction?.menu || world.totem?.menu || world.campaign?.menu) return false;
       if (!this.renderer) this.createRenderer();
       this.renderer.globals.gameTimeStep = elapsed;
       const choice = this.renderer.doTaskUI({ descriptionTaskRenderInfo: this.description, completedTaskRenderInfo: this.state.completed ? this.items.get(this.state.completed.id) : null, taskRenderInfoList: this.state.tasks.map(row => this.items.get(row.id)), badgeTaskRenderInfoList: [] });
