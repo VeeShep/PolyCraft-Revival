@@ -93,7 +93,10 @@
         tx.phase = 'checking';
         this.perform(tx, async () => {
           await tx.link.acceptRestartAnswer(data.value); if (!this.active(tx)) return;
-          await tx.link.confirmRestart(); if (!this.active(tx)) return; tx.checked = true; this.completeIfReady(tx);
+          await tx.link.confirmRestart(); if (!this.active(tx)) return;
+          // Fresh host traffic lets controlled ICE retire its old receiving pair before confirming.
+          room.session.world.requestResync(tx.link, { version: 1, tick: 0 });
+          tx.checked = true; this.completeIfReady(tx);
         });
       } else if (room.role === 'host' && data.type === 'connected' && tx.phase === 'checking' && !tx.remoteChecked) {
         tx.remoteChecked = true; this.completeIfReady(tx);
@@ -108,7 +111,6 @@
         await this.send(tx, 'complete'); if (!this.active(tx)) return;
         tx.link.finishRestart(); tx.state.expires = tx.credentials.expires; tx.state.failures = 0;
         clearTimeout(tx.timer); tx.credentials = null; tx.state.tx = null;
-        this.room.session.world.requestResync(tx.link, { version: 1, tick: 0 });
         this.schedule(tx.state); this.room.session.notify('Relay credentials renewed.');
       });
     }

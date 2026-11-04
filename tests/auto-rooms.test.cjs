@@ -172,6 +172,22 @@ test('an existing direct ICE path never requests fresh relay credentials', async
   await f.host.renewals.start(state); await new Promise(resolve => setTimeout(resolve, 15));
   assert.equal(guest.lastRelayIssue, issued); assert.equal(guest.renewal, undefined); assert.equal(state.tx, undefined); assert.equal(f.order.includes('renew-offer'), false);
 });
+test('host sends a coherent resync before waiting for an idle guest to confirm its fresh ICE pair', async t => {
+  const f = await fixture(t, { works: 'turn', relayService: true, forward: false });
+  await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
+  const { state } = renewalWindow(f);
+  f.guest.session.connection.confirmRestart = async () => {
+    await until(() => f.order.includes('renew-resync'));
+    f.order.push('renew-checked-guest');
+  };
+  await f.host.renewals.start(state);
+  await until(() => f.order.includes('renew-finished-guest'));
+  assert.ok(f.order.indexOf('renew-checked-host') < f.order.indexOf('renew-resync'));
+  assert.ok(f.order.indexOf('renew-resync') < f.order.indexOf('renew-checked-guest'));
+  assert.ok(f.order.indexOf('renew-checked-guest') < f.order.indexOf('renew-finished-host'));
+  assert.equal(f.order.filter(value => value === 'renew-resync').length, 1);
+  assert.equal(f.order.filter(value => value === 'admit').length, 1);
+});
 test('failed renewal preserves live peers and prior expiry, clears both transactions and never exposes native SDP errors', async t => {
   const f = await fixture(t, { works: 'turn', relayService: true, forward: false }); await f.host.approve(f.entry.id, 'saved-hero'); await f.entry.running;
   const { guest, state } = renewalWindow(f), expires = guest.relayExpires;

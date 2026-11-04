@@ -96,54 +96,60 @@ app.on('window-all-closed', () => app.quit());`);
               check((await local.diagnostics()).path === (relay ? 'relayed' : 'direct'), 'Unexpected selected connection path.');
               await local.send('update', { tick: 1 }); await remote.send('action', { id: 1 });
               await wait(() => guest.messages.length === 1 && hostMessages.filter(row => row.peer === guest.peer).length === 1);
-              const abort = new AbortController();
-              stage = 'creating a restart offer';
-              const offer = await local.restartOffer(fresh, abort.signal);
-              await local.send('update', { tick: 2 });
-              stage = 'creating a restart answer';
-              const answer = await remote.restartAnswer(offer, fresh, abort.signal);
-              const candidateSummary = sdp => {
-                const fragment = sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
-                const candidates = sdp.split(/\r?\n/).filter(line => line.startsWith('a=candidate:'));
-                return { count: candidates.length, explicitFragment: candidates.filter(line => line.includes(' ufrag ')).length, matchingGeneration: candidates.filter(line => line.split(' ufrag ')[1]?.split(' ')[0] === fragment).length };
-              };
-              signaledCandidates = { offer: candidateSummary(offer), answer: candidateSummary(answer) };
-              stage = 'applying the restart answer';
-              await local.acceptRestartAnswer(answer);
-              stage = 'confirming the selected new generation';
-              try { await Promise.all([local.confirmRestart(), remote.confirmRestart()]); }
-              catch {
-                generationFailure = await Promise.all([local, remote].map(async link => {
-                  const selected = await pairInfo(link);
-                  const fragment = description => description.sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
-                  const nativePair = link.pc.sctp?.transport?.iceTransport?.getSelectedCandidatePair();
-                  const baseline = link === local ? previous : guestPrevious;
-                  const signaled = (description, candidate) => description.sdp.split(/\r?\n/).filter(line => line.startsWith('a=candidate:')).some(line => {
-                    const value = new RTCIceCandidate({ candidate: line.slice(2), sdpMid: '0' });
-                    return value.address === candidate?.address && value.port === candidate?.port && value.protocol === candidate?.protocol;
-                  });
-                  return { role: link.role, connected: link.pc.connectionState === 'connected', iceConnected: ['connected', 'completed'].includes(link.pc.iceConnectionState), channelOpen: link.channel?.readyState === 'open',
-                    confirmed: !!link.iceRenewal?.confirmed, localObservable: typeof selected.local?.usernameFragment === 'string', remoteObservable: typeof selected.remote?.usernameFragment === 'string',
-                    localMatches: selected.local?.usernameFragment === fragment(link.pc.localDescription), remoteMatches: selected.remote?.usernameFragment === fragment(link.pc.remoteDescription),
-                    nativeLocalMatches: nativePair?.local.usernameFragment === fragment(link.pc.localDescription), nativeRemoteMatches: nativePair?.remote.usernameFragment === fragment(link.pc.remoteDescription),
-                    localPortChanged: selected.local?.port !== baseline.local?.port, remotePortChanged: selected.remote?.port !== baseline.remote?.port,
-                    localSignaled: signaled(link.pc.localDescription, selected.local), remoteSignaled: signaled(link.pc.remoteDescription, selected.remote),
-                    transportFragmentMatches: selected.transport?.iceLocalUsernameFragment === fragment(link.pc.localDescription) };
-                }));
-                check(false, 'Selected new ICE generation was not confirmed.');
+              if (relay) {
+                const abort = new AbortController();
+                stage = 'creating a restart offer';
+                const offer = await local.restartOffer(fresh, abort.signal);
+                await local.send('update', { tick: 2 });
+                stage = 'creating a restart answer';
+                const answer = await remote.restartAnswer(offer, fresh, abort.signal);
+                const candidateSummary = sdp => {
+                  const fragment = sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
+                  const candidates = sdp.split(/\r?\n/).filter(line => line.startsWith('a=candidate:'));
+                  return { count: candidates.length, explicitFragment: candidates.filter(line => line.includes(' ufrag ')).length, matchingGeneration: candidates.filter(line => line.split(' ufrag ')[1]?.split(' ')[0] === fragment).length };
+                };
+                signaledCandidates = { offer: candidateSummary(offer), answer: candidateSummary(answer) };
+                stage = 'applying the restart answer';
+                await local.acceptRestartAnswer(answer);
+                stage = 'confirming the selected new generation';
+                try { await Promise.all([local.confirmRestart().then(() => local.send('snapshot', { tick: 3 })), remote.confirmRestart()]); }
+                catch {
+                  generationFailure = await Promise.all([local, remote].map(async link => {
+                    const selected = await pairInfo(link);
+                    const fragment = description => description.sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
+                    const nativePair = link.pc.sctp?.transport?.iceTransport?.getSelectedCandidatePair();
+                    const baseline = link === local ? previous : guestPrevious;
+                    const signaled = (description, candidate) => description.sdp.split(/\r?\n/).filter(line => line.startsWith('a=candidate:')).some(line => {
+                      const value = new RTCIceCandidate({ candidate: line.slice(2), sdpMid: '0' });
+                      return value.address === candidate?.address && value.port === candidate?.port && value.protocol === candidate?.protocol;
+                    });
+                    return { role: link.role, connected: link.pc.connectionState === 'connected', iceConnected: ['connected', 'completed'].includes(link.pc.iceConnectionState), channelOpen: link.channel?.readyState === 'open',
+                      confirmed: !!link.iceRenewal?.confirmed, localObservable: typeof selected.local?.usernameFragment === 'string', remoteObservable: typeof selected.remote?.usernameFragment === 'string',
+                      localMatches: selected.local?.usernameFragment === fragment(link.pc.localDescription), remoteMatches: selected.remote?.usernameFragment === fragment(link.pc.remoteDescription),
+                      nativeLocalMatches: nativePair?.local.usernameFragment === fragment(link.pc.localDescription), nativeRemoteMatches: nativePair?.remote.usernameFragment === fragment(link.pc.remoteDescription),
+                      localPortChanged: selected.local?.port !== baseline.local?.port, remotePortChanged: selected.remote?.port !== baseline.remote?.port,
+                      localSignaled: signaled(link.pc.localDescription, selected.local), remoteSignaled: signaled(link.pc.remoteDescription, selected.remote),
+                      transportFragmentMatches: selected.transport?.iceLocalUsernameFragment === fragment(link.pc.localDescription) };
+                  }));
+                  check(false, 'Selected new ICE generation was not confirmed.');
+                }
+                local.finishRestart(); remote.finishRestart();
+                const selected = await pairInfo(local);
+                check(selected.local?.usernameFragment !== previous.local?.usernameFragment && selected.remote?.usernameFragment !== previous.remote?.usernameFragment, 'Selected ICE generation did not change.');
+                const guestSelected = await pairInfo(remote);
+                check(selected.local?.port !== previous.local?.port && guestSelected.local?.port !== guestPrevious.local?.port, 'Fresh TURN allocations did not replace both old relay ports.');
+              } else {
+                check(!local.iceRenewal && !remote.iceRenewal && local.pc.getConfiguration().iceServers.length === 0 && remote.pc.getConfiguration().iceServers.length === 0, 'Direct peers must not request relay renewal.');
+                await local.send('update', { tick: 2 }); await local.send('snapshot', { tick: 3 });
               }
-              local.finishRestart(); remote.finishRestart();
-              const selected = await pairInfo(local);
-              check(selected.local?.usernameFragment !== previous.local?.usernameFragment && selected.remote?.usernameFragment !== previous.remote?.usernameFragment, 'Selected ICE generation did not change.');
-              if (relay) check(selected.local?.port !== previous.local?.port, 'Fresh TURN allocation did not replace the old relay port.');
               check((await local.diagnostics()).path === (relay ? 'relayed' : 'direct'), 'Connection escaped the required test path.');
               check(local.channel === channels[0] && remote.channel === channels[1] && local.pc === pcs[0] && remote.pc === pcs[1], 'Renewal replaced the admitted transport.');
-              await local.send('update', { tick: 3 }); await remote.send('action', { id: 2 });
-              await wait(() => guest.messages.length === 3 && hostMessages.filter(row => row.peer === guest.peer).length === 2);
-              check(guest.messages.map(row => row.payload.tick).join(',') === '1,2,3', 'Host messages were lost, duplicated or reordered.');
+              await local.send('update', { tick: 4 }); await remote.send('action', { id: 2 });
+              await wait(() => guest.messages.length === 4 && hostMessages.filter(row => row.peer === guest.peer).length === 2);
+              check(guest.messages.map(row => row.payload.tick).join(',') === '1,2,3,4', 'Host messages were lost, duplicated or reordered.');
               check(hostMessages.filter(row => row.peer === guest.peer).map(row => row.message.payload.id).join(',') === '1,2', 'Guest messages were lost, duplicated or reordered.');
-              check(local.sentSequence === 3 && remote.sentSequence === 2 && local.receivedSequence === 2 && remote.receivedSequence === 3, 'Framing counters reset during renewal.');
-              summaries.push({ path: relay ? 'relayed' : 'direct', sameChannel: true, newGeneration: true, freshAllocation: relay, hostFrames: 3, guestFrames: 2 });
+              check(local.sentSequence === 4 && remote.sentSequence === 2 && local.receivedSequence === 2 && remote.receivedSequence === 4, 'Framing counters reset during renewal.');
+              summaries.push({ path: relay ? 'relayed' : 'direct', sameChannel: true, newGeneration: relay, freshAllocation: relay, hostFrames: 4, guestFrames: 2 });
             }
             check(errors.length === 0, 'Native transport reported an error.');
             return { participants: count, links: summaries };
