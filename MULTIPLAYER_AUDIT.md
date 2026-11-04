@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current durable pending host campaign rewards — Beta 54, 2026-11-04
+## Current maintenance and original save-boundary audit — Beta 55, 2026-11-04
+
+The private SceneNode constructor and 71 references now use the original name verified from a pinned Turbulenz reference (unique 57-method inventory and seven exact canonical bodies). Inverse AST proof reproduces committed Beta 54 input. No implementation is replaced, and gameplay/wire/save formats remain unchanged: coop-38/world 15/delta 2/room 3, with envelope 8 for tracked campaign rewards. Beta 51–55 peers remain compatible. 435 full checks and 65 packaged runtime checks pass; evidence and license provenance are in RESTORATION_STATUS.md and RUNTIME_READABILITY.md.
+
+The active-battle audit confirms original saves omit wave/enemy/projectile/loot state and rebuild campaign regions from battle zero, retaining campaign selection/progression and persistent island changes. Counter-only score restoration would be inconsistent. Exact midbattle continuation is saved as a user decision requiring coordinated simulation reconstruction; no battle-reset behavior was changed. Beta 54 completed-reward preservation remains implemented. Saved XP policy, guest result history, visible regression, native platforms and real-network acceptance remain open.
+
+## Previous durable pending host campaign rewards — Beta 54, 2026-11-04
 
 Native completed scoring stages a copied, versioned pending reward synchronously before a save can capture the finished campaign. Each record belongs to solo play or the saved co-op host UUID. The original host result panel reads its exact ledger ID; the original XP/resource grant path consumes it once. Restoring a score panel does not rerun campaign-end events or repeat scoring. Online menus retain their original non-pausing host behavior. Guest scorecards remain presentation only, with no independent payout.
 

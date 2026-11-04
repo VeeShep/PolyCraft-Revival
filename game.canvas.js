@@ -22805,10 +22805,10 @@
   };
   fd.version = 1;
   var Xa,
-    ga = function (a) {
+    SceneNode = function (a) {
       this.name = a.name;
       var b = this.mathDevice;
-      b || (b = TurbulenzEngine.getMathDevice(), ga.prototype.mathDevice = b);
+      b || (b = TurbulenzEngine.getMathDevice(), SceneNode.prototype.mathDevice = b);
       this.dynamic = a.dynamic || !1;
       this.disabled = a.disabled || !1;
       this.dirtyWorld = !1;
@@ -22825,31 +22825,31 @@
       this.parent = void 0;
       this.notifiedParent = !1;
     };
-  ga.makePath = function (a, b) {
+  SceneNode.makePath = function (a, b) {
     return a + "/" + b;
   };
-  ga.prototype.getName = function () {
+  SceneNode.prototype.getName = function () {
     return this.name;
   };
-  ga.prototype.getPath = function () {
-    return this.parent ? ga.makePath(this.parent.getPath(), this.name) : this.name;
+  SceneNode.prototype.getPath = function () {
+    return this.parent ? SceneNode.makePath(this.parent.getPath(), this.name) : this.name;
   };
-  ga.prototype.getParent = function () {
+  SceneNode.prototype.getParent = function () {
     return this.parent;
   };
-  ga.prototype.setParentHelper = function (a) {
+  SceneNode.prototype.setParentHelper = function (a) {
     this.parent = a;
     this.dirtyWorld = this.notifiedParent = !1;
     this._setDirtyWorldTransform();
   };
-  ga.prototype.addChild = function (a) {
+  SceneNode.prototype.addChild = function (a) {
     a.parent ? a.parent.removeChild(a) : a.scene && a.scene.removeRootNode(a);
     this.children || (this.children = [], this.childNeedsUpdateCount = 0);
     this.children.push(a);
     a.setParentHelper(this);
     this.dynamic && !a.dynamic && a.setDynamic();
   };
-  ga.prototype.removeChild = function (a) {
+  SceneNode.prototype.removeChild = function (a) {
     var b = this.children;
     if (b) {
       a.notifiedParent && this.childUpdated();
@@ -22862,12 +22862,12 @@
       }
     }
   };
-  ga.prototype.findChild = function (a) {
+  SceneNode.prototype.findChild = function (a) {
     var b = this.children;
     if (b) for (var c = b.length, d = 0; d < c; d += 1) if (b[d].name === a) return b[d];
   };
-  ga.prototype.clone = function (a) {
-    var a = ga.create({
+  SceneNode.prototype.clone = function (a) {
+    var a = SceneNode.create({
         name: a || this.name,
         local: this.local,
         dynamic: this.dynamic,
@@ -22889,36 +22889,36 @@
     }
     return a;
   };
-  ga.prototype.getRoot = function () {
+  SceneNode.prototype.getRoot = function () {
     for (var a = this; a.parent;) a = a.parent;
     return a;
   };
-  ga.prototype.isInScene = function () {
+  SceneNode.prototype.isInScene = function () {
     return this.getRoot().scene ? !0 : !1;
   };
-  ga.prototype.addedToScene = function (a) {
+  SceneNode.prototype.addedToScene = function (a) {
     this.updateWorldExtents();
     var b = this.worldExtents;
     b && (this.dynamic ? a.dynamicSpatialMap.add(this, b) : (a.staticSpatialMap.add(this, b), a.staticNodesChangeCounter += 1));
     if (b = this.children) for (var c = b.length, d = 0; d < c; d += 1) b[d].addedToScene(a);
   };
-  ga.prototype.removedFromScene = function (a) {
+  SceneNode.prototype.removedFromScene = function (a) {
     void 0 !== this.spatialIndex && (this.dynamic ? a.dynamicSpatialMap.remove(this) : (a.staticSpatialMap.remove(this), a.staticNodesChangeCounter += 1));
     var b = this.children;
     if (b) for (var c = b.length, d = 0; d < c; d += 1) b[d].removedFromScene(a);
   };
-  ga.prototype.setLocalTransform = function (a) {
+  SceneNode.prototype.setLocalTransform = function (a) {
     a !== this.local && (this.local = this.mathDevice.m43Copy(a, this.local));
     this.dirtyWorld || this._setDirtyWorldTransform();
   };
-  ga.prototype.getLocalTransform = function () {
+  SceneNode.prototype.getLocalTransform = function () {
     this.local || (this.local = this.mathDevice.m43BuildIdentity());
     return this.local;
   };
-  ga.prototype._setDirtyWorldTransform = function () {
+  SceneNode.prototype._setDirtyWorldTransform = function () {
     var a = this.parent;
     a ? this.notifiedParent || (this.notifiedParent = !0, a.childNeedsUpdate()) : (a = this.scene) && a.addRootNodeToUpdate(this, this.name);
-    a = ga._tempDirtyNodes;
+    a = SceneNode._tempDirtyNodes;
     a[0] = this;
     var b = 1,
       c,
@@ -22939,11 +22939,11 @@
       }
     } while (0 < b);
   };
-  ga.prototype.getWorldTransform = function () {
+  SceneNode.prototype.getWorldTransform = function () {
     this.dirtyWorld && this.updateWorldTransform();
     return this.world;
   };
-  ga.prototype.updateWorldTransform = function () {
+  SceneNode.prototype.updateWorldTransform = function () {
     if (this.dirtyWorld) {
       this.dirtyWorld = !1;
       this.worldUpdate += 1;
@@ -22953,7 +22953,7 @@
       a ? (a = a.getWorldTransform(), this.world = b ? this.mathDevice.m43Mul(b, a, this.world) : this.mathDevice.m43Copy(a, this.world)) : this.world = this.mathDevice.m43Copy(b, this.world);
     }
   };
-  ga.prototype.setDynamic = function () {
+  SceneNode.prototype.setDynamic = function () {
     if (!this.dynamic) {
       var a = this.getRoot().scene,
         b = this.getWorldExtents();
@@ -22963,7 +22963,7 @@
     }
     if (a = this.children) for (var b = a.length, c = 0; c < b; c += 1) a[c].setDynamic();
   };
-  ga.prototype.setStatic = function () {
+  SceneNode.prototype.setStatic = function () {
     if (this.dynamic) {
       var a = this.getRoot().scene,
         b = this.getWorldExtents();
@@ -22973,38 +22973,38 @@
     }
     if (a = this.children) for (var b = a.length, c = 0; c < b; c += 1) a[c].setStatic();
   };
-  ga.prototype.setDisabled = function (a) {
+  SceneNode.prototype.setDisabled = function (a) {
     this.disabled = a ? !0 : !1;
   };
-  ga.prototype.getDisabled = function () {
+  SceneNode.prototype.getDisabled = function () {
     return this.disabled;
   };
-  ga.prototype.enableHierarchy = function (a) {
+  SceneNode.prototype.enableHierarchy = function (a) {
     this.setDisabled(!a);
     var b = this.children;
     if (b) for (var c = b.length, d = 0; d < c; d += 1) b[d].enableHierarchy(a);
   };
-  ga.prototype.childUpdated = function () {
+  SceneNode.prototype.childUpdated = function () {
     this.childNeedsUpdateCount -= 1;
     0 === this.childNeedsUpdateCount && !1 === this.dirtyWorld && !1 === this.dirtyWorldExtents && this.parent && (this.parent.childUpdated(), this.notifiedParent = !1);
   };
-  ga.prototype.childNeedsUpdate = function () {
+  SceneNode.prototype.childNeedsUpdate = function () {
     this.updateRequired();
     this.childNeedsUpdateCount += 1;
   };
-  ga.prototype.updateRequired = function () {
+  SceneNode.prototype.updateRequired = function () {
     var a = this.parent;
     a ? this.notifiedParent || (this.notifiedParent = !0, a.childNeedsUpdate()) : (a = this.scene) && a.addRootNodeToUpdate(this, this.name);
   };
-  ga.prototype.checkUpdateRequired = function () {
+  SceneNode.prototype.checkUpdateRequired = function () {
     this.notifiedParent && !this.dirtyWorldExtents && !this.dirtyWorld && !this.childNeedsUpdateCount && (this.parent.childUpdated(), this.notifiedParent = !1);
   };
-  ga.prototype.update = function (a) {
-    var b = ga._tempDirtyNodes;
+  SceneNode.prototype.update = function (a) {
+    var b = SceneNode._tempDirtyNodes;
     b[0] = this;
-    ga.updateNodes(this.mathDevice, a || this.scene, b, 1);
+    SceneNode.updateNodes(this.mathDevice, a || this.scene, b, 1);
   };
-  ga.updateNodes = function (a, b, c, d) {
+  SceneNode.updateNodes = function (a, b, c, d) {
     var f, g;
     do {
       d -= 1;
@@ -23024,11 +23024,11 @@
       f.notifiedParent = !1;
     } while (0 < d);
   };
-  ga.prototype._updateSpatialMap = function (a) {
+  SceneNode.prototype._updateSpatialMap = function (a) {
     var b = this.worldExtents;
     b ? this.dynamic ? a.dynamicSpatialMap.update(this, b) : (a.staticSpatialMap.update(this, b), a.staticNodesChangeCounter += 1) : void 0 !== this.spatialIndex && (this.dynamic ? a.dynamicSpatialMap.remove(this) : (a.staticSpatialMap.remove(this), a.staticNodesChangeCounter += 1));
   };
-  ga.prototype.updateLocalExtents = function () {
+  SceneNode.prototype.updateLocalExtents = function () {
     var a, b, c;
     a = !1;
     if (this.customLocalExtents) this.localExtents = this.customLocalExtents, a = !0;else {
@@ -23058,11 +23058,11 @@
     a ? (a = this.localExtents, b = this.localExtentsCenter || new this.arrayConstructor(3), b[0] = 0.5 * (a[3] + a[0]), b[1] = 0.5 * (a[4] + a[1]), b[2] = 0.5 * (a[5] + a[2]), this.localExtentsCenter = b, c = this.localHalfExtents || new this.arrayConstructor(3), c[0] = a[3] - b[0], c[1] = a[4] - b[1], c[2] = a[5] - b[2], this.localHalfExtents = c) : (delete this.localExtents, delete this.localExtentsCenter, delete this.localHalfExtents);
     this.dirtyLocalExtents = !1;
   };
-  ga.prototype.getLocalExtents = function () {
+  SceneNode.prototype.getLocalExtents = function () {
     this.dirtyLocalExtents && this.updateLocalExtents();
     return this.localExtents;
   };
-  ga.prototype.updateWorldExtents = function () {
+  SceneNode.prototype.updateWorldExtents = function () {
     this.dirtyWorld && this.updateWorldTransform();
     if (this.dirtyWorldExtents) {
       this.customWorldExtents ? this.worldExtents = this.customWorldExtents : (this.dirtyLocalExtents && this.updateLocalExtents(), this.numCustomRenderableWorldExtents ? this.updateCustomRenderableWorldExtents() : this.localExtents ? this.recalculateWorldExtents() : delete this.worldExtents);
@@ -23072,7 +23072,7 @@
       this.checkUpdateRequired();
     }
   };
-  ga.prototype.updateCustomRenderableWorldExtents = function () {
+  SceneNode.prototype.updateCustomRenderableWorldExtents = function () {
     var a,
       b,
       c,
@@ -23098,7 +23098,7 @@
     for (; a < i; a += 1) if (b = j[a], b = b.getCustomWorldExtents()) c > b[0] && (c = b[0]), d > b[1] && (d = b[1]), f > b[2] && (f = b[2]), g < b[3] && (g = b[3]), h < b[4] && (h = b[4]), e < b[5] && (e = b[5]);
     l ? delete this.worldExtents : (a = this.worldExtents, a || (this.worldExtents = a = new this.arrayConstructor(6)), a[0] = c, a[1] = d, a[2] = f, a[3] = g, a[4] = h, a[5] = e);
   };
-  ga.prototype.recalculateWorldExtents = function () {
+  SceneNode.prototype.recalculateWorldExtents = function () {
     var a = this.localExtentsCenter,
       b = this.localHalfExtents,
       c = a[0],
@@ -23133,11 +23133,11 @@
     h[4] = a + d;
     h[5] = j + g;
   };
-  ga.prototype.getWorldExtents = function () {
+  SceneNode.prototype.getWorldExtents = function () {
     this.dirtyWorldExtents && this.updateWorldExtents();
     return this.worldExtents;
   };
-  ga.prototype.addCustomLocalExtents = function (a) {
+  SceneNode.prototype.addCustomLocalExtents = function (a) {
     var b = this.customLocalExtents;
     if (b) {
       if (b[0] !== a[0] || b[1] !== a[1] || b[2] !== a[2] || b[3] !== a[3] || b[4] !== a[4] || b[5] !== a[5]) b[0] = a[0], b[1] = a[1], b[2] = a[2], b[3] = a[3], b[4] = a[4], b[5] = a[5], this.dirtyLocalExtents = !0;
@@ -23165,39 +23165,39 @@
     }
     this.dirtyLocalExtents && (this.dirtyWorldExtents = !0, this.updateRequired());
   };
-  ga.prototype.removeCustomLocalExtents = function () {
+  SceneNode.prototype.removeCustomLocalExtents = function () {
     delete this.customLocalExtents;
     this.dirtyLocalExtents = this.dirtyWorldExtents = !0;
     this.updateRequired();
   };
-  ga.prototype.getCustomLocalExtents = function () {
+  SceneNode.prototype.getCustomLocalExtents = function () {
     return this.customLocalExtents;
   };
-  ga.prototype.addCustomWorldExtents = function (a) {
+  SceneNode.prototype.addCustomWorldExtents = function (a) {
     var b = this.customWorldExtents;
     if (b) {
       if (b[0] !== a[0] || b[1] !== a[1] || b[2] !== a[2] || b[3] !== a[3] || b[4] !== a[4] || b[5] !== a[5]) b[0] = a[0], b[1] = a[1], b[2] = a[2], b[3] = a[3], b[4] = a[4], b[5] = a[5], this.dirtyWorldExtents = !0;
     } else this.customWorldExtents = b = new this.arrayConstructor(6), b[0] = a[0], b[1] = a[1], b[2] = a[2], b[3] = a[3], b[4] = a[4], b[5] = a[5], this.dirtyWorldExtents = !0;
     this.dirtyWorldExtents && this.updateRequired();
   };
-  ga.prototype.removeCustomWorldExtents = function () {
+  SceneNode.prototype.removeCustomWorldExtents = function () {
     delete this.customWorldExtents;
     this.dirtyWorldExtents = !0;
     this.updateRequired();
   };
-  ga.prototype.getCustomWorldExtents = function () {
+  SceneNode.prototype.getCustomWorldExtents = function () {
     return this.customWorldExtents;
   };
-  ga.prototype.renderableWorldExtentsUpdated = function (a) {
+  SceneNode.prototype.renderableWorldExtentsUpdated = function (a) {
     this.customWorldExtents || (this.dirtyWorldExtents = !0, this.updateRequired());
     a || (this.dirtyLocalExtents = !0, this.numCustomRenderableWorldExtents = this.numCustomRenderableWorldExtents ? this.numCustomRenderableWorldExtents + 1 : 1);
   };
-  ga.prototype.renderableWorldExtentsRemoved = function () {
+  SceneNode.prototype.renderableWorldExtentsRemoved = function () {
     this.customWorldExtents || (this.dirtyWorldExtents = !0, this.updateRequired());
     this.dirtyLocalExtents = !0;
     this.numCustomRenderableWorldExtents -= 1;
   };
-  ga.prototype.calculateHierarchyWorldExtents = function (a) {
+  SceneNode.prototype.calculateHierarchyWorldExtents = function (a) {
     var b = Number.MAX_VALUE;
     a || (a = new this.arrayConstructor(6));
     a[0] = b;
@@ -23208,14 +23208,14 @@
     a[5] = -b;
     if (this._calculateNodeExtents(a)) return a;
   };
-  ga.prototype._calculateNodeExtents = function (a) {
+  SceneNode.prototype._calculateNodeExtents = function (a) {
     var b = !1,
       c = this.getWorldExtents();
     c && (a[0] = a[0] < c[0] ? a[0] : c[0], a[1] = a[1] < c[1] ? a[1] : c[1], a[2] = a[2] < c[2] ? a[2] : c[2], a[3] = a[3] > c[3] ? a[3] : c[3], a[4] = a[4] > c[4] ? a[4] : c[4], a[5] = a[5] > c[5] ? a[5] : c[5], b = !0);
     if (c = this.children) for (var d = c.length, f = 0; f < d; f += 1) c[f]._calculateNodeExtents(a) && (b = !0);
     return b;
   };
-  ga.prototype.addRenderable = function (a) {
+  SceneNode.prototype.addRenderable = function (a) {
     this.dirtyWorldExtents = !0;
     this.updateRequired();
     this.renderables || (this.renderables = []);
@@ -23223,14 +23223,14 @@
     a.setNode(this);
     this.dirtyLocalExtents = !0;
   };
-  ga.prototype.addRenderableArray = function (a) {
+  SceneNode.prototype.addRenderableArray = function (a) {
     this.dirtyWorldExtents = !0;
     this.updateRequired();
     this.renderables || (this.renderables = []);
     for (var b = this.renderables, c = a.length, d = 0; d < c; d += 1) b.push(a[d]), a[d].setNode(this);
     this.dirtyLocalExtents = !0;
   };
-  ga.prototype.removeRenderable = function (a) {
+  SceneNode.prototype.removeRenderable = function (a) {
     this.dirtyWorldExtents = !0;
     this.updateRequired();
     for (var b = this.renderables, c = b.length, d = 0; d < c; d += 1) if (b[d] === a) {
@@ -23240,10 +23240,10 @@
       break;
     }
   };
-  ga.prototype.hasRenderables = function () {
+  SceneNode.prototype.hasRenderables = function () {
     return this.renderables && this.renderables.length ? !0 : !1;
   };
-  ga.prototype.addLightInstance = function (a) {
+  SceneNode.prototype.addLightInstance = function (a) {
     this.dirtyWorldExtents = !0;
     this.updateRequired();
     this.lightInstances || (this.lightInstances = []);
@@ -23251,14 +23251,14 @@
     a.setNode(this);
     this.dirtyLocalExtents = !0;
   };
-  ga.prototype.addLightInstanceArray = function (a) {
+  SceneNode.prototype.addLightInstanceArray = function (a) {
     this.dirtyWorldExtents = !0;
     this.updateRequired();
     this.lightInstances || (this.lightInstances = []);
     for (var b = this.lightInstances, c = a.length, d = 0; d < c; d += 1) a[d].setNode(this), b.push(a[d]);
     this.dirtyLocalExtents = !0;
   };
-  ga.prototype.removeLightInstance = function (a) {
+  SceneNode.prototype.removeLightInstance = function (a) {
     this.dirtyWorldExtents = !0;
     this.updateRequired();
     for (var b = this.lightInstances, c = b.length, d = 0; d < c; d += 1) if (b[d] === a) {
@@ -23268,10 +23268,10 @@
       break;
     }
   };
-  ga.prototype.hasLightInstances = function () {
+  SceneNode.prototype.hasLightInstances = function () {
     return this.lightInstances && this.lightInstances.length;
   };
-  ga.prototype.destroy = function () {
+  SceneNode.prototype.destroy = function () {
     this.destroyedObserver && this.destroyedObserver.notify({
       node: this
     });
@@ -23287,30 +23287,30 @@
     }
     this.lightInstances && (this.lightInstances = []);
     this.scene = void 0;
-    a = ga._tempDirtyNodes;
+    a = SceneNode._tempDirtyNodes;
     b = a.length;
     for (c = 0; c < b; c += 1) a[c] = null;
   };
-  ga.prototype.subscribeCloned = function (a) {
+  SceneNode.prototype.subscribeCloned = function (a) {
     this.clonedObserver || (this.clonedObserver = yb.create());
     this.clonedObserver.subscribe(a);
   };
-  ga.prototype.unsubscribeCloned = function (a) {
+  SceneNode.prototype.unsubscribeCloned = function (a) {
     this.clonedObserver.unsubscribe(a);
   };
-  ga.prototype.subscribeDestroyed = function (a) {
+  SceneNode.prototype.subscribeDestroyed = function (a) {
     this.destroyedObserver || (this.destroyedObserver = yb.create());
     this.destroyedObserver.subscribe(a);
   };
-  ga.prototype.unsubscribeDestroyed = function (a) {
+  SceneNode.prototype.unsubscribeDestroyed = function (a) {
     this.destroyedObserver.unsubscribe(a);
   };
-  ga.create = function (a) {
-    return new ga(a);
+  SceneNode.create = function (a) {
+    return new SceneNode(a);
   };
-  ga.version = 1;
-  ga._tempDirtyNodes = [];
-  Xa = ga;
+  SceneNode.version = 1;
+  SceneNode._tempDirtyNodes = [];
+  Xa = SceneNode;
   Xa.prototype.mathDevice = null;
   Xa.prototype.arrayConstructor = Array;
   if ("undefined" !== typeof Float32Array) {

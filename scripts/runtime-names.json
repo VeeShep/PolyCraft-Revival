@@ -744,6 +744,38 @@
       "outputSHA256": "9da24a79115cf6e7a40a5028ccdc2bcfb0ef43c59af7bbb459f3348ead12c2e6",
       "inputCanonicalSHA256": "59226123e3175c9dc496add156d4c094b1126fc9a902541995aaca17c02a28a3",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "upstream-scene-node-name",
+      "names": [
+        {
+          "original": "ga",
+          "name": "SceneNode",
+          "role": "upstream SceneNode",
+          "descriptive": false,
+          "evidence": "57 matching public method names and 7 exact canonical method bodies; other bodies are not asserted identical",
+          "upstream": {
+            "commit": "2cd2857c3f5f00d1d0f31bcb1577f905eee4c068",
+            "path": "jslib/scenenode.js",
+            "sha256": "97e95c83a47a44ef70f25e647819f5256e10c93f234766e7861257df60df8100"
+          },
+          "matchingMethods": [
+            "getName",
+            "getParent",
+            "getDisabled",
+            "childNeedsUpdate",
+            "getCustomLocalExtents",
+            "getCustomWorldExtents",
+            "hasLightInstances"
+          ],
+          "offset": 792405,
+          "references": 71
+        }
+      ],
+      "inputSHA256": "3dacb693f270ccfa5a15c8d5d9f16c03450b9ebbef7a3091950be2edef60ab49",
+      "outputSHA256": "a4dae607d8f8e4ef28208e5b8fd8219db4e15cc3f226d1cb8ea9aebc35030b62",
+      "inputCanonicalSHA256": "0c7ffaf3d278958170d3888f88b450d0878f3f5925b3926c14b6ac2e6f2a1578",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }
