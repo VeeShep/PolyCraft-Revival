@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current original world visuals — Beta 42, 2026-11-04
+## Current expanded world visuals — Beta 43, 2026-11-04
+
+The explicit native world inventory expands to 126 visual definitions, including weapon/projectile, fire/explosion, mushroom, resource, crate, enemy warning and upgrade effects. GUI/build-option/world-builder clicks, local task arrows, test and dormant charge assets stay excluded. A per-name native duration table retains 15-second explosion and 40-second building decals across late join/resync and expiry. No gameplay mechanic, audio or shake is activated by extending visual playback.
+
+373 checks pass (74 focused). All 126 native definitions create/update through original factory/tween methods with finite sprite data and untouched solo queues/clocks; explosion decals retain phase and expire at the native deadline. Runtime coop-32/world 12 require matching Beta 43 peers; room/save formats stay unchanged. Pre-host visual history, guest-local UI/campaign/screens, native GPU/visible/audio/platform/physical-network acceptance remain open. See RESTORATION_STATUS.md for exact packaging/build evidence and the next lifecycle audit.
+
+## Previous original world visuals — Beta 42, 2026-11-04
 
 A verified native adapter exposes the original visual-only creator, definitions and tween namespace. Host recording captures 33 whitelisted world visuals with copied bounded parameters, skipping screen-local effects. Guest-owned roots and chains advance under a temporary scheduler/clock context restored in `finally`; no original solo main tween is advanced or cleared. Event sequence/history prevents initial/stale hit replay, while current state retains the two native 40-second building decals for late join/resync/expiry. Factory rollback and close preserve ownership; audio/shake are not replayed through the special-effect path.
 

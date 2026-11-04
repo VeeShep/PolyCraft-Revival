@@ -78,7 +78,8 @@ function visualEffectMethods(names) {
   function Factory() {}
   Factory.prototype = evaluate(definition.right, { [namespace]: tweens, [sprite]: { prototype: { blendStyle: { NORMAL: 'normal' } } } });
   Factory.create = staticMethod(owner, 'create', { [owner]: Factory });
-  const definitions = assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.property?.name === 'archetypes' && a.left.object.object?.name === owner && names.includes(a.left.property.name) && a.right.type === 'ObjectExpression');
+  const allDefinitions = assignments.filter(a => a.left.type === 'MemberExpression' && a.left.object.property?.name === 'archetypes' && a.left.object.object?.name === owner && a.right.type === 'ObjectExpression');
+  const definitions = allDefinitions.filter(a => names.includes(a.left.property.name));
   const adapters = [];
   traverse(ast, { CallExpression(p) { if (p.node.callee.property?.name === 'attach' && p.node.callee.object.property?.name === 'PolycraftControls') adapters.push(p.node.arguments.at(-1)); } });
   const adapter = one(adapters, 'desktop effect adapter');
@@ -95,7 +96,7 @@ function visualEffectMethods(names) {
     colours[p.node.name] = evaluate(assigned);
   } });
   const archetypes = Object.fromEntries(definitions.map(a => [a.left.property.name, evaluate(a.right, colours)]));
-  return { create: Factory.create, factory: Factory, archetypes, tweens };
+  return { create: Factory.create, factory: Factory, archetypes, tweens, allNames: allDefinitions.map(a => a.left.property.name) };
 }
 function soundManagerMethods() {
   const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'updateListener')), 'sound manager prototype');

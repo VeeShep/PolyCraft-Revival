@@ -1,11 +1,35 @@
 'use strict';
 (function (root) {
-  const NAMES = Object.freeze(['vfx_hit_e_generic1', 'vfx_hit_e_generic2', 'vfx_hit_bullet', 'vfx_hero_melee_thump1h', 'vfx_hero_melee_thump1v',
-    'vfx_hero_rankup1', 'vfx_hero_rankup2', 'vfx_hero_rankup3', 'vfx_hero_rankup4', 'vfx_healing1', 'vfx_healing2', 'vfx_healing3', 'vfx_healing4',
-    'vfx_dth_e_generic1v', 'vfx_dth_e_generic2h', 'vfx_dth_e_generic2v', 'vfx_dth_e_generic3v', 'vfx_dth_death1', 'vfx_dth_death2', 'vfx_dth_death3',
-    'vfx_dth_death4', 'vfx_dth_death5', 'vfx_hit_e_treasure', 'vfx_crt_building1', 'vfx_crt_building2', 'vfx_dth_building1', 'vfx_dth_building2',
-    'vfx_dth_building3', 'vfx_dth_building4', 'vfx_dth_small_building1', 'vfx_dth_small_building2', 'vfx_dth_small_building3', 'vfx_dth_small_building4']);
-  const PERSISTENT = Object.freeze(['vfx_dth_building3', 'vfx_dth_small_building3']), persistent = new Set(PERSISTENT);
+  const NAMES = Object.freeze([
+    'explosion', 'explosionBig', 'stomp', 'smallScaffold', 'scaffold',
+    'hitScaffold', 'levelUp', 'pistolshoteffect', 'meleeHit', 'thumper',
+    'shot', 'vfx_hero_rankup1', 'vfx_hero_rankup2', 'vfx_hero_rankup3', 'vfx_hero_rankup4',
+    'vfx_hero_melee_thump1h', 'vfx_hero_melee_thump1v', 'vfx_dth_e_generic1h', 'vfx_dth_e_generic1v', 'vfx_dth_e_generic2h',
+    'vfx_dth_e_generic2v', 'vfx_dth_e_generic3v', 'vfx_hit_e_generic1', 'vfx_hit_e_generic2', 'vfx_bannerling_alert',
+    'vfx_dth_death1', 'vfx_dth_death2', 'vfx_dth_death3', 'vfx_dth_death4', 'vfx_dth_death5',
+    'vfx_inc_death', 'vfx_hit_e_treasure', 'vfx_crt_mortar', 'vfx_crt_bullet', 'vfx_fire_shotgunH1',
+    'vfx_fire_shotgunV1', 'vfx_amb_bullet', 'vfx_amb_spit', 'vfx_hit_bullet', 'vfx_dst_r_generic',
+    'vfx_dst_r_amber', 'vfx_dst_r_lumber', 'vfx_dst_r_stone', 'vfx_dst_r_xp', 'vfx_crt_building1',
+    'vfx_crt_building2', 'vfx_dth_building1', 'vfx_dth_building2', 'vfx_dth_building3', 'vfx_dth_building4',
+    'vfx_dth_small_building1', 'vfx_dth_small_building2', 'vfx_dth_small_building3', 'vfx_dth_small_building4', 'vfx_dst_fire1',
+    'vfx_dst_fire2', 'vfx_dst_fire3', 'vfx_dst_fire4', 'vfx_dst_fire5', 'vfx_dst_fire6',
+    'vfx_dst_fire_small1', 'vfx_dst_fire_small2', 'vfx_dst_fire_small3', 'vfx_dst_fire_small4', 'vfx_dst_fire_small5',
+    'vfx_dst_fire_small6', 'vfx_healing1', 'vfx_healing2', 'vfx_healing3', 'vfx_healing4',
+    'vfx_exp_0h', 'vfx_exp_0v', 'vfx_exp_1h', 'vfx_exp_1v', 'vfx_exp_2h',
+    'vfx_exp_2v', 'vfx_exp_3h', 'vfx_exp_3v', 'vfx_expBig_0h', 'vfx_expBig_0v',
+    'vfx_expBig_1h', 'vfx_expBig_1v', 'vfx_expBig_2h', 'vfx_expBig_2v', 'vfx_expBig_3h',
+    'vfx_expBig_3v', 'vfx_exp_decal', 'vfx_exp_decalBig', 'vfx_mushroom_puff_1_1v', 'vfx_mushroom_puff_1_2h',
+    'vfx_mushroom_puff_1_2v', 'vfx_mushroom_puff_1_3v', 'vfx_mushroom_puff_2_1v', 'vfx_mushroom_puff_2_2h', 'vfx_mushroom_puff_2_2v',
+    'vfx_mushroom_puff_2_3v', 'vfx_mushroom_puff_3_1v', 'vfx_mushroom_puff_3_2h', 'vfx_mushroom_puff_3_2v', 'vfx_mushroom_puff_3_3v',
+    'vfx_mushroom_hit1', 'vfx_mushroom_hit2', 'vfx_mushroom_hit3', 'vfx_bannerling_alert_mob', 'vfx_bannerling_alert_bombthrower',
+    'vfx_bannerling_alert_boss', 'vfx_bannerling_alert_charger', 'vfx_bannerling_alert_commando', 'vfx_bannerling_alert_death', 'vfx_bannerling_alert_ranged',
+    'vfx_bannerling_alert_thief', 'vfx_bannerling_alert_treasuredropper', 'vfx_dth_crate1', 'vfx_dth_crate2', 'vfx_dth_crate3',
+    'vfx_dth_e_arrow1h', 'vfx_dth_e_arrow1v', 'vfx_dth_e_arrow2h', 'vfx_dth_e_arrow2v', 'vfx_dth_e_arrow3v',
+    'vfx_upgrade_batch1', 'vfx_upgrade_batch2v', 'vfx_upgrade_batch3h', 'vfx_upgrade_batch3v', 'vfx_upgrade_batch4v',
+    'vfx_upgrade_batch5'
+  ]);
+  const DURATIONS = Object.freeze({ vfx_dth_building3: 40, vfx_dth_small_building3: 40, vfx_exp_decal: 15, vfx_exp_decalBig: 15 });
+  const PERSISTENT = Object.freeze(Object.keys(DURATIONS)), persistent = new Set(PERSISTENT);
   const names = new Set(NAMES), LIMITS = Object.freeze({ events: 128, active: 64, age: 2, tweens: 1024 });
   const object = (value, fields) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every(field => Object.hasOwn(value, field));
   const number = value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= 1e9;
@@ -25,7 +49,7 @@
     previous = 0;
     for (const event of state.active) {
       validate(event);
-      if (!persistent.has(event.name) || event.time + 40 / event.dilation <= time) fail();
+      if (!persistent.has(event.name) || event.time + DURATIONS[event.name] / event.dilation <= time) fail();
       const prior = recent.get(event.id);
       if (prior && ['name', 'time', 'entity', 'scale', 'dilation', 'location', 'direction'].some(key => JSON.stringify(prior[key]) !== JSON.stringify(event[key]))) fail();
     }
@@ -52,7 +76,7 @@
     trim() {
       const time = this.game.globals.gameCurrentTime;
       this.events = this.events.filter(event => event.time >= time - LIMITS.age).slice(-LIMITS.events);
-      for (const [id, event] of this.active) if (event.time + 40 / event.dilation <= time) this.active.delete(id);
+      for (const [id, event] of this.active) if (event.time + DURATIONS[event.name] / event.dilation <= time) this.active.delete(id);
     }
     capture() { this.trim(); return structuredClone({ sequence: this.sequence, events: this.events, active: [...this.active.values()] }); }
     close() { if (this.api?.factory) this.api.factory.create = this.original; }
@@ -98,7 +122,7 @@
     }
     close() { this.closed = true; this.queue.length = 0; this.owners.clear(); this.active.clear(); }
   }
-  const api = { NAMES, PERSISTENT, LIMITS, emptyEffects, validateEffects, HostEffects, GuestEffects };
+  const api = { NAMES, PERSISTENT, DURATIONS, LIMITS, emptyEffects, validateEffects, HostEffects, GuestEffects };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftWorldEffects = api;
 })(globalThis);

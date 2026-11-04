@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { HostEffects, GuestEffects, NAMES, PERSISTENT, LIMITS, emptyEffects, validateEffects } = require('../desktop/world-effects.js');
+const { HostEffects, GuestEffects, NAMES, PERSISTENT, DURATIONS, LIMITS, emptyEffects, validateEffects } = require('../desktop/world-effects.js');
 const { visualEffectMethods } = require('./runtime-ast.cjs');
 const native = visualEffectMethods(NAMES);
 function fixture() {
@@ -68,7 +68,7 @@ test('effect parser refuses arbitrary assets, screen state, invalid bounds, over
 
 test('original forty-second decals survive journal expiry and late join, retain phase across resync and stop when removed', () => {
   const f = fixture(), host = new HostEffects({ globals: f.globals }, native); f.globals.gameCurrentTime = 1;
-  for (const name of PERSISTENT) { assert.equal(native.archetypes[name].lifetime, 40); host.record(f.globals, native.archetypes[name], [1, 2, 3]); }
+  for (const name of PERSISTENT.filter(name => DURATIONS[name] === 40)) { assert.equal(native.archetypes[name].lifetime, 40); host.record(f.globals, native.archetypes[name], [1, 2, 3]); }
   f.globals.gameCurrentTime = 20; const state = host.capture(); assert.equal(state.events.length, 0); assert.equal(state.active.length, 2); validateEffects(state, 20);
   const guest = new GuestEffects(native, f.scene, f.globals); guest.receive(state, 20); assert.equal(guest.queue.length, 2);
   guest.update(20); assert.equal(f.sprites.length, 2); assert.ok(f.sprites[0].v4color[3] < native.archetypes[PERSISTENT[0]].startColour[3]);
@@ -86,4 +86,27 @@ test('decal parsing and active/tween caps prevent unbounded presentation state w
   const add = native.tweens.add;
   assert.throws(() => guest.receive({ sequence: 1, events: [event()], active: [] }, 1), /Too many guest visual effects/);
   assert.equal(guest.queue.length, LIMITS.tweens); assert.equal(native.tweens.add, add); assert.equal(f.globals.gameCurrentTime, 100); assert.equal(f.solo.length, 0); guest.close();
+});
+
+test('all audited non-GUI world definitions use the original factory successfully without advancing solo work', () => {
+  const excluded = name => /^(vfx_gui_|vfx_buildoption_|vfx_wb_)/.test(name) || ['vfx_test', 'charge', 'chargeUp', 'arrowPulse', 'criticalArrowPulse'].includes(name);
+  assert.deepEqual([...NAMES].sort(), native.allNames.filter(name => !excluded(name)).sort(), 'new or unclassified native definitions need an explicit scope decision');
+  const f = fixture(), guest = new GuestEffects(native, f.scene, f.globals); guest.receive(emptyEffects(), 1);
+  const events = NAMES.map((name, i) => ({ ...event(i + 1), name, direction: [0, 0, 1], entity: null }));
+  const active = events.filter(value => PERSISTENT.includes(value.name));
+  guest.receive({ sequence: events.length, events, active }, 1); assert.equal(guest.queue.length, NAMES.length);
+  guest.update(1.05); assert.ok(f.sprites.length > 50);
+  for (const sprite of f.sprites) { assert.ok(sprite.v3Location.every(Number.isFinite)); assert.ok(Number.isFinite(sprite.size)); assert.ok(sprite.v4color.every(Number.isFinite)); }
+  for (const name of PERSISTENT) assert.equal(native.archetypes[name].lifetime, DURATIONS[name]);
+  assert.equal(f.solo.length, 0); assert.equal(f.globals.gameCurrentTime, 100); guest.close();
+});
+test('native explosion decals retain their fifteen-second phase on late join and expire at the original deadline', () => {
+  const f = fixture(), host = new HostEffects({ globals: f.globals }, native); f.globals.gameCurrentTime = 1;
+  for (const name of ['vfx_exp_decal', 'vfx_exp_decalBig']) host.record(f.globals, native.archetypes[name], [1, 2, 3]);
+  f.globals.gameCurrentTime = 10; const state = host.capture(); assert.equal(state.events.length, 0); assert.equal(state.active.length, 2);
+  const guest = new GuestEffects(native, f.scene, f.globals); guest.receive(state, 10); guest.update(10);
+  assert.equal(f.sprites.length, 2); assert.ok(f.sprites[0].v4color[3] < native.archetypes.vfx_exp_decal.startColour[3]);
+  guest.receive(state, 10); assert.equal(guest.queue.length, 2); f.globals.gameCurrentTime = 16;
+  const expired = host.capture(); assert.equal(expired.active.length, 0); guest.receive(expired, 16); assert.equal(guest.queue.length, 0);
+  assert.throws(() => validateEffects(state, 16), /Invalid/); host.close();
 });
