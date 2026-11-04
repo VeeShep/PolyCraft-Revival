@@ -124,7 +124,10 @@
       if (type === 'life' || type === 'revive') {
         if (target !== hero || !life) return 'Only your own hero can be revived.';
         const status = lifeStatus(life);
-        if (type === 'life') return { message: 'Hero life state.', life: status, hud: captureHud(game, hero, status.phase === 'normal' && game.getPlayFlags().displaySkipPrepareButton && hero.getEC('ECHealth').getHealth() > 0 && !game.isScriptLocked() ? this.preparationView(game) : null) };
+        if (type === 'life') {
+          const result = game.desktopCampaignResults?.latest;
+          return { message: 'Hero life state.', life: status, hud: captureHud(game, hero, status.phase === 'normal' && game.getPlayFlags().displaySkipPrepareButton && hero.getEC('ECHealth').getHealth() > 0 && !game.isScriptLocked() ? this.preparationView(game) : null, result && result.id > (this.resultFloor || 0) ? result : null) };
+        }
         if (game.isScriptLocked() || !status.option || action.episode !== status.episode || action.amber !== (status.option === 'amber') || !status.affordable) return 'Revive choice changed or resources are unavailable. Wait for a refresh.';
         if (!life.payToRevive(action.amber ? 10 : 0, action.amber ? 0 : 50, action.amber)) return 'Revival is already in progress or unavailable.';
         return { message: 'Revive purchased and saved.', save: true, life: lifeStatus(life) };

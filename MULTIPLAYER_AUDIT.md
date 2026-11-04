@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current original preparation skipping — Beta 50, 2026-11-04
+## Current original guest campaign results — Beta 51, 2026-11-04
+
+Host end-of-tick capture observes native completed star-array replacement after all simulation/task updates and before coherent admission/save captures. The scored criteria-array identity selects the original campaign even after its banner is replaced. A copied latest result survives quick host screen dismissal during the hosting session; pre-host/pre-admission results are filtered, manager replacement clears retained data, and IDs remain monotonic. Startup failure and close restore prior host hooks/state. No scoring or grant method is wrapped or replaced.
+
+Strict HUD parsing bounds the exact known campaign, native star roles/order, text, integer rewards and grade. Guests use original victory/defeat, flag, star and reward-summary panel methods. New results wait behind local menus/placements; an already-open scorecard is preserved while a newer result waits separately. Focus/resync pauses preserve it. Back to the Island/Escape advances a local dismissal watermark, sends no claim, and changes no resources/XP. Native host reward collection remains unchanged; XP-distribution policy is still saved for the user.
+
+419 checks pass, including all 82 native score definitions in victory/defeat, original result-panel metadata, malformed data, quick host dismissal, copied ownership, manager/connection cleanup, admission/expected-HUD baselines, local staging/dedup and native host reward isolation. A task-completed scoring boundary regression failed before moving capture after task updates. The first full run hit an existing ephemeral-port EADDRINUSE; isolated networking (9 checks) and a complete rerun passed without source changes for that collision. Read-only result-flow review found no concrete issue; main review added task-boundary ordering and startup cleanup. Runtime coop-38/world 15/delta 2 requires matching Beta 51 game peers; room/save formats are unchanged. Latest results are session presentation data; full historical scorecard replay and XP policy are outside this UI milestone. Live UI/audio/network/native acceptance remains open. Exact package evidence is in RESTORATION_STATUS.md.
+
+## Previous original preparation skipping — Beta 50, 2026-11-04
 
 Guests receive a nullable preparation control in their own life/HUD status, using a per-binding monotonically numbered ID tied by WeakMap to the exact native preparation object. The original skipPrepare button artwork, position and size are retained. A fresh, focused, living guest with no local menu can send one pending intent; resync, stale HUD, closed/disconnected sessions and other menus suppress it. The control captures pointer input rather than moving the hero beneath it.
 

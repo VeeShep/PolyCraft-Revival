@@ -98,6 +98,7 @@
         if (event.code === 'KeyP') { if (!event.repeat) this.world.togglePauseMenu?.(); this.keys.clear(); this.flush(); return; }
         if (event.code === 'Escape') {
           if (this.world.construction?.placement?.held) this.world.construction.cancelHeld();
+          else if (this.world.campaign?.result && !this.world.pauseMenu && !this.world.resyncing && this.world.lifeState?.phase === 'normal') this.world.campaign.dismissResult();
           else if (this.world.controls.fullscreen && !this.world.localMenu?.() && !this.world.construction?.placement) this.world.toggleFullscreen?.();
           else this.world.cancelLocalMenu?.();
           this.keys.clear(); this.flush(); return;

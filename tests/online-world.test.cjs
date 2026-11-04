@@ -92,8 +92,10 @@ test('host-selected invitation slots reserve identities, reject duplicate claims
   const invitation = await pending, connection = transport.peers.get(invitation.peer);
   assert.equal(invitation.playerId, first.id);
   assert.throws(() => world.playerFor(connection), /no assigned/);
+  world.results.sequence = 5;
   await world.connectPlayer(invitation.peer);
   assert.equal(world.playerFor(connection).id, first.id);
+  assert.equal(world.peerPlayers.get(invitation.peer).actions.resultFloor, 5);
   assert.deepEqual(deliveries[0], { peer: invitation.peer, kind: 'welcome', payload: { version: 1, playerId: first.id, name: 'One', entity: 'Hero_' + first.id, pvp: false } });
   assert.deepEqual(streams, [invitation.peer]);
   await world.connectPlayer(invitation.peer); assert.equal(deliveries.length, 1);
@@ -397,4 +399,29 @@ test('hosting borrows pre-host effect history across failed admission, host exit
   factory.create(game.globals, api.archetypes.vfx_exp_decal, [4, 5, 6]); assert.equal(calls, 2); assert.equal(history.capture().active.length, 2);
   const secondTransport = new HostSession(); t.after(() => secondTransport.close());
   const second = await startHostingWorld(controls, secondTransport); assert.equal(second.effects, history); await second.close(); assert.equal(history.sequence, 2);
+});
+test('completed campaign results are retained after native task scoring before coherent admission/save boundaries', async t => {
+  const { controls, game, transport } = setup(t), ast = require('./runtime-ast.cjs');
+  const runtime = ast.campaignRuntime({}, {}, {}), score = ast.campaignScore({ gameManager: { eventManager: { subscribe() {}, unsubscribe() {} } } });
+  score.getHQHealthFactor = () => 1;
+  game.getScoreInfo = () => score; controls.campaignMethods = runtime; controls.infoPanels = { starGuiArchetypeMap: ast.assignedObject('starGuiArchetypeMap') };
+  const world = await startHostingWorld(controls, transport); t.after(() => world.close());
+  game.desktopQuestRewards = {}; game.getActiveGameState = () => ({ name: 'GamestateCampaignScore' });
+  game.updateOnlineTasks = () => {
+    const definition = runtime.archetypes.campaign_tutorial_01;
+    score.onCampaignStarted({ maxResourceBonusList: definition.maxResourceBonusList, maxXpBonus: definition.maxXpBonus, starCriteriaList: definition.starCriteriaList });
+    score.onCampaignEnded();
+  };
+  const captured = world.atBoundary(() => { assert.equal(world.results.latest?.id, 1); return world.results.latest; });
+  world.beginTick(); world.endTick(); assert.equal((await captured).campaign, 'campaign_tutorial_01');
+  assert.equal(game.desktopCampaignResults, world.results); await world.close(); assert.equal(game.desktopCampaignResults, undefined); assert.equal(world.results.latest, null);
+});
+
+test('failed result-recorder initialization restores installed audio hooks and leaves the island outside online mode', async t => {
+  const { controls, game, transport } = setup(t), failure = new Error('Score unavailable');
+  const play = game.gameSoundManager.playInternal, stop = game.gameSoundManager.stopInternal;
+  game.getScoreInfo = () => { throw failure; };
+  await assert.rejects(startHostingWorld(controls, transport), error => error === failure);
+  assert.equal(game.gameSoundManager.playInternal, play); assert.equal(game.gameSoundManager.stopInternal, stop);
+  assert.equal(controls.onlineWorld, undefined); assert.equal(game.desktopCampaignResults, undefined);
 });

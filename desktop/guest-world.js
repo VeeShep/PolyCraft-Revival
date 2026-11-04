@@ -438,7 +438,7 @@
       }
       return true;
     }
-    localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu || this.quests?.description || this.campaign?.menu); }
+    localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu || this.quests?.description || this.campaign?.menu || this.campaign?.result); }
     togglePauseMenu() {
       const open = !this.pauseMenu;
       this.cancelLocalMenu();
@@ -704,7 +704,7 @@
     }
     close() {
       if (this.closed) return;
-      this.quests?.close(); this.visuals?.close();
+      this.quests?.close(); this.campaign?.close(); this.visuals?.close();
       this.closed = true;
       this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive');
       clearTimeout(this.resyncTimer); this.resyncing = false;

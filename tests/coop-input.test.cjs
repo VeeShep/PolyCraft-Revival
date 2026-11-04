@@ -90,6 +90,14 @@ test('guest camera-relative keys normalize diagonals, cancel opposing aliases an
   let heldCancellations = 0; world.construction = { placement: { held: true }, cancelHeld() { heldCancellations++; } };
   listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} });
   assert.equal(heldCancellations, 1); assert.equal(cancelled, 1, 'Escape must request authoritative held cancellation rather than silently hide it');
+  world.construction = null; let dismissed = 0; world.lifeState = { phase: 'normal' }; world.campaign = { result: {}, dismissResult() { dismissed++; this.result = null; } };
+  listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} }); assert.equal(dismissed, 1); assert.equal(cancelled, 1);
+  world.campaign.result = {}; world.pauseMenu = true;
+  listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} }); assert.equal(dismissed, 1); assert.equal(cancelled, 2);
+  world.pauseMenu = false; world.lifeState.phase = 'waiting';
+  listeners.get('keydown')({ code: 'Escape', preventDefault() {}, stopImmediatePropagation() {} }); assert.equal(dismissed, 1); assert.equal(cancelled, 3);
+  world.lifeState = world.campaign = null;
+
   world.localMenu = () => false; world.construction = null; input.keys.clear();
   if (input.pending) await input.pending;
   const point = [30, 999, 20]; input.requestWalk(point); point[0] = 999;

@@ -9,6 +9,7 @@
   const { QuestRewards } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
   const { HostAudio } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
   const { HostEffects } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
+  const { HostCampaignResults } = typeof module !== 'undefined' ? require('./campaign.js') : root.PolycraftCampaign;
   class HostWorld {
     constructor(controls, transport) {
       if (!(transport instanceof HostSession) || transport.closed || !controls.ready() || controls.onlineWorld) throw new Error('Hosting needs a loaded island and an available host session.');
@@ -26,7 +27,9 @@
       const game = this.game, clock = game.gameClock, controller = game.getGameController();
       this.ownsEffects = !controls.effectHistory;
       this.effects = controls.effectHistory || new HostEffects(game, controls.effectMethods);
-      try { this.audio = new HostAudio(game); } catch (error) { if (this.ownsEffects) this.effects.close(); throw error; }
+      try { this.audio = new HostAudio(game); this.results = new HostCampaignResults(game, controls); }
+      catch (error) { this.audio?.close(); if (this.ownsEffects) this.effects.close(); throw error; }
+      game.desktopCampaignResults = this.results;
       game.desktopEffects = this.effects; game.desktopAudio = this.audio;
       this.original = { pause: clock.pause, controllerUpdate: controller.update, simulation: game.updateSimulation };
       clock.pause = () => {};
@@ -69,6 +72,7 @@
       }
       this.players?.flushRefreshes();
       if (this.game.desktopQuestRewards && this.game.getActiveGameState().name !== 'GamestatePlaying') this.game.updateOnlineTasks();
+      this.results.update();
       const captures = this.captures.splice(0);
       for (const capture of captures) {
         clearTimeout(capture.timer);
@@ -194,7 +198,7 @@
         if (!this.players.active.has(binding.id)) this.players.add(binding.id);
         else if (!this.detachedPlayers.has(binding.id)) throw new Error('This hero is already controlled by another player.');
         this.detachedPlayers.delete(binding.id);
-        binding.joined = true;
+        binding.joined = true; binding.actions.resultFloor = this.results.sequence;
         const entity = this.players.active.get(binding.id).hero.getName();
         const snapshot = captureSnapshot(this.game, this.players.active.get(binding.id).hero);
         return { welcome: { version: 1, playerId: binding.id, name: this.players.registry.player(binding.id).name,
@@ -287,6 +291,7 @@
           this.construction?.close();
         }
         this.closed = true;
+        this.results.close(); delete this.game.desktopCampaignResults;
         this.audio.close(); delete this.game.desktopAudio;
         if (this.ownsEffects) this.effects.close();
         delete this.game.desktopEffects;

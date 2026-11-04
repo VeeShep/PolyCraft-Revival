@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
   const { validateQuestView } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
+  const { validateCampaignResult } = typeof module !== 'undefined' ? require('./campaign.js') : root.PolycraftCampaign;
   function captureIslandHud(game, hero, flags) {
     let hq = null, prepare = null, invasion = null, upcoming = null;
     if (flags.displayHQHealth) {
@@ -19,9 +20,9 @@
     }
     return { hq, prepare, invasion, upcoming };
   }
-  function captureHud(game, hero, preparation = null) {
+  function captureHud(game, hero, preparation = null, campaignResult = null) {
     const data = hero.getEC('ECPlayerData'), flags = game.getPlayFlags();
-    return { preparation, resources: [data.getResource(0), data.getResource(1)], caps: [data.getResourceCap(0), data.getResourceCap(1)], amber: data.getSoftCurrency(), xp: data.getXP(), points: data.getUpgradePoints(), quests: game.desktopQuestRewards?.snapshot() || null, island: captureIslandHud(game, hero, flags),
+    return { preparation, campaignResult, resources: [data.getResource(0), data.getResource(1)], caps: [data.getResourceCap(0), data.getResourceCap(1)], amber: data.getSoftCurrency(), xp: data.getXP(), points: data.getUpgradePoints(), quests: game.desktopQuestRewards?.snapshot() || null, island: captureIslandHud(game, hero, flags),
       flags: { resources: !!flags.displayResource, amber: !!flags.displaySoftCurrency, rank: !!flags.displayRank } };
   }
   const keys = (value, names) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));
@@ -42,12 +43,13 @@
     receive(value, expected) {
       if (!Object.hasOwn(value, 'hud')) return;
       const hud = value.hud;
-      if (value.type !== 'life' || !Object.hasOwn(value, 'life') || !keys(hud, ['preparation', 'resources', 'caps', 'amber', 'xp', 'points', 'flags', 'quests', 'island']) || ![hud.resources, hud.caps].every(values => Array.isArray(values) && values.length === 2 && [0, 1].every(index => amount(values[index]))) || !amount(hud.amber) || !Number.isSafeInteger(hud.xp) || !amount(hud.xp) || !Number.isSafeInteger(hud.points) || hud.points < 0 || hud.points > 2147483647 + this.world.controls.xpTable.length || !keys(hud.flags, ['resources', 'amber', 'rank']) || !Object.values(hud.flags).every(flag => typeof flag === 'boolean')) throw new Error('Invalid guest HUD state.');
+      if (value.type !== 'life' || !Object.hasOwn(value, 'life') || !keys(hud, ['preparation', 'campaignResult', 'resources', 'caps', 'amber', 'xp', 'points', 'flags', 'quests', 'island']) || ![hud.resources, hud.caps].every(values => Array.isArray(values) && values.length === 2 && [0, 1].every(index => amount(values[index]))) || !amount(hud.amber) || !Number.isSafeInteger(hud.xp) || !amount(hud.xp) || !Number.isSafeInteger(hud.points) || hud.points < 0 || hud.points > 2147483647 + this.world.controls.xpTable.length || !keys(hud.flags, ['resources', 'amber', 'rank']) || !Object.values(hud.flags).every(flag => typeof flag === 'boolean')) throw new Error('Invalid guest HUD state.');
       if (hud.preparation !== null && (!keys(hud.preparation, ['episode']) || !Number.isSafeInteger(hud.preparation.episode) || hud.preparation.episode < 1)) throw new Error('Invalid preparation view.');
+      validateCampaignResult(hud.campaignResult, this.world.controls);
       validateQuestView(hud.quests, hud.quests ? this.world.game.getTaskManager() : null);
       validateIslandHud(hud.island, this.world.game);
       if (value.sequence !== expected) return;
-      this.world.quests?.receiveView(hud.quests);
+      this.world.quests?.receiveView(hud.quests); this.world.campaign?.receiveResult(hud.campaignResult);
       const globals = this.world.controls.app.globals, now = globals.appCurrentTime;
       if (!this.data) {
         // Original number animations, with getters bound only to host-supplied presentation data.

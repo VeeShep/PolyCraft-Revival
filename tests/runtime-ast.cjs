@@ -111,12 +111,23 @@ function campaignRuntime(playing, features, panels) {
     const start = one(properties.filter(property => key(property) === 'doCampaignStartBookend'), 'campaign bookend').value;
     const flag = one(properties.filter(property => key(property) === 'flagGuiArchetype' && property.start > start.start && property.end < start.end), 'campaign flag lookup').value.object;
     let flagDefinition; traverse(ast, { ReferencedIdentifier(p) { if (p.node.start === flag.start) flagDefinition = p.scope.getBinding(p.node.name).path.node.init; } });
-    campaignSource = { archetypes, namespace, definition, start, flag, flagValues: evaluate(flagDefinition), create: get('create'), enabled: get('enabled'), playing: drawingDependency(confirm, 'create'), panels: drawingDependency(update, 'doCampaignStartBookend'), panelHelpers: drawingDependency(start, 'doInfoPanel'), features: drawingDependency(get('enabled'), 'campaignsEnabled') };
+    campaignSource = { end: one(properties.filter(property => key(property) === 'doCampaignEndBookend'), 'campaign result bookend').value, archetypes, namespace, definition, start, flag, flagValues: evaluate(flagDefinition), create: get('create'), enabled: get('enabled'), playing: drawingDependency(confirm, 'create'), panels: drawingDependency(update, 'doCampaignStartBookend'), panelHelpers: drawingDependency(start, 'doInfoPanel'), features: drawingDependency(get('enabled'), 'campaignsEnabled') };
   }
   const source = campaignSource;
   function Prepare() {}
   Prepare.prototype = evaluate(source.definition, { [source.playing]: playing, [source.panels]: panels });
-  return { archetypes: source.archetypes, create: staticMethod(source.create.object.name, 'create', { [source.create.object.name]: Prepare }), enabled: evaluate(source.enabled, { [source.features]: features }), startPanel: evaluate(source.start, { [source.namespace]: source.archetypes, [source.flag.name]: source.flagValues, [source.panelHelpers]: panels }) };
+  return { endPanel: evaluate(source.end, { [source.flag.name]: source.flagValues, [source.panelHelpers]: panels }), archetypes: source.archetypes, create: staticMethod(source.create.object.name, 'create', { [source.create.object.name]: Prepare }), enabled: evaluate(source.enabled, { [source.features]: features }), startPanel: evaluate(source.start, { [source.namespace]: source.archetypes, [source.flag.name]: source.flagValues, [source.panelHelpers]: panels }) };
+}
+function campaignRewards() {
+  const give = one(properties.filter(property => key(property) === 'giveRewards'), 'native campaign reward').value;
+  return evaluate(give, { [drawingDependency(give, 'LUMBER')]: { LUMBER: 0, STONE: 1 } });
+}
+function campaignScore(globals) {
+  const definition = one(assignments.filter(assignment => assignment.left.property?.name === 'prototype' && assignment.right.type === 'ObjectExpression' && assignment.right.properties.some(property => key(property) === 'getCampaignScoreInfo')), 'native campaign score');
+  const deposit = definition.right.properties.find(property => key(property) === 'onResourceDeposited').value;
+  function Score() {}
+  Score.prototype = evaluate(definition.right, { [drawingDependency(deposit, 'LUMBER')]: { LUMBER: 0, STONE: 1 } });
+  return staticMethod(definition.left.object.name, 'create', { [definition.left.object.name]: Score })(globals);
 }
 function preparationButton(renderer, types) {
   const buttons = []; traverse(ast, { CallExpression(p) { if (p.node.callee.property?.name === 'doButton' && p.node.arguments[0]?.type === 'ObjectExpression' && p.node.arguments[0].properties.some(property => key(property) === 'id' && property.value.value === 'SKIP PREPARE')) buttons.push(p.node.arguments[0]); } });
@@ -172,4 +183,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
