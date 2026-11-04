@@ -181,6 +181,52 @@ test('legacy recovery and import keep untouched original backups', t => {
   assert.equal(fs.readFileSync(saves.file(imported.id) + '.pre-v2', 'utf8'), old.raw);
   assert.equal(fs.readFileSync(source, 'utf8'), old.raw);
 });
+test('import uses one validated byte snapshot even if the selected file is replaced or removed during creation', t => {
+  for (const replacement of [true, false]) {
+    let source, reads = 0;
+    const changed = '{"outside":"changed after the original read"}\n';
+    const io = { ...fs, readFileSync(file, options) {
+      const bytes = fs.readFileSync(file, options);
+      if (file === source && ++reads === 1) {
+        if (replacement) fs.writeFileSync(source, changed); else fs.unlinkSync(source);
+      }
+      return bytes;
+    } };
+    const saves = setup(t, io), old = legacySlot(saves, { enabled: true });
+    source = path.join(saves.directory, 'external-import.json'); fs.writeFileSync(source, old.raw);
+    const imported = saves.import(source);
+    assert.equal(imported.name, 'Legacy'); assert.equal(imported.state.cheats.everEnabled, true);
+    for (const suffix of ['.pre-v2', '.pre-v7', '.pre-v8']) assert.equal(fs.readFileSync(saves.file(imported.id) + suffix, 'utf8'), old.raw);
+    assert.equal(reads, 1, 'Parsing and every migration backup must share the same captured bytes.');
+    if (replacement) assert.equal(fs.readFileSync(source, 'utf8'), changed); else assert.equal(fs.existsSync(source), false);
+  }
+});
+test('captured save bytes obey the size limit even if the earlier file size is stale', t => {
+  let source;
+  const io = { ...fs, statSync(file) { const stat = fs.statSync(file); return file === source ? { size: 0 } : stat; } };
+  const saves = setup(t, io); source = path.join(saves.directory, 'oversized-import.json');
+  fs.writeFileSync(source, Buffer.alloc(32 * 1024 * 1024 + 1, 32));
+  assert.throws(() => saves.read(source), /exceeds 32 MB/);
+  assert.throws(() => saves.import(source), /exceeds 32 MB/);
+  assert.deepEqual(saves.list(), []);
+});
+test('migration backups retain the validated primary or recovery snapshot if its path changes during saving', t => {
+  for (const recovered of [false, true]) {
+    let source, armed = false, changed = false;
+    const io = { ...fs, readFileSync(file, options) {
+      const contents = fs.readFileSync(file, options);
+      if (armed && file === source && !changed) { changed = true; fs.writeFileSync(source, 'replaced after validation\n'); }
+      return contents;
+    } };
+    const saves = setup(t, io), old = legacySlot(saves, { enabled: true }, {}, recovered), file = saves.file(old.id);
+    source = file + (recovered ? '.bak' : '');
+    const state = saves.load(old.id).state; armed = true;
+    const migrated = saves.save(old.id, state);
+    assert.equal(changed, true); assert.equal(migrated.version, 2);
+    assert.equal(fs.readFileSync(file + '.pre-v2', 'utf8'), old.raw);
+    assert.equal(migrated.state.cheats.everEnabled, true);
+  }
+});
 test('failed migration keeps original primary and untouched backup; retry succeeds', t => {
   let fail = false;
   const io = { ...fs, renameSync(from, to) { if (fail && to.endsWith('.json')) throw new Error('disk full'); fs.renameSync(from, to); } };

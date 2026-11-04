@@ -107,27 +107,32 @@ class Saves {
     if (typeof id !== 'string' || !/^[a-f0-9-]{36}$/.test(id)) throw new Error('Invalid save slot.');
     return path.join(this.directory, id + '.json');
   }
-  read(file) {
+  readSnapshot(file) {
     if (this.io.statSync(file).size > MAX_BYTES) throw new Error('Save exceeds 32 MB.');
-    return validate(JSON.parse(this.io.readFileSync(file, 'utf8')));
+    const contents = this.io.readFileSync(file);
+    if (Buffer.byteLength(contents) > MAX_BYTES) throw new Error('Save exceeds 32 MB.');
+    return { contents, save: validate(JSON.parse(contents.toString('utf8'))) };
   }
-  load(id) {
+  read(file) { return this.readSnapshot(file).save; }
+  loadSnapshot(id) {
     const file = this.file(id);
-    let save;
-    try { save = this.read(file); }
+    let snapshot;
+    try { snapshot = this.readSnapshot(file); }
     catch (primaryError) {
       if (primaryError.code === 'UNSUPPORTED_SAVE') throw primaryError;
-      try { return { id, ...this.read(file + '.bak'), recovered: true }; }
+      try { const backup = this.readSnapshot(file + '.bak'); return { contents: backup.contents, save: { id, ...backup.save, recovered: true } }; }
       catch (backupError) {
         if (backupError.code === 'UNSUPPORTED_SAVE') throw backupError;
         throw new Error('Unable to load this slot or its recovery backup: ' + primaryError.message);
       }
     }
+    const save = snapshot.save;
     // A failed primary replacement may already have committed known use to recovery.
     try { save.state = withHistory(save.state, this.read(file + '.bak').state.cheats.everEnabled); }
     catch (error) { if (error.code === 'UNSUPPORTED_SAVE') throw error; }
-    return { id, ...save, recovered: false };
+    return { contents: snapshot.contents, save: { id, ...save, recovered: false } };
   }
+  load(id) { return this.loadSnapshot(id).save; }
   list() {
     const ids = new Set(this.io.readdirSync(this.directory).filter(f => /^[a-f0-9-]{36}\.json(?:\.bak)?$/.test(f)).map(f => f.slice(0, 36)));
     return [...ids].map(id => {
@@ -155,18 +160,18 @@ class Saves {
   }
   save(id, state, name) {
     const file = this.file(id);
-    const previous = this.load(id);
+    const { save: previous, contents: previousContents } = this.loadSnapshot(id);
     const next = { format: 'polycraft-offline', version: Math.max(previous.version, versionForState(state)), name: validName(name ?? previous.name), updatedAt: new Date().toISOString(), state: withHistory(state, previous.state.cheats.everEnabled) };
     const contents = JSON.stringify(next);
     if (Buffer.byteLength(contents) > MAX_BYTES) throw new Error('Save exceeds 32 MB.');
-    if (previous.version === 1) this.atomic(file + '.pre-v2', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
-    if (previous.version < 3 && next.version === 3) this.atomic(file + '.pre-v3', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
+    if (previous.version === 1) this.atomic(file + '.pre-v2', previousContents, true);
+    if (previous.version < 3 && next.version === 3) this.atomic(file + '.pre-v3', previousContents, true);
     const oldCoop = previous.state.userData[COOP_KEY], newCoop = next.state.userData[COOP_KEY];
-    if (next.version === 4 && (previous.version < 4 || (oldCoop && newCoop && JSON.parse(oldCoop).version === 1 && JSON.parse(newCoop).version === 2))) this.atomic(file + '.pre-v4', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
-    if (next.version >= 5 && (previous.version < 5 || (oldCoop && newCoop && JSON.parse(oldCoop).version < 3 && JSON.parse(newCoop).version >= 3))) this.atomic(file + '.pre-v5', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
-    if (next.version >= 6 && (previous.version < 6 || (oldCoop && newCoop && JSON.parse(oldCoop).version < 4 && JSON.parse(newCoop).version === 4))) this.atomic(file + '.pre-v6', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
-    if (next.version >= 7 && previous.version < 7) this.atomic(file + '.pre-v7', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
-    if (next.version >= 8 && previous.version < 8) this.atomic(file + '.pre-v8', this.io.readFileSync(file + (previous.recovered ? '.bak' : '')), true);
+    if (next.version === 4 && (previous.version < 4 || (oldCoop && newCoop && JSON.parse(oldCoop).version === 1 && JSON.parse(newCoop).version === 2))) this.atomic(file + '.pre-v4', previousContents, true);
+    if (next.version >= 5 && (previous.version < 5 || (oldCoop && newCoop && JSON.parse(oldCoop).version < 3 && JSON.parse(newCoop).version >= 3))) this.atomic(file + '.pre-v5', previousContents, true);
+    if (next.version >= 6 && (previous.version < 6 || (oldCoop && newCoop && JSON.parse(oldCoop).version < 4 && JSON.parse(newCoop).version === 4))) this.atomic(file + '.pre-v6', previousContents, true);
+    if (next.version >= 7 && previous.version < 7) this.atomic(file + '.pre-v7', previousContents, true);
+    if (next.version >= 8 && previous.version < 8) this.atomic(file + '.pre-v8', previousContents, true);
     // Carry history into recovery so rolling back a checkpoint cannot erase known cheat use.
     const backupState = withHistory(previous.state, next.state.cheats.everEnabled);
     this.atomic(file + '.bak', JSON.stringify({ format: previous.format, version: next.version, name: previous.name, updatedAt: previous.updatedAt, state: backupState }));
@@ -188,14 +193,14 @@ class Saves {
     for (const suffix of ['', '.bak', '.pre-v2', '.pre-v3', '.pre-v4', '.pre-v5', '.pre-v6', '.pre-v7', '.pre-v8', '.tmp', '.bak.tmp', '.pre-v2.tmp', '.pre-v3.tmp', '.pre-v4.tmp', '.pre-v5.tmp', '.pre-v6.tmp', '.pre-v7.tmp', '.pre-v8.tmp']) if (this.io.existsSync(file + suffix)) this.io.unlinkSync(file + suffix);
   }
   import(file) {
-    const save = this.read(file);
+    const { save, contents } = this.readSnapshot(file);
     const imported = this.create(save.name, save.state, Math.max(2, save.version));
     try {
-      if (save.version < 8) this.atomic(this.file(imported.id) + '.pre-v8', this.io.readFileSync(file), true);
-      if (save.version < 7) this.atomic(this.file(imported.id) + '.pre-v7', this.io.readFileSync(file), true);
-      if (save.version === 1) this.atomic(this.file(imported.id) + '.pre-v2', this.io.readFileSync(file), true);
-      if (Object.hasOwn(save.state.userData, COOP_KEY) && JSON.parse(save.state.userData[COOP_KEY]).version < 3) this.atomic(this.file(imported.id) + '.pre-v5', this.io.readFileSync(file), true);
-      if (Object.hasOwn(save.state.userData, COOP_KEY) && JSON.parse(save.state.userData[COOP_KEY]).version < 4) this.atomic(this.file(imported.id) + '.pre-v6', this.io.readFileSync(file), true);
+      if (save.version < 8) this.atomic(this.file(imported.id) + '.pre-v8', contents, true);
+      if (save.version < 7) this.atomic(this.file(imported.id) + '.pre-v7', contents, true);
+      if (save.version === 1) this.atomic(this.file(imported.id) + '.pre-v2', contents, true);
+      if (Object.hasOwn(save.state.userData, COOP_KEY) && JSON.parse(save.state.userData[COOP_KEY]).version < 3) this.atomic(this.file(imported.id) + '.pre-v5', contents, true);
+      if (Object.hasOwn(save.state.userData, COOP_KEY) && JSON.parse(save.state.userData[COOP_KEY]).version < 4) this.atomic(this.file(imported.id) + '.pre-v6', contents, true);
     } catch (error) { this.remove(imported.id); throw error; }
     return imported;
   }

@@ -33,7 +33,15 @@ Reference audit: [FlimLick/flimssite/tools/stun](https://github.com/FlimLick/fli
 
 Implementation order: bounded signaling/room protocol and server with deployment instructions → authenticated room-code host/join adapter → direct-first route coordinator and staged WebRTC/TURN → network timing/bandwidth instrumentation and disposable acceptance. Beta 8 now contains source and local non-GUI checks for the first three steps with manually configured TURN. Beta 37 implements optional coturn credential issuance; provider-specific APIs, measurements and physical gameplay/deployment acceptance remain next. Continue preserving existing multiplayer/save/gameplay gates; no backend deployment, provider account setup or automatic router mappings occurred in this requirements pass. That requirements checkpoint changed documentation only; the subsequent room implementation is Beta 6, recorded below.
 
-## Current source: Beta 64 native allocation lifecycle verification — 2026-11-04
+## Current source: Beta 65 consistent save migration snapshots — 2026-11-04
+
+Working version is **1.0.0-beta.65**. Import and managed-save migrations now preserve the exact byte snapshot that was validated, rather than rereading a path that a sync tool or another process could replace or remove. Primary and recovery migrations share this behavior. The captured bytes are also checked against the 32 MB limit after reading, protecting against a stale earlier size check. Public load/import results, sticky cheat history, save formats, runtime coop-38 and room protocol 4 are unchanged. Beta 51–65 manual peers remain compatible.
+
+- Reproduced both import and managed-migration backup mismatches before fixing their shared read path. Added regressions for replacement/removal during import, primary/recovery replacement during migration, and a stale file-size report. Focused save/co-op/life/quest/reward checks: **63 passed** (`/private/tmp/polycraft-beta65-saves-focused.txt`). Full suite: **472 passed, zero failed** (`/private/tmp/polycraft-beta65-checks.txt`); `git diff --check` passed. Focused read-only review found no must-fix issue in snapshot consistency, sticky history, future-format rejection, rollback or IPC result shape.
+- Raw source bytes remain internal to persistence and are not returned through renderer load/import results. Existing exclusive migration backups, rollback on failed import, future-format refusal and history merging remain in place. This does not add multi-process write arbitration.
+- Prior Beta 64 packages remain unchanged and do not contain this fix. No game was launched and no personal save was opened. Full-game, native-platform gameplay and physical-network acceptance remain open; graphical tests remain deferred at the user's request.
+
+## Previous checkpoint: Beta 64 native allocation lifecycle verification — 2026-11-04
 
 Working version is **1.0.0-beta.64**. Runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4**, manual framing and save formats are unchanged. Beta 51–64 manual peers remain compatible; room play requires Beta 57+ and the protocol-4 service. No production gameplay/network code changes. Public release remains Beta 2; baselines, prior artifacts and personal saves remain untouched.
 
