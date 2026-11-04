@@ -151,8 +151,18 @@
     }
     async diagnostics() {
       const result = { path: 'unknown', rttMs: null, bufferedBytes: this.channel?.bufferedAmount || 0 };
+      if (this.closed) return result;
+      let timer, stopped;
       try {
-        const stats = await this.pc.getStats();
+        // Browser statistics must not hold connection admission or the report menu open indefinitely.
+        const unavailable = new Promise(resolve => {
+          stopped = () => resolve(null);
+          timer = setTimeout(stopped, 2000);
+          this.abort.signal.addEventListener('abort', stopped, { once: true });
+        });
+        if (!this.statsQuery) this.statsQuery = Promise.resolve(this.pc.getStats()).finally(() => { this.statsQuery = null; });
+        const stats = await Promise.race([this.statsQuery, unavailable]);
+        if (!stats || this.closed) return result;
         const transport = [...stats.values()].find(stat => stat.type === 'transport' && stat.selectedCandidatePairId);
         const pair = transport ? stats.get(transport.selectedCandidatePairId) : [...stats.values()].find(stat => stat.type === 'candidate-pair' && stat.nominated && stat.state === 'succeeded');
         if (!pair) return result;
@@ -160,6 +170,7 @@
         if (local && remote) result.path = local.candidateType === 'relay' || remote.candidateType === 'relay' ? 'relayed' : 'direct';
         if (Number.isFinite(pair.currentRoundTripTime) && pair.currentRoundTripTime >= 0) result.rttMs = Math.round(pair.currentRoundTripTime * 1000);
       } catch { /* Missing browser statistics must not break a session. */ }
+      finally { clearTimeout(timer); this.abort.signal.removeEventListener('abort', stopped); }
       return result;
     }
     async gather() {

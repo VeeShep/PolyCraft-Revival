@@ -217,6 +217,45 @@ test('connection diagnostics expose selected-path RTT and queue size without lea
   assert.deepEqual(await connection.diagnostics(), { path: 'unknown', rttMs: null, bufferedBytes: 8192 });
 });
 
+test('stalled browser statistics cannot hold an open channel in setup or overwrite its bounded fallback later', async t => {
+  mock(t); t.mock.timers.enable({ apis: ['setTimeout'] });
+  const states = [], connection = link(t, 'host', { onState: (state, details) => states.push({ state, ...details }) });
+  let finish, queries = 0;
+  connection.pc.getStats = () => { queries++; return new Promise(resolve => { finish = resolve; }); };
+  connection.pc.connectionState = 'connected';
+  const connecting = connection.connected();
+  t.mock.timers.tick(1999); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(connection.state, 'new');
+  t.mock.timers.tick(1); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(connection.state, 'connected'); await connecting;
+  assert.deepEqual(states, [{ state: 'connected', path: 'unknown' }]);
+  assert.equal(require('node:events').getEventListeners(connection.abort.signal, 'abort').length, 0);
+  const reports = [connection.diagnostics(), connection.diagnostics()];
+  t.mock.timers.tick(2000); await Promise.all(reports);
+  assert.equal(queries, 1, 'Repeated polling must share the outstanding browser query.');
+  finish(new Map()); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(states.length, 1); assert.equal(connection.closed, false);
+  assert.equal(connection.statsQuery, null);
+  connection.pc.getStats = async () => { queries++; throw new Error('browser query failed'); };
+  assert.equal((await connection.diagnostics()).path, 'unknown'); assert.equal(queries, 2);
+  assert.equal(require('node:events').getEventListeners(connection.abort.signal, 'abort').length, 0);
+});
+
+test('closing a peer cancels pending statistics and setup without resurrecting it or querying a closed browser peer', async t => {
+  mock(t);
+  const states = [], connection = link(t, 'host', { onState: state => states.push(state) });
+  let queries = 0;
+  connection.pc.getStats = () => { queries++; return new Promise(() => {}); };
+  const connecting = connection.connected(); let report;
+  const querying = connection.diagnostics().then(value => { report = value; });
+  connection.close(); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(report, { path: 'unknown', rttMs: null, bufferedBytes: 0 });
+  await Promise.all([connecting, querying]);
+  assert.deepEqual(states, ['closed']); assert.equal(connection.notifyingConnection, false);
+  assert.equal(require('node:events').getEventListeners(connection.abort.signal, 'abort').length, 0);
+  await connection.diagnostics(); assert.equal(queries, 1, 'Closed peers must not start another browser query.');
+});
+
 test('room trickle ICE skips gather waits, queues early candidates until the reply and retains candidate bounds', async t => {
   mock(t);
   const produced = [], host = new HostSession({ trickle: true, onCandidate: (candidate, link) => produced.push({ candidate, peer: link.peer }) });
