@@ -77,7 +77,7 @@ app.on('window-all-closed', () => app.quit());`);
             const transport = [...stats.values()].find(row => row.type === 'transport' && row.selectedCandidatePairId);
             const pair = transport && stats.get(transport.selectedCandidatePairId);
             const local = pair && stats.get(pair.localCandidateId), remote = pair && stats.get(pair.remoteCandidateId);
-            return { local, remote };
+            return { local, remote, transport };
           }
           try {
             for (let index = 1; index < count; index++) {
@@ -92,7 +92,7 @@ app.on('window-all-closed', () => app.quit());`);
             for (const guest of guests) {
               const local = host.peers.get(guest.peer), remote = guest.link;
               const channels = [local.channel, remote.channel], pcs = [local.pc, remote.pc];
-              const previous = await pairInfo(local);
+              const [previous, guestPrevious] = await Promise.all([pairInfo(local), pairInfo(remote)]);
               check((await local.diagnostics()).path === (relay ? 'relayed' : 'direct'), 'Unexpected selected connection path.');
               await local.send('update', { tick: 1 }); await remote.send('action', { id: 1 });
               await wait(() => guest.messages.length === 1 && hostMessages.filter(row => row.peer === guest.peer).length === 1);
@@ -105,7 +105,7 @@ app.on('window-all-closed', () => app.quit());`);
               const candidateSummary = sdp => {
                 const fragment = sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
                 const candidates = sdp.split(/\r?\n/).filter(line => line.startsWith('a=candidate:'));
-                return { count: candidates.length, matchingGeneration: candidates.filter(line => line.split(' ufrag ')[1]?.split(' ')[0] === fragment).length };
+                return { count: candidates.length, explicitFragment: candidates.filter(line => line.includes(' ufrag ')).length, matchingGeneration: candidates.filter(line => line.split(' ufrag ')[1]?.split(' ')[0] === fragment).length };
               };
               signaledCandidates = { offer: candidateSummary(offer), answer: candidateSummary(answer) };
               stage = 'applying the restart answer';
@@ -117,10 +117,18 @@ app.on('window-all-closed', () => app.quit());`);
                   const selected = await pairInfo(link);
                   const fragment = description => description.sdp.match(/^a=ice-ufrag:([^\r\n]+)$/m)?.[1];
                   const nativePair = link.pc.sctp?.transport?.iceTransport?.getSelectedCandidatePair();
+                  const baseline = link === local ? previous : guestPrevious;
+                  const signaled = (description, candidate) => description.sdp.split(/\r?\n/).filter(line => line.startsWith('a=candidate:')).some(line => {
+                    const value = new RTCIceCandidate({ candidate: line.slice(2), sdpMid: '0' });
+                    return value.address === candidate?.address && value.port === candidate?.port && value.protocol === candidate?.protocol;
+                  });
                   return { role: link.role, connected: link.pc.connectionState === 'connected', iceConnected: ['connected', 'completed'].includes(link.pc.iceConnectionState), channelOpen: link.channel?.readyState === 'open',
                     confirmed: !!link.iceRenewal?.confirmed, localObservable: typeof selected.local?.usernameFragment === 'string', remoteObservable: typeof selected.remote?.usernameFragment === 'string',
                     localMatches: selected.local?.usernameFragment === fragment(link.pc.localDescription), remoteMatches: selected.remote?.usernameFragment === fragment(link.pc.remoteDescription),
-                    nativeLocalMatches: nativePair?.local.usernameFragment === fragment(link.pc.localDescription), nativeRemoteMatches: nativePair?.remote.usernameFragment === fragment(link.pc.remoteDescription) };
+                    nativeLocalMatches: nativePair?.local.usernameFragment === fragment(link.pc.localDescription), nativeRemoteMatches: nativePair?.remote.usernameFragment === fragment(link.pc.remoteDescription),
+                    localPortChanged: selected.local?.port !== baseline.local?.port, remotePortChanged: selected.remote?.port !== baseline.remote?.port,
+                    localSignaled: signaled(link.pc.localDescription, selected.local), remoteSignaled: signaled(link.pc.remoteDescription, selected.remote),
+                    transportFragmentMatches: selected.transport?.iceLocalUsernameFragment === fragment(link.pc.localDescription) };
                 }));
                 check(false, 'Selected new ICE generation was not confirmed.');
               }
