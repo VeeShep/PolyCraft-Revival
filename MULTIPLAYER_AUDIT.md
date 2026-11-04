@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current guest audio isolation — Beta 39, 2026-11-04
+## Current spatial world audio — Beta 40, 2026-11-04
+
+Original host play/stop internals feed a bounded, copied, spatial-only whitelist journal and current loop/fade state at coherent world boundaries. Muted/unloaded host audio still records intent; guests use local original archetypes. Monotonic IDs skip initial one-shot history and deduplicate later full/delta/resync delivery. Loop instance reconciliation handles missing stops, same-name ordering and remaining fades without restarting unchanged playback. Attached sources follow displayed entities; replicated one-shot stops cannot stop same-name local menu sounds. Host shutdown restores exact original hooks, and guest teardown uses the isolated manager from Beta 39.
+
+359 checks pass (72 focused), including actual native sound methods on silent devices, bounds/parser refusal, full/delta integration and lifecycle restoration. Native review caught start+fade occurring between snapshots; current loop state now retains remaining fade and the regression includes connected/late-joining guests. Follow-up found no further concrete issues. Runtime coop-29/world 9 require matching Beta 40 peers; room/save formats are unchanged. Global campaign stings, preexisting fading-source seeding, complete visual effects and audible/native/physical-network acceptance remain open. The final Mac ARM64 ZIP passes architecture/signature, source/metadata matching and packaged Node audio checks; this is not native gameplay acceptance. See RESTORATION_STATUS.md for exact evidence and next work.
+
+## Previous guest audio isolation — Beta 39, 2026-11-04
 
 A separate native manager facade owns guest active sources and listener buffers while original solo sources are parked using SDK pause. Idle channels are borrowed; private replacements preserve capacity for parked sources without rerunning archetype normalization. Teardown stops guest playback, destroys only replacements and resumes parked solo sources at their saved offsets. Allocation rollback restores the guest boundary without writing solo saves; individual cleanup failures cannot skip manager restoration.
 

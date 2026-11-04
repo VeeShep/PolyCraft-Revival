@@ -8,6 +8,8 @@
   const { GuestQuests } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
   const { GuestHud } = typeof module !== 'undefined' ? require('./hud.js') : root.PolycraftHud;
 
+  const { GuestAudio } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
+
   const same = (a, b) => a === b || !!(a && b && a.length === b.length && a.every((value, index) => value === b[index]));
   function transformParts(math, transform) {
     const normalized = new Float32Array(transform), scale = [0, 3, 6].map(offset => Math.hypot(...transform.slice(offset, offset + 3)));
@@ -287,6 +289,7 @@
           }
           // A rank-up recreates the entity; the assigned saved player identity stays unchanged.
           if (this.identity) this.identity.entity = this.scene.snapshot.hero;
+          if (!this.resyncing) this.effects.receive(this.scene.snapshot.audio, this.scene.snapshot.time);
         }
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
@@ -325,7 +328,7 @@
         this.original.onState?.(state, details);
       };
       this.movement = new GuestMovement(this);
-      try { this.isolateAudio(); } catch (error) { this.close(); throw error; }
+      try { this.isolateAudio(); this.effects = new GuestAudio(game.gameSoundManager, this.scene); } catch (error) { this.close(); throw error; }
     }
     requestResync() {
       if (this.closed || this.resyncing || !this.scene.snapshot) return;

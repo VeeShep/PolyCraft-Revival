@@ -48,7 +48,8 @@ function setup(t) {
   const clock = { isStopped: false, pause() { this.isStopped = true; }, resume() { this.isStopped = false; } };
   const controller = { update: () => events.push('input'), clearInputs: () => events.push('clear'), unlockMouse() {} };
   const game = {
-    hasLoadedLevel: true, gameClock: clock, paused: false,
+    hasLoadedLevel: true, gameClock: clock, paused: false, globals: { gameCurrentTime: 0 },
+    gameSoundManager: { activeSoundSourceList: [], playInternal() {}, stopInternal() {} },
     getActiveGameState: () => ({ name: 'GamestatePlaying' }),
     getGameController: () => controller, getPlayState: () => ({ update: () => events.push('play-state') }),
     beginWorldUpdate: () => events.push('begin'), updateSimulation: () => events.push('simulation'),
@@ -245,7 +246,7 @@ test('host streams an initial snapshot then bounded updates, waits for each tran
 });
 
 function worldSnapshot(tick) {
-  return { version: 8, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },
+  return { version: 9, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },
     spaces: [{ extents: [-10, -10, -10, 10, 10, 10], transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], blocks: [],
       entities: [{ id: 'hero', archetype: null, interactive: true, location: [tick, 0, 0], scale: [1, 1, 1], rotation: 0, mesh: null, health: null }] }] };
 }
@@ -359,4 +360,13 @@ test('the host dispatcher keeps walking, directional cancellation and constructi
     assert.equal(input.sequence, 3); assert.equal(actions.sequence, 1);
     assert.throws(() => transport.onMessage({ kind: 'action', payload: { type: 'move', sequence: 4, move: [0, 0] } }, { ...connection }), /no assigned/);
   } finally { world.peerPlayers.clear(); transport.peers.clear(); delete world.players; await world.close(); }
+});
+
+test('hosting installs one world-audio recorder and closing restores original native audio hooks', async t => {
+  const { controls, transport, game } = setup(t), original = { play: game.gameSoundManager.playInternal, stop: game.gameSoundManager.stopInternal };
+  const world = await startHostingWorld(controls, transport);
+  assert.equal(game.desktopAudio, world.audio); assert.notEqual(game.gameSoundManager.playInternal, original.play);
+  game.gameSoundManager.playInternal('aud_shotgunshot', [1, 2, 3]); assert.equal(game.desktopAudio.capture().events.length, 1);
+  await world.close(); assert.equal(game.desktopAudio, undefined);
+  assert.equal(game.gameSoundManager.playInternal, original.play); assert.equal(game.gameSoundManager.stopInternal, original.stop);
 });

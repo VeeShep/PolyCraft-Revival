@@ -68,6 +68,12 @@ function healthDrawing() {
   return { healthMethods: evaluate(health, { [drawingDependency(drawHealth, 'healthMid')]: colors }), drawProgressBar: evaluate(drawBar, {
     [drawingDependency(drawBar, 'progressBarTexturePath')]: { progressBarTexturePath: 'textures/block.dds' }, [drawingDependency(drawBar, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth' } } }, [drawingDependency(drawBar, 'outline')]: colors }) };
 }
+function soundManagerMethods() {
+  const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'updateListener')), 'sound manager prototype');
+  const owner = definition.left.object.name, archetypes = {};
+  for (const a of assignments) if (a.left.type === 'MemberExpression' && a.left.object.property?.name === 'archetypes' && a.left.object.object?.name === owner && a.right.type === 'ObjectExpression') archetypes[a.left.property.name] = evaluate(a.right);
+  return { archetypes, methods: evaluate(definition.right, { [owner]: { archetypes } }) };
+}
 function audioSourceMethods() {
   const create = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === '_createBufferNode' && a.left.object.property?.name === 'prototype'), 'audio buffer source');
   const owner = create.left.object.object.name;
@@ -90,4 +96,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, soundManagerMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
