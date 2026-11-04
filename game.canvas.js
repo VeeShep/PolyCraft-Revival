@@ -66107,10 +66107,11 @@
       var b = b ? b.getName() : void 0,
         d,
         f,
-        e = this.activeSoundSourceList;
-      for (f = 0; f < e.length; f += 1) if (d = e[f], d.soundName === a && d.gameEntityName === b) {
-        0 < c ? (d.fadeTime = c, d.startFadeTime = c) : (d.soundSource.stop(), this.removeActiveSoundByIndex(f));
-        break;
+        e = this.activeSoundSourceList,
+        stopFamily = O.archetypes[a] && O.archetypes[a].preview;
+      for (f = 0; f < e.length; f += 1) if (d = e[f], (d.soundName === a || d.parentSoundName === a) && d.gameEntityName === b) {
+        0 < c ? (d.fadeTime = c, d.startFadeTime = c) : (d.soundSource.stop(), this.removeActiveSoundByIndex(f), f -= 1);
+        if (!stopFamily) break;
       }
     },
     setVolumeInternal: function (a, b, c, d) {
@@ -66118,7 +66119,7 @@
         f,
         e,
         h = this.activeSoundSourceList;
-      for (e = 0; e < h.length; e += 1) f = h[e], f.soundName === a && f.gameEntityName === b && (f.oldVolumeFactor = f.currentVolumeFactor, f.newVolumeFactor = c, f.newVolumeFactorFadeTime = d, f.newVolumeFactorStartFadeTime = d);
+      for (e = 0; e < h.length; e += 1) f = h[e], (f.soundName === a || f.parentSoundName === a) && f.gameEntityName === b && (f.oldVolumeFactor = f.currentVolumeFactor, f.newVolumeFactor = c, f.newVolumeFactorFadeTime = d, f.newVolumeFactorStartFadeTime = d);
     },
     play: function (a, b, c) {
       if (a) if (c && c.isManagedByThisMachine()) {
@@ -66160,7 +66161,20 @@
         f = this.globals.settings.volume;
       if (!a.soundSource.playing) return !1;
       var e = a.currentVolumeFactor;
-      if (void 0 !== a.startFadeTime) a.fadeTime -= this.globals.gameTimeStep, 0 >= a.fadeTime ? a.soundSource.stop() : e *= a.fadeTime / a.startFadeTime;else if (a.parentSoundName && (d = this.extractParametersToPlay(a.parentSoundName)) && d.path && c.isSoundLoaded(d.path) && !c.isSoundMissing(d.path)) a.startFadeTime = 0.2, a.fadeTime = 0.2, this.playInternal(a.parentSoundName, a.v3Location, a.gameEntity);
+      if (void 0 !== a.startFadeTime) a.fadeTime -= this.globals.gameTimeStep, 0 >= a.fadeTime ? a.soundSource.stop() : e *= a.fadeTime / a.startFadeTime;else if (a.parentSoundName && (d = this.extractParametersToPlay(a.parentSoundName)) && d.path && c.isSoundLoaded(d.path) && !c.isSoundMissing(d.path)) {
+        var previousLength = this.activeSoundSourceList.length;
+        this.playInternal(a.parentSoundName, a.v3Location, a.gameEntity);
+        if (this.activeSoundSourceList.length > previousLength) {
+          var promoted = this.activeSoundSourceList[this.activeSoundSourceList.length - 1];
+          promoted.currentVolumeFactor = a.currentVolumeFactor;
+          promoted.oldVolumeFactor = a.oldVolumeFactor;
+          promoted.newVolumeFactor = a.newVolumeFactor;
+          promoted.newVolumeFactorFadeTime = a.newVolumeFactorFadeTime;
+          promoted.newVolumeFactorStartFadeTime = a.newVolumeFactorStartFadeTime;
+          promoted.soundSource.gain = promoted.currentVolumeFactor * promoted.originalVolume * f;
+          a.startFadeTime = a.fadeTime = 0.2;
+        }
+      }
       void 0 !== a.newVolumeFactor && (a.newVolumeFactorFadeTime -= this.globals.gameTimeStep, 0 >= a.newVolumeFactorFadeTime ? (e = a.newVolumeFactor, a.newVolumeFactor = void 0) : (c = b.saturate(1 - a.newVolumeFactorFadeTime / a.newVolumeFactorStartFadeTime), e = b.lerp(a.oldVolumeFactor, a.newVolumeFactor, c)));
       a.currentVolumeFactor = e;
       a.soundSource.gain = e * a.originalVolume * f;

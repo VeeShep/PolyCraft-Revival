@@ -593,7 +593,7 @@ function guestAudio() {
   const ast = require('./runtime-ast.cjs'), world = Object.create(GuestWorld.prototype), played = [], sources = [];
   const math = { v3Copy: value => [...value], m43Copy(value, output = []) { value.forEach((number, i) => { output[i] = number; }); return output; }, m43SetPos(matrix, position) { position.forEach((value, i) => { matrix[9 + i] = value; }); }, saturate: value => Math.max(0, Math.min(1, value)), lerp: (a, b, factor) => a + (b - a) * factor };
   const globals = { mathDevice: math, gameTimeStep: 9, soundDevice: {}, settings: { volume: 1 }, camera: { matrix: [1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 50, 50] } };
-  const sounds = Object.assign(Object.create(ast.prototypeWith('updateListener')), { globals, activeSoundSourceList: [], soundSourceDepot: [], soundSourceGlobalDepot: [],
+  const sounds = Object.assign(Object.create(ast.soundManagerMethods().methods), { globals, activeSoundSourceList: [], soundSourceDepot: [], soundSourceGlobalDepot: [],
     playInternal(name) { played.push(name); const source = { playing: true, globalSource: true, stop() { this.playing = false; } }; sources.push(source); this.attachSource(source, null, null, name, 1, 0); } });
   const game = { gameSoundManager: sounds, startMusic: ast.method('startMusic'), stopMusic: ast.method('stopMusic'), setMusicVolume: ast.method('setMusicVolume'), getMusicEnabled: () => false,
     getHero: () => assert.fail('guest audio must not read the suspended solo hero') };
@@ -637,7 +637,7 @@ function isolatedAudio() {
   const music = source(true, true), worker = source(false, true), paused = source(true, true, true), finished = source(false), idle = source(false), idleGlobal = source(true);
   const device = { createSource(options) { assert.deepEqual(options, { minDistance: 1, maxDistance: 30, rollOff: 1 }); const value = source(false); created.push(value); return value; },
     createGlobalSource() { const value = source(true); created.push(value); return value; } };
-  const manager = Object.assign(Object.create(ast.prototypeWith('updateListener')), { activeSoundSourceList: [music, worker, paused, finished].map(soundSource => ({ soundSource })),
+  const manager = Object.assign(Object.create(ast.soundManagerMethods().methods), { activeSoundSourceList: [music, worker, paused, finished].map(soundSource => ({ soundSource })),
     soundSourceDepot: [idle], soundSourceGlobalDepot: [idleGlobal], listenerMatrix: new Float32Array(identity()), listenerv3WorldLocation: new Float32Array([1, 2, 3]), soundExtension: '.mp3',
     initialize() { assert.fail('Isolation must not renormalize native sound archetype paths'); } });
   world.controls = { app: { globals: { soundDevice: device } } }; world.game = { gameSoundManager: manager, musicString: 'aud_music_day' };

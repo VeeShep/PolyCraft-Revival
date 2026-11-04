@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current legacy world audio and native channel fixes — Beta 45, 2026-11-04
+## Current preview music controls — Beta 46, 2026-11-04
+
+Native stop/volume requests now follow preview parent names. Declared preview families stop all their current parts; ordinary SFX remain first-match. Full-track promotion copies the preview's current/old/target volume and fade clocks, applies gain immediately and starts preview exit only after channel allocation succeeds. No-channel retries preserve the preview. Solo preference storage and network/save formats are unchanged.
+
+384 checks pass (47 focused) using original GameManager and sound-manager methods, with pre-fix failures for mute and lingering preview parts. Tests cover promotion/fade/mute, channel retry, family cleanup, pool recovery, other-track/SFX isolation and guest restoration. Read-only review found no concrete issues. Runtime coop-33/world 13 remains compatible with Beta 45; each affected client needs Beta 46 for the fix. Audible/native/physical-network, journal bandwidth and broader UI/campaign acceptance remain open. See RESTORATION_STATUS.md.
+
+## Previous legacy world audio and native channel fixes — Beta 45, 2026-11-04
 
 The original pistol, worker/resource, creature and construction/door sounds extend the explicit inventory to 84 spatial names, plus three global battle cues. Native firearm/entity/queued handlers now carry pistolshot into guest playback with original variants/gain. Actual battle entry emits combatWaveApproaching globally; local menu/preparation/purchase/achievement sounds remain excluded. Native pool fallback now chooses/stops only the lowest-priority spatial voice (including priority zero), preserving global music. Preview recursion returns the failed parent channel first, avoiding capacity leaks.
 

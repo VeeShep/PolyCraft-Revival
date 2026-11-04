@@ -229,3 +229,39 @@ test('native delayed music previews return failed parent channels and never leak
   f.manager.soundManager.isSoundLoaded = () => false; f.manager.playInternal('aud_music_day');
   assert.equal(f.manager.activeSoundSourceList.length, 0); assert.equal(f.manager.soundSourceGlobalDepot.length, capacity);
 });
+
+function musicFixture(enabled = true) {
+  const f = fixture(), ast = require('./runtime-ast.cjs');
+  const parent = native.archetypes.aud_music_day, loaded = new Set([native.archetypes[parent.preview].path]);
+  Object.assign(f.game, { startMusic: ast.method('startMusic'), stopMusic: ast.method('stopMusic'), setMusicVolume: ast.method('setMusicVolume'), getMusicEnabled: () => enabled });
+  f.manager.soundManager.isSoundLoaded = path => loaded.has(path); f.globals = f.game.globals; f.globals.soundManager = f.manager.soundManager;
+  f.manager.updateListener = () => {}; f.globals.gameTimeStep = 0.1;
+  return { ...f, parent, loaded };
+}
+test('native music mute applies to previews and survives promotion to the loaded full track', () => {
+  const f = musicFixture(false); f.game.startMusic('aud_music_day'); const preview = f.manager.activeSoundSourceList[0];
+  f.manager.update(); assert.equal(preview.soundSource.gain, 0, 'logical parent mute reaches its preview');
+  f.loaded.add(f.parent.path); f.manager.update(); const full = f.manager.activeSoundSourceList.find(entry => entry.soundName === 'aud_music_day');
+  assert.ok(full); assert.equal(full.soundSource.gain, 0); assert.equal(full.currentVolumeFactor, 0);
+  f.game.stopMusic(); assert.equal(f.game.musicString, undefined);
+  assert.ok(f.manager.activeSoundSourceList.every(entry => entry.startFadeTime === 1), 'stop addresses preview and full-track parts');
+  f.globals.gameTimeStep = 2; f.manager.update(); f.manager.update(); assert.equal(f.manager.activeSoundSourceList.length, 0); assert.equal(f.manager.soundSourceGlobalDepot.length, 20);
+});
+test('native preview promotion retains the pending volume fade and waits for an available full-track channel', () => {
+  const f = musicFixture(); f.game.startMusic('aud_music_day'); f.game.setMusicVolume(0, 0.4); f.manager.update();
+  const preview = f.manager.activeSoundSourceList[0]; assert.ok(Math.abs(preview.currentVolumeFactor - 0.75) < 1e-9);
+  const idle = f.manager.soundSourceGlobalDepot.splice(0); f.loaded.add(f.parent.path); f.manager.update();
+  assert.equal(preview.startFadeTime, undefined, 'do not fade away the only playing source when promotion has no channel');
+  f.manager.soundSourceGlobalDepot.push(...idle); f.manager.update(); const full = f.manager.activeSoundSourceList.find(entry => entry.soundName === 'aud_music_day');
+  assert.ok(full); assert.equal(full.newVolumeFactor, 0); assert.equal(full.currentVolumeFactor, preview.currentVolumeFactor);
+  assert.equal(full.newVolumeFactorFadeTime, preview.newVolumeFactorFadeTime);
+  for (let i = 0; i < 6; i++) f.manager.update(); assert.equal(full.soundSource.gain, 0);
+});
+test('native immediate parent stop removes all preview-family parts without stopping other music or changing first-match SFX stops', () => {
+  const f = fixture();
+  f.manager.playInternal('aud_music_day_preview', null, null, 'aud_music_day'); f.manager.playInternal('aud_music_day'); f.manager.playInternal('aud_music_night');
+  f.manager.stopInternal('aud_music_day', null, 0); assert.deepEqual(f.manager.activeSoundSourceList.map(entry => entry.soundName), ['aud_music_night']);
+  f.manager.playInternal('pistolshot', [0, 0, 0]); f.manager.playInternal('pistolshot', [0, 0, 0]); f.manager.stopInternal('pistolshot', null, 0);
+  assert.equal(f.manager.activeSoundSourceList.filter(entry => entry.soundName === 'pistolshot').length, 1);
+  assert.equal(f.manager.activeSoundSourceList[0].soundSource.playing, true);
+});
