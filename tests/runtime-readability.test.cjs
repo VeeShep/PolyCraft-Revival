@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const { nameInputControllers } = require('../scripts/name-input-controllers.cjs');
+const { nameDataModels } = require('../scripts/name-data-models.cjs');
 const source = `(function () {
   function a() {} function b() {}
   function shadow(a) { return a; }
@@ -20,6 +21,57 @@ test('scope-aware controller naming preserves public keys, assets, shadowed loca
   assert.equal(result.output.split('\n').length, source.split('\n').length, 'unrelated formatting stays unchanged');
   assert.match(result.proof, /canonical input/); assert.notEqual(result.inputSHA256, result.outputSHA256);
   assert.throws(() => nameInputControllers(result.output), /already named/);
+});
+const dataSource = `(function () {
+  function a() { this.xp = 0; }
+  a.prototype = { saveProgress: function () { this.xp += 3; return this.xp; }, saveHeroUpgrades: function () { return 'heroUpgrades'; } };
+  a.create = function () { return new a(); };
+  function b() { this.tasks = []; }
+  b.prototype = { saveCompletedTasks: function (task) { this.tasks.push(task); }, giveTaskReward: function () { return this.tasks.slice(); } };
+  b.create = function () { return new b(); };
+  function c() { this.victory = false; }
+  c.prototype = { getCampaignScoreInfo: function () { return this.victory; }, onCampaignEnded: function () { this.victory = true; } };
+  c.create = function () { return new c(); };
+  var game = {};
+  game.playerData = a.create(); game.taskManager = b.create(); game.scoreInfo = c.create();
+  function shadow(a) { return a; }
+  game.playerData.saveProgress(); game.taskManager.saveCompletedTasks('taskIdcrit_1'); game.scoreInfo.onCampaignEnded();
+  globalThis.result = { keys: Object.keys(game), xp: game.playerData.saveProgress(), upgrades: game.playerData.saveHeroUpgrades(), tasks: game.taskManager.giveTaskReward(), victory: game.scoreInfo.getCampaignScoreInfo(), shadow: shadow('a') };
+})();`;
+test('data-model naming preserves native progression/task/score methods and public data keys with inverse proof', () => {
+  const result = nameDataModels(dataSource), before = {}, after = {};
+  vm.runInNewContext(dataSource, before); vm.runInNewContext(result.output, after);
+  assert.equal(JSON.stringify(after.result), JSON.stringify(before.result));
+  assert.deepEqual(result.names.map(entry => [entry.original, entry.name, entry.descriptive]), [['a', 'PlayerDataModel', true], ['b', 'QuestTaskManager', true], ['c', 'CampaignScoreInfo', true]]);
+  assert.match(result.proof, /canonical input/); assert.match(result.output, /function shadow\(a\)/);
+  assert.equal(result.output.split('\n').length, dataSource.split('\n').length);
+  assert.throws(() => nameDataModels(result.output), /already named/);
+});
+test('data-model naming refuses ambiguous factories, missing native methods, captured names and global bindings', () => {
+  for (const source of [
+    dataSource.replace('game.playerData = a.create();', ''),
+    dataSource.replace('game.playerData = a.create();', 'game.playerData = a.create(); game.playerData = a.create();'),
+    dataSource.replace('game.scoreInfo = c.create();', 'game.scoreInfo = b.create();'),
+    dataSource.replace('saveHeroUpgrades: function', 'unrelated: function'),
+    dataSource.replace('function shadow(a)', 'function nested() { var PlayerDataModel = 1; return new a(); } function shadow(a)'),
+    dataSource.replace('function shadow(a)', 'a = function () {}; function shadow(a)'),
+    dataSource.replace('(function () {', '').replace('})();', '')
+  ]) assert.throws(() => nameDataModels(source), /factory|native data|Generated syntax|Changes beyond|Reassigned|private/);
+});
+test('data-model CLI records its proof without changing immutable baseline or earlier naming passes', t => {
+  const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), crypto = require('node:crypto'), { spawnSync } = require('node:child_process');
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-data-names-')); t.after(() => fs.rmSync(folder, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(folder, 'scripts')); fs.mkdirSync(path.join(folder, 'reference/beta-1'), { recursive: true });
+  const baseline = Buffer.from('immutable baseline'), runtime = path.join(folder, 'game.canvas.js'), report = path.join(folder, 'scripts/runtime-names.json');
+  fs.writeFileSync(path.join(folder, 'reference/beta-1/game.canvas.js'), baseline); fs.writeFileSync(runtime, dataSource);
+  const oldPass = { id: 'previous', inputSHA256: 'preserved' };
+  fs.writeFileSync(report, JSON.stringify({ baselineSHA256: crypto.createHash('sha256').update(baseline).digest('hex'), passes: [oldPass] }));
+  const run = () => spawnSync(process.execPath, [path.join(__dirname, '../scripts/name-data-models.cjs')], { cwd: folder, encoding: 'utf8' });
+  const first = run(); assert.equal(first.status, 0, first.stderr);
+  const output = fs.readFileSync(runtime, 'utf8'), manifestText = fs.readFileSync(report, 'utf8'), manifest = JSON.parse(manifestText);
+  assert.deepEqual(manifest.passes[0], oldPass); assert.equal(manifest.passes[1].id, 'data-model-role-names'); assert.equal(manifest.passes[1].names.length, 3);
+  assert.deepEqual(fs.readFileSync(path.join(folder, 'reference/beta-1/game.canvas.js')), baseline);
+  assert.notEqual(run().status, 0); assert.equal(fs.readFileSync(runtime, 'utf8'), output); assert.equal(fs.readFileSync(report, 'utf8'), manifestText);
 });
 test('controller naming refuses ambiguous factories, reassignment and destination-name collisions', () => {
   for (const invalid of [source.replace('value.controllerActionB = b.create()', 'value.controllerActionB = a.create()'), source.replace('var game = {};', 'b = function () {}; var game = {};'), source.replace('var game = {};', 'var GameInputController = 1; var game = {};'), source.replace('var game = {};', 'globalThis.publicValue = GameInputController; var game = {};'), source.replace('game.gameController = a.create();', 'game.gameController = a.create(); game.gameController = a.create();')]) assert.throws(() => nameInputControllers(invalid), /constructor|factory|Conflicting/);

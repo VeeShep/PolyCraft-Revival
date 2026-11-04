@@ -119,7 +119,7 @@
   function pf() {}
   function qf() {}
   function Xd() {}
-  function rf() {}
+  function QuestTaskManager() {}
   function sf() {}
   function tf() {}
   function HeroControllerAction() {}
@@ -191,10 +191,10 @@
   function Hf() {}
   function Ta() {}
   function If() {}
-  function Jf() {}
+  function PlayerDataModel() {}
   function Ib() {}
   function Kf() {}
-  function Lf() {}
+  function CampaignScoreInfo() {}
   function Mf() {}
   function Nf() {}
   function Of() {}
@@ -40255,7 +40255,7 @@
     g.runStartUpScripts(a, c);
     return g;
   };
-  rf.prototype = {
+  QuestTaskManager.prototype = {
     MAX_VISIBLE_BADGE_TASKS: 1,
     MAX_VISIBLE_CRITICAL_TASKS: 1,
     MAX_VISIBLE_FILLER_TASKS: 2,
@@ -40438,8 +40438,8 @@
       this.badgeTaskGroup.destroy();
     }
   };
-  rf.create = function (a, b, c) {
-    var d = new rf();
+  QuestTaskManager.create = function (a, b, c) {
+    var d = new QuestTaskManager();
     d.globals = a;
     d.gameManager = b;
     d.shouldArrowsPersistAfterDesc = !0;
@@ -66579,7 +66579,7 @@
     b.init();
     return b;
   };
-  Jf.prototype = {
+  PlayerDataModel.prototype = {
     dataKeyHeroUpgrades: "heroUpgrades",
     dataKeyResource: "resource",
     dataKeySoftCurrency: "softCurrency",
@@ -67010,8 +67010,8 @@
       this.fullSave();
     }
   };
-  Jf.create = function (a) {
-    var b = new Jf();
+  PlayerDataModel.create = function (a) {
+    var b = new PlayerDataModel();
     b.init(a);
     return b;
   };
@@ -68452,7 +68452,7 @@
     void 0 === Ib.prototype.globals && (Ib.prototype.globals = b);
     var c = new Ib();
     c.eventManager = yf.create();
-    c.playerData = Jf.create(b);
+    c.playerData = PlayerDataModel.create(b);
     c.uniqueIndex = 0;
     c.uniqueLevelIndex = 0;
     c.gameCamera = td.create(b, c);
@@ -68461,7 +68461,7 @@
     c.guiManager = zf.create(b, c.gameController);
     c.gameScoresUI = Af.create(b, c.imgui);
     c.gameClock = Df.create(b);
-    c.scoreInfo = Lf.create(b);
+    c.scoreInfo = CampaignScoreInfo.create(b);
     c.gameLighting = Hb.create(b, c);
     c.ecDebugDrawFlags = {};
     c.activeECMasks = {};
@@ -68798,7 +68798,7 @@
     c.uniquePlayerNumber = 0;
     return c;
   };
-  Lf.prototype = {
+  CampaignScoreInfo.prototype = {
     getCampaignScoreInfo: function () {
       return {
         resourceBonusList: this.campaignResourceBonusList,
@@ -68975,8 +68975,8 @@
       }
     }
   };
-  Lf.create = function (a) {
-    var b = new Lf();
+  CampaignScoreInfo.create = function (a) {
+    var b = new CampaignScoreInfo();
     b.globals = a;
     b.campaignActive = !1;
     b.campaignResourceBonusList = [];
@@ -71978,7 +71978,7 @@
       var a = this.globals,
         b = this.gameManager,
         c = b.getPlayerData().getTaskFlags();
-      b.taskManager = rf.create(a, b, c);
+      b.taskManager = QuestTaskManager.create(a, b, c);
     },
     destroyTaskManager: function () {
       var a = this.gameManager.getTaskManager();

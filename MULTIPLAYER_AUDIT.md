@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current maintenance checkpoint — Beta 52, 2026-11-04
+## Current maintenance checkpoint — Beta 53, 2026-11-04
+
+The private player-data model, quest-task manager and campaign-score manager now have descriptive names verified from unique public factory assignments and native prototype methods. Three definitions and 12 references change; public/save keys and execution order remain intact. Inverse AST proof reproduces committed Beta 52 input. The manifest distinguishes these role descriptions from recovered original names. 425 full checks and ten readability checks pass; package evidence is in RESTORATION_STATUS.md. Runtime coop-38/world 15/delta 2 and room/save formats remain unchanged; Beta 51–53 game peers are compatible. No gameplay/award changes or native/physical-network acceptance are claimed.
+
+Source audit: every original requiresMovement setting is false, including all nine resource definitions covered by native-method tests. The manual-approach fallback is dormant for original content; enabling it would be new behavior. Native campaign result rewards remain in memory until the host closes the panel: CampaignScoreInfo.create resets score data, the manager has no serialization/load path, and GamestateCampaignScore.giveRewards grants host XP and shared resources only on dismissal. Durable pending campaign rewards and reconnect history need implementation/acceptance, with a compatible ledger migration and preserved owner identity. Do not guess XP distribution or duplicate shared resources. This is source evidence, not a reproduced graphical save/reload test.
+
+## Previous maintenance checkpoint — Beta 52, 2026-11-04
 
 Three private native play-state constructors now use names verified from their literal labels and matching factory registrations. Scoped identifier edits preserve the original behavior; a canonical inverse rename reproduces the committed Beta 51 input. The naming helper rejects ambiguous/dynamic/global scope and records hashes without changing the immutable baseline. 422 full-suite checks, seven readability checks and 63 selected packaged Mac runtime checks pass. Runtime coop-38/world 15/delta 2 and all room/save formats remain unchanged; Beta 51 and Beta 52 peers are compatible. No new multiplayer behavior or graphical/network/native acceptance is claimed. Package and continuation evidence is in RESTORATION_STATUS.md. Campaign XP ownership remains a saved question; host reward collection is unchanged.
 
