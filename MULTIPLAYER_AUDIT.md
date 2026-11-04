@@ -2,7 +2,15 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current maintenance checkpoint — Beta 53, 2026-11-04
+## Current durable pending host campaign rewards — Beta 54, 2026-11-04
+
+Native completed scoring stages a copied, versioned pending reward synchronously before a save can capture the finished campaign. Each record belongs to solo play or the saved co-op host UUID. The original host result panel reads its exact ledger ID; the original XP/resource grant path consumes it once. Restoring a score panel does not rerun campaign-end events or repeat scoring. Online menus retain their original non-pausing host behavior. Guest scorecards remain presentation only, with no independent payout.
+
+Co-op rewards remain pending while playing solo and restore when hosting the same saved co-op hero. If hosting ends with a result panel open, the mismatched panel leaves safely without granting to the solo hero. Record identity is bound before native score-screen exit events. Native grant order remains XP, lumber, stone. Reentrant saves/claims are blocked during that synchronous operation; exceptions latch a failure that blocks native level saves and coherent checkpoints until reloading the prior disk checkpoint. No XP distribution policy changes.
+
+Format 8 requires compatible readers; exact pre-migration files are retained as .pre-v8. Shape/owner validation, unsupported-version refusal, primary/recovery refusal by the unchanged reader-7 fixture, import/export, rename and sticky history are tested. 432 full checks and 86 selected packaged runtime checks pass. Seven new focused tests cover native completion/panel/grant methods, reload, duplicate delivery, host/solo switches, exit callbacks, partial failures and pending UI readiness. Native graphical save/reload, mid-campaign score preservation, guest result history and physical-network/native-platform acceptance remain open. Runtime coop-38/world 15/delta 2 and room protocol 3 remain compatible with Beta 51–54; save format changes only affect reopening islands. Detailed evidence is in RESTORATION_STATUS.md.
+
+## Previous maintenance checkpoint — Beta 53, 2026-11-04
 
 The private player-data model, quest-task manager and campaign-score manager now have descriptive names verified from unique public factory assignments and native prototype methods. Three definitions and 12 references change; public/save keys and execution order remain intact. Inverse AST proof reproduces committed Beta 52 input. The manifest distinguishes these role descriptions from recovered original names. 425 full checks and ten readability checks pass; package evidence is in RESTORATION_STATUS.md. Runtime coop-38/world 15/delta 2 and room/save formats remain unchanged; Beta 51–53 game peers are compatible. No gameplay/award changes or native/physical-network acceptance are claimed.
 

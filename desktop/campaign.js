@@ -21,16 +21,85 @@
     return { owner, view };
   }
   const amount = value => Number.isSafeInteger(value) && value >= 0 && value <= 2147483647;
+  const REWARD_KEY = 'desktopCampaignRewards';
+  const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+  const STARS = ['hqHealthFactor', 'fewerThanNHeroDeaths', 'killNEnemies', 'killNEnemiesWithHero'];
   function validateCampaignResult(value, controls) {
     if (value === null) return value;
-    if (!keys(value, ['id', 'campaign', 'score']) || !Number.isSafeInteger(value.id) || value.id < 1 || !name(value.campaign) || !Object.hasOwn(controls.campaignMethods?.archetypes || {}, value.campaign)) throw new Error('Invalid campaign result.');
-    const score = value.score, criteria = controls.campaignMethods.archetypes[value.campaign].starCriteriaList;
-    if (!keys(score, ['wasVictory', 'resourceBonusList', 'xpBonus', 'starStatusList', 'grade']) || typeof score.wasVictory !== 'boolean' || !Array.isArray(score.resourceBonusList) || score.resourceBonusList.length !== 2 || !Array.from(score.resourceBonusList).every(amount) || !amount(score.xpBonus) || !Array.isArray(score.starStatusList) || score.starStatusList.length < 1 || score.starStatusList.length > 16 || score.starStatusList.length !== criteria.length || !Number.isSafeInteger(score.grade) || score.grade < 0 || score.grade > criteria.length) throw new Error('Invalid campaign score.');
+    if (!keys(value, ['id', 'campaign', 'score']) || !Number.isSafeInteger(value.id) || value.id < 1 || !name(value.campaign) || controls && !Object.hasOwn(controls.campaignMethods?.archetypes || {}, value.campaign)) throw new Error('Invalid campaign result.');
+    const score = value.score, criteria = controls?.campaignMethods.archetypes[value.campaign].starCriteriaList;
+    if (!keys(score, ['wasVictory', 'resourceBonusList', 'xpBonus', 'starStatusList', 'grade']) || typeof score.wasVictory !== 'boolean' || !Array.isArray(score.resourceBonusList) || score.resourceBonusList.length !== 2 || !Array.from(score.resourceBonusList).every(amount) || !amount(score.xpBonus) || !Array.isArray(score.starStatusList) || score.starStatusList.length < 1 || score.starStatusList.length > 16 || criteria && score.starStatusList.length !== criteria.length || !Number.isSafeInteger(score.grade) || score.grade < 0 || score.grade > score.starStatusList.length) throw new Error('Invalid campaign score.');
     for (const [index, row] of Array.from(score.starStatusList).entries()) {
-      if (!keys(row, ['starName', 'displayText', 'achieved', 'value']) || row.starName !== criteria[index].name || !Object.hasOwn(controls.infoPanels.starGuiArchetypeMap, row.starName) || typeof row.achieved !== 'boolean' || ![row.displayText, row.value].every(text => typeof text === 'string' && text.length <= 256)) throw new Error('Invalid campaign star.');
+      if (!keys(row, ['starName', 'displayText', 'achieved', 'value']) || !STARS.includes(row.starName) || criteria && (row.starName !== criteria[index].name || !Object.hasOwn(controls.infoPanels.starGuiArchetypeMap, row.starName)) || typeof row.achieved !== 'boolean' || ![row.displayText, row.value].every(text => typeof text === 'string' && text.length <= 256)) throw new Error('Invalid campaign star.');
     }
     if (score.grade !== (score.wasVictory ? score.starStatusList.filter(row => row.achieved).length : 0) || !score.wasVictory && (score.xpBonus || score.resourceBonusList.some(Boolean))) throw new Error('Invalid campaign rewards.');
     return value;
+  }
+  function validateCampaignRewards(value) {
+    if (value?.version > 1) { const error = new Error('Campaign rewards need a newer PolyCraft version.'); error.code = 'UNSUPPORTED_SAVE'; throw error; }
+    if (!keys(value, ['version', 'nextId', 'pending']) || value.version !== 1 || !Number.isSafeInteger(value.nextId) || value.nextId < 1 || !Array.isArray(value.pending) || value.pending.length > 16) throw new Error('Invalid campaign reward ledger.');
+    const ids = new Set();
+    for (const row of value.pending) {
+      if (!keys(row, ['id', 'owner', 'campaign', 'score']) || row.owner !== null && (typeof row.owner !== 'string' || !UUID.test(row.owner)) || ids.has(row.id) || row.id >= value.nextId) throw new Error('Invalid campaign reward owner or identity.');
+      validateCampaignResult({ id: row.id, campaign: row.campaign, score: row.score }); ids.add(row.id);
+    }
+    return value;
+  }
+  class CampaignRewards {
+    constructor(game, bridge, controls) {
+      this.game = game; this.bridge = bridge; this.controls = controls;
+      this.data = validateCampaignRewards(JSON.parse(bridge.state.userData[REWARD_KEY] || '{"version":1,"nextId":1,"pending":[]}'));
+      for (const row of this.data.pending) validateCampaignResult({ id: row.id, campaign: row.campaign, score: row.score }, controls);
+      this.staged = new WeakSet();
+    }
+    owner() { return this.game.desktopPlayers?.registry.data.host || null; }
+    current() { this.assertHealthy(); return this.data.pending.find(row => row.owner === this.owner()); }
+    definition(row) { return this.controls.campaignMethods.archetypes[row.campaign]; }
+    persist() { this.bridge.state.userData[REWARD_KEY] = JSON.stringify(validateCampaignRewards(this.data)); }
+    stage(manager) {
+      this.assertHealthy();
+      const stars = manager.campaignStarStatusList;
+      if (manager.campaignActive || !Array.isArray(stars) || !stars.length || this.staged.has(stars)) return;
+      try {
+        const campaign = Object.entries(this.controls.campaignMethods.archetypes).find(([, definition]) => definition.starCriteriaList === manager.campaignStarCriteriaList)?.[0];
+        const { wasVictory, resourceBonusList, xpBonus, starStatusList, grade } = manager.getCampaignScoreInfo();
+        const record = validateCampaignResult({ id: this.data.nextId, campaign, score: { wasVictory, resourceBonusList, xpBonus, starStatusList, grade } }, this.controls);
+        this.data.pending.push({ ...structuredClone(record), owner: this.owner() }); this.data.nextId++;
+        this.persist(); this.staged.add(stars);
+      } catch (error) { this.failure = error; throw error; }
+    }
+    forPanel(panel) {
+      this.assertHealthy();
+      if (panel.desktopCampaignRewardId === undefined) {
+        this.stage(this.game.getScoreInfo());
+        panel.desktopCampaignRewardId = this.current()?.id;
+      }
+      return this.data.pending.find(row => row.id === panel.desktopCampaignRewardId && row.owner === this.owner());
+    }
+    award(id, give) {
+      this.assertHealthy();
+      const record = this.data.pending.find(row => row.id === id);
+      if (!record) return false;
+      if (record.owner !== this.owner()) throw new Error('Return to the hero who earned this campaign reward.');
+      this.awarding = true;
+      try {
+        give(record.score.xpBonus, [...record.score.resourceBonusList]);
+        this.data.pending.splice(this.data.pending.indexOf(record), 1); this.persist(); return true;
+      } catch (error) { this.failure = error; throw error; }
+      finally { this.awarding = false; }
+    }
+    assertHealthy() {
+      if (this.failure) throw new Error('A campaign reward did not finish. Reload the last saved checkpoint before saving again.', { cause: this.failure });
+      if (this.awarding) throw new Error('Wait for the campaign reward to finish before saving.');
+    }
+    update() {
+      if (!this.current() || this.controls.paused || this.controls.guestWorld || !this.controls.ready() || this.game.getActiveGameState().name !== 'GamestatePlaying' || this.game.getPlayState()?.playStateName !== 'PlayStateNormal' || this.game.isScriptLocked()) return;
+      const builder = this.game.getHero().getEC('ECPlayerBuilder');
+      if (builder.isBuilding() || builder.isThrowing()) return;
+      const panel = this.controls.campaignMethods.createScore(this.game, this.game.globals);
+      panel.desktopCampaignRewardId = this.current().id;
+      this.game.setGameState(panel);
+    }
   }
   class HostCampaignResults {
     constructor(game, controls) { this.game = game; this.controls = controls; this.sequence = 0; this.manager = game.getScoreInfo?.(); this.stars = this.manager?.campaignStarStatusList; this.latest = null; }
@@ -122,7 +191,7 @@
       return true;
     }
   }
-  const api = { HostCampaignResults, validateCampaignResult, preparationState, validateCampaign, campaignContext, GuestCampaign };
+  const api = { REWARD_KEY, validateCampaignRewards, CampaignRewards, HostCampaignResults, validateCampaignResult, preparationState, validateCampaign, campaignContext, GuestCampaign };
   if (typeof module !== 'undefined') module.exports = api;
   else root.PolycraftCampaign = api;
 })(globalThis);

@@ -122,6 +122,12 @@ function campaignRewards() {
   const give = one(properties.filter(property => key(property) === 'giveRewards'), 'native campaign reward').value;
   return evaluate(give, { [drawingDependency(give, 'LUMBER')]: { LUMBER: 0, STONE: 1 } });
 }
+function campaignScorePanel(panels, playing) {
+  const definition = one(assignments.filter(a => a.left.property?.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'giveRewards')), 'native campaign result panel').right;
+  const update = definition.properties.find(p => key(p) === 'updateMenu').value;
+  const give = definition.properties.find(p => key(p) === 'giveRewards').value;
+  return evaluate(definition, { [drawingDependency(update, 'doCampaignEndBookend')]: panels, [drawingDependency(update, 'create')]: playing, [drawingDependency(give, 'LUMBER')]: { LUMBER: 0, STONE: 1 } });
+}
 function campaignScore(globals) {
   const definition = one(assignments.filter(assignment => assignment.left.property?.name === 'prototype' && assignment.right.type === 'ObjectExpression' && assignment.right.properties.some(property => key(property) === 'getCampaignScoreInfo')), 'native campaign score');
   const deposit = definition.right.properties.find(property => key(property) === 'onResourceDeposited').value;
@@ -183,4 +189,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

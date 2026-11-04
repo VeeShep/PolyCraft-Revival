@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
   const { KEY: QUEST_KEY, QuestRewards } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
+  const { CampaignRewards } = typeof module !== 'undefined' ? require('./campaign.js') : root.PolycraftCampaign;
   const { HostEffects } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const CHEAT_CODE = 'moreamberplease';
@@ -36,12 +37,21 @@
       };
       const update = app.updateGame;
       // Freezing the game update preserves an underlying tutorial/shop pause state.
-      app.updateGame = (...args) => { if (!this.paused || this.onlineWorld) update.apply(app, args); };
+      app.updateGame = (...args) => {
+        if (!this.paused || this.onlineWorld) update.apply(app, args);
+        if (!this.guestWorld && this.ready()) this.ensureCampaignRewards()?.update();
+      };
     }
     manager() { return this.app?.globals.gameManager; }
     attachTaskManager(manager, archetypes) {
       manager.taskArchetypes = archetypes;
       if (this.bridge && [QUEST_KEY, 'desktopCoop'].some(key => Object.hasOwn(this.bridge.state.userData, key))) new QuestRewards(this.manager(), this.bridge, manager);
+      this.ensureCampaignRewards();
+    }
+    ensureCampaignRewards() {
+      const game = this.manager();
+      if (this.bridge && game?.getScoreInfo?.() && !game.desktopCampaignRewards) game.desktopCampaignRewards = new CampaignRewards(game, this.bridge, this);
+      return game?.desktopCampaignRewards;
     }
     ready() { const game = this.manager(); return !this.guestWorld && !!(game?.hasLoadedLevel && !game.getLoading() && game.getHero()); }
     pause(value) {
@@ -247,6 +257,7 @@
       if (this.guestWorld) throw new Error('The host saves this online island.');
       const game = this.manager();
       game.desktopQuestRewards?.assertHealthy();
+      this.ensureCampaignRewards()?.assertHealthy();
       game.saveLevel(true);
       const data = game.getPlayerData();
       for (const method of ['saveResource', 'saveSoftCurrency', 'saveConsumedSoftCurrency', 'saveHeroUpgrades', 'saveProgress', 'saveGameStats', 'saveSettings', 'saveShared', 'saveNumberOfGamesPlayed', 'saveScriptFlags', 'saveTaskFlags']) data[method]();

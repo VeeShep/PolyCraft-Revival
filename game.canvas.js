@@ -67439,6 +67439,7 @@
       this.playerData.loadInfoFromThisPlayer();
     },
     saveLevel: function (a) {
+      this.desktopCampaignRewards && this.desktopCampaignRewards.assertHealthy();
       if (this.hasLoadedLevel && (a || this.getSavingEnabled())) {
         var a = this.globals,
           b = ua.Serialize.serializePlayerSave(this),
@@ -68848,6 +68849,7 @@
         a.hqHealthFactor = this.getHQHealthFactor();
         this.campaignStarStatusList = b = this.calculateCampaignStarStatus(b, c, d, a);
         (this.campaignVictory = a = 0 === a.numberOfHQsDestroyed) ? (this.campaignGrade = a = this.getGradeFromStarStatusList(b), b = b.length, this.campaignResourceBonusList = this.getResourceRewardsFromGrade(a, b, this.campaignMaxResourceBonusList), this.campaignXpBonus = this.getXpRewardFromGrade(a, b, this.campaignMaxXpBonus)) : (this.campaignGrade = 0, this.campaignResourceBonusList = [0, 0], this.campaignXpBonus = 0);
+        this.globals.gameManager.desktopCampaignRewards && this.globals.gameManager.desktopCampaignRewards.stage(this);
       }
     },
     getHQHealthFactor: function () {
@@ -71271,15 +71273,23 @@
       a.getGuiManager().addDrawGui("bgPattern", {
         v2ScreenLocation: c.getv2RenderLocation(0, 0)
       }, "idBackgroundPatternImage");
-      b = a.getScoreInfo().getCampaignScoreInfo();
-      c = this.warManager.getEC("ECWarManager").getPreviousActiveCampaignArchetype();
+      var reward = a.desktopCampaignRewards && a.desktopCampaignRewards.forPanel(this);
+      if (a.desktopCampaignRewards && !reward) {
+        c = GamestatePlaying.create(a, this.globals); c.setPlayState("PlayStateNormal"); a.setGameState(c); return;
+      }
+      b = reward ? reward.score : a.getScoreInfo().getCampaignScoreInfo();
+      c = reward ? a.desktopCampaignRewards.definition(reward) : this.warManager.getEC("ECWarManager").getPreviousActiveCampaignArchetype();
       wa.doCampaignEndBookend(a, this.globals, c, b) && (c = GamestatePlaying.create(a, this.globals), c.setPlayState("PlayStateNormal"), a.setGameState(c), this.giveRewards(b.xpBonus, b.resourceBonusList));
     },
     giveRewards: function (a, b) {
       var c = this.gameManager.getHero().getEC("ECPlayerData");
-      c.adjustXP(a);
-      c.adjustResource(H.LUMBER, b[H.LUMBER], !0);
-      c.adjustResource(H.STONE, b[H.STONE], !0);
+      var give = function (xp, resource) {
+        c.adjustXP(xp);
+        c.adjustResource(H.LUMBER, resource[H.LUMBER], !0);
+        c.adjustResource(H.STONE, resource[H.STONE], !0);
+      };
+      if (this.gameManager.desktopCampaignRewards) return this.gameManager.desktopCampaignRewards.award(this.desktopCampaignRewardId, give);
+      give(a, b);
     },
     sendRepairCostMetric: function () {
       var a = this.globals.metricsManager,
@@ -145054,7 +145064,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L }, { archetypes: ca, enabled: function () { return Sb.campaignsEnabled; }, create: GamestatePrepareForCampaign.create });
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L }, { archetypes: ca, enabled: function () { return Sb.campaignsEnabled; }, create: GamestatePrepareForCampaign.create, createScore: GamestateCampaignScore.create });
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };
