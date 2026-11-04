@@ -378,3 +378,18 @@ test('failed host audio initialization restores an already-installed original vi
   await assert.rejects(startHostingWorld(controls, transport), error => error === failure);
   assert.equal(factory.create, create); assert.equal(game.desktopEffects, undefined); assert.equal(controls.onlineWorld, undefined);
 });
+
+test('hosting borrows pre-host effect history across failed admission, host exit and another session without duplicating native calls', async t => {
+  const { controls, transport, game } = setup(t), { HostEffects } = require('../desktop/world-effects.js'); let calls = 0;
+  const factory = { create() { calls++; } }, original = factory.create, api = { factory, archetypes: { vfx_exp_decal: {} } };
+  const history = controls.effectHistory = new HostEffects(() => game, api); t.after(() => history.close());
+  factory.create(game.globals, api.archetypes.vfx_exp_decal, [1, 2, 3]); const first = history.capture(); assert.equal(first.active.length, 1);
+  const failure = new Error('audio initialization failed'); game.gameSoundManager.activeSoundSourceList = [{ get soundName() { throw failure; } }];
+  await assert.rejects(startHostingWorld(controls, transport), error => error === failure); assert.notEqual(factory.create, original); assert.deepEqual(history.capture(), first);
+  game.gameSoundManager.activeSoundSourceList = []; const world = await startHostingWorld(controls, transport);
+  assert.equal(world.effects, history); assert.equal(game.desktopEffects, history); await world.close();
+  assert.equal(history.closed, undefined); assert.equal(game.desktopEffects, undefined); assert.deepEqual(history.capture(), first);
+  factory.create(game.globals, api.archetypes.vfx_exp_decal, [4, 5, 6]); assert.equal(calls, 2); assert.equal(history.capture().active.length, 2);
+  const secondTransport = new HostSession(); t.after(() => secondTransport.close());
+  const second = await startHostingWorld(controls, secondTransport); assert.equal(second.effects, history); await second.close(); assert.equal(history.sequence, 2);
+});

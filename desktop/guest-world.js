@@ -240,7 +240,7 @@
       this.original = {
         update: app.updateGame, draw: game.draw, draw2D: game.draw2D, save: game.saveLevel, getCamera: game.getGameCamera, heroLightUpdate: game.gameLighting.updateHeroLightPosition,
         time: globals.gameCurrentTime, dayTime: game.getGameDayTime(),
-        paused: controls.paused, guiController: game.imgui.controller,
+        paused: controls.paused, historySuspended: controls.effectHistory?.suspended, guiController: game.imgui.controller,
         camera: Object.fromEntries(['desiredV3Focus', 'desiredV3Position', 'currentV3Focus', 'currentV3Position', 'currentV3Up', 'currentv3Direction'].filter(key => camera[key]).map(key => [key, Array.from(camera[key])])),
         fov: camera.currentFOV,
         lights: [game.gameLighting.worldDirectionLightNode, game.gameLighting.heroLightNode].filter(Boolean).map(node => ({ node, transform: Array.from(node.getLocalTransform()), disabled: node.disabled })),
@@ -257,6 +257,7 @@
       game.getGameCamera = () => this.viewCamera.camera;
       game.gameLighting.updateHeroLightPosition = () => this.updateTorch();
       controls.guestWorld = this;
+      if (controls.effectHistory) controls.effectHistory.suspended = true;
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
       this.guiInput = { down: false, pendingDown: false, position: [0, 0], getGuiDown() { return this.down; }, getv2ScreenCoord() { return this.position; } };
@@ -708,6 +709,7 @@
       for (const light of original.lights) { light.node.setLocalTransform(new Float32Array(light.transform)); light.node.setDisabled(light.disabled); }
       game.gameClock.prevEngineTime = app.globals.appCurrentTime;
       camera.setShouldSnap(); game.getGameController().clearInputs();
+      if (this.controls.effectHistory) this.controls.effectHistory.suspended = original.historySuspended;
       delete this.controls.guestWorld;
       this.controls.pause(original.paused);
     }

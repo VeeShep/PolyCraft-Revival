@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
   const { KEY: QUEST_KEY, QuestRewards } = typeof module !== 'undefined' ? require('./quests.js') : root.PolycraftQuests;
+  const { HostEffects } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const CHEAT_CODE = 'moreamberplease';
   function createCheatCodeHandler(canType, reveal, code = CHEAT_CODE) {
@@ -17,12 +18,14 @@
   }
   class Controls {
     attach(app, xpTable, guiTypes, infoPanels, upgradeMethods, playerDataMethods, healthMethods, drawProgressBar, drawPauseSettings, drawTargetCross, movementMethods, effectMethods) {
+      this.effectHistory?.close();
       this.app = app;
       this.xpTable = xpTable;
       this.guiTypes = guiTypes;
       this.infoPanels = infoPanels; this.upgradeMethods = upgradeMethods;
       this.playerDataMethods = playerDataMethods;
       this.healthMethods = healthMethods; this.drawProgressBar = drawProgressBar; this.drawPauseSettings = drawPauseSettings; this.drawTargetCross = drawTargetCross; this.movementMethods = movementMethods; this.effectMethods = effectMethods;
+      this.effectHistory = effectMethods?.factory ? new HostEffects(() => this.app?.globals?.gameManager, effectMethods) : null;
       const render = app.render;
       if (render) app.render = (...args) => {
         const now = app.globals.appCurrentTime;

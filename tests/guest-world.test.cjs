@@ -203,7 +203,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   globals.gameManager = game;
   const app = { globals, updateGame() { simulations++; } }, controls = new Controls();
   controls.attach(app, [], {});
-  controls.paused = true;
+  controls.paused = true; controls.effectHistory = { suspended: false };
   const update = app.updateGame, draw = game.draw, save = game.saveLevel, getCamera = game.getGameCamera, heroLightUpdate = game.gameLighting.updateHeroLightPosition;
   const guiController = game.imgui.controller;
   let forwarded = 0;
@@ -211,7 +211,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const connection = { role: 'guest', pvp: false, state: 'connected', send: async (kind, payload) => requests.push({ kind, payload }),
     onMessage() { forwarded++; }, close() { this.closed = true; this.onState?.('closed', {}); } };
   const world = new GuestWorld(controls, connection);
-  assert.equal(controls.ready(), false); assert.equal(roots.includes(originalRoot), false);
+  assert.equal(controls.ready(), false); assert.equal(roots.includes(originalRoot), false); assert.equal(controls.effectHistory.suspended, true);
   assert.notEqual(world.sessionSettings.settings, preferences.settings);
   world.sessionSettings.settings.music = false; world.sessionSettings.saveSettings();
   assert.equal(preferences.settings.music, true);
@@ -314,7 +314,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(game.imgui.controller, guiController); assert.equal(game.getGameCamera, getCamera); assert.equal(game.gameLighting.updateHeroLightPosition, heroLightUpdate); assert.equal(world.localMenu(), false);
   assert.equal(globals.gameCurrentTime, 20); assert.equal(game.gameClock.prevEngineTime, 100);
   assert.deepEqual(Array.from(camera.desiredV3Focus), [0, 0, 0]); assert.deepEqual(Array.from(camera.desiredV3Position), [0, 10, 10]);
-  assert.equal(controls.paused, true, 'An originally paused solo island stays paused after disconnect');
+  assert.equal(controls.paused, true, 'An originally paused solo island stays paused after disconnect'); assert.equal(controls.effectHistory.suspended, false);
   assert.equal(controls.ready(), true); app.updateGame(); assert.equal(simulations, 0);
   controls.paused = false; app.updateGame(); assert.equal(simulations, 1);
   assert.equal(connection.closed, true); world.close();

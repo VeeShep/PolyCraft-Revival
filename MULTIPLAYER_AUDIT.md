@@ -2,7 +2,13 @@
 
 Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
 
-## Current expanded world visuals — Beta 43, 2026-11-04
+## Current pre-host visual history — Beta 44, 2026-11-04
+
+Controls owns loaded-island visual history before hosting; host sessions borrow it and preserve it through failed setup, exit and later hosting. Native clearGameSpaces teardown clears history/releases references in `finally`, including destruction effects and errors. Manager/list replacement or backwards time also clears stale state while sequence identity remains monotonic. Guest recording/capture is suspended until original solo clocks are restored; reattach restores old hooks. This history remains bounded and in memory, without changing saves or activating gameplay.
+
+377 checks pass, including actual native factory/decals, teardown/clock/world ownership, borrowed history lifetime, reattach and actual guest-boundary suspension. Native read-only lifecycle review found no concrete issues. Runtime coop-32/world 12 stays compatible with Beta 43, with the host upgrade required for history retention. Visible/audible lifecycle, UI/campaign, native platform and physical-network acceptance remain open. See RESTORATION_STATUS.md for exact package/build evidence and next work.
+
+## Previous expanded world visuals — Beta 43, 2026-11-04
 
 The explicit native world inventory expands to 126 visual definitions, including weapon/projectile, fire/explosion, mushroom, resource, crate, enemy warning and upgrade effects. GUI/build-option/world-builder clicks, local task arrows, test and dormant charge assets stay excluded. A per-name native duration table retains 15-second explosion and 40-second building decals across late join/resync and expiry. No gameplay mechanic, audio or shake is activated by extending visual playback.
 

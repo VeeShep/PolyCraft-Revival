@@ -24,8 +24,9 @@
       this.actionSaves = new Set();
       this.closed = false;
       const game = this.game, clock = game.gameClock, controller = game.getGameController();
-      this.effects = new HostEffects(game, controls.effectMethods);
-      try { this.audio = new HostAudio(game); } catch (error) { this.effects.close(); throw error; }
+      this.ownsEffects = !controls.effectHistory;
+      this.effects = controls.effectHistory || new HostEffects(game, controls.effectMethods);
+      try { this.audio = new HostAudio(game); } catch (error) { if (this.ownsEffects) this.effects.close(); throw error; }
       game.desktopEffects = this.effects; game.desktopAudio = this.audio;
       this.original = { pause: clock.pause, controllerUpdate: controller.update, simulation: game.updateSimulation };
       clock.pause = () => {};
@@ -287,7 +288,8 @@
         }
         this.closed = true;
         this.audio.close(); delete this.game.desktopAudio;
-        this.effects.close(); delete this.game.desktopEffects;
+        if (this.ownsEffects) this.effects.close();
+        delete this.game.desktopEffects;
         const game = this.game, clock = game.gameClock, controller = game.getGameController();
         clock.pause = this.original.pause;
         controller.update = this.original.controllerUpdate;

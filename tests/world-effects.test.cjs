@@ -110,3 +110,37 @@ test('native explosion decals retain their fifteen-second phase on late join and
   const expired = host.capture(); assert.equal(expired.active.length, 0); guest.receive(expired, 16); assert.equal(guest.queue.length, 0);
   assert.throws(() => validateEffects(state, 16), /Invalid/); host.close();
 });
+
+test('continuous history clears same-list teardown effects even when destruction throws, preserving monotonic identity', () => {
+  const f = fixture(), spaces = [{}], failure = new Error('destroy failed');
+  const game = { globals: f.globals, hasLoadedLevel: true, getGameSpaceList: () => spaces,
+    clearGameSpaces() { native.factory.create(f.globals, native.archetypes.vfx_exp_decal, [9, 9, 9]); spaces.length = 0; throw failure; } };
+  const clear = game.clearGameSpaces, history = new HostEffects(() => game, native);
+  native.factory.create(f.globals, native.archetypes.vfx_exp_decal, [1, 2, 3]); assert.equal(history.capture().active.length, 1);
+  assert.throws(() => game.clearGameSpaces(), error => error === failure);
+  assert.equal(game.clearGameSpaces, clear); assert.equal(history.game, null); assert.equal(history.clearWrapper, null);
+  assert.equal(history.capture().active.length, 0); assert.equal(history.sequence, 2);
+  spaces.push({}); native.factory.create(f.globals, native.archetypes.vfx_exp_decal, [4, 5, 6]);
+  const state = history.capture(); assert.equal(state.active.length, 1); assert.equal(state.active[0].id, 3); assert.deepEqual(state.active[0].location, [4, 5, 6]); history.close();
+});
+test('world/manager replacement and backwards time discard old history while guest suspension preserves solo effects', () => {
+  const f = fixture(); let spaces = [{}], game = { globals: f.globals, getGameSpaceList: () => spaces, clearGameSpaces() {} };
+  const clear = game.clearGameSpaces, history = new HostEffects(() => game, native), create = () => native.factory.create(f.globals, native.archetypes.vfx_exp_decal, [1, 2, 3]);
+  create(); const before = history.capture(); history.suspended = true; f.globals.gameCurrentTime = 1; create(); assert.equal(history.capture().active.length, 0);
+  f.globals.gameCurrentTime = 100; history.suspended = false; assert.deepEqual(history.capture(), before);
+  spaces = [{}]; assert.equal(history.capture().active.length, 0); create(); assert.equal(history.sequence, 2);
+  f.globals.gameCurrentTime = 50; assert.equal(history.capture().active.length, 0); create(); assert.equal(history.sequence, 3);
+  const old = game; game = { globals: f.globals, getGameSpaceList: () => spaces, clearGameSpaces() {} };
+  assert.equal(history.capture().active.length, 0); assert.equal(old.clearGameSpaces, clear); create(); assert.equal(history.sequence, 4); history.close();
+});
+test('Controls retains pre-host native decals and reattachment restores the previous native hooks', () => {
+  const f = fixture(), { Controls } = require('../desktop/controls.js'), controls = new Controls(), spaces = [{}];
+  const game = { globals: f.globals, hasLoadedLevel: true, getLoading: () => false, getHero: () => ({}), getGameSpaceList: () => spaces, clearGameSpaces() {} };
+  const clear = game.clearGameSpaces, factory = native.factory.create; f.globals.gameManager = game;
+  const app = { globals: f.globals, updateGame() {} }, attach = () => controls.attach(app, [], {}, null, null, null, null, null, null, null, null, native);
+  attach(); const first = controls.effectHistory;
+  native.factory.create(f.globals, native.archetypes.vfx_exp_decal, [1, 2, 3]); assert.equal(first.capture().active.length, 1); assert.equal(f.solo.length, 1);
+  attach(); assert.equal(first.closed, true); assert.equal(first.active.size, 0); assert.equal(game.clearGameSpaces, clear);
+  native.factory.create(f.globals, native.archetypes.vfx_exp_decal, [4, 5, 6]); assert.equal(controls.effectHistory.sequence, 1); assert.equal(f.solo.length, 2);
+  controls.effectHistory.close(); assert.equal(native.factory.create, factory);
+});

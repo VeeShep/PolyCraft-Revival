@@ -57,15 +57,45 @@
   }
   class HostEffects {
     constructor(game, api) {
-      this.game = game; this.api = api; this.sequence = 0; this.events = []; this.active = new Map();
+      this.source = typeof game === 'function' ? game : () => game; this.api = api; this.sequence = 0; this.events = []; this.active = new Map();
       if (!api?.factory) return;
       this.original = api.factory.create;
       this.identities = new Map(NAMES.map(name => [api.archetypes[name], name]).filter(([definition]) => definition));
-      api.factory.create = (...args) => { this.record(...args); return this.original.apply(api.factory, args); };
+      this.wrapper = (...args) => { this.record(...args); return this.original.apply(api.factory, args); };
+      api.factory.create = this.wrapper;
+    }
+    reset() { this.events.length = 0; this.active.clear(); this.world = null; this.lastTime = undefined; }
+    unbind() {
+      if (this.game && this.game.clearGameSpaces === this.clearWrapper) this.game.clearGameSpaces = this.clearOriginal;
+      this.game = null; this.clearWrapper = null; this.clearOriginal = null;
+    }
+    synchronize() {
+      if (this.closed || this.suspended) return null;
+      const game = this.source();
+      if (game !== this.game) {
+        this.unbind(); this.reset(); this.game = game;
+        if (game?.clearGameSpaces) {
+          const clear = this.clearOriginal = game.clearGameSpaces;
+          this.clearWrapper = (...args) => {
+            try { return clear.apply(game, args); }
+            finally { if (this.game === game) { this.reset(); this.unbind(); } }
+          };
+          game.clearGameSpaces = this.clearWrapper;
+        }
+      }
+      if (!game || game.hasLoadedLevel === false || game.getLoading?.()) return null;
+      const time = game.globals.gameCurrentTime, world = game.getGameSpaceList?.() || game;
+      if (!number(time) || time < 0 || Array.isArray(world) && !world.length) return null;
+      if (world !== this.world || time < this.lastTime) { this.reset(); this.world = world; }
+      this.lastTime = time;
+      return game;
     }
     record(globals, definition, location, direction, actor, screen, scale = 1, dilation = 1) {
+      if (this.closed || this.suspended) return;
       const name = this.identities.get(definition);
-      if (!name || screen || globals !== this.game.globals) return;
+      if (!name || screen) return;
+      const game = this.synchronize();
+      if (!game || globals !== game.globals) return;
       const event = { id: this.sequence + 1, time: globals.gameCurrentTime, name, location: Array.from(location || actor?.getv3Location() || []),
         direction: direction ? Array.from(direction) : null, entity: actor?.getName() || null, scale, dilation };
       try { validateEffects({ sequence: event.id, events: [event], active: [] }, event.time); } catch { return; }
@@ -78,8 +108,16 @@
       this.events = this.events.filter(event => event.time >= time - LIMITS.age).slice(-LIMITS.events);
       for (const [id, event] of this.active) if (event.time + DURATIONS[event.name] / event.dilation <= time) this.active.delete(id);
     }
-    capture() { this.trim(); return structuredClone({ sequence: this.sequence, events: this.events, active: [...this.active.values()] }); }
-    close() { if (this.api?.factory) this.api.factory.create = this.original; }
+    capture() {
+      if (!this.synchronize()) return { sequence: this.sequence, events: [], active: [] };
+      this.trim(); return structuredClone({ sequence: this.sequence, events: this.events, active: [...this.active.values()] });
+    }
+    close() {
+      if (this.closed) return;
+      this.closed = true; this.reset(); this.unbind();
+      if (this.wrapper && this.api?.factory?.create === this.wrapper) this.api.factory.create = this.original;
+      this.source = () => null;
+    }
   }
   class GuestEffects {
     constructor(api, scene, globals) { this.api = api; this.scene = scene; this.globals = globals; this.queue = []; this.owners = new Map(); this.active = new Set(); this.sequence = null; }
