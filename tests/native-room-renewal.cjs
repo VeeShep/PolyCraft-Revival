@@ -5,8 +5,25 @@ const { once } = require('node:events');
 const { createRoomServer } = require('../server/rooms.cjs');
 const { RoomSocket } = require('../desktop/room-socket.cjs');
 
-async function nativeRoomRenewal(page, { port, secret }) {
-  const service = createRoomServer({ turn: { urls: [`turn:127.0.0.1:${port}?transport=udp`], secret, ttl: 120 } });
+function retiredTurnObserver() {
+  let pending = '';
+  const users = new Map();
+  return {
+    write(chunk) {
+      const lines = (pending + chunk).split('\n'); pending = lines.pop().slice(-8192);
+      for (const line of lines) {
+        const user = line.match(/user <(\d+:[a-f0-9-]{36})>/)?.[1], session = line.match(/session (\d+)(?::|\))/)?.[1];
+        if (!user || !session) continue;
+        const state = users.get(user) || { allocated: false, active: new Set(), closed: false }; users.set(user, state);
+        if (line.includes('incoming packet ALLOCATE processed, success')) { state.allocated = true; state.active.add(session); }
+        if (line.includes('closed (2nd stage)')) { state.closed = true; state.active.delete(session); }
+      }
+    },
+    has: user => { const state = users.get(user); return !!state?.allocated && state.closed && state.active.size === 0; }
+  };
+}
+async function nativeRoomRenewal(page, { port, secret, retired }) {
+  const service = createRoomServer({ turn: { urls: [`turn:127.0.0.1:${port}?transport=udp`], secret, ttl: 60 } });
   const clients = new Map(), deliveries = new Set();
   let deliveryFailed = false;
   service.server.listen(0, '127.0.0.1'); await once(service.server, 'listening');
@@ -24,14 +41,7 @@ async function nativeRoomRenewal(page, { port, secret }) {
       }));
       return clients.get(client).request(operation, options);
     });
-    await page.exposeFunction('networkRenewalWindow', (name, ids) => {
-      const room = service.rooms.get(name); assert.ok(room);
-      for (const id of ids) {
-        const guest = room.guests.get(id); assert.ok(guest?.routeAck && guest.relayIssued);
-        // Exercise the normal renewal protocol now, without claiming a real two-minute expiry test.
-        guest.relayExpires = Date.now() + 30000; guest.lastRelayIssue = Date.now() - 16000;
-      }
-    });
+    await page.exposeFunction('networkRetiredAllocations', users => ({ expected: users.length, observed: users.filter(user => retired.has(user)).length }));
     await page.exposeFunction('networkVerifyRenewal', (name, values) => {
       const room = service.rooms.get(name); assert.ok(room);
       for (const value of values) {
@@ -40,7 +50,7 @@ async function nativeRoomRenewal(page, { port, secret }) {
       }
     });
     for (const count of [2, 4]) {
-      console.log(`Checking ${count} participants through real room signaling, native ICE and coturn renewal.`);
+      console.log(`Checking ${count} participants through real room signaling and repeated automatic renewal beyond initial credential expiry.`);
       const report = await page.evaluate(async ({ count, url }) => {
         let stage = 'opening room';
         const controllers = [], guests = [], hostMessages = [], errors = [];
@@ -67,8 +77,8 @@ async function nativeRoomRenewal(page, { port, secret }) {
         const offer = transport.offer.bind(transport);
         transport.offer = (stage, created, servers) => offer(stage, link => { forceRelay(link); created?.(link); }, servers);
         const hostSession = { transport, changed() {}, notify() {}, world: {
-          async admitConnectedPlayer(hero, link) { admissions++; link.probing = false; link.testHero = hero; },
-          requestResync(link) { resyncs++; link.send('snapshot', { tick: 3 }).catch(() => errors.push('resync transfer')); }
+          async admitConnectedPlayer(hero, link) { admissions++; link.probing = false; link.testHero = hero; link.testTick = 0; link.testRenewals = 0; },
+          requestResync(link) { resyncs++; link.testRenewals++; link.send('snapshot', { tick: ++link.testTick }).catch(() => errors.push('resync transfer')); }
         } };
         host = new PolycraftAutoRooms.AutoRoomSession(hostSession, hostRuntime, budgets); host.options = { iceServers: [] }; controllers.push(host);
         const settings = { url, room: `native-renewal-${count}`, password: 'disposable network-only password', name: 'Guest' };
@@ -92,34 +102,57 @@ async function nativeRoomRenewal(page, { port, secret }) {
             check((await local.diagnostics()).path === 'relayed' && (await remote.diagnostics()).path === 'relayed', 'Room route did not use coturn.');
             guests.push({ entry, controller, local, remote, messages });
           }
-          await window.networkRenewalWindow(settings.room, guests.map(guest => guest.entry.id));
           for (const guest of guests) {
-            stage = `renewing ${guest.local.testHero}`;
-            const { local, remote, entry, controller, messages } = guest;
-            const original = [local.pc, remote.pc, local.channel, remote.channel], before = await Promise.all([pair(local), pair(remote)]);
-            const state = host.renewals.states.get(entry.id); check(state, 'Admitted relay route was not watched.'); clearTimeout(state.timer); state.expires = Date.now() + 30000;
-            const priorExpiry = state.expires;
-            await local.send('update', { tick: 1 }); await remote.send('action', { id: 1 });
-            await wait(() => messages.length === 1 && hostMessages.filter(row => row.peer === local.peer).length === 1);
-            await host.renewals.start(state);
-            await wait(() => state.expires > priorExpiry && !state.tx && !controller.renewals.guest);
-            clearTimeout(state.timer);
-            const after = await Promise.all([pair(local), pair(remote)]);
-            for (let index = 0; index < 2; index++) {
-              check(after[index].local.port !== before[index].local.port, 'A room peer retained its old relay allocation.');
-              check(after[index].local.usernameFragment !== before[index].local.usernameFragment && after[index].remote.usernameFragment !== before[index].remote.usernameFragment, 'A room peer retained its old ICE generation.');
-            }
-            check(local.pc === original[0] && remote.pc === original[1] && local.channel === original[2] && remote.channel === original[3], 'Room renewal replaced the admitted channel.');
-            await local.send('update', { tick: 4 }); await remote.send('action', { id: 2 });
-            await wait(() => messages.length === 3 && hostMessages.filter(row => row.peer === local.peer).length === 2);
-            check(messages.map(row => row.payload.tick).join(',') === '1,3,4', 'Room renewal lost or duplicated host messages.');
-            check(hostMessages.filter(row => row.peer === local.peer).map(row => row.message.payload.id).join(',') === '1,2', 'Room renewal lost or duplicated guest actions.');
-            check(local.sentSequence === 3 && local.receivedSequence === 2 && remote.sentSequence === 2 && remote.receivedSequence === 3, 'Room renewal reset framing counters.');
-            check(local.testHero === entry.heroId, 'Room renewal changed hero ownership.');
+            const { local, remote, entry } = guest;
+            guest.original = [local.pc, remote.pc, local.channel, remote.channel]; guest.before = await Promise.all([pair(local), pair(remote)]);
+            guest.state = host.renewals.states.get(entry.id); check(guest.state, 'Admitted relay route was not watched.');
+            guest.expires = guest.state.expires; guest.renewals = 0; guest.probes = 0;
+            guest.initialUsers = [local, remote].flatMap(link => link.pc.getConfiguration().iceServers.map(server => server.username));
           }
-          check(admissions === count - 1 && resyncs === count - 1 && errors.length === 0, 'Room renewal repeated admission/resync or encountered a transport failure.');
+          const initialUsers = guests.flatMap(guest => guest.initialUsers);
+          check(initialUsers.length === 2 * (count - 1) && initialUsers.every(user => /^\d+:[a-f0-9-]{36}$/.test(user)), 'Initial relay credentials were not observable.');
+          const initialExpiry = Math.max(...initialUsers.map(user => Number(user.split(':')[0]) * 1000));
+          const until = initialExpiry + 35000, deadline = until + 15000, started = performance.now();
+          let nextProbe = 0;
+          do {
+            check(Date.now() < deadline && errors.length === 0, 'Automatic renewal endurance failed or timed out.');
+            for (const guest of guests) {
+              const { local, remote, entry, controller, state } = guest;
+              stage = `observing automatic renewal for ${local.testHero}`;
+              check(!local.closed && !remote.closed && host.renewals.states.get(entry.id) === state, 'A scheduled relay watch or connection ended.');
+              check(state.failures === 0, 'Scheduled relay renewal failed.');
+              if (state.expires > guest.expires && !state.tx && !controller.renewals.guest) {
+                const after = await Promise.all([pair(local), pair(remote)]);
+                for (let index = 0; index < 2; index++) {
+                  check(after[index].local.port !== guest.before[index].local.port, 'A room peer retained its old relay allocation.');
+                  check(after[index].local.usernameFragment !== guest.before[index].local.usernameFragment && after[index].remote.usernameFragment !== guest.before[index].remote.usernameFragment, 'A room peer retained its old ICE generation.');
+                }
+                guest.before = after; guest.expires = state.expires; guest.renewals++;
+                await window.networkVerifyRenewal(settings.room, [{ id: entry.id, expires: state.expires }]);
+              }
+              check(local.pc === guest.original[0] && remote.pc === guest.original[1] && local.channel === guest.original[2] && remote.channel === guest.original[3], 'Room renewal replaced the admitted channel.');
+              check(local.testHero === entry.heroId, 'Room renewal changed hero ownership.');
+              if (performance.now() >= nextProbe && !state.tx && !controller.renewals.guest) {
+                await local.send('update', { tick: ++local.testTick }); await remote.send('action', { id: ++guest.probes });
+              }
+            }
+            if (performance.now() >= nextProbe) nextProbe = performance.now() + 1000;
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } while (Date.now() < until || guests.some(guest => guest.renewals < 3 || guest.state.tx || guest.controller.renewals.guest));
+          for (const guest of guests) {
+            const { local, remote, messages } = guest;
+            check(guest.renewals >= 3 && local.testRenewals === guest.renewals, 'Automatic renewal did not complete successive cycles exactly once.');
+            await local.send('update', { tick: ++local.testTick }); await remote.send('action', { id: ++guest.probes });
+            await wait(() => messages.length === local.testTick && hostMessages.filter(row => row.peer === local.peer).length === guest.probes);
+            check(messages.every((row, index) => row.payload.tick === index + 1), 'Room renewal lost or duplicated host messages.');
+            check(hostMessages.filter(row => row.peer === local.peer).every((row, index) => row.message.payload.id === index + 1), 'Room renewal lost or duplicated guest actions.');
+            check(local.sentSequence === local.testTick && local.receivedSequence === guest.probes && remote.sentSequence === guest.probes && remote.receivedSequence === local.testTick, 'Room renewal reset framing counters.');
+          }
+          const retirement = await window.networkRetiredAllocations(initialUsers);
+          check(retirement.observed === retirement.expected, `Initial TURN allocations were not retired (${retirement.observed}/${retirement.expected}).`);
+          check(admissions === count - 1 && resyncs === guests.reduce((total, guest) => total + guest.renewals, 0) && errors.length === 0, 'Room renewal repeated admission/resync or encountered a transport failure.');
           await window.networkVerifyRenewal(settings.room, guests.map(guest => ({ id: guest.entry.id, expires: host.renewals.states.get(guest.entry.id).expires })));
-          return { participants: count, renewedGuests: guests.length, admissions, resyncs, sameChannels: true, freshAllocations: true, expiryCommitted: true };
+          return { participants: count, renewalsPerGuest: guests.map(guest => guest.renewals), admissions, resyncs, sameChannels: true, freshAllocations: true, expiryCommitted: true, initialCredentialsExpired: Date.now() > initialExpiry, retiredInitialAllocations: retirement.observed, durationMs: Math.round(performance.now() - started) };
         } catch { return { failure: stage, participants: count }; }
         finally { for (const controller of controllers) controller.close(); transport.close(); for (const guest of guests) guest.remote.close(); }
       }, { count, url: `ws://127.0.0.1:${service.server.address().port}/signaling` });
@@ -129,4 +162,4 @@ async function nativeRoomRenewal(page, { port, secret }) {
     }
   } finally { for (const socket of clients.values()) socket.close(); await service.close(); await Promise.all([...deliveries]); }
 }
-module.exports = { nativeRoomRenewal };
+module.exports = { nativeRoomRenewal, retiredTurnObserver };

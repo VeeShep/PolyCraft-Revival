@@ -1,0 +1,22 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { retiredTurnObserver } = require('./native-room-renewal.cjs');
+test('TURN retirement evidence requires final session teardown and handles split log chunks without exposing log content', () => {
+  const observer = retiredTurnObserver(), user = '1793800000:01234567-89ab-cdef-0123-456789abcdef';
+  observer.write(`session 1: realm <test> user <${user}>: incoming packet ALLOCATE processed, success\n`);
+  observer.write(`session 2: realm <test> user <${user}>: incoming packet ALLOCATE processed, success\n`);
+  observer.write(`session 1: closed (1st stage), user <${user}> realm <test>\n`);
+  assert.equal(observer.has(user), false);
+  observer.write(`session 1: closed (2nd stage), user <${user.slice(0, 20)}`);
+  assert.equal(observer.has(user), false);
+  observer.write(`${user.slice(20)}> realm <test>, reason: allocation timeout\n`);
+  assert.equal(observer.has(user), false, 'One closed session must not hide another active allocation for this credential.');
+  observer.write(`closed (2nd stage), user <${user}> realm <test>, reason: allocation timeout (session 2)\n`);
+  assert.equal(observer.has(user), true); assert.equal(observer.has('another-user'), false);
+  const failed = '1793800000:11234567-89ab-cdef-0123-456789abcdef';
+  observer.write(`session 3: closed (2nd stage), user <${failed}> realm <test>\n`); assert.equal(observer.has(failed), false);
+  observer.write('x'.repeat(20000)); observer.write(`\nsession 2: closed (2nd stage), user <not-a-test-credential>\n`);
+  assert.equal(observer.has(user), true); assert.equal(observer.has('not-a-test-credential'), false);
+  assert.deepEqual(Object.keys(observer).sort(), ['has', 'write']);
+});

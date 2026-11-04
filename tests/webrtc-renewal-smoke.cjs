@@ -18,12 +18,14 @@ async function run() {
   const port = listener.address().port;
   await new Promise(resolve => listener.close(resolve));
   const secret = randomUUID();
+  const { nativeRoomRenewal, retiredTurnObserver } = require('./native-room-renewal.cjs'), retired = retiredTurnObserver();
   let application, turn;
   try {
     turn = spawn('turnserver', ['-c', '/dev/null', '--listening-ip=127.0.0.1', '--relay-ip=127.0.0.1', `--listening-port=${port}`,
       '--min-port=49160', '--max-port=49260', '--allow-loopback-peers', '--use-auth-secret', `--static-auth-secret=${secret}`,
-      '--realm=polycraft-ci.invalid', '--relay-threads=1', '--no-tls', '--no-dtls', '--no-cli', '--simple-log', '--log-file=stdout',
-      `--pidfile=${path.join(directory, 'turn.pid')}`, `--userdb=${path.join(directory, 'turn.sqlite')}`], { stdio: 'ignore' });
+      '--realm=polycraft-ci.invalid', '--relay-threads=1', '--max-allocate-lifetime=30', '--verbose', '--no-tls', '--no-dtls', '--no-cli', '--simple-log', '--log-file=stdout',
+      `--pidfile=${path.join(directory, 'turn.pid')}`, `--userdb=${path.join(directory, 'turn.sqlite')}`], { stdio: ['ignore', 'pipe', 'ignore'] });
+    turn.stdout.setEncoding('utf8'); turn.stdout.on('data', chunk => retired.write(chunk));
     let turnError;
     turn.once('error', error => { turnError = error; });
     const deadline = Date.now() + 10000;
@@ -161,7 +163,7 @@ app.on('window-all-closed', () => app.quit());`);
       }
     }
     assert.deepEqual(failures, [], 'The sanitized network reports above identify failed steps.');
-    await require('./native-room-renewal.cjs').nativeRoomRenewal(page, { port, secret });
+    await nativeRoomRenewal(page, { port, secret, retired });
   } finally {
     if (application) await application.close();
     if (turn?.pid && turn.exitCode === null) {
