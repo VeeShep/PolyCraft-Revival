@@ -1,8 +1,16 @@
-# Multiplayer boundary audit: initial findings
+# Multiplayer boundary audit and implementation evidence
 
-Inspected after the complete runtime formatting pass on 2026-10-21. This is an implementation checkpoint, not working co-op. Restoration remains unfinished; see RESTORATION_STATUS.md for the checked app-goal state and current scope.
+The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current service-issued relay renewal — Beta 57, 2026-11-04
+## Current checkpoint — Beta 68, 2026-11-04
+
+Beta 68 corrects the joining guide and in-game relay help to match the existing room/manual/direct menus and service-issued TURN fallback. It changes no connection, simulation or save logic. The actual runtime remains coop-38/world 15/delta 2/room protocol 4, with save envelopes through 8. Current player instructions are in [README.md](README.md#multiplayer-can-i-join-a-friends-game); service deployment and credential lifecycle are in [server/README.md](server/README.md).
+
+Beta 67 bounds browser-statistics waits and cancels them on close without changing strict renewal proof. Its [native worker run](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/41877909246), job `126743923394`, passes actual Electron/coturn direct and forced-relay cases with two/four participants. Real room-service/coordinator cases complete three scheduled renewals per guest on the same channels over roughly 94 seconds past joining with 60-second credentials. All allocation sessions associated with 8/8 and 24/24 issued credential sets retire about one second after peer close. Old native allocations can remain live while peers are open; this is not proof of immediate expiry teardown or bounded multi-hour retention. Game/world/admission behavior remains stubbed.
+
+477 Beta 67 unit checks and 78 selected checks using the packaged Apple Silicon runtime pass. Both local Mac ZIPs pass architecture, deep/strict ad-hoc signature, icon/source and checksum verification. Six Windows/Linux GitHub artifacts are available; hosted Mac output and all native-platform gameplay remain unverified. Visible full-game testing stays deferred at the user's request. Physical LAN/forwarding/UPnP/STUN/TURN/WAN, multi-hour sessions, deployment/provider choices and the saved campaign XP/midbattle decisions remain open. Keep those acceptance gates distinct from loopback/module evidence.
+
+## Historical service-issued relay renewal — Beta 57, 2026-11-04
 
 Room signaling now uses protocol 4; update both room-code clients and the service. Manual game runtime coop-38/world 15/delta 2 and save envelope 8 remain unchanged. Initial direct-first joining is retained. The creating host renews only a committed service-issued TURN pair near known expiry, with per-guest cooldown, existing quotas and bounded in-memory transaction state. Direct selected paths request none; manual TURN credentials are not managed automatically.
 
