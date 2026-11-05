@@ -333,6 +333,11 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   controls.fullscreenChanged(true); assert.equal(requests.at(-1).payload.type, 'enterFullscreen'); assert.equal(world.uiRequests.get('enterFullscreen'), 14);
   connection.onMessage({ kind: 'result', payload: { type: 'enterFullscreen', sequence: 14, message: 'Recorded.' } }); assert.equal(world.uiRequests.size, 0); assert.equal(world.lastTargetResult, cameraFeedback); assert.equal(world.lastLifeQuery, 0);
   assert.equal(game.imgui.controller, world.guiInput);
+  const craft = { quote: 14, resources: [0, 0], caps: [1000, 1000], amber: 10 };
+  connection.onMessage({ kind: 'result', payload: { type: 'craftMenu', sequence: 14, message: 'Craft Resources.', craft } });
+  assert.equal(world.craft.view, null, 'A late reply never opens a closed crafting menu');
+  assert.throws(() => connection.onMessage({ kind: 'result', payload: { type: 'craftMenu', sequence: 14, message: 'Craft Resources.', craft: { ...craft, amber: -1 } } }), /Invalid crafting/);
+  assert.throws(() => connection.onMessage({ kind: 'result', payload: { type: 'life', sequence: 14, message: 'Forged details.', craft } }), /Invalid crafting/);
   controls.campaignMethods = { archetypes: { campaign_tutorial_01: {} } };
   game.getEntityFactory = () => ({ getArchetypeList: () => ['a_melee'] });
   let preparationCues = 0; game.gameSoundManager.playInternal = () => { preparationCues++; };
@@ -389,7 +394,7 @@ test('guest Pause and Resume use original artwork and block local actions withou
   world.guiInput = {}; world.movement = { keys: new Set(['KeyW']), flush() { stopped++; } };
   world.game = { gameSoundManager: { update() {} }, getIMGui: () => ({ doBackground() {}, doButton(options) { buttons.push(options); return options.id === clicked; } }), getGuiManager: () => ({ addDrawGui: name => draws.push(name) }) };
   let fullscreen = 0; world.toggleFullscreen = () => { fullscreen++; };
-  clicked = 'guest-fullscreen'; world.drawPauseMenu(); assert.equal(fullscreen, 1); assert.equal(buttons[0].guiArchetype, 'fullscreen'); assert.deepEqual(buttons[0].v2ScreenLocation, [54, 52]);
+  clicked = 'guest-fullscreen'; world.drawPauseMenu(); assert.equal(fullscreen, 1); const fullscreenButton = buttons.find(button => button.id === 'guest-fullscreen'); assert.equal(fullscreenButton.guiArchetype, 'fullscreen'); assert.deepEqual(fullscreenButton.v2ScreenLocation, [54, 52]);
   world.controls.fullscreen = true; world.drawPauseMenu(); assert.equal(buttons.at(-2).guiArchetype, 'minimize'); clicked = 'guest-pause';
   world.drawPauseMenu(); assert.equal(world.pauseMenu, true); assert.equal(world.localMenu(), true);
   assert.equal(world.movement.keys.size, 0); assert.equal(stopped, 1); assert.equal(world.controls.paused, false);

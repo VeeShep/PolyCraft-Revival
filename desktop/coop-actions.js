@@ -3,6 +3,7 @@
   const { totemMenu, upgradeTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
   const { captureHud } = typeof module !== 'undefined' ? require('./hud.js') : root.PolycraftHud;
   const { campaignContext, preparationState } = typeof module !== 'undefined' ? require('./campaign.js') : root.PolycraftCampaign;
+  const { craftMenu, craftOffer } = typeof module !== 'undefined' ? require('./crafting.js') : root.PolycraftCrafting;
   function lifeStatus(life) {
     const phase = life.respawnTime !== undefined ? 'waiting' : life.state === life.states.DYING ? 'dying' : 'normal';
     const remaining = phase === 'waiting' ? Math.max(0, life.getTimeToRespawn()) : phase === 'dying' ? Math.max(0, life.getDeathAnimationDuration() - (life.globals.gameCurrentTime - life.deathTime)) : 0;
@@ -15,8 +16,10 @@
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
       const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
       const quest = ['questOpen', 'questReward'].includes(value?.type), campaign = ['campaignStart', 'campaignClose'].includes(value?.type);
+      const crafting = value?.type === 'craftResource';
       const held = value?.archetype !== undefined, targeted = value?.type === 'target';
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade ? 5 : value?.type === 'repair' || quest || campaign || value?.type === 'skipPrepare' ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade || crafting ? 5 : value?.type === 'repair' || quest || campaign || value?.type === 'skipPrepare' ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (crafting && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 6 || !Number.isSafeInteger(value.quote) || value.quote < 1 || value.quote >= value.sequence)) throw new Error('Invalid crafting choice.');
       if (campaign && (typeof value.campaign !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.campaign))) throw new Error('Invalid campaign request.');
       if (quest && (typeof value.quest !== 'string' || !/^taskId(?:crit|fill)_\d{1,4}$/.test(value.quest))) throw new Error('Invalid quest request.');
       if ((buildingUpgrade || cancelUpgrade) && (typeof value.next !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.next))) throw new Error('Invalid building upgrade.');
@@ -55,7 +58,7 @@
           !target.getEC('ECTarget')?.isValidTarget(hero) || !target.getEC('ECHealth') || target.getEC('ECHealth').getHealth() <= 0 || !players.canDamage(target, hero)) { this.endFacing(hero); return; }
       this.facingMethods?.updateTargetedRanged.call({ getHeroEntity: () => hero, getTargetEntity: () => target });
     }
-    stop(hero) { this.prepareEpisodes = new WeakMap(); this.campaignOffer = null; this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; hero.getEC('ECAutoFire')?.disable(); }
+    stop(hero) { this.prepareEpisodes = new WeakMap(); this.campaignOffer = this.craftQuote = null; this.endFacing(hero); this.targetMode = null; this.targetStarted = undefined; hero.getEC('ECAutoFire')?.disable(); }
     updateCombat(game, hero, players) {
       const automatic = hero.getEC('ECAutoFire'), target = automatic?.getTargetEntity();
       if (!target) return;
@@ -91,6 +94,25 @@
       if (!target || target.shouldBeDestroyed() || hero.shouldBeDestroyed()) return 'Target unavailable.';
       const builder = hero.getEC('ECPlayerBuilder');
       const life = hero.getEC('ECPlayerLife'), incapacitated = life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL);
+      if (type === 'craftMenu' || type === 'craftResource') {
+        if (target !== hero || game.isScriptLocked() || !controls?.shopMethods) return 'Crafting is not available.';
+        let message = 'Craft Resources.', save = false;
+        if (type === 'craftResource') {
+          const quote = this.craftQuote;
+          this.craftQuote = null;
+          const before = quote?.hero === hero && quote.menu.quote === action.quote && craftOffer(quote.menu, action.index, controls);
+          const current = craftOffer(craftMenu(hero, action.sequence), action.index, controls);
+          if (!before || !current || before.amount !== current.amount || before.cost !== current.cost) message = 'That crafting offer changed. Choose again.';
+          else if (hero.getEC('ECPlayerData').getSoftCurrency() < current.cost) message = 'Not enough Amber.';
+          else {
+            controls.shopMethods.fillFraction.call(Object.assign(Object.create(controls.shopMethods), { globals: game.globals, gameManager: { getHero: () => hero } }), current.resource, current.fraction);
+            message = 'Resources crafted and saved.'; save = true;
+          }
+        }
+        const menu = craftMenu(hero, action.sequence);
+        this.craftQuote = { hero, menu };
+        return { message, ...(save ? { save: true } : {}), craft: menu };
+      }
       if (type === 'pauseGame' || type === 'enterFullscreen') {
         if (target !== hero) return 'Only your own interface actions can be recorded.';
         game.eventManager.notify(type === 'pauseGame' ? 'PauseGame' : 'GoFullScreen', {});

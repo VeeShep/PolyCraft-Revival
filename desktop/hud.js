@@ -71,11 +71,10 @@
     }
     draw() {
       if (!this.state || this.world.resyncing) return;
-      const scores = this.world.game.getGuiScores(), hero = { getEC: () => this.data }, flags = this.state.flags;
-      if (flags.resources) { scores.drawResourceBar(hero, 0); scores.drawResourceBar(hero, 1); }
-      if (flags.amber) scores.drawSoftCurrency(hero);
-      if (flags.rank) scores.drawRanking(hero);
-      this.drawIsland(scores);
+      const scores = this.world.game.getGuiScores(), hero = { getEC: () => this.data }, flags = this.state.flags, crafting = this.world.craft?.menu;
+      if (flags.resources || crafting) { scores.drawResourceBar(hero, 0); scores.drawResourceBar(hero, 1); }
+      if (flags.amber || crafting) scores.drawSoftCurrency(hero);
+      if (!crafting) { if (flags.rank) scores.drawRanking(hero); this.drawIsland(scores); }
     }
     drawIsland(scores) {
       const world = this.world, island = this.state.island, elapsed = Math.max(0, (performance.now() - this.receivedAt) / 1000);

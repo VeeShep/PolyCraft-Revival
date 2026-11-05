@@ -55,6 +55,12 @@ test('original number animations retain continuity, ignore unchanged packets and
   assert.equal(JSON.stringify(next), original);
   f.receive({ ...profile(), xp: 0 }); assert.equal(f.hud.data.getVisibleXP(), 0); assert.equal(f.hud.data.getVisibleRank(), 0);
 });
+test('guest crafting shows native wood, stone and Amber bars even before normal HUD unlocks, without rank or island overlays', () => {
+  const f = guest(), state = profile(); state.flags = { resources: false, amber: false, rank: true };
+  f.world.craft = { menu: true }; f.receive(state); f.hud.draw();
+  assert.ok(f.drawn.some(draw => draw.name === 'lumber')); assert.ok(f.drawn.some(draw => draw.name === 'stone'));
+  assert.ok(f.drawn.some(draw => draw.name === 'resourceAmberTotal')); assert.ok(!f.drawn.some(draw => draw.name === 'rank'));
+});
 test('HUD accepts only the expected status, copies packet arrays and follows host display flags/resync suppression', () => {
   const f = guest(), value = profile(); f.receive(value, 99); assert.equal(f.hud.state, undefined);
   f.receive(value); value.resources[0] = 999; assert.equal(f.hud.state.resources[0], 100);

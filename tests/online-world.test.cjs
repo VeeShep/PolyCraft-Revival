@@ -302,6 +302,11 @@ test('authenticated in-flight actions survive a disconnected peer without applyi
   const stream = { resyncRequestedAt: -Infinity, forceFull: false, stop: () => world.streams.delete(connection) }; world.streams.set(connection, stream);
   world.receiveMessage({ kind: 'resync', payload: { version: 1, tick: 1 } }, connection); assert.equal(stream.forceFull, true);
   connection.state = 'connected'; world.beginTick(); world.beginTick(); assert.equal(applied, 1); assert.equal(actions.sequence, 1);
+  world.receiveMessage({ kind: 'action', payload: { type: 'craftMenu', target: 'own-hero', sequence: 2 } }, connection);
+  world.receiveMessage({ kind: 'action', payload: { type: 'craftResource', target: 'own-hero', sequence: 3, quote: 2, index: 0 } }, connection);
+  assert.deepEqual(actions.queue.map(action => action.type), ['craftMenu', 'craftResource']);
+  assert.throws(() => world.receiveMessage({ kind: 'action', payload: { type: 'craftResource', target: 'own-hero', sequence: 4, quote: 2, index: 0, cost: 0 } }, connection), /Invalid/);
+  world.beginTick(); world.beginTick(); assert.equal(applied, 3);
   delete world.players; await world.close();
 });
 

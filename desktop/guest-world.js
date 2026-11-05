@@ -1,6 +1,7 @@
 'use strict';
 (function (root) {
   const { GuestTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
+  const { GuestCraft } = typeof module !== 'undefined' ? require('./crafting.js') : root.PolycraftCrafting;
   const { validateSnapshot, validateDelta, applyDelta, BATTLE_NOTICES } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
@@ -265,7 +266,7 @@
       for (const node of this.original.roots) globals.scene.removeRootNode(node);
       app.updateGame = () => this.update();
       this.guiInput = { down: false, pendingDown: false, position: [0, 0], getGuiDown() { return this.down; }, getv2ScreenCoord() { return this.position; } };
-      this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this); this.hud = new GuestHud(this); this.quests = new GuestQuests(this); this.campaign = new GuestCampaign(this);
+      this.construction = new GuestConstruction(this); this.totem = new GuestTotem(this); this.hud = new GuestHud(this); this.quests = new GuestQuests(this); this.campaign = new GuestCampaign(this); this.craft = new GuestCraft(this);
       game.imgui.controller = this.guiInput;
       game.draw = () => {};
       game.draw2D = () => {
@@ -307,8 +308,8 @@
         else if (message.kind === 'end') this.close();
         else if (message.kind === 'result') {
           const value = message.payload;
-          const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud', 'quests', 'campaign'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud', 'quests', 'campaign', 'craft'].filter(key => Object.hasOwn(value, key));
+          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (value.type === 'life' && Object.hasOwn(value, 'life') !== Object.hasOwn(value, 'hud')) throw new Error('Incomplete hero status.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
           if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
@@ -326,10 +327,11 @@
           this.totem.receive(value, selected);
           this.construction.receive(value, selected);
           this.quests.receive(value);
+          this.craft.receive(value);
           this.hud.receive(value, this.lifeRequest);
           this.receiveLife(value);
           if (selected) { this.selectionRequest = null; if (value.construction || value.totem || value.campaign) this.selectedBuilding = this.demolition = null; }
-          if ((value.type !== 'target' || selected) && !['held', 'life', 'rotateCamera', 'pauseGame', 'enterFullscreen'].includes(value.type)) {
+          if ((value.type !== 'target' || selected) && !['held', 'life', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu'].includes(value.type)) {
             this.lastTargetResult = { ...value };
             const status = root.document?.getElementById?.('status');
             if (status) status.textContent = value.message;
@@ -354,7 +356,7 @@
     }
     clickTarget(event) {
       const gui = this.game.getIMGui();
-      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare')) return;
+      if (gui.hasCapturedInput() || gui.isHot('guest-shop') || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare')) return;
       const target = pickTarget(this, event);
       this.selectionRequest = null;
       if (target || this.movement.requestWalk(this.construction.cursor())) {
@@ -426,6 +428,7 @@
         this.lastLifeQuery = now; this.lifeRequest = this.sendTarget('life', this.identity.entity);
       }
       const life = this.lifeState;
+      if (this.craft?.menu) return false;
       if (!life || life.phase === 'normal') return false;
       const age = Math.max(0, (now - this.lifeReceivedAt) / 1000), remaining = Math.max(0, life.remaining - age);
       this.game.getGuiManager().addGameMessage('guest-revive', 'You have been knocked out', life.phase === 'dying' ? 'Recovering...' : remaining > 0 ? 'Revive in: ' + Math.ceil(remaining) + ' s' : 'Waiting for the host...', 2);
@@ -438,7 +441,7 @@
       }
       return true;
     }
-    localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu || this.quests?.description || this.campaign?.menu || this.campaign?.result); }
+    localMenu() { return !!(this.pauseMenu || this.selectedBuilding || this.demolition || this.construction?.menu || this.totem?.menu || this.quests?.description || this.campaign?.menu || this.campaign?.result || this.craft?.menu); }
     togglePauseMenu() {
       const open = !this.pauseMenu;
       this.cancelLocalMenu();
@@ -471,6 +474,8 @@
         if (gui.doButton({ id: 'guest-resume', text: 'Resume', v2ScreenLocation: location(-220, -70), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: 'buttonStart' })) this.cancelLocalMenu();
         this.controls.drawPauseSettings.call({ gameManager: this.game, globals: this.controls.app.globals }, this.sessionSettings);
       } else {
+        if (this.craft?.menu) return;
+        if (gui.doButton({ id: 'guest-shop', text: 'SHOP', v2ScreenLocation: location(85, 113, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME, guiArchetype: 'shop' })) this.craft?.open();
         if (gui.doButton({ id: 'guest-fullscreen', text: '', v2ScreenLocation: location(54, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: this.controls.fullscreen ? 'minimize' : 'fullscreen', passive: true })) this.toggleFullscreen();
         if (gui.doButton({ id: 'guest-pause', text: '', v2ScreenLocation: location(116, 52, 'topLeft'), buttonType: this.controls.guiTypes.BUTTON_IN_GAME_TINY, guiArchetype: 'pause' })) this.togglePauseMenu();
       }
@@ -479,7 +484,7 @@
       this.cancelGroundDrag();
       this.pauseMenu = false;
       this.selectedBuilding = this.demolition = null;
-      this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel(); this.quests?.cancel(); this.campaign?.cancel();
+      this.selectionRequest = null; this.construction?.cancel(); this.totem?.cancel(); this.quests?.cancel(); this.campaign?.cancel(); this.craft?.cancel();
       this.guiInput.down = this.guiInput.pendingDown = false;
       this.movement?.keys.clear();
     }
@@ -540,6 +545,7 @@
     }
     updateMenu() {
       if (this.updateLife()) return;
+      if (this.craft?.update()) return;
       if (this.campaign?.update()) return;
       if (this.quests?.update()) return;
       this.construction?.update(); this.totem?.update();
@@ -640,7 +646,7 @@
     drawMovementCursor() {
       if (!this.movement.available() || this.construction.placement || !this.pointerEvent || this.groundDrag?.targeted) return;
       const gui = this.game.getIMGui();
-      if (gui.hasCapturedInput() || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare') || !this.groundDrag && pickTarget(this, this.pointerEvent)) return;
+      if (gui.hasCapturedInput() || gui.isHot('guest-shop') || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare') || !this.groundDrag && pickTarget(this, this.pointerEvent)) return;
       const cursor = this.construction.cursor();
       if (!cursor) return;
       const globals = this.controls.app.globals, controller = this.game.getGameController(), drag = this.groundDrag;
@@ -692,9 +698,8 @@
       this.viewCamera.update(); this.updateGroundDrag(); game.gameLighting.update();
       this.updateTorch();
       this.hasFrame = true;
-      this.drawHealth();
-      this.drawCombatTarget();
-      this.hud.draw(); this.drawBattleNotices();
+      if (!this.craft?.menu) { this.drawHealth(); this.drawCombatTarget(); this.drawBattleNotices(); }
+      this.hud.draw();
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       this.campaign.drawPreparation();
       if (!this.pauseMenu) this.updateMenu();

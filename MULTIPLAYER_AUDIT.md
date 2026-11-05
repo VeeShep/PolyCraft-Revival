@@ -2,7 +2,15 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current checkpoint — Beta 68, 2026-11-04
+## Current checkpoint — Beta 74, 2026-11-05
+
+Guest Shop/Craft Resource interaction now uses the original GamestateShop prototype and artwork with a guest-owned presentation/input facade. Only the native resource panel is exposed; Amber/free-claim tabs are removed even when the host enables cheats. Native pricing tiers, six fixed stone/wood fraction slots, duplicate-price hiding, full/no-storage messages and normal currency/resource adjustment methods are retained. No native shop enter/exit/pause or solo persistence path runs on a guest.
+
+A host-owned quote is bound to the assigned hero and action sequence. Clients send only quote/index selection; the host recomputes current quantity, price, visibility, capacity and funds at execution. Stale quantities/prices, hidden offers, repeated quotes and foreign hero targets cannot spend; a fresh quote is returned for retry. Shared transactions remain synchronous and successful results use the existing coherent checkpoint-before-acknowledgement path. New actions/results are strictly parsed and rate/queue limited. Menu cancellation, native focus loss, resync and disconnect clear pending UI; late replies cannot reopen it. Online simulation keeps running.
+
+Runtime is now coop-39, requiring matching Beta 74 peers; room protocol 4, world/delta 15/2 and save formats are unchanged. Node/native-method fixtures cover two/four-player shared spending, native prices/UI, malformed requests/replies, stale/repeated choices, cancellation and persisted co-op economy/solo isolation. A focused review caught missing doText forwarding for full/absent storage; the fix and native-menu regression are included. Full-game graphical clicking/layout, real concurrent human play, physical networks and native-platform gameplay remain unverified. Exact checks and artifact evidence are in RESTORATION_STATUS.md.
+
+## Previous checkpoint — Beta 68, 2026-11-04
 
 Beta 68 corrects the joining guide and in-game relay help to match the existing room/manual/direct menus and service-issued TURN fallback. It changes no connection, simulation or save logic. The actual runtime remains coop-38/world 15/delta 2/room protocol 4, with save envelopes through 8. Current player instructions are in [README.md](README.md#multiplayer-can-i-join-a-friends-game); service deployment and credential lifecycle are in [server/README.md](server/README.md).
 
