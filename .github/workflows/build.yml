@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.gitattributes'
       - '.github/workflows/build.yml'
       - 'desktop/**'
       - 'server/**'
@@ -15,6 +16,7 @@ on:
       - '*.json'
       - 'scripts/collect-build.cjs'
       - 'scripts/verify-mac.cjs'
+      - 'scripts/verify-desktop.cjs'
       - 'tests/**'
   pull_request:
 
@@ -131,6 +133,32 @@ jobs:
           version=$(node -p 'require("./package.json").version')
           ditto -x -k "dist/ci/PolyCraft-Offline-${version}-mac-${{ matrix.arch }}.zip" "$verify_dir"
           node scripts/verify-mac.cjs "$verify_dir/PolyCraft Offline.app" "${{ matrix.arch }}"
+      - name: Verify finished Windows ZIP architecture, source and icon
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $verifyDir = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString())
+          try {
+            Expand-Archive -LiteralPath "dist/ci/PolyCraft-Offline-$version-win-${{ matrix.arch }}.zip" -DestinationPath $verifyDir
+            node scripts/verify-desktop.cjs "$verifyDir" win32 "${{ matrix.arch }}"
+            if ($LASTEXITCODE -ne 0) { throw 'Windows package verification failed.' }
+          } finally {
+            if (Test-Path -LiteralPath $verifyDir) { Remove-Item -LiteralPath $verifyDir -Recurse -Force }
+          }
+      - name: Verify finished Linux archives, architectures and desktop icons (no game)
+        if: runner.os == 'Linux'
+        run: |
+          verify_dir=$(mktemp -d "${RUNNER_TEMP}/polycraft-linux-verify.XXXXXX")
+          trap 'rm -rf "$verify_dir"' EXIT
+          version=$(node -p 'require("./package.json").version')
+          mkdir "$verify_dir/tar" "$verify_dir/image"
+          tar -xzf "dist/ci/PolyCraft-Offline-${version}-linux-${{ matrix.arch }}.tar.gz" -C "$verify_dir/tar"
+          node scripts/verify-desktop.cjs "$verify_dir/tar/PolyCraft-Offline-${version}-linux-${{ matrix.arch }}" linux "${{ matrix.arch }}"
+          image_arch="${{ matrix.arch }}"
+          if [[ "$image_arch" == x64 ]]; then image_arch=x86_64; fi
+          (cd "$verify_dir/image" && "$GITHUB_WORKSPACE/dist/ci/PolyCraft-Offline-${version}-linux-${image_arch}.AppImage" --appimage-extract > /dev/null)
+          node scripts/verify-desktop.cjs "$verify_dir/image/squashfs-root" appimage "${{ matrix.arch }}"
       - name: Collect packages, instructions and checksums
         run: |
           if [[ "${{ matrix.platform }}" == linux ]]; then

@@ -1,0 +1,15 @@
+# Keep source and packaged text identical across build hosts.
+*.js text eol=lf
+*.cjs text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.txt text eol=lf
+
+# Original references and game assets retain their exact stored bytes.
+reference/** -text
+assets/** -text
+staticmax/** -text
+img/** -text
