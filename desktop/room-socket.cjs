@@ -12,10 +12,13 @@ class RoomSocket {
     const traffic = this.traffic = { started: performance.now(), sentBytes: 0, receivedBytes: 0, sentMessages: 0, receivedMessages: 0 };
     return new Promise((resolve, reject) => {
       let ready = false;
-      const timer = setTimeout(() => { reject(new Error('Room server timed out. Check its address and try again.')); this.close(); }, 10000);
-      socket.on('open', () => { this.write(JSON.stringify({ v: protocol.VERSION, type: options.type, room, password, runtime: options.runtime, ...(options.type === 'join' ? { name: options.name, relay: options.relay === true } : {}) })).catch(error => { reject(error); this.close(); }); });
-      socket.on('error', () => { if (!ready) { reject(new Error('Cannot reach the room server. Check its address, connection and TLS certificate.')); this.close(); } });
+      // A cancelled connection can report failure after its replacement has opened.
+      const close = () => { if (this.socket === socket) this.close(); };
+      const timer = setTimeout(() => { reject(new Error('Room server timed out. Check its address and try again.')); close(); }, 10000);
+      socket.on('open', () => { if (this.socket !== socket) return; this.write(JSON.stringify({ v: protocol.VERSION, type: options.type, room, password, runtime: options.runtime, ...(options.type === 'join' ? { name: options.name, relay: options.relay === true } : {}) })).catch(error => { reject(error); close(); }); });
+      socket.on('error', () => { if (!ready) { reject(new Error('Cannot reach the room server. Check its address, connection and TLS certificate.')); close(); } });
       socket.on('message', (bytes, binary) => {
+        if (this.socket !== socket) return;
         traffic.receivedBytes += bytes.length; traffic.receivedMessages++;
         try {
           const message = JSON.parse(bytes.toString());
@@ -28,7 +31,7 @@ class RoomSocket {
             if (message.type !== (options.type === 'create' ? 'created' : 'joined') || message.room !== room) throw new Error('Unexpected room server reply.');
             ready = true; clearTimeout(timer); resolve({ id, room, relay: message.relay === true });
           } else this.emit({ ...message, connectionId: id });
-        } catch (error) { if (!ready) reject(error); else this.emit({ connectionId: id, type: 'error', message: error.message }); this.close(); }
+        } catch (error) { if (!ready) reject(error); else this.emit({ connectionId: id, type: 'error', message: error.message }); close(); }
       });
       socket.on('close', () => {
         traffic.ended ??= performance.now();

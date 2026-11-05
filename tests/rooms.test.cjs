@@ -24,6 +24,32 @@ async function until(check) {
 }
 const settings = url => ({ url, room: 'poopedpants123', password: 'giggle shits', runtime });
 
+test('cancelling a connecting room socket cannot close its immediate replacement', async t => {
+  const s = await service(t), c = client(t);
+  const cancelled = assert.rejects(c.native.open({ ...settings(s.url), type: 'create' }), /ended|reach/);
+  c.native.close();
+  const replacement = await c.native.open({ ...settings(s.url), type: 'create' });
+  await cancelled;
+  assert.equal(c.native.id, replacement.id);
+  assert.equal(c.native.socket.readyState, 1);
+  assert.equal(s.rooms.size, 1);
+});
+
+test('late open, message and error callbacks cannot affect a replacement room connection', async t => {
+  const s = await service(t), c = client(t);
+  const cancelled = assert.rejects(c.native.open({ ...settings(s.url), type: 'create' }), /ended|reach/);
+  const stale = c.native.socket; c.native.close();
+  const replacement = await c.native.open({ ...settings(s.url), type: 'create' }); await cancelled;
+  stale.emit('open');
+  stale.emit('message', Buffer.from('malformed old reply'), false);
+  stale.emit('error', new Error('late old failure'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(c.native.id, replacement.id); assert.equal(c.native.socket.readyState, 1);
+  assert.equal(c.events.some(event => event.connectionId === replacement.id), false);
+  await client(t).native.open({ ...settings(s.url), type: 'join', name: 'Guest' });
+  await until(() => c.events.some(event => event.connectionId === replacement.id && event.type === 'request'));
+});
+
 test('room names normalize, password spaces/case are preserved and insecure remote endpoints are rejected', () => {
   assert.equal(rules.roomName(' PoopedPants123 '), 'poopedpants123'); assert.equal(rules.password('giggle shits'), 'giggle shits'); assert.equal(rules.password('  giggle shits  '), '  giggle shits  ');
   for (const value of ['', 'has spaces', '../rooms']) assert.throws(() => rules.roomName(value));
