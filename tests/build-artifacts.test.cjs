@@ -8,7 +8,7 @@ const { createHash } = require('node:crypto');
 const asar = require('@electron/asar');
 const { collectBuild } = require('../scripts/collect-build.cjs');
 const { verifyMacApp } = require('../scripts/verify-mac.cjs');
-const { version } = require('../package.json');
+const metadata = require('../package.json'), { version } = metadata;
 function fixture(t) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-artifacts-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
@@ -72,10 +72,11 @@ async function macFixture(t) {
   fs.writeFileSync(path.join(app, 'Contents', 'Info.plist'), 'not executable');
   const resources = path.join(app, 'Contents/Resources'), source = path.join(directory, 'source'); fs.mkdirSync(resources); fs.mkdirSync(source);
   fs.copyFileSync(path.join(__dirname, '../assets/offline-ui/icons/icon.icns'), path.join(resources, 'icon.icns'));
-  for (const name of ['game.canvas.js', 'desktop/main.cjs', 'desktop/multiplayer.js', 'assets/offline-ui/icons/png/512x512.png']) {
+  for (const name of ['game.canvas.js', 'assets/offline-ui/icons/png/512x512.png']) {
     const target = path.join(source, name); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(path.join(__dirname, '..', name), target);
   }
-  fs.writeFileSync(path.join(source, 'package.json'), JSON.stringify({ version }));
+  fs.cpSync(path.join(__dirname, '..', 'desktop'), path.join(source, 'desktop'), { recursive: true });
+  fs.writeFileSync(path.join(source, 'package.json'), JSON.stringify({ version, name: metadata.name, productName: metadata.productName, main: metadata.main, type: metadata.type }));
   const archive = path.join(resources, 'app.asar'); await asar.createPackage(source, archive);
   return { app, files, source, archive, resources };
 }
@@ -106,6 +107,12 @@ test('Mac verification refuses incorrect or unsafe icon metadata, missing/defaul
   for (const name of ['../icon.icns\n', 'icon.icns \n', '']) assert.throws(() => verifyMacApp(f.app, 'arm64', command => command === 'plutil' ? name : macRun('arm64')(command)), /icon filename/);
   fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version: 'old-version' })); await asar.createPackage(f.source, f.archive);
   assert.throws(() => verifyMacApp(f.app, 'arm64', run), /version differs/);
-  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version })); fs.writeFileSync(path.join(f.source, 'assets/offline-ui/icons/png/512x512.png'), 'wrong window icon'); await asar.createPackage(f.source, f.archive);
+  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version, name: metadata.name, productName: metadata.productName, main: metadata.main, type: metadata.type })); fs.writeFileSync(path.join(f.source, 'assets/offline-ui/icons/png/512x512.png'), 'wrong window icon'); await asar.createPackage(f.source, f.archive);
   assert.throws(() => verifyMacApp(f.app, 'arm64', run), /source\/icon differs/); assert.equal(signed, false);
+});
+test('Mac source verification refuses stale drag input before checking the signature', async t => {
+  const f = await macFixture(t); let signed = false;
+  fs.writeFileSync(path.join(f.source, 'desktop/coop-input.js'), 'old drag implementation'); await asar.createPackage(f.source, f.archive);
+  assert.throws(() => verifyMacApp(f.app, 'arm64', command => { if (command === 'codesign') signed = true; return macRun('arm64')(command); }), /Packaged source\/icon differs: desktop/);
+  assert.equal(signed, false);
 });

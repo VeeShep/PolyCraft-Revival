@@ -31,8 +31,20 @@ function verifyBinaries(directory, platform, arch) {
 }
 function verifySource(archive) {
   asar.uncache(archive);
-  assert.equal(JSON.parse(asar.extractFile(archive, 'package.json')).version, metadata.version, 'Packaged version differs.');
-  for (const file of ['game.canvas.js', 'desktop/main.cjs', 'desktop/multiplayer.js', 'assets/offline-ui/icons/png/512x512.png']) assert.equal(digest(asar.extractFile(archive, path.normalize(file))), digest(fs.readFileSync(path.join(root, file))), 'Packaged source/icon differs: ' + file);
+  const info = JSON.parse(asar.extractFile(archive, 'package.json'));
+  assert.equal(info.version, metadata.version, 'Packaged version differs.');
+  for (const key of ['name', 'productName', 'main', 'type']) assert.equal(info[key], metadata[key], 'Packaged ' + key + ' differs.');
+  const desktop = fs.readdirSync(path.join(root, 'desktop'), { recursive: true, withFileTypes: true });
+  for (const entry of desktop) assert.ok(entry.isFile() || entry.isDirectory(), 'Unsupported desktop source entry: ' + entry.name);
+  const relative = entry => path.relative(root, path.join(entry.parentPath, entry.name)).split(path.sep).join('/');
+  const packaged = asar.listPackage(archive).map(file => file.slice(1).split(path.sep).join('/')).filter(file => file.startsWith('desktop/'));
+  assert.deepEqual(packaged.sort(), desktop.map(relative).sort(), 'Packaged desktop entries differ.');
+  const files = new Set(['game.canvas.js', 'desktop/main.cjs', 'desktop/multiplayer.js', 'assets/offline-ui/icons/png/512x512.png',
+    ...desktop.filter(entry => entry.isFile()).map(relative).sort()]);
+  for (const file of files) {
+    assert.equal(asar.statFile(archive, path.normalize(file), false).link, undefined, 'Packaged source link: ' + file);
+    assert.equal(digest(asar.extractFile(archive, path.normalize(file))), digest(fs.readFileSync(path.join(root, file))), 'Packaged source/icon differs: ' + file);
+  }
 }
 function verifyWindows(directory, arch) {
   const binaries = verifyBinaries(directory, 'win32', arch), executable = path.join(directory, metadata.productName + '.exe');
