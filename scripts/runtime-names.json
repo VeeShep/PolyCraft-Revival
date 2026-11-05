@@ -893,6 +893,51 @@
       "outputSHA256": "17e3c9da599ac96f30bfd799215a742655df784ffea7cf6e5eb1dfd1eec45dda",
       "inputCanonicalSHA256": "3927b33119273a250199bd694b4be5be18398285bed5735db42fdd34bfd37cc8",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "ui-model-role-names",
+      "names": [
+        {
+          "original": "td",
+          "name": "GameCamera",
+          "role": "gameCamera",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.gameCamera, bound native construction and methods: setDesiredFocus, setDesiredPosition, getCameraValues, update",
+          "offset": 5743,
+          "references": 6
+        },
+        {
+          "original": "yf",
+          "name": "GameEventManager",
+          "role": "eventManager",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.eventManager, bound native construction and methods: subscribe, unsubscribe, notify, reset",
+          "offset": 4463,
+          "references": 4
+        },
+        {
+          "original": "zf",
+          "name": "GuiManager",
+          "role": "guiManager",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.guiManager, bound native construction and methods: addDrawGui, clearDrawList, completeDraw, addGameMessage",
+          "offset": 5623,
+          "references": 4
+        },
+        {
+          "original": "Af",
+          "name": "GameScoresUI",
+          "role": "gameScoresUI",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.gameScoresUI, bound native construction and methods: drawResourceBar, drawSoftCurrency, drawRanking, setPrepareTimeRemaining",
+          "offset": 5660,
+          "references": 4
+        }
+      ],
+      "inputSHA256": "f10fda9ec44cec4faf62471f80254e8824abe10e87668a6389f974551f5911a5",
+      "outputSHA256": "45636eaea7962504dcf4d0750d4085b8ec2aa11810f4753c910046ce91f5a9e1",
+      "inputCanonicalSHA256": "2324551a191676bf90215fa83650f5a7802cc2b4579e67f3d42827acf410311b",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }

@@ -129,7 +129,7 @@
   function vf() {}
   function wf() {}
   function xf() {}
-  function yf() {}
+  function GameEventManager() {}
   function Zd() {}
   function $d() {}
   function ae() {}
@@ -174,13 +174,13 @@
     this.buildZone = b.isBuildZone ? !0 : !1;
     this.scratchpad = {};
   }
-  function zf() {}
+  function GuiManager() {}
   function Z() {}
-  function Af() {}
+  function GameScoresUI() {}
   function Bf() {}
   function Cf() {}
   function GameClock() {}
-  function td() {}
+  function GameCamera() {}
   function Ef() {}
   function GameSpace() {}
   function Hb() {}
@@ -44304,7 +44304,7 @@
     b.defenceRatingMappingTable = [1, 2, 3, 4, 5, Number.MAX_VALUE];
     return b;
   };
-  yf.prototype = {
+  GameEventManager.prototype = {
     subscribe: function (a, b) {
       var c = this.events[a];
       c || (c = this.events[a] = yb.create());
@@ -44324,8 +44324,8 @@
       this.events = {};
     }
   };
-  yf.create = function () {
-    var a = new yf();
+  GameEventManager.create = function () {
+    var a = new GameEventManager();
     a.events = {};
     return a;
   };
@@ -61466,7 +61466,7 @@
       return a >= this.xpTable.length ? void 0 : this.xpTable[a];
     }
   };
-  zf.prototype = {
+  GuiManager.prototype = {
     addControl: function (a, b) {
       var c;
       1 < arguments.length && (c = Array.prototype.slice.call(arguments), c.shift(), c.shift(), c = {
@@ -61701,8 +61701,8 @@
       this.drawGuiMap = {};
     }
   };
-  zf.create = function (a) {
-    var b = new zf();
+  GuiManager.create = function (a) {
+    var b = new GuiManager();
     b.globals = a;
     b.controlInfoList = [];
     b.gameMessages = {};
@@ -62807,7 +62807,7 @@
       }
     }
   };
-  Af.prototype = {
+  GameScoresUI.prototype = {
     draw2D: function (a, b) {
       var c = this.globals,
         d = c.mathDevice,
@@ -63052,8 +63052,8 @@
     },
     reset: function () {}
   };
-  Af.create = function (a, b) {
-    var c = new Af();
+  GameScoresUI.create = function (a, b) {
+    var c = new GameScoresUI();
     c.globals = a;
     c.imgui = b;
     c.prepareTimeRemaining = 0;
@@ -63364,7 +63364,7 @@
     b.prevEngineTime = 0;
     return b;
   };
-  td.prototype = {
+  GameCamera.prototype = {
     globals: void 0,
     reset: function () {
       var a = this.globals.mathDevice;
@@ -63954,9 +63954,9 @@
       return !e ? void 0 : e;
     }
   };
-  td.create = function (a, b) {
-    void 0 === td.prototype.globals && (td.prototype.globals = a);
-    var c = new td();
+  GameCamera.create = function (a, b) {
+    void 0 === GameCamera.prototype.globals && (GameCamera.prototype.globals = a);
+    var c = new GameCamera();
     c.gameManager = b;
     c.camera = a.camera;
     c.cameraController = pf.create(a.graphicsDevice, a.camera);
@@ -68452,15 +68452,15 @@
     var b = a.globals;
     void 0 === GameManager.prototype.globals && (GameManager.prototype.globals = b);
     var c = new GameManager();
-    c.eventManager = yf.create();
+    c.eventManager = GameEventManager.create();
     c.playerData = PlayerDataModel.create(b);
     c.uniqueIndex = 0;
     c.uniqueLevelIndex = 0;
-    c.gameCamera = td.create(b, c);
+    c.gameCamera = GameCamera.create(b, c);
     c.gameController = GameInputController.create(b, c);
     c.imgui = Z.create(b, c, c.gameController);
-    c.guiManager = zf.create(b, c.gameController);
-    c.gameScoresUI = Af.create(b, c.imgui);
+    c.guiManager = GuiManager.create(b, c.gameController);
+    c.gameScoresUI = GameScoresUI.create(b, c.imgui);
     c.gameClock = GameClock.create(b);
     c.scoreInfo = CampaignScoreInfo.create(b);
     c.gameLighting = Hb.create(b, c);

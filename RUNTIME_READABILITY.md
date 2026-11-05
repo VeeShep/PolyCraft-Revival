@@ -6,7 +6,24 @@ The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`
 
 `scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
 
-## Current world-factory role names — Beta 72
+## Current native camera/event/UI role names — Beta 75
+
+Four more private constructors have descriptive names verified from fields on the actual newly created GameManager:
+
+| Previous binding | Role name | Manager field | Bound references |
+| --- | --- | --- | --- |
+| `td` | `GameCamera` | `gameCamera` | 6 |
+| `yf` | `GameEventManager` | `eventManager` | 4 |
+| `zf` | `GuiManager` | `guiManager` | 4 |
+| `Af` | `GameScoresUI` | `gameScoresUI` | 4 |
+
+These are descriptive role names, not recovered original spellings. GameCamera is the native gameplay camera controller; the earlier verified Camera name identifies the separate Turbulenz engine camera. Public manager fields, event strings, GUI artwork/IDs, entity/save keys and implementation order remain unchanged.
+
+`scripts/name-ui-models.cjs` reuses the world-model evidence to find the actual manager factory. Each selected field must belong to its newly constructed manager, use one bound native factory and resolve to a private constructor with the expected native methods. Each factory must construct that same binding once. Duplicate/missing roles, wrong owners/factories, missing methods, shadowed construction, reassignment and capture refuse transformation. The shared scope-aware inverse proof restores the canonical input, and an independent token audit reverses exactly **22 identifier edits** to the prior source bytes, including comments and formatting. Earlier manifest passes and immutable Beta 1 bytes are preserved.
+
+Six focused checks pass before transformation: fixture behavior/shadows/public keys, rejection cases, CLI provenance/repeat protection, and actual native event forwarding/reset, layered GUI queue/frame preservation and camera vector/FOV/mode priorities. Full checks and release evidence are recorded in RESTORATION_STATUS.md. No GUI was launched or engine implementation replaced; native gameplay acceptance remains open.
+
+## Historical world-factory role names — Beta 72
 
 The factory/product pipeline now has four descriptive private names:
 
