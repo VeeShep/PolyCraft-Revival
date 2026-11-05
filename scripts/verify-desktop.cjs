@@ -33,7 +33,7 @@ function verifySource(directory) {
   const archive = path.join(directory, 'resources/app.asar');
   asar.uncache(archive);
   assert.equal(JSON.parse(asar.extractFile(archive, 'package.json')).version, metadata.version, 'Packaged version differs.');
-  for (const file of ['game.canvas.js', 'desktop/main.cjs', 'desktop/multiplayer.js', 'assets/offline-ui/icons/png/512x512.png']) assert.equal(digest(asar.extractFile(archive, file)), digest(fs.readFileSync(path.join(root, file))), 'Packaged source/icon differs: ' + file);
+  for (const file of ['game.canvas.js', 'desktop/main.cjs', 'desktop/multiplayer.js', 'assets/offline-ui/icons/png/512x512.png']) assert.equal(digest(asar.extractFile(archive, path.normalize(file))), digest(fs.readFileSync(path.join(root, file))), 'Packaged source/icon differs: ' + file);
 }
 function verifyWindows(directory, arch) {
   const binaries = verifyBinaries(directory, 'win32', arch), executable = path.join(directory, metadata.productName + '.exe');
