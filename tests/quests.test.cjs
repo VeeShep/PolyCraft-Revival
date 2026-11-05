@@ -91,6 +91,40 @@ test('format-6 reference readers retain their original source hashes', () => {
   const dir = path.join(__dirname, '../reference/coop-schema-4');
   for (const line of fs.readFileSync(path.join(dir, 'SHA256SUMS.txt'), 'utf8').trim().split('\n')) { const [hash, file] = line.split(/\s+/); assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, file))).digest('hex'), hash); }
 });
+test('native guest bump impacts retain speed/direction/cooldown guards and complete the original shared charge quest with one saved reward', () => {
+  const ast = require('./runtime-ast.cjs'), f = fixture(), task = ast.assignedObject('bargeAttack'), handlers = new Map(), damage = [], effects = [];
+  const globals = { gameCurrentTime: 1, metricsManager: { sendMetric() {} }, mathDevice: { saturate: value => Math.max(0, Math.min(1, value)), v3Length2DSq: v => v[0] ** 2 + v[2] ** 2,
+    v3Sub: (a, b) => a.map((value, i) => value - b[i]), v3Dot: (a, b) => a.reduce((sum, value, i) => sum + value * b[i], 0), v3Lerp: (a, b, t) => a.map((value, i) => value + (b[i] - value) * t) } };
+  f.game.eventManager = { subscribe: (name, fn) => handlers.set(name, fn), unsubscribe: name => handlers.delete(name), notify: (name, value) => handlers.get(name)?.(value) };
+  f.game.getEventManager = () => f.game.eventManager;
+  const tasks = { archetypes: { bargeAttack: task }, conditions: { onEvent: ast.assignedObject('onEvent') } };
+  const group = Object.assign(Object.create(ast.taskGroupMethods(tasks)), { globals, gameManager: f.game, taskList: ['bargeAttack'], uniqueGroupString: 'crit',
+    taskConditionStateMap: {}, eventInterestMap: {}, eventHandlerMap: {}, eventMap: {}, taskCompleteStatusList: [false] });
+  f.manager.taskArchetypes = tasks.archetypes; f.manager.criticalTaskGroup = group; group.activateTask(task, 0);
+  const quests = f.attach(), enemy = { getv3Location: () => [2, 0, 0] }, velocity = [0, 0, 0], guest = { getv3Location: () => [0, 0, 0] };
+  f.game.actionManager = { addAction: (name, args) => { assert.equal(name, 'ApplyDamageToEntity'); assert.equal(args.aggressor, guest); assert.equal(args.victim, enemy); damage.push(args.damageType); } };
+  f.game.getEffectFactory = () => ({ play: (...args) => effects.push(args) }); globals.gameManager = f.game;
+  const methods = ast.component('ECBumpAttack'), bump = Object.assign(Object.create(methods), { globals, gameManager: f.game, entity: guest, targetEntity: enemy, scratchpad: {},
+    archetype: { ...methods.parameters, ...ast.archetypeComponent('a_h_hero_01', 'ECBumpAttack') }, damageType: ast.archetypeComponent('a_h_hero_01', 'ECBumpAttack').damageType,
+    getv3Location: () => guest.getv3Location(), getEntityEC: name => name === 'ECPhysicsSphere' ? { getv3Velocity: () => velocity } : null, isManagedByThisMachine: () => true });
+  bump.onImpact(enemy); velocity[0] = -3; bump.onImpact(enemy); velocity[0] = 3; bump.onImpact({ getv3Location: enemy.getv3Location });
+  f.manager.updateCompletedTasks(); assert.equal(damage.length, 0); assert.equal(f.flags.bargeAttack, undefined);
+  bump.onImpact(enemy); f.manager.updateCompletedTasks(); assert.equal(damage.length, 1); assert.equal(f.flags.bargeAttack, undefined);
+  globals.gameCurrentTime = 1.2; assert.ok(Math.abs(bump.getCooldownFactor() - 1 / 3) < 1e-9); bump.onImpact(enemy);
+  globals.gameCurrentTime = 1.6; bump.onImpact(enemy); f.manager.updateCompletedTasks(); assert.equal(damage.length, 1, 'cooldown includes its exact boundary');
+  for (const time of [1.6001, 2.21]) { globals.gameCurrentTime = time; bump.onImpact(enemy); f.manager.updateCompletedTasks(); }
+  assert.deepEqual(damage, Array(3).fill(bump.damageType)); assert.equal(effects.length, 3);
+  for (const [name, position, actor, direction] of effects) { assert.equal(name, bump.getHitEffect()); assert.deepEqual(Array.from(position), [1, 0, 0]); assert.equal(actor, guest); assert.deepEqual(Array.from(direction), [2, 0, 0]); }
+  assert.equal(f.flags.bargeAttack, true); assert.equal(f.gifts.length, 0);
+  assert.deepEqual(JSON.parse(f.bridge.state.userData[KEY]), ledger([{ id: 'taskIdcrit_0', task: 'bargeAttack' }]));
+  quests.close();
+  const restored = fixture(structuredClone(f.bridge.state)); restored.manager.taskArchetypes = tasks.archetypes; restored.manager.criticalTaskGroup.taskList = ['bargeAttack'];
+  const next = restored.attach(); assert.deepEqual(next.data.pending, [{ id: 'taskIdcrit_0', task: 'bargeAttack' }]);
+  assert.equal(next.award('taskIdcrit_0', guest), true); assert.equal(next.award('taskIdcrit_0', guest), false);
+  assert.deepEqual(restored.gifts, [['amber', 1, [0, 0, 0]], ['xp', 20, [0, 0, 0]]]);
+  const final = fixture(structuredClone(restored.bridge.state)), finalQuests = final.attach(); assert.equal(final.flags.bargeAttack, true); assert.equal(finalQuests.award('taskIdcrit_0', guest), false);
+  next.close(); finalQuests.close();
+});
 
 test('task-manager attachment enables tracking for co-op history or a saved ledger, and leaves untracked solo saves alone', () => {
   for (const tracked of ['none', 'coop', 'ledger']) {

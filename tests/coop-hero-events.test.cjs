@@ -56,6 +56,30 @@ test('original hero creation supplies a numeric rotation before the first simula
   assert.equal(runtime.method('createHero').call(game, 'Guest', 'hero', [0, 0, 0]), hero);
   assert.equal(typeof rotation, 'number'); assert.equal(rotation, 1);
 });
+test('native damage applies guest-owned enemy and enabled hero hits while protecting allied workers and buildings from damage and stun', () => {
+  const { CoopPlayers } = require('../desktop/coop-players.js'), damageMethods = runtime.prototypeWith('applyToEntity'), healthMethods = runtime.component('ECHealth');
+  for (const pvp of [false, true]) {
+    const players = Object.create(CoopPlayers.prototype), game = { globals: { desktopWorld: { transport: { pvp } } }, desktopPlayers: players,
+      getFactionManager: () => ({ areFriendly: (a, b) => a.faction === b.faction }) };
+    players.game = game; players.registry = { data: { host: 'host' } };
+    function entity(faction, agent = false) {
+      const state = { hp: 50, calls: 0, stun: 0 }, actor = { faction, shouldBeDestroyed: () => false, isManagedByThisMachine: () => true, hasEC: () => false,
+        isFriendlyWith: other => faction === other.faction, getv3Location: () => [0, 0, 0], state };
+      const health = { getInvulnerable: () => false, isRooted: () => false,
+        takeDamage(amount, critical, aggressor) { assert.equal(aggressor, guest); assert.equal(critical, true); state.hp -= amount; state.calls++; },
+        takesFullDamageFromFriendlyFire: () => healthMethods.takesFullDamageFromFriendlyFire.call({ entity: actor, gameManager: game, archetype: { takesFullDamageFromFriendlyFire: false } }) };
+      actor.getEC = name => name === 'ECHealth' ? health : name === 'ECAgent' && agent ? { setStunned: time => { state.stun = time; } } : null;
+      return actor;
+    }
+    const host = entity('players'), guest = entity('players'), enemy = entity('enemies', true), worker = entity('players', true), building = entity('players');
+    players.active = new Map([['host', { hero: host }], ['guest', { hero: guest }]]);
+    const damage = Object.assign(Object.create(damageMethods), { damage: 40, friendlyFire: 0, stunDuration: 0.5, gameManager: game, globals: { gameTimeStep: 1 / 60, mathDevice: {} } });
+    for (const target of [host, enemy, worker, building]) damage.applyToEntity(target, guest);
+    assert.equal(enemy.state.hp, 10); assert.equal(enemy.state.calls, 1); assert.equal(enemy.state.stun, 0.5);
+    assert.equal(host.state.hp, pvp ? 10 : 50); assert.equal(host.state.calls, pvp ? 1 : 0);
+    for (const target of [worker, building]) assert.deepEqual(target.state, { hp: 50, calls: 0, stun: 0 });
+  }
+});
 test('original preload loads both torch and daytime hands before any guest scene can need them', () => {
   const loaded = new Set(), requests = [];
   const globals = { simpleSceneLoader: { isLoadingMesh: name => loaded.has(name), load: name => { loaded.add(name); requests.push(name); } } };
