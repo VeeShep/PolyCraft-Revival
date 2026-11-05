@@ -24,6 +24,8 @@ Native Linux/Electron/coturn checks have verified direct and relayed links, repe
 
 **Latest complete CI artifact set: Beta 76.** [Build run 42112629653](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42112629653) passed all eight jobs and has eight downloads for Mac ARM64/Intel, Windows x64/ARM64 and Linux x64/ARM64 (separate AppImage/tar.gz). Unit/native-loopback networking and every package job passed. Windows/Linux packages pass binary/icon/selected-source checks; both Mac packages pass expanded icon/selected-source/architecture/deep-signature checks. These are experimental tester builds; native gameplay and physical-network acceptance remain open. Artifacts require GitHub sign-in and expire after seven days.
 
+**Newer experimental Windows/Linux builds: Beta 78.** [Run 42125622720](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42125622720) has six downloads (suffix **104.1**) for Windows x64/ARM64 and Linux x64/ARM64, with separate AppImage and tar.gz archives. All four platform jobs, 519 unit checks and native loopback networking passed. Both Mac jobs remain queued. Full-game and real-internet acceptance remain open.
+
 Previous local Mac Beta 74 tester ZIPs remain preserved in ignored `dist/beta-74-local/`, with recorded source/checksum verification in [RESTORATION_STATUS.md](RESTORATION_STATUS.md). Use the Beta 76 CI downloads above for the current host drag fix; cloning Git does not download any app package.
 
 Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadmap, package provenance, remaining acceptance gates and continuation instructions. Its earlier checkpoints are historical, not the current release state.
