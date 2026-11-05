@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const asar = require('@electron/asar');
 const { collectBuild } = require('../scripts/collect-build.cjs');
 const { verifyMacApp } = require('../scripts/verify-mac.cjs');
 const { version } = require('../package.json');
@@ -64,28 +65,47 @@ test('collecting a build never overwrites an existing download bundle', t => {
   assert.deepEqual(fs.readdirSync(destination), ['keep.txt']);
   assert.equal(fs.readFileSync(path.join(destination, 'keep.txt'), 'utf8'), 'original');
 });
-function macFixture(t) {
+async function macFixture(t) {
   const { directory } = fixture(t), app = path.join(directory, 'PolyCraft Offline.app');
   const files = ['MacOS/PolyCraft Offline', 'Frameworks/Electron Framework.framework/Versions/A/Electron Framework', 'Frameworks/Helper.app/Contents/MacOS/Helper', 'Frameworks/libtest.dylib'];
   for (const file of files) { const target = path.join(app, 'Contents', file); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.writeFileSync(target, Buffer.from('cffaedfe00000000', 'hex')); }
   fs.writeFileSync(path.join(app, 'Contents', 'Info.plist'), 'not executable');
-  return { app, files };
+  const resources = path.join(app, 'Contents/Resources'), source = path.join(directory, 'source'); fs.mkdirSync(resources); fs.mkdirSync(source);
+  fs.copyFileSync(path.join(__dirname, '../assets/offline-ui/icons/icon.icns'), path.join(resources, 'icon.icns'));
+  for (const name of ['game.canvas.js', 'desktop/main.cjs', 'desktop/multiplayer.js', 'assets/offline-ui/icons/png/512x512.png']) {
+    const target = path.join(source, name); fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(path.join(__dirname, '..', name), target);
+  }
+  fs.writeFileSync(path.join(source, 'package.json'), JSON.stringify({ version }));
+  const archive = path.join(resources, 'app.asar'); await asar.createPackage(source, archive);
+  return { app, files, source, archive, resources };
 }
-test('Mac artifact verification checks every executable and library against target arch before verifying the extracted signature', t => {
-  const { app, files } = macFixture(t), calls = [];
-  const run = (command, args) => { calls.push({ command, args }); return 'arm64\n'; };
+const macRun = arch => command => command === 'lipo' ? arch : command === 'plutil' ? 'icon.icns\n' : '';
+test('Mac artifact verification checks every executable/library, original icons and packaged source before verifying the signature', async t => {
+  const { app, files } = await macFixture(t), calls = [];
+  const run = (command, args) => { calls.push({ command, args }); return macRun('arm64\n')(command); };
   assert.equal(verifyMacApp(app, 'arm64', run), files.length);
   assert.equal(calls.filter(call => call.command === 'lipo').length, files.length);
   assert.deepEqual(calls.at(-1), { command: 'codesign', args: ['--verify', '--deep', '--strict', app] });
-  assert.equal(verifyMacApp(app, 'x64', () => 'x86_64\n'), files.length);
+  assert.equal(verifyMacApp(app, 'x64', macRun('x86_64\n')), files.length);
   assert.throws(() => verifyMacApp(app, 'constructor', run), /Unsupported/);
 });
-test('Mac artifact verification refuses wrong or mixed architectures, missing framework and invalid signatures', t => {
-  const { app } = macFixture(t); let signed = false;
+test('Mac artifact verification refuses wrong or mixed architectures, missing framework and invalid signatures', async t => {
+  const { app } = await macFixture(t); let signed = false;
   const wrong = (command, args) => { if (command === 'codesign') signed = true; return args.at(-1).endsWith('.dylib') ? 'x86_64' : 'arm64'; };
   assert.throws(() => verifyMacApp(app, 'arm64', wrong), /Wrong architecture/); assert.equal(signed, false);
   assert.throws(() => verifyMacApp(app, 'arm64', () => 'arm64 x86_64'), /Wrong architecture/);
-  assert.throws(() => verifyMacApp(app, 'arm64', command => { if (command === 'codesign') throw new Error('Invalid signature'); return 'arm64'; }), /Invalid signature/);
+  assert.throws(() => verifyMacApp(app, 'arm64', command => { if (command === 'codesign') throw new Error('Invalid signature'); return macRun('arm64')(command); }), /Invalid signature/);
   fs.unlinkSync(path.join(app, 'Contents/Frameworks/Electron Framework.framework/Versions/A/Electron Framework'));
   assert.throws(() => verifyMacApp(app, 'arm64', () => 'arm64'), /Missing Mach-O/);
+});
+test('Mac verification refuses incorrect or unsafe icon metadata, missing/default badge bytes and stale packaged source', async t => {
+  const f = await macFixture(t), icon = path.join(f.resources, 'icon.icns'), original = fs.readFileSync(icon); let signed = false;
+  const run = command => { if (command === 'codesign') signed = true; return macRun('arm64')(command); };
+  fs.writeFileSync(icon, 'default Electron icon'); assert.throws(() => verifyMacApp(f.app, 'arm64', run), /icon differs/); assert.equal(signed, false);
+  fs.unlinkSync(icon); assert.throws(() => verifyMacApp(f.app, 'arm64', run), /ENOENT/); fs.writeFileSync(icon, original);
+  for (const name of ['../icon.icns\n', 'icon.icns \n', '']) assert.throws(() => verifyMacApp(f.app, 'arm64', command => command === 'plutil' ? name : macRun('arm64')(command)), /icon filename/);
+  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version: 'old-version' })); await asar.createPackage(f.source, f.archive);
+  assert.throws(() => verifyMacApp(f.app, 'arm64', run), /version differs/);
+  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version })); fs.writeFileSync(path.join(f.source, 'assets/offline-ui/icons/png/512x512.png'), 'wrong window icon'); await asar.createPackage(f.source, f.archive);
+  assert.throws(() => verifyMacApp(f.app, 'arm64', run), /source\/icon differs/); assert.equal(signed, false);
 });

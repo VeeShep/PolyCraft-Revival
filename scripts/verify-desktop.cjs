@@ -29,8 +29,7 @@ function verifyBinaries(directory, platform, arch) {
   }
   visit(directory); assert.ok(binaries.size > 0, 'No platform executables found.'); return binaries;
 }
-function verifySource(directory) {
-  const archive = path.join(directory, 'resources/app.asar');
+function verifySource(archive) {
   asar.uncache(archive);
   assert.equal(JSON.parse(asar.extractFile(archive, 'package.json')).version, metadata.version, 'Packaged version differs.');
   for (const file of ['game.canvas.js', 'desktop/main.cjs', 'desktop/multiplayer.js', 'assets/offline-ui/icons/png/512x512.png']) assert.equal(digest(asar.extractFile(archive, path.normalize(file))), digest(fs.readFileSync(path.join(root, file))), 'Packaged source/icon differs: ' + file);
@@ -51,12 +50,12 @@ function verifyWindows(directory, arch) {
     }
     assert.deepEqual(group.getIconItemsFromEntries(resources.entries).map(signature).sort(), expected, 'Windows executable icon differs from approved hero badge.');
   }
-  verifySource(directory); return binaries.size;
+  verifySource(path.join(directory, 'resources/app.asar')); return binaries.size;
 }
 function verifyLinux(directory, arch, appImage = false) {
   const binaries = verifyBinaries(directory, 'linux', arch);
   assert.ok(binaries.has(path.resolve(directory, metadata.name)), 'Missing Linux ELF executable.');
-  verifySource(directory);
+  verifySource(path.join(directory, 'resources/app.asar'));
   if (appImage) {
     const desktop = fs.readFileSync(path.join(directory, metadata.desktopName), 'utf8'), fields = new Map(); let active = false;
     for (const line of desktop.split(/\r?\n/)) {
@@ -79,4 +78,4 @@ if (require.main === module) {
     console.log(`Verified ${count} ${platform}/${arch} binaries, packaged source/version and original hero icons.`);
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { verifyWindows, verifyLinux };
+module.exports = { verifyWindows, verifyLinux, verifySource };
