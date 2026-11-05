@@ -527,6 +527,7 @@ const assert = require('node:assert/strict');
       return { id: building.getName(), before, after };
     }), ids[0]);
     await guest.waitForFunction(id => window.guestWorld.scene.entities.has(id), storage.id);
+    await require('./coop-crafting-acceptance.cjs')(host, pages.slice(1), () => focus(1), originals[0].file);
     async function clickEntity(id) {
       const point = await guest.evaluate(id => {
         const world = window.guestWorld, globals = world.controls.app.globals, record = world.scene.entities.get(id).record;
@@ -655,7 +656,7 @@ const assert = require('node:assert/strict');
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     const rejected = await host.evaluate(() => window.hostErrors);
     assert.equal(rejected.length, 1); assert.match(rejected[0], /Guests cannot select heroes/);
-    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest retains same-tick host positions/rotations and separately renders smooth finite mesh poses; original gathering; original guest build/cost/throw/scaffold/save; original guest demolition/cancel and fresh save ordering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
+    console.log('PASS: four visible Electron games; assigned heroes; all four heroes move; every guest retains same-tick host positions/rotations and separately renders smooth finite mesh poses; original gathering; original guest build/cost/throw/scaffold/save; original guest Craft Resource clicks, paid disk acknowledgement and multi-guest shared-budget race; original guest demolition/cancel and fresh save ordering; PvP-off protection; real PvP-on pistol damage and replicated health; forged identity isolation; reconnect restores XP; host exit preserves guest saves.');
     console.log('Same-Mac acceptance only. Full HUD/actions, broader combat/PvP and real-network/platform acceptance remain open.');
   } catch (error) {
     fs.mkdirSync('test-results', { recursive: true });
@@ -668,7 +669,7 @@ const assert = require('node:assert/strict');
         startup: window.polycraft?.controls && { ready: window.polycraft.controls.ready(), loaded: window.polycraft.controls.manager()?.hasLoadedLevel, loading: window.polycraft.controls.manager()?.getLoading(), hero: !!window.polycraft.controls.manager()?.getHero(), state: window.polycraft.controls.manager()?.activeGameState?.name, play: Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)), canvas: document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect().toJSON() },
         movement: window.guestWorld?.movement && { keys: [...window.guestWorld.movement.keys], available: window.guestWorld.movement.available(), nativeFocused: window.guestWorld.movement.nativeFocused },
         identity: window.guestWorld?.identity, tick: window.guestWorld?.scene.tick,
-        action: window.guestWorld && { sequence: window.guestWorld.targetSequence, selection: window.guestWorld.selectionRequest, result: window.guestWorld.lastTargetResult, totem: window.guestWorld.totem?.menu, menu: window.guestWorld.construction?.menu, placement: window.guestWorld.construction?.placement, preview: window.guestWorld.construction?.preview },
+        action: window.guestWorld && { sequence: window.guestWorld.targetSequence, selection: window.guestWorld.selectionRequest, result: window.guestWorld.lastTargetResult, totem: window.guestWorld.totem?.menu, menu: window.guestWorld.construction?.menu, placement: window.guestWorld.construction?.placement, preview: window.guestWorld.construction?.preview, craft: { menu: window.guestWorld.craft.menu, pending: window.guestWorld.craft.pending, state: window.guestWorld.craft.state } },
         slots: window.hostWorld && [...window.hostWorld.guestSlots.values()].map(binding => ({ id: binding.id, ready: binding.ready, joined: binding.joined, releasing: binding.releasing, input: { sequence: binding.input.sequence, move: binding.input.move, moving: binding.input.moving, age: performance.now() - binding.input.receivedAt } })) }))));
       await pages[index].screenshot({ path: 'test-results/coop-identities-failure-' + index + '.png' });
     } catch {}
