@@ -37,6 +37,10 @@ function objectWith(name) {
 function assignedObject(name, context) {
   return evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name && a.right.type === 'ObjectExpression'), name).right, context);
 }
+function entityFactoryName() {
+  const factory = one(assignments.filter(a => a.left.type === 'MemberExpression' && !a.left.computed && a.left.property.name === 'entityFactory' && a.right.type === 'CallExpression' && a.right.callee.type === 'MemberExpression' && !a.right.callee.computed && a.right.callee.property.name === 'create' && a.right.callee.object.type === 'Identifier'), 'entity factory role');
+  return factory.right.callee.object.name;
+}
 function archetypeComponent(name, component) {
   const definition = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name && a.right.type === 'ObjectExpression'), name).right;
   return evaluate(one(definition.properties.filter(p => key(p) === component), `${name}.${component}`).value);
@@ -189,4 +193,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

@@ -848,6 +848,51 @@
       "outputSHA256": "4bf10a559d5c8240d04239b9b67dd36aa39c5d1b468efd4fe3817225f7d5e336",
       "inputCanonicalSHA256": "db8d0a10e77383778b28fdc6e5dbe799ecf3a9d5c18a2f952e3b5a2b053f02f3",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "world-factory-role-names",
+      "names": [
+        {
+          "original": "e",
+          "name": "EntityFactory",
+          "role": "entityFactory",
+          "evidence": "entityFactory factory on the created gameManager, native methods and bound create construction",
+          "descriptive": true,
+          "offset": 6909,
+          "references": 3316
+        },
+        {
+          "original": "M",
+          "name": "BlockFactory",
+          "role": "blockFactory",
+          "evidence": "blockFactory factory on the created gameManager, native methods and bound create construction",
+          "descriptive": true,
+          "offset": 5044,
+          "references": 132
+        },
+        {
+          "original": "lb",
+          "name": "GameEntity",
+          "role": "GameEntity",
+          "evidence": "entityFactory.createEntity uses this bound create factory, with native persistence/spatial methods",
+          "descriptive": true,
+          "offset": 4353,
+          "references": 17
+        },
+        {
+          "original": "tf",
+          "name": "GameBlock",
+          "role": "GameBlock",
+          "evidence": "blockFactory.createBlockInstance uses this bound create factory, with native persistence/spatial methods",
+          "descriptive": true,
+          "offset": 4261,
+          "references": 4
+        }
+      ],
+      "inputSHA256": "4bf10a559d5c8240d04239b9b67dd36aa39c5d1b468efd4fe3817225f7d5e336",
+      "outputSHA256": "17e3c9da599ac96f30bfd799215a742655df784ffea7cf6e5eb1dfd1eec45dda",
+      "inputCanonicalSHA256": "3927b33119273a250199bd694b4be5be18398285bed5735db42fdd34bfd37cc8",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }

@@ -81,4 +81,4 @@ function selectWorldModels(ast) {
 }
 function nameWorldModels(source) { return renameBindings(source, selectWorldModels); }
 if (require.main === module) writeNamingPass('world-model-role-names', nameWorldModels);
-module.exports = { nameWorldModels };
+module.exports = { nameWorldModels, selectWorldModels };

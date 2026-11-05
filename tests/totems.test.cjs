@@ -128,7 +128,7 @@ test('original solo and host paid-totem buttons apply the upgrade to the replace
 
 test('every original totem prerequisite names a real upgrade and a valid tier', () => {
   const names = ['a_b_heroShrineOfAgility', 'a_b_heroShrineOfPower', 'a_b_heroShrineOfProtection', 'a_b_heroShrineOfTechnology'];
-  const definitions = names.flatMap(name => runtime.assignedObject(name, { e: { EC_DEFAULT: {} } }).ECHeroShrine.upgradeTypes);
+  const definitions = names.flatMap(name => runtime.assignedObject(name, { [runtime.entityFactoryName()]: { EC_DEFAULT: {} } }).ECHeroShrine.upgradeTypes);
   assert.equal(definitions.length, 8);
   for (const definition of definitions) for (const prerequisite of definition.prerequisites) {
     const required = definitions.find(item => item.upgradeType === prerequisite.upgradeType);
@@ -141,7 +141,7 @@ test('all eight original upgrades can be bought with guest points through their 
   const f = setup(); f.guest.level = 20;
   const before = JSON.stringify(f.host);
   for (const name of ['a_b_heroShrineOfAgility', 'a_b_heroShrineOfPower', 'a_b_heroShrineOfProtection', 'a_b_heroShrineOfTechnology']) {
-    f.shrine.archetype = runtime.assignedObject(name, { e: { EC_DEFAULT: {} } }).ECHeroShrine;
+    f.shrine.archetype = runtime.assignedObject(name, { [runtime.entityFactoryName()]: { EC_DEFAULT: {} } }).ECHeroShrine;
     for (const [index, definition] of f.shrine.archetype.upgradeTypes.entries()) {
       assert.equal(totemMenu(f.hero(), f.source, f.controls).products[index].available, true, definition.upgradeType);
       const result = upgradeTotem(f.game, f.hero(), f.players, f.source, { index, level: 0, amber: false }, f.controls);

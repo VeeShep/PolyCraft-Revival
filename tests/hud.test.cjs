@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const ast = require('./runtime-ast.cjs');
 const ranks = ast.objectWith('xpTable');
 const playerDataMethods = ast.component('ECPlayerData', { kd: ranks });
-const scoreMethods = ast.prototypeWith('drawResourceBar', { Za: [{ barGUI: 'lumber', string: 'Lumber' }, { barGUI: 'stone', string: 'Stone' }], e: { archetypes: { a_melee: { familyName: 'melee' } } } });
+const scoreMethods = ast.prototypeWith('drawResourceBar', { Za: [{ barGUI: 'lumber', string: 'Lumber' }, { barGUI: 'stone', string: 'Stone' }], [ast.entityFactoryName()]: { archetypes: { a_melee: { familyName: 'melee' } } } });
 const { captureHud, GuestHud } = require('../desktop/hud.js');
 const { HostActions } = require('../desktop/coop-actions.js');
 const profile = () => ({ preparation: null, campaignResult: null, resources: [100, 50], caps: [500, 1000], amber: 10, xp: 0, points: 0, quests: null, island: { hq: null, prepare: null, invasion: null, upcoming: null }, flags: { resources: true, amber: true, rank: true } });

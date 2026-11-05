@@ -6,7 +6,24 @@ The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`
 
 `scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
 
-## Current world-model role names — Beta 69
+## Current world-factory role names — Beta 72
+
+The factory/product pipeline now has four descriptive private names:
+
+| Previous binding | Role name | Bound references |
+| --- | --- | --- |
+| `e` | `EntityFactory` | 3,316 |
+| `M` | `BlockFactory` | 132 |
+| `lb` | `GameEntity` | 17 |
+| `tf` | `GameBlock` | 4 |
+
+These names describe verified local roles, not claimed lost-original spellings. In particular, thousands of archetype definitions now read `EntityFactory.archetypes` rather than `e.archetypes`, while their public keys and values remain intact.
+
+`scripts/name-world-factories.cjs` reuses the verified world-model selector to locate the created manager. It checks that the two factory fields belong to that actual newly constructed manager, then follows the sole product `.create` call in each native creation method. All four classes must have their required native methods and a construction resolving to the same binding. Missing/duplicate fields, mismatched products, shadowed construction, reassignment and capture are rejected. The shared inverse rename restores the exact canonical Beta 71 input; only four declarations and 3,469 bound references change. Earlier hashes and immutable baseline bytes remain historical and unchanged.
+
+Checks cover component/save-data preservation, block add/remove behavior, shadow/public keys, CLI provenance/repeat guards and the actual native entity/block factory methods. Those native checks preserve name/family/location/rotation/save-flag forwarding, null component defaults, the mandatory grid component and block defaults. The prior world-model fixture is shared without changing its contents. HUD/totem fixtures now resolve the entity-factory namespace from its native factory field rather than the old `e` spelling. All 491 full checks pass after that fixture update; an independent token audit reverses all 3,473 identifier edits back to exact prior source bytes, including comments and formatting. No factory implementation, archetype/component/save/asset identifier, progression or execution order is replaced. Full-game and native-platform acceptance remain separate and open.
+
+## Historical world-model role names — Beta 69
 
 Four private bindings now have descriptive names tied to the native island/save/simulation code: `Ib` → `GameManager` (11 references), `da` → `GameSpace` (71), `Df` → `GameClock` (4) and `ua` → `LevelPersistence` (53). These are verified role names, **not a claim to have recovered their lost original spelling**. Their manifest entries have `descriptive: true`.
 

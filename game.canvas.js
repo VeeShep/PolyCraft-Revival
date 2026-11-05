@@ -121,10 +121,10 @@
   function Xd() {}
   function QuestTaskManager() {}
   function sf() {}
-  function tf() {}
+  function GameBlock() {}
   function HeroControllerAction() {}
   function GameInputController() {}
-  function lb() {}
+  function GameEntity() {}
   function uf() {}
   function vf() {}
   function wf() {}
@@ -158,7 +158,7 @@
   }
   function be() {}
   function sd() {}
-  function M() {}
+  function BlockFactory() {}
   function X() {}
   function K() {}
   function lc(a, b) {
@@ -223,7 +223,7 @@
   function GamestateTutorial() {}
   function Da() {}
   function Ia() {}
-  function e() {}
+  function EntityFactory() {}
   function Q() {}
   function $f() {}
   function ag() {}
@@ -40824,7 +40824,7 @@
       bubbleArchetype: "resourceStone",
       fullArchetype: "newsflashStoneFull"
     }];
-  tf.prototype = {
+  GameBlock.prototype = {
     isBlock: !0,
     getV3Scale: function () {
       return this.v3Scale;
@@ -40884,8 +40884,8 @@
       this.destroyMeshNode();
     }
   };
-  tf.create = function (a, b, c, d, f, g) {
-    var e = new tf(),
+  GameBlock.create = function (a, b, c, d, f, g) {
+    var e = new GameBlock(),
       m = g.mathDevice,
       j;
     f && (j = m.m43BuildRotationY(f));
@@ -42435,7 +42435,7 @@
       return b.apply(a, arguments);
     };
   });
-  lb.prototype = {
+  GameEntity.prototype = {
     activate: function () {
       var a = this.eCMap,
         b = this.getv3Location(),
@@ -42985,7 +42985,7 @@
         c = 0.5 * c,
         d = 0.5 * d,
         b = d * (1 - 0.22 * b),
-        l = lb.progressBarTexturePath;
+        l = GameEntity.progressBarTexturePath;
       j && m && (m.addSprite({
         v3Location: i,
         sizeX: 1.03 * c,
@@ -43132,10 +43132,10 @@
       return this.smartPointer;
     },
     createSmartPointer: function () {
-      lb.prototype.smartPointerIndex = void 0 === lb.prototype.smartPointerIndex ? 0 : lb.prototype.smartPointerIndex + 1;
+      GameEntity.prototype.smartPointerIndex = void 0 === GameEntity.prototype.smartPointerIndex ? 0 : GameEntity.prototype.smartPointerIndex + 1;
       return {
         entity: this,
-        smartPointerIndex: lb.prototype.smartPointerIndex,
+        smartPointerIndex: GameEntity.prototype.smartPointerIndex,
         get: function () {
           return this.entity;
         }
@@ -43155,12 +43155,12 @@
       this.levelEntityNameMap = void 0;
     }
   };
-  lb.progressBarTexturePath = "textures/block.dds";
-  lb.create = function (a, b, c, d, f, g, e) {
+  GameEntity.progressBarTexturePath = "textures/block.dds";
+  GameEntity.create = function (a, b, c, d, f, g, e) {
     var m = c.gameManager;
-    void 0 === lb.prototype.globals && (lb.prototype.globals = c);
-    void 0 === lb.prototype.gameManager && (lb.prototype.gameManager = m);
-    var j = new lb(),
+    void 0 === GameEntity.prototype.globals && (GameEntity.prototype.globals = c);
+    void 0 === GameEntity.prototype.gameManager && (GameEntity.prototype.gameManager = m);
+    var j = new GameEntity(),
       i = c.mathDevice;
     j.toBeDestroyed = !1;
     j.active = !1;
@@ -51600,7 +51600,7 @@
         d,
         f = this.entity.getGameSpace(),
         g = this.gameManager,
-        h = e.archetypes,
+        h = EntityFactory.archetypes,
         i;
       for (a = 0; a < c; a += 1) if (d = b[a], this.placed && f.addPickup(d.number), i = h[d.archetype].ECPickup) (i = i.score) && d.number && g.addPotentialScore(i * d.number);
     },
@@ -60854,19 +60854,19 @@
     return new ECWorldGui(a, b);
   };
   ECBase.prototype.eCCreationMap[ECWorldGui.prototype.entityComponentName] = ECWorldGui;
-  M.prototype = {
+  BlockFactory.prototype = {
     createBlockInstance: function (a, b, c, d) {
       var f = this.globals,
-        e = M.archetypes[a];
+        e = BlockFactory.archetypes[a];
       c || (c = f.mathDevice, c = e.v3CreationScale || c.v3BuildOne());
       d || (d = 0);
-      return tf.create(a, e, b, c, d, f);
+      return GameBlock.create(a, e, b, c, d, f);
     },
     getArchetype: function (a) {
-      return M.archetypes[a];
+      return BlockFactory.archetypes[a];
     },
     preload: function () {
-      var a = M.archetypes,
+      var a = BlockFactory.archetypes,
         b = Xa.create({
           name: "temp",
           dynamic: !1,
@@ -60892,12 +60892,12 @@
       return b;
     }
   };
-  M.archetypes = {};
-  M.create = function (a, b) {
-    var c = new M();
+  BlockFactory.archetypes = {};
+  BlockFactory.create = function (a, b) {
+    var c = new BlockFactory();
     c.globals = a;
     c.gameManager = b;
-    c.archetypeList = c.createAlphabeticalArchetypeList(M.archetypes);
+    c.archetypeList = c.createAlphabeticalArchetypeList(BlockFactory.archetypes);
     return c;
   };
   X.prototype = {
@@ -63022,7 +63022,7 @@
         x: f[0],
         y: f[1],
         text: ""
-      }, f.text = h.toString(10), h = (h = e.archetypes[g]) && h.familyName ? h.familyName : g, this.globals.gameManager.getGuiManager().addDrawGui(h + "_quantity", f, "idNextInvasionInfo " + h), b[0] += 40);
+      }, f.text = h.toString(10), h = (h = EntityFactory.archetypes[g]) && h.familyName ? h.familyName : g, this.globals.gameManager.getGuiManager().addDrawGui(h + "_quantity", f, "idNextInvasionInfo " + h), b[0] += 40);
     },
     drawSprite: function (a, b, c, d, f, e, h) {
       var i = this.globals.draw2D;
@@ -64758,7 +64758,7 @@
         e = a.newEntities,
         a = a.deltaEntities;
       if (void 0 !== f) for (d = 0; d < f.length; d += 1) b = this.entityMap[f[d]], void 0 !== b && b.destroy();
-      for (c in e) e.hasOwnProperty(c) && (b = this.entityMap[c], void 0 === b && (f = e[c].v3Location, b = lb.create(c, this.globals, this.gameManager, f, entityParameters), b.activate(), b.setGameSpace(this)), b.deserialize(e));
+      for (c in e) e.hasOwnProperty(c) && (b = this.entityMap[c], void 0 === b && (f = e[c].v3Location, b = GameEntity.create(c, this.globals, this.gameManager, f, entityParameters), b.activate(), b.setGameSpace(this)), b.deserialize(e));
       for (c in a) a.hasOwnProperty(c) && (b = this.entityMap[c], void 0 === b && (b = this.gameManager.getGameEntityByName(c)) && b.setGameSpace(this), void 0 !== b && b.deserialize(a));
     },
     buildCreationParameters: function () {
@@ -68480,8 +68480,8 @@
     c.resourceDispenserMaanger = null;
     c.gameSpaceMigrationRequests = [];
     c.gameSoundManager = O.create(b, c);
-    c.entityFactory = e.create(b, c);
-    c.blockFactory = M.create(b, c);
+    c.entityFactory = EntityFactory.create(b, c);
+    c.blockFactory = BlockFactory.create(b, c);
     c.effectFactory = X.create(b, c);
     c.useSplashScreens = a.useSplashScreens;
     c.gamestateSplashScreens = GamestateSplashScreens.create(c, b);
@@ -75046,7 +75046,7 @@
   oi.create = function (a, b) {
     return new oi(a, b);
   };
-  e.prototype = {
+  EntityFactory.prototype = {
     createActiveEntityInstance: function (a, b, c, d) {
       a = this.createInactiveEntityInstance(a, b, c, d);
       a.activate();
@@ -75072,7 +75072,7 @@
       var g = this.globals,
         c = c || {},
         h,
-        a = lb.create(a, b, g, d, c.shouldLevelSave, c.shouldPlayerSave, e);
+        a = GameEntity.create(a, b, g, d, c.shouldLevelSave, c.shouldPlayerSave, e);
       for (h in c) c.hasOwnProperty(h) && this.isValidECName(h) && ((b = c[h]) || (b = {}), b = ECBase.createFromName(h, g, b), a.addEC(b));
       a.getEC("ECGameGridEntity") || a.addEC(ECBase.createFromName("ECGameGridEntity", g, void 0));
       return a;
@@ -75178,7 +75178,7 @@
       return a[b];
     },
     initArchetypes: function () {
-      var a = e.archetypes,
+      var a = EntityFactory.archetypes,
         b = {},
         c = this.archetypes,
         d,
@@ -75197,8 +75197,8 @@
       c[a.name] = d;
     },
     copyArchetypeProperties: function (a, b) {
-      var c = e.EC_DEFAULT,
-        d = e.EC_REMOVE,
+      var c = EntityFactory.EC_DEFAULT,
+        d = EntityFactory.EC_REMOVE,
         f,
         g,
         h,
@@ -75324,18 +75324,18 @@
       ECBase.forEachECClass(function (b) {
         b.preload && b.preload(a);
       });
-      var c = lb.progressBarTexturePath;
+      var c = GameEntity.progressBarTexturePath;
       b && c && b.load(c);
     },
     getArchetypeList: function () {
       return this.archetypeList;
     }
   };
-  e.archetypes = {};
-  e.EC_DEFAULT = 0;
-  e.EC_REMOVE = 1;
-  e.create = function (a, b) {
-    var c = new e();
+  EntityFactory.archetypes = {};
+  EntityFactory.EC_DEFAULT = 0;
+  EntityFactory.EC_REMOVE = 1;
+  EntityFactory.create = function (a, b) {
+    var c = new EntityFactory();
     c.globals = a;
     c.gameManager = b;
     c.archetypes = {};
@@ -75347,7 +75347,7 @@
   WorkshopSettings = {
     iconSize: 1.15
   };
-  e.balanceBuildings = {
+  EntityFactory.balanceBuildings = {
     a_b_hq: {
       health: 1E3,
       buildTime: 2,
@@ -76581,7 +76581,7 @@
       maxResourceRepairCost: [0, 1E5]
     }
   };
-  e.balanceDefences = {
+  EntityFactory.balanceDefences = {
     a_d_barrel: {
       resourceCost: 50,
       buildTime: 30,
@@ -76753,7 +76753,7 @@
       maxAttackers: 2
     }
   };
-  e.balanceEnemies = {
+  EntityFactory.balanceEnemies = {
     a_e_bannerling: {
       xp: 5,
       health: 10,
@@ -77995,7 +77995,7 @@
       }]
     }
   };
-  e.balanceTurrets = {
+  EntityFactory.balanceTurrets = {
     a_d_turret_level_1: {
       health: 200,
       buildTime: 900,
@@ -78209,7 +78209,7 @@
       forceRadial: 0.2
     }
   };
-  e.balanceBarricades = {
+  EntityFactory.balanceBarricades = {
     a_d_barricadegate: {
       health: 100,
       buildTime: 10,
@@ -78295,7 +78295,7 @@
       for (b in this.archetypes) this.archetypes.hasOwnProperty(b) && (c = this.archetypes[b], c.meshPath && (a.isLoadingMesh(c.meshPath) || a.load(c.meshPath, void 0, void 0, d)));
     }
   };
-  e.archetypes.a_wm_inv_01_1 = {
+  EntityFactory.archetypes.a_wm_inv_01_1 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78358,7 +78358,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_01_2 = {
+  EntityFactory.archetypes.a_wm_inv_01_2 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78421,7 +78421,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_02_1 = {
+  EntityFactory.archetypes.a_wm_inv_02_1 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78484,7 +78484,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_02_2 = {
+  EntityFactory.archetypes.a_wm_inv_02_2 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78559,7 +78559,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_03_1 = {
+  EntityFactory.archetypes.a_wm_inv_03_1 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78618,7 +78618,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_03_2 = {
+  EntityFactory.archetypes.a_wm_inv_03_2 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78696,7 +78696,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_03_3 = {
+  EntityFactory.archetypes.a_wm_inv_03_3 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78754,7 +78754,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_04_1 = {
+  EntityFactory.archetypes.a_wm_inv_04_1 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78821,7 +78821,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_04_2 = {
+  EntityFactory.archetypes.a_wm_inv_04_2 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78888,7 +78888,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_04_3 = {
+  EntityFactory.archetypes.a_wm_inv_04_3 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -78966,7 +78966,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_05_1 = {
+  EntityFactory.archetypes.a_wm_inv_05_1 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79025,7 +79025,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_05_2 = {
+  EntityFactory.archetypes.a_wm_inv_05_2 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79092,7 +79092,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_05_3 = {
+  EntityFactory.archetypes.a_wm_inv_05_3 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79144,7 +79144,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_06 = {
+  EntityFactory.archetypes.a_wm_inv_06 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79197,7 +79197,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_r2_test_01 = {
+  EntityFactory.archetypes.a_wm_inv_r2_test_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79273,7 +79273,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_r2_test_02 = {
+  EntityFactory.archetypes.a_wm_inv_r2_test_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79331,7 +79331,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_inv_r2_test_03 = {
+  EntityFactory.archetypes.a_wm_inv_r2_test_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79401,7 +79401,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_01 = {
+  EntityFactory.archetypes.a_wm_trickle_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79679,7 +79679,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_02 = {
+  EntityFactory.archetypes.a_wm_trickle_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -79917,7 +79917,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_03 = {
+  EntityFactory.archetypes.a_wm_trickle_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -80291,7 +80291,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_04 = {
+  EntityFactory.archetypes.a_wm_trickle_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -80737,7 +80737,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_05 = {
+  EntityFactory.archetypes.a_wm_trickle_05 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -81273,7 +81273,7 @@
       contentsList: ["dualResourceProgressBars", "buildDurationBar", "resourceSep", "healthBoostBar"]
     }
   };
-  e.archetypes.a_b_amberwell = {
+  EntityFactory.archetypes.a_b_amberwell = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 0.9,
@@ -81288,8 +81288,8 @@
       offsetY: 0.5,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       resourceCost: 0,
       secondaryResourceCost: 100,
@@ -81312,9 +81312,9 @@
       dispenseSFX: "none",
       useRadial: !1
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_amberwellOwned = {
+  EntityFactory.archetypes.a_b_amberwellOwned = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 0.9,
@@ -81329,8 +81329,8 @@
       offsetY: 0.5,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       resourceCost: 0,
       secondaryResourceCost: 100,
@@ -81353,9 +81353,9 @@
       dispenseSFX: "none",
       useRadial: !1
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_amberchest = {
+  EntityFactory.archetypes.a_b_amberchest = {
     shouldPlayerSave: !0,
     familyName: "amberchest",
     ECMesh: {
@@ -81371,8 +81371,8 @@
       offsetY: 0.5,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       resourceCost: 0,
       secondaryResourceCost: 400,
@@ -81406,9 +81406,9 @@
       dispenseSFX: "none",
       useRadial: !1
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_defencefactory = {
+  EntityFactory.archetypes.a_b_defencefactory = {
     shouldPlayerSave: !0,
     familyName: "Defence Factory",
     ECMesh: {
@@ -81425,16 +81425,16 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory.health,
+      health: EntityFactory.balanceBuildings.a_b_defencefactory.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -81458,18 +81458,18 @@
       buildingRadius: 12
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 2",
       upgradeArchetypeName: "a_b_defencefactory_level_2",
       upgradeInfo: "warfactory"
     },
-    ECUpgrader: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       contents: []
     },
@@ -81499,19 +81499,19 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_defencefactory_level_2 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_2.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_2.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81528,8 +81528,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_2.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 3",
@@ -81539,19 +81539,19 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_defencefactory_level_3 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_2",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_3.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_3.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81568,8 +81568,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_3.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 4",
@@ -81579,19 +81579,19 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_defencefactory_level_4 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_3",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_4.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_4.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81608,8 +81608,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_4.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 5",
@@ -81619,19 +81619,19 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_defencefactory_level_5 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_4",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_5.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_5.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81648,8 +81648,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_5.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 6",
@@ -81659,19 +81659,19 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_defencefactory_level_6 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_5",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_6.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_6.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81688,8 +81688,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_6.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 7",
@@ -81699,19 +81699,19 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_defencefactory_level_7 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_6",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81728,8 +81728,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 8",
@@ -81739,7 +81739,7 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_defendlinghutworkshop = {
+  EntityFactory.archetypes.a_b_defendlinghutworkshop = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1.5 * WorkshopSettings.iconSize,
@@ -81747,7 +81747,7 @@
       path: "environment/models/factory_wildling.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -81758,7 +81758,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       contents: [{
         dispenseName: "Defendling Hut",
@@ -81767,21 +81767,21 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_defencefactory_level_8 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_7",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_8.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_8.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81798,8 +81798,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 9",
@@ -81809,7 +81809,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_defendlinghutworkshop = {
+  EntityFactory.archetypes.a_b_defendlinghutworkshop = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1.5,
@@ -81817,11 +81817,11 @@
       path: "environment/models/factory_wildling.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       contents: [{
         dispenseName: "Defendling Hut",
@@ -81830,21 +81830,21 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_defencefactory_level_9 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_8",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_9.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_9.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_9.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81861,8 +81861,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 10",
@@ -81872,7 +81872,7 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_defendlinghutworkshop = {
+  EntityFactory.archetypes.a_b_defendlinghutworkshop = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1.5,
@@ -81880,11 +81880,11 @@
       path: "environment/models/factory_wildling.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       contents: [{
         dispenseName: "Defendling Hut",
@@ -81893,21 +81893,21 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_defencefactory_level_10 = {
+  EntityFactory.archetypes.a_b_defencefactory_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_defencefactory_level_9",
     ECMesh: {
       path: "environment/models/e_b_warfactory_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_defencefactory_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_defencefactory_level_10.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_defencefactory_level_10.buildTime,
-      resourceCost: e.balanceBuildings.a_b_defencefactory_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_defencefactory_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_defencefactory_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_10.secondaryResourceCost,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Defence Factory",
@@ -81924,15 +81924,15 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_defencefactory_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_defencefactory_level_10.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_defendlinghutworkshop = {
+  EntityFactory.archetypes.a_b_defendlinghutworkshop = {
     shouldPlayerSave: !0,
     familyName: "defendlinghutworkshop",
     ECMesh: {
@@ -81941,11 +81941,11 @@
       path: "environment/models/factory_wildling.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/factorywildlingshell.dae",
       contents: [{
@@ -81955,9 +81955,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_heroShrineOfAgility = {
+  EntityFactory.archetypes.a_b_heroShrineOfAgility = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "totemAgility",
@@ -81989,9 +81989,9 @@
       scaleMesh: !1,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECHeroShrine: {
       svgPath: "gui/icon_totem_agility_n.svg",
       upgradeTypes: [{
@@ -82047,7 +82047,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_heroShrineOfPower = {
+  EntityFactory.archetypes.a_b_heroShrineOfPower = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "totemPower",
@@ -82079,9 +82079,9 @@
       scaleMesh: !1,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECHeroShrine: {
       svgPath: "gui/icon_totem_power_n.svg",
       upgradeTypes: [{
@@ -82137,7 +82137,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_heroShrineOfProtection = {
+  EntityFactory.archetypes.a_b_heroShrineOfProtection = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "totemProtection",
@@ -82169,9 +82169,9 @@
       scaleMesh: !1,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECHeroShrine: {
       svgPath: "gui/icon_totem_protection_n.svg",
       upgradeTypes: [{
@@ -82227,7 +82227,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_heroShrineOfTechnology = {
+  EntityFactory.archetypes.a_b_heroShrineOfTechnology = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "totemTechnology",
@@ -82259,9 +82259,9 @@
       scaleMesh: !1,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECHeroShrine: {
       svgPath: "gui/icon_totem_tech_n.svg",
       upgradeTypes: [{
@@ -82317,7 +82317,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.v_socket_glow_purple_small = {
+  EntityFactory.archetypes.v_socket_glow_purple_small = {
     ECSprite: {
       size: 1.5,
       offsetY: 0,
@@ -82326,7 +82326,7 @@
       color: [175 / 255, 47 / 255, 164 / 255, 0.2]
     }
   };
-  e.archetypes.v_socket_glow_purple_medium = {
+  EntityFactory.archetypes.v_socket_glow_purple_medium = {
     ECSprite: {
       size: 8,
       offsetY: 0,
@@ -82335,7 +82335,7 @@
       color: [175 / 255, 47 / 255, 164 / 255, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_purple_particulate = {
+  EntityFactory.archetypes.v_socket_glow_purple_particulate = {
     ECSprite: {
       size: 2,
       offsetY: 0,
@@ -82345,7 +82345,7 @@
       color: [175 / 255, 47 / 255, 164 / 255, 0.8]
     }
   };
-  e.archetypes.v_socket_glow_purple_particulate_large = {
+  EntityFactory.archetypes.v_socket_glow_purple_particulate_large = {
     ECSprite: {
       size: 6,
       offsetY: 0,
@@ -82365,7 +82365,7 @@
     radius: 10,
     isExplosion: !0
   });
-  e.archetypes.a_b_hq = {
+  EntityFactory.archetypes.a_b_hq = {
     shouldPlayerSave: !0,
     familyName: "hq",
     ECMesh: {
@@ -82382,24 +82382,24 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq.health,
+      health: EntityFactory.balanceBuildings.a_b_hq.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
     ECHealthRegenerator: {
       radius: 8
     },
-    ECGameCritical: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGameCritical: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq.secondaryResourceCost,
       buildingType: "HQ",
       autoRebuild: !0,
-      buildTime: e.balanceBuildings.a_b_hq.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq.buildTime,
       level: 1,
       obeysScaffoldCap: !0,
       defenceLevel: 1,
@@ -82457,7 +82457,7 @@
       upgradeArchetypeName: "a_b_hq_level_2",
       upgradeInfo: "hq"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECResourceDestination: {
       canDepositResource: [!0, !0]
     },
@@ -82473,7 +82473,7 @@
         localOffset: [0, 0, 0]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "sfx_crt_building",
       onDeathEffect: "sfx_dth_building"
@@ -82492,20 +82492,20 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_hq_level_2 = {
+  EntityFactory.archetypes.a_b_hq_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_2.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_2.secondaryResourceCost,
       level: 2,
-      buildTime: e.balanceBuildings.a_b_hq_level_2.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_2.buildTime,
       defenceLevel: 2,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -82572,20 +82572,20 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_hq_level_3 = {
+  EntityFactory.archetypes.a_b_hq_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_2",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_3.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_3.secondaryResourceCost,
       level: 3,
-      buildTime: e.balanceBuildings.a_b_hq_level_3.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_3.buildTime,
       defenceLevel: 3,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -82652,20 +82652,20 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_hq_level_4 = {
+  EntityFactory.archetypes.a_b_hq_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_3",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_4.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_4.secondaryResourceCost,
       level: 4,
-      buildTime: e.balanceBuildings.a_b_hq_level_4.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_4.buildTime,
       defenceLevel: 4,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -82735,20 +82735,20 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_hq_level_5 = {
+  EntityFactory.archetypes.a_b_hq_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_4",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_5.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_5.secondaryResourceCost,
       level: 5,
-      buildTime: e.balanceBuildings.a_b_hq_level_5.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_5.buildTime,
       defenceLevel: 5,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -82818,20 +82818,20 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_hq_level_6 = {
+  EntityFactory.archetypes.a_b_hq_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_5",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_6.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_6.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_6.secondaryResourceCost,
       level: 6,
-      buildTime: e.balanceBuildings.a_b_hq_level_6.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_6.buildTime,
       defenceLevel: 6,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -82901,20 +82901,20 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_hq_level_7 = {
+  EntityFactory.archetypes.a_b_hq_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_6",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_7.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_7.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_7.secondaryResourceCost,
       level: 7,
-      buildTime: e.balanceBuildings.a_b_hq_level_7.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_7.buildTime,
       defenceLevel: 7,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -82984,20 +82984,20 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_hq_level_8 = {
+  EntityFactory.archetypes.a_b_hq_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_7",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_8.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_8.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_8.secondaryResourceCost,
       level: 8,
-      buildTime: e.balanceBuildings.a_b_hq_level_8.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_8.buildTime,
       defenceLevel: 8,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -83067,20 +83067,20 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_hq_level_9 = {
+  EntityFactory.archetypes.a_b_hq_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_8",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_9.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_9.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_9.secondaryResourceCost,
       level: 9,
-      buildTime: e.balanceBuildings.a_b_hq_level_9.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_9.buildTime,
       defenceLevel: 9,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -83150,20 +83150,20 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_hq_level_10 = {
+  EntityFactory.archetypes.a_b_hq_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_hq_level_9",
     ECMesh: {
       path: "environment/models/e_b_headquarter_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_hq_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_hq_level_10.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_hq_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_hq_level_10.secondaryResourceCost,
+      resourceCost: EntityFactory.balanceBuildings.a_b_hq_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_hq_level_10.secondaryResourceCost,
       level: 10,
-      buildTime: e.balanceBuildings.a_b_hq_level_10.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_hq_level_10.buildTime,
       defenceLevel: 10,
       globalCaps: [{
         buildingType: "Buildling Hut",
@@ -83225,12 +83225,12 @@
         localOffset: [0, 0, 0]
       }]
     },
-    ECUpgradable: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_flag_level_1 = {
+  EntityFactory.archetypes.a_b_flag_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83238,7 +83238,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_2 = {
+  EntityFactory.archetypes.a_b_flag_level_2 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83246,7 +83246,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_3 = {
+  EntityFactory.archetypes.a_b_flag_level_3 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83254,7 +83254,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_4 = {
+  EntityFactory.archetypes.a_b_flag_level_4 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83262,7 +83262,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_5 = {
+  EntityFactory.archetypes.a_b_flag_level_5 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83270,7 +83270,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_6 = {
+  EntityFactory.archetypes.a_b_flag_level_6 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83278,7 +83278,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_7 = {
+  EntityFactory.archetypes.a_b_flag_level_7 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83286,7 +83286,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_8 = {
+  EntityFactory.archetypes.a_b_flag_level_8 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83294,7 +83294,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_9 = {
+  EntityFactory.archetypes.a_b_flag_level_9 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83302,7 +83302,7 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_flag_level_10 = {
+  EntityFactory.archetypes.a_b_flag_level_10 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -83310,77 +83310,77 @@
       rotationY: 1 * -Math.PI
     }
   };
-  e.archetypes.a_b_hq_smoke = {
+  EntityFactory.archetypes.a_b_hq_smoke = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_2 = {
+  EntityFactory.archetypes.a_b_hq_smoke_2 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level02.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_3 = {
+  EntityFactory.archetypes.a_b_hq_smoke_3 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level03.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_4 = {
+  EntityFactory.archetypes.a_b_hq_smoke_4 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level04.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_5 = {
+  EntityFactory.archetypes.a_b_hq_smoke_5 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level05.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_6 = {
+  EntityFactory.archetypes.a_b_hq_smoke_6 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level06.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_7 = {
+  EntityFactory.archetypes.a_b_hq_smoke_7 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level07.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_8 = {
+  EntityFactory.archetypes.a_b_hq_smoke_8 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level08.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_9 = {
+  EntityFactory.archetypes.a_b_hq_smoke_9 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level09.dae"
     }
   };
-  e.archetypes.a_b_hq_smoke_10 = {
+  EntityFactory.archetypes.a_b_hq_smoke_10 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_headquarter_smoke_level010.dae"
     }
   };
-  e.archetypes.a_b_library = {
+  EntityFactory.archetypes.a_b_library = {
     shouldPlayerSave: !0,
     familyName: "Library",
     ECMesh: {
@@ -83397,16 +83397,16 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library.health,
+      health: EntityFactory.balanceBuildings.a_b_library.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -83422,18 +83422,18 @@
       buildingRadius: 12
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 2",
       upgradeArchetypeName: "a_b_library_level_2",
       upgradeInfo: "library"
     },
-    ECUpgrader: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECCapDispenser: {
       upgradeLevels: [{
         buildingDisplayName: "Gatling",
@@ -83559,7 +83559,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_library_level_2 = {
+  EntityFactory.archetypes.a_b_library_level_2 = {
     parent: "a_b_library",
     ECMesh: {
       scale: 1,
@@ -83568,13 +83568,13 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library_level_2.health,
+      health: EntityFactory.balanceBuildings.a_b_library_level_2.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library_level_2.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -83587,8 +83587,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_2.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 3",
@@ -83741,7 +83741,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_library_level_3 = {
+  EntityFactory.archetypes.a_b_library_level_3 = {
     parent: "a_b_library_level_2",
     ECMesh: {
       scale: 1,
@@ -83750,13 +83750,13 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library_level_3.health,
+      health: EntityFactory.balanceBuildings.a_b_library_level_3.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library_level_3.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -83769,8 +83769,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_3.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 4",
@@ -83973,7 +83973,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_library_level_4 = {
+  EntityFactory.archetypes.a_b_library_level_4 = {
     parent: "a_b_library_level_3",
     ECMesh: {
       scale: 1,
@@ -83982,13 +83982,13 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library_level_4.health,
+      health: EntityFactory.balanceBuildings.a_b_library_level_4.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library_level_4.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -84001,8 +84001,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_4.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 5",
@@ -84223,7 +84223,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_library_level_5 = {
+  EntityFactory.archetypes.a_b_library_level_5 = {
     parent: "a_b_library_level_4",
     ECMesh: {
       scale: 1,
@@ -84232,13 +84232,13 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library_level_5.health,
+      health: EntityFactory.balanceBuildings.a_b_library_level_5.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library_level_5.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -84251,8 +84251,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_5.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 6",
@@ -84521,19 +84521,19 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_library_level_6 = {
+  EntityFactory.archetypes.a_b_library_level_6 = {
     parent: "a_b_library_level_5",
     ECMesh: {
       path: "environment/models/e_b_library_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library_level_6.health,
+      health: EntityFactory.balanceBuildings.a_b_library_level_6.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library_level_6.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -84546,8 +84546,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_6.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 7",
@@ -84864,19 +84864,19 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_library_level_7 = {
+  EntityFactory.archetypes.a_b_library_level_7 = {
     parent: "a_b_library_level_6",
     ECMesh: {
       path: "environment/models/e_b_library_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library_level_7.health,
+      health: EntityFactory.balanceBuildings.a_b_library_level_7.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library_level_7.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -84889,8 +84889,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 8",
@@ -85207,19 +85207,19 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_library_level_8 = {
+  EntityFactory.archetypes.a_b_library_level_8 = {
     parent: "a_b_library_level_7",
     ECMesh: {
       path: "environment/models/e_b_library_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_library_level_8.health,
+      health: EntityFactory.balanceBuildings.a_b_library_level_8.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_library_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_b_library_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_library_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_library_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_library_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_library_level_8.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -85232,10 +85232,10 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_library_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_library_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_library_level_8.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
     ECCapDispenser: {
       upgradeLevels: [{
         buildingDisplayName: "Gatling",
@@ -85547,7 +85547,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_lumbermill = {
+  EntityFactory.archetypes.a_b_lumbermill = {
     shouldPlayerSave: !0,
     familyName: "lumbermill",
     ECMesh: {
@@ -85564,20 +85564,20 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill.health,
+      health: EntityFactory.balanceBuildings.a_b_lumbermill.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill.secondaryResourceCost,
       autoRebuild: !0,
       canSpeedUpWithSoftCurrency: !0,
       obeysScaffoldCap: !0,
@@ -85603,14 +85603,14 @@
       onCreateEffect: "sfx_crt_building",
       onDeathEffect: "sfx_dth_building"
     },
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECUpgradable: {
       upgradeName: "Level 2",
       upgradeArchetypeName: "a_b_lumbermill_level_2",
       upgradeInfo: "lumbermill"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       contents: []
     },
@@ -85626,7 +85626,7 @@
     ECResourceDestination: {
       canDepositResource: [!0, !1]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Lumbermill",
       text2: "Level 1",
@@ -85637,14 +85637,14 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_lumbermill_level_2 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_2.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -85653,9 +85653,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_2.secondaryResourceCost,
       level: 2,
       prerequisites: [{
         buildingType: "HQ",
@@ -85663,8 +85663,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_2.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 3",
@@ -85674,19 +85674,19 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_lumbermill_level_3 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_2",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_3.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_3.secondaryResourceCost,
       level: 3,
       prerequisites: [{
         buildingType: "HQ",
@@ -85700,8 +85700,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_3.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 4",
@@ -85711,19 +85711,19 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_lumbermill_level_4 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_3",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_4.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_4.secondaryResourceCost,
       level: 4,
       prerequisites: [{
         buildingType: "HQ",
@@ -85737,8 +85737,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_4.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 5",
@@ -85748,19 +85748,19 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_lumbermill_level_5 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_4",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_5.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_5.secondaryResourceCost,
       level: 5,
       prerequisites: [{
         buildingType: "HQ",
@@ -85774,8 +85774,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_5.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 6",
@@ -85785,19 +85785,19 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_lumbermill_level_6 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_5",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_6.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_6.secondaryResourceCost,
       level: 6,
       prerequisites: [{
         buildingType: "HQ",
@@ -85811,8 +85811,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_6.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 7",
@@ -85822,19 +85822,19 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_lumbermill_level_7 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_6",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_7.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_7.secondaryResourceCost,
       level: 7,
       prerequisites: [{
         buildingType: "HQ",
@@ -85848,8 +85848,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 8",
@@ -85859,19 +85859,19 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_lumbermill_level_8 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_7",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_8.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_8.secondaryResourceCost,
       level: 8,
       prerequisites: [{
         buildingType: "HQ",
@@ -85885,8 +85885,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_8.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 9",
@@ -85896,19 +85896,19 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_lumbermill_level_9 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_8",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_9.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_9.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_9.secondaryResourceCost,
       level: 9,
       prerequisites: [{
         buildingType: "HQ",
@@ -85922,8 +85922,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_9.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 10",
@@ -85933,19 +85933,19 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_lumbermill_level_10 = {
+  EntityFactory.archetypes.a_b_lumbermill_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumbermill_level_9",
     ECMesh: {
       path: "environment/models/e_b_lumbermill_level10.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumbermill_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_lumbermill_level_10.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_lumbermill_level_10.buildTime,
-      resourceCost: e.balanceBuildings.a_b_lumbermill_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumbermill_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumbermill_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_10.secondaryResourceCost,
       level: 10,
       prerequisites: [{
         buildingType: "HQ",
@@ -85959,16 +85959,16 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumbermill_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumbermill_level_10.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_lumberlinghutworkshop = {
+  EntityFactory.archetypes.a_b_lumberlinghutworkshop = {
     shouldPlayerSave: !0,
     familyName: "lumberlinghutworkshop",
     ECMesh: {
@@ -85977,7 +85977,7 @@
       path: "environment/models/lumbermill_wildling.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -85988,7 +85988,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/lumberwildlingshell.dae",
       contents: [{
@@ -85998,9 +85998,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_lumberstorage = {
+  EntityFactory.archetypes.a_b_lumberstorage = {
     shouldPlayerSave: !0,
     familyName: "lumberstorage",
     ECMesh: {
@@ -86017,20 +86017,20 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage.health,
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage.maxResourceRepairCost
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage.buildTime,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -86048,14 +86048,14 @@
       upgradeArchetypeName: "a_b_lumberstorage_level_2",
       upgradeInfo: "lumber_storage"
     },
-    ECUpgrader: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage.resourceStorage, 0],
       maxResourceToLose: [100, 0]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "sfx_crt_building",
       onDeathEffect: "sfx_dth_building"
@@ -86070,19 +86070,19 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_lumberstorage_level_2 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_2.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_2.buildTime,
       level: 2,
       prerequisites: [{
         buildingType: "HQ",
@@ -86090,34 +86090,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_2.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 3",
       upgradeArchetypeName: "a_b_lumberstorage_level_3"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_2.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_2.resourceStorage, 0],
       maxResourceToLose: [100, 0]
     },
     ECWorldGui: {
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_3 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_2",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_3.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_3.buildTime,
       level: 3,
       prerequisites: [{
         buildingType: "HQ",
@@ -86125,34 +86125,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_3.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 4",
       upgradeArchetypeName: "a_b_lumberstorage_level_4"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_3.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_3.resourceStorage, 0],
       maxResourceToLose: [100, 0]
     },
     ECWorldGui: {
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_4 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_3",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_4.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_4.buildTime,
       level: 4,
       prerequisites: [{
         buildingType: "HQ",
@@ -86160,34 +86160,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_4.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 5",
       upgradeArchetypeName: "a_b_lumberstorage_level_5"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_4.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_4.resourceStorage, 0],
       maxResourceToLose: [500, 0]
     },
     ECWorldGui: {
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_5 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_4",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_5.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_5.buildTime,
       level: 5,
       prerequisites: [{
         buildingType: "HQ",
@@ -86195,34 +86195,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_5.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 6",
       upgradeArchetypeName: "a_b_lumberstorage_level_6"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_5.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_5.resourceStorage, 0],
       maxResourceToLose: [500, 0]
     },
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_6 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_5",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_6.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_6.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_6.buildTime,
       level: 6,
       prerequisites: [{
         buildingType: "HQ",
@@ -86230,34 +86230,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_6.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 7",
       upgradeArchetypeName: "a_b_lumberstorage_level_7"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_6.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_6.resourceStorage, 0],
       maxResourceToLose: [500, 0]
     },
     ECWorldGui: {
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_7 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_6",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_7.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_7.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_7.buildTime,
       level: 7,
       prerequisites: [{
         buildingType: "HQ",
@@ -86265,34 +86265,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 8",
       upgradeArchetypeName: "a_b_lumberstorage_level_8"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_7.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_7.resourceStorage, 0],
       maxResourceToLose: [1E3, 0]
     },
     ECWorldGui: {
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_8 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_7",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_8.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_8.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_8.buildTime,
       level: 8,
       prerequisites: [{
         buildingType: "HQ",
@@ -86300,34 +86300,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_8.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 9",
       upgradeArchetypeName: "a_b_lumberstorage_level_9"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_8.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_8.resourceStorage, 0],
       maxResourceToLose: [1E3, 0]
     },
     ECWorldGui: {
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_9 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_8",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_9.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_9.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_9.buildTime,
       level: 9,
       prerequisites: [{
         buildingType: "HQ",
@@ -86335,34 +86335,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_9.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 10",
       upgradeArchetypeName: "a_b_lumberstorage_level_10"
     },
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_9.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_9.resourceStorage, 0],
       maxResourceToLose: [1E3, 0]
     },
     ECWorldGui: {
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_lumberstorage_level_10 = {
+  EntityFactory.archetypes.a_b_lumberstorage_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_lumberstorage_level_9",
     ECMesh: {
       path: "environment/models/e_b_lumberstorage_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_lumberstorage_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_lumberstorage_level_10.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_lumberstorage_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_lumberstorage_level_10.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_lumberstorage_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_lumberstorage_level_10.buildTime,
       level: 10,
       prerequisites: [{
         buildingType: "HQ",
@@ -86370,35 +86370,35 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_lumberstorage_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_lumberstorage_level_10.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECResourceStorage: {
-      maxResource: [e.balanceBuildings.a_b_lumberstorage_level_10.resourceStorage, 0],
+      maxResource: [EntityFactory.balanceBuildings.a_b_lumberstorage_level_10.resourceStorage, 0],
       maxResourceToLose: [1E3, 0]
     },
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_scaffold = {
+  EntityFactory.archetypes.a_b_scaffold = {
     shouldPlayerSave: !0,
     familyName: "scaffold",
-    ECMesh: e.EC_DEFAULT,
+    ECMesh: EntityFactory.EC_DEFAULT,
     ECPhysicsCube: {
       scaleMesh: !1,
       stationary: !0,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
     ECScaffold: {
       scaffoldType: "normal",
       buildSpeed: 0,
       delayBuildingUntilBuilderPresent: !1
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       buildingType: "",
       buildTime: 10,
@@ -86408,7 +86408,7 @@
       defenceLevel: 0,
       addedFootprintSize: 0
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "placeBuilding"
     },
@@ -86416,22 +86416,22 @@
       buildingRadius: 0
     }
   };
-  e.archetypes.a_b_scaffoldSmall = {
+  EntityFactory.archetypes.a_b_scaffoldSmall = {
     shouldPlayerSave: !0,
     familyName: "scaffold",
-    ECMesh: e.EC_DEFAULT,
+    ECMesh: EntityFactory.EC_DEFAULT,
     ECPhysicsCube: {
       scaleMesh: !1,
       stationary: !0,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
     ECScaffold: {
       scaffoldType: "normal",
       buildSpeed: 0,
       delayBuildingUntilBuilderPresent: !1
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       buildingType: "",
       buildTime: 10,
@@ -86441,7 +86441,7 @@
       defenceLevel: 0,
       addedFootprintSize: 0
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "placeSmallBuilding"
     },
@@ -86449,22 +86449,22 @@
       buildingRadius: 0
     }
   };
-  e.archetypes.a_b_scaffoldWar = {
+  EntityFactory.archetypes.a_b_scaffoldWar = {
     shouldPlayerSave: !0,
     familyName: "scaffold",
-    ECMesh: e.EC_DEFAULT,
+    ECMesh: EntityFactory.EC_DEFAULT,
     ECPhysicsCube: {
       scaleMesh: !1,
       stationary: !0,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
     ECScaffold: {
       scaffoldType: "war",
       buildSpeed: 0,
       delayBuildingUntilBuilderPresent: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       buildingType: "",
       buildTime: 10,
@@ -86474,7 +86474,7 @@
       defenceLevel: 0,
       addedFootprintSize: 0
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "placeBuilding"
     },
@@ -86482,22 +86482,22 @@
       buildingRadius: 0
     }
   };
-  e.archetypes.a_b_scaffoldWarSmall = {
+  EntityFactory.archetypes.a_b_scaffoldWarSmall = {
     shouldPlayerSave: !0,
     familyName: "scaffold",
-    ECMesh: e.EC_DEFAULT,
+    ECMesh: EntityFactory.EC_DEFAULT,
     ECPhysicsCube: {
       scaleMesh: !1,
       stationary: !0,
       terrainType: "building"
     },
-    ECSelectable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
     ECScaffold: {
       scaffoldType: "war",
       buildSpeed: 0,
       delayBuildingUntilBuilderPresent: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       buildingType: "",
       buildTime: 10,
@@ -86507,7 +86507,7 @@
       defenceLevel: 0,
       addedFootprintSize: 0
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "placeSmallBuilding"
     },
@@ -86515,7 +86515,7 @@
       buildingRadius: 0
     }
   };
-  e.archetypes.a_b_scaffoldMesh = {
+  EntityFactory.archetypes.a_b_scaffoldMesh = {
     familyName: "scaffoldMesh",
     ECMesh: {
       scale: 1,
@@ -86527,11 +86527,11 @@
       ambientEffect: "sfx_construction"
     }
   };
-  e.archetypes.a_b_shrinkDisappearMesh = {
+  EntityFactory.archetypes.a_b_shrinkDisappearMesh = {
     familyName: "shrinkDisappearMesh",
-    ECMesh: e.EC_DEFAULT
+    ECMesh: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_stonemill = {
+  EntityFactory.archetypes.a_b_stonemill = {
     shouldPlayerSave: !0,
     familyName: "stonemill",
     ECMesh: {
@@ -86548,20 +86548,20 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill.health,
+      health: EntityFactory.balanceBuildings.a_b_stonemill.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill.maxResourceRepairCost
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill.buildTime,
       autoRebuild: !0,
       canSpeedUpWithSoftCurrency: !0,
       obeysScaffoldCap: !0,
@@ -86583,18 +86583,18 @@
     ECBuildingPlacementRadius: {
       buildingRadius: 12
     },
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECUpgradable: {
       upgradeName: "Level 2",
       upgradeArchetypeName: "a_b_stonemill_level_2",
       upgradeInfo: "stonemill"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECResourceDestination: {
       canDepositResource: [!1, !0]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       contents: []
     },
@@ -86621,19 +86621,19 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_stonemill_level_2 = {
+  EntityFactory.archetypes.a_b_stonemill_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_2.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_2.buildTime,
       level: 2,
       prerequisites: [{
         buildingType: "HQ",
@@ -86647,8 +86647,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_2.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 3",
@@ -86658,19 +86658,19 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_stonemill_level_3 = {
+  EntityFactory.archetypes.a_b_stonemill_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_2",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_3.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_3.buildTime,
       level: 3,
       prerequisites: [{
         buildingType: "HQ",
@@ -86684,8 +86684,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_3.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 4",
@@ -86695,19 +86695,19 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_stonemill_level_4 = {
+  EntityFactory.archetypes.a_b_stonemill_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_3",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_4.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_4.buildTime,
       level: 4,
       prerequisites: [{
         buildingType: "HQ",
@@ -86721,8 +86721,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_4.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 5",
@@ -86732,19 +86732,19 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_stonemill_level_5 = {
+  EntityFactory.archetypes.a_b_stonemill_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_4",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_5.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_5.buildTime,
       level: 5,
       prerequisites: [{
         buildingType: "HQ",
@@ -86758,8 +86758,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_5.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 6",
@@ -86769,19 +86769,19 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_stonemill_level_6 = {
+  EntityFactory.archetypes.a_b_stonemill_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_5",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_6.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_6.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_6.buildTime,
       level: 6,
       prerequisites: [{
         buildingType: "HQ",
@@ -86795,8 +86795,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_6.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 7",
@@ -86806,19 +86806,19 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_stonemill_level_7 = {
+  EntityFactory.archetypes.a_b_stonemill_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_6",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_7.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_7.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_7.buildTime,
       level: 7,
       prerequisites: [{
         buildingType: "HQ",
@@ -86832,8 +86832,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 8",
@@ -86843,19 +86843,19 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_stonemill_level_8 = {
+  EntityFactory.archetypes.a_b_stonemill_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_7",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_8.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_8.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_8.buildTime,
       level: 8,
       prerequisites: [{
         buildingType: "HQ",
@@ -86869,8 +86869,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_8.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 9",
@@ -86880,19 +86880,19 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_stonemill_level_9 = {
+  EntityFactory.archetypes.a_b_stonemill_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_8",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_9.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_9.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_9.buildTime,
       level: 9,
       prerequisites: [{
         buildingType: "HQ",
@@ -86906,8 +86906,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_9.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 10",
@@ -86917,19 +86917,19 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_stonemill_level_10 = {
+  EntityFactory.archetypes.a_b_stonemill_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonemill_level_9",
     ECMesh: {
       path: "environment/models/e_b_stonemill_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonemill_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_stonemill_level_10.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonemill_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonemill_level_10.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonemill_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonemill_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonemill_level_10.buildTime,
       level: 10,
       prerequisites: [{
         buildingType: "HQ",
@@ -86943,16 +86943,16 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonemill_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonemill_level_10.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_stonelinghutworkshop = {
+  EntityFactory.archetypes.a_b_stonelinghutworkshop = {
     shouldPlayerSave: !0,
     familyName: "stonelinghutworkshop",
     ECMesh: {
@@ -86961,7 +86961,7 @@
       path: "environment/models/stonemill_wildling.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -86972,7 +86972,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/stonewildlingshell.dae",
       contents: [{
@@ -86982,9 +86982,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_stonestorage = {
+  EntityFactory.archetypes.a_b_stonestorage = {
     shouldPlayerSave: !0,
     familyName: "stonestorage",
     ECMesh: {
@@ -87001,20 +87001,20 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage.health,
+      health: EntityFactory.balanceBuildings.a_b_stonestorage.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage.maxResourceRepairCost
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage.buildTime,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87032,14 +87032,14 @@
       upgradeArchetypeName: "a_b_stonestorage_level_2",
       upgradeInfo: "stone_storage"
     },
-    ECUpgrader: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage.secondaryResourceStorage],
       maxResourceToLose: [0, 100]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "sfx_crt_building",
       onDeathEffect: "sfx_dth_building"
@@ -87054,19 +87054,19 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_stonestorage_level_2 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_2.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_2.buildTime,
       level: 2,
       prerequisites: [{
         buildingType: "HQ",
@@ -87074,34 +87074,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_2.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 3",
       upgradeArchetypeName: "a_b_stonestorage_level_3"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_2.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_2.secondaryResourceStorage],
       maxResourceToLose: [0, 100]
     },
     ECWorldGui: {
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_stonestorage_level_3 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_2",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_3.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_3.buildTime,
       level: 3,
       prerequisites: [{
         buildingType: "HQ",
@@ -87109,34 +87109,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_3.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 4",
       upgradeArchetypeName: "a_b_stonestorage_level_4"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_3.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_3.secondaryResourceStorage],
       maxResourceToLose: [0, 100]
     },
     ECWorldGui: {
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_stonestorage_level_4 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_3",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_4.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_4.buildTime,
       level: 4,
       prerequisites: [{
         buildingType: "HQ",
@@ -87144,34 +87144,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_4.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 5",
       upgradeArchetypeName: "a_b_stonestorage_level_5"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_4.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_4.secondaryResourceStorage],
       maxResourceToLose: [0, 500]
     },
     ECWorldGui: {
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_stonestorage_level_5 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_4",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_5.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_5.buildTime,
       level: 5,
       prerequisites: [{
         buildingType: "HQ",
@@ -87179,34 +87179,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_5.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 6",
       upgradeArchetypeName: "a_b_stonestorage_level_6"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_5.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_5.secondaryResourceStorage],
       maxResourceToLose: [0, 500]
     },
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_stonestorage_level_6 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_5",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_6.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_6.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_6.buildTime,
       level: 6,
       prerequisites: [{
         buildingType: "HQ",
@@ -87214,34 +87214,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_6.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 7",
       upgradeArchetypeName: "a_b_stonestorage_level_7"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_6.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_6.secondaryResourceStorage],
       maxResourceToLose: [0, 500]
     },
     ECWorldGui: {
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_stonestorage_level_7 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_6",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_7.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_7.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_7.buildTime,
       level: 7,
       prerequisites: [{
         buildingType: "HQ",
@@ -87249,34 +87249,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 8",
       upgradeArchetypeName: "a_b_stonestorage_level_8"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_7.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_7.secondaryResourceStorage],
       maxResourceToLose: [0, 1E3]
     },
     ECWorldGui: {
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_stonestorage_level_8 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_7",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_8.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_8.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_8.buildTime,
       level: 8,
       prerequisites: [{
         buildingType: "HQ",
@@ -87284,34 +87284,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_8.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 9",
       upgradeArchetypeName: "a_b_stonestorage_level_9"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_8.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_8.secondaryResourceStorage],
       maxResourceToLose: [0, 1E3]
     },
     ECWorldGui: {
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_stonestorage_level_9 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_8",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_9.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_9.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_9.buildTime,
       level: 9,
       prerequisites: [{
         buildingType: "HQ",
@@ -87319,34 +87319,34 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_9.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 10",
       upgradeArchetypeName: "a_b_stonestorage_level_10"
     },
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_9.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_9.secondaryResourceStorage],
       maxResourceToLose: [0, 1E3]
     },
     ECWorldGui: {
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_stonestorage_level_10 = {
+  EntityFactory.archetypes.a_b_stonestorage_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_stonestorage_level_9",
     ECMesh: {
       path: "environment/models/e_b_stonestorage_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_stonestorage_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_stonestorage_level_10.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_stonestorage_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_stonestorage_level_10.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_stonestorage_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_stonestorage_level_10.buildTime,
       level: 10,
       prerequisites: [{
         buildingType: "HQ",
@@ -87354,27 +87354,27 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_stonestorage_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_stonestorage_level_10.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECResourceStorage: {
-      maxResource: [0, e.balanceBuildings.a_b_stonestorage_level_10.secondaryResourceStorage],
+      maxResource: [0, EntityFactory.balanceBuildings.a_b_stonestorage_level_10.secondaryResourceStorage],
       maxResourceToLose: [0, 1E3]
     },
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_wildlinghouse_smoke = {
+  EntityFactory.archetypes.a_b_wildlinghouse_smoke = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_wildlinghouse_smoke.dae"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber = {
     shouldPlayerSave: !0,
     familyName: "wildlingHouseLumber",
     ECMesh: {
@@ -87390,23 +87390,23 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber.health,
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87424,7 +87424,7 @@
       upgradeArchetypeName: "a_b_wildlinghouse_lumber_level_2",
       upgradeInfo: "wildlinghouse_lumber"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECWildlingHouse: {
       wildlingArchetype: "a_f_lumberling"
     },
@@ -87438,23 +87438,23 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_2 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_2.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_2.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_2.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87478,23 +87478,23 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_3 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_2",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_3.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_3.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_3.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87518,23 +87518,23 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_4 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_3",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_4.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_4.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_4.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87558,23 +87558,23 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_5 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_4",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_5.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_5.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_5.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87598,23 +87598,23 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_6 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_5",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_6.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_6.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_6.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87638,23 +87638,23 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_7 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_6",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_7.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_7.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_7.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87678,23 +87678,23 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_8 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_7",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_8.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_8.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_8.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87718,23 +87718,23 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_9 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_8",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_9.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_9.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_9.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_9.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87758,23 +87758,23 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_wildlinghouse_lumber_level_10 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_lumber_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_lumber_level_9",
     ECMesh: {
       path: "environment/models/e_b_lumberling_shack_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_lumber_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_10.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_10.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_lumber_level_10.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_lumber_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_lumber_level_10.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87786,8 +87786,8 @@
       }],
       addedFootprintSize: 0
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWildlingHouse: {
       wildlingArchetype: "a_f_lumberling_level_10"
     },
@@ -87795,7 +87795,7 @@
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone = {
     shouldPlayerSave: !0,
     familyName: "wildlingHouseStone",
     ECMesh: {
@@ -87811,23 +87811,23 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone.health,
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87845,7 +87845,7 @@
       upgradeArchetypeName: "a_b_wildlinghouse_stone_level_2",
       upgradeInfo: "wildlinghouse_stone"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECWildlingHouse: {
       wildlingArchetype: "a_f_stoneling"
     },
@@ -87859,23 +87859,23 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_2 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_2.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_2.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_2.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87899,23 +87899,23 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_3 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_2",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_3.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_3.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_3.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87939,23 +87939,23 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_4 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_3",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_4.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_4.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_4.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -87979,23 +87979,23 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_5 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_4",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_5.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_5.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_5.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88019,23 +88019,23 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_6 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_5",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_6.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_6.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_6.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88059,23 +88059,23 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_7 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_6",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_7.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_7.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_7.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88099,23 +88099,23 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_8 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_7",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_8.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_8.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_8.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88139,23 +88139,23 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_9 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_8",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_9.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_9.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_9.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_9.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88179,23 +88179,23 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_wildlinghouse_stone_level_10 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_stone_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_stone_level_9",
     ECMesh: {
       path: "environment/models/e_b_stoneling_shack_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_stone_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_10.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_10.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_stone_level_10.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_stone_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_stone_level_10.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88207,8 +88207,8 @@
       }],
       addedFootprintSize: 0
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWildlingHouse: {
       wildlingArchetype: "a_f_stoneling_level_10"
     },
@@ -88216,7 +88216,7 @@
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_wildlinghouse_build = {
+  EntityFactory.archetypes.a_b_wildlinghouse_build = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1,
@@ -88235,10 +88235,10 @@
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       resourceCost: 0,
       secondaryResourceCost: 0,
@@ -88270,7 +88270,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_wildlinghouse_build_2 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_build_2 = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1,
@@ -88288,10 +88288,10 @@
       health: 50,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
       minResourceRepairCost: [8, 0],
@@ -88320,7 +88320,7 @@
       wildlingArchetype: "a_f_buildling"
     }
   };
-  e.archetypes.a_b_wildlinghouse_build_3 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_build_3 = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1,
@@ -88338,10 +88338,10 @@
       health: 50,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       minResourceRepairCost: [8, 0],
       maxResourceRepairCost: [16, 0]
@@ -88369,7 +88369,7 @@
       wildlingArchetype: "a_f_buildling"
     }
   };
-  e.archetypes.a_b_wildlinghouse_build_4 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_build_4 = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1,
@@ -88387,10 +88387,10 @@
       health: 50,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       minResourceRepairCost: [8, 0],
       maxResourceRepairCost: [16, 0]
@@ -88418,7 +88418,7 @@
       wildlingArchetype: "a_f_buildling"
     }
   };
-  e.archetypes.a_b_wildlinghouse_build_5 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_build_5 = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1,
@@ -88436,10 +88436,10 @@
       health: 50,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       minResourceRepairCost: [8, 0],
       maxResourceRepairCost: [16, 0]
@@ -88466,7 +88466,7 @@
       wildlingArchetype: "a_f_buildling"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war = {
     shouldPlayerSave: !0,
     familyName: "Defendling Hut",
     ECMesh: {
@@ -88482,22 +88482,22 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war.health,
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war.health,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88515,7 +88515,7 @@
       upgradeArchetypeName: "a_b_wildlinghouse_war_level_2",
       upgradeInfo: "wildlinghouse_war"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECWildlingHouse: {
       wildlingArchetype: "a_f_warling"
     },
@@ -88529,23 +88529,23 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_2 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_2.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_2.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_2.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88569,23 +88569,23 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_3 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_2",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_3.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_3.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_3.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88609,23 +88609,23 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_4 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_3",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_4.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_4.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_4.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88649,23 +88649,23 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_5 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_4",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_5.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_5.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_5.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88689,23 +88689,23 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_6 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_5",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_6.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_6.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_6.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88729,23 +88729,23 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_7 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_6",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_7.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_7.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_7.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88769,23 +88769,23 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_8 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_7",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_8.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_8.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_8.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88809,23 +88809,23 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_9 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_8",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_9.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_9.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_9.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_9.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88849,23 +88849,23 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_wildlinghouse_war_level_10 = {
+  EntityFactory.archetypes.a_b_wildlinghouse_war_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_wildlinghouse_war_level_6",
     ECMesh: {
       path: "environment/models/e_b_warling_shack_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_wildlinghouse_war_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_10.health
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_wildlinghouse_war_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_10.maxResourceRepairCost
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_wildlinghouse_war_level_10.buildTime,
-      resourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_wildlinghouse_war_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_wildlinghouse_war_level_10.secondaryResourceCost,
       autoRebuild: !0,
       obeysScaffoldCap: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -88877,8 +88877,8 @@
       }],
       addedFootprintSize: 0
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWildlingHouse: {
       wildlingArchetype: "a_f_warling_level_10"
     },
@@ -88886,7 +88886,7 @@
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_workshop = {
+  EntityFactory.archetypes.a_b_workshop = {
     shouldPlayerSave: !0,
     familyName: "workshop",
     ECMesh: {
@@ -88903,22 +88903,22 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_workshop.health,
+      health: EntityFactory.balanceBuildings.a_b_workshop.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_workshop.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_workshop.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop.maxResourceRepairCost
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_workshop.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_workshop.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_workshop.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_workshop.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_workshop.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_workshop.buildTime,
       autoRebuild: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Workshop",
@@ -88935,7 +88935,7 @@
       upgradeArchetypeName: "a_b_workshop_level_2",
       upgradeInfo: "workshop"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECSockets: {
       sockets: [{
         archetypeName: "a_b_hqworkshop",
@@ -88986,7 +88986,7 @@
       onCreateEffect: "sfx_crt_building",
       onDeathEffect: "sfx_dth_building"
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Workshop",
       text2: "Level 1",
@@ -88997,7 +88997,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_workshop_level_2 = {
+  EntityFactory.archetypes.a_b_workshop_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_workshop",
     ECMesh: {
@@ -89007,12 +89007,12 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_workshop_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_workshop_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_workshop_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_workshop_level_2.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_workshop_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_workshop_level_2.buildTime,
       level: 2,
       prerequisites: [{
         buildingType: "HQ",
@@ -89020,8 +89020,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_workshop_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_workshop_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_2.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 3",
@@ -89031,7 +89031,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_workshop_level_3 = {
+  EntityFactory.archetypes.a_b_workshop_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_workshop_level_2",
     ECMesh: {
@@ -89041,12 +89041,12 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_workshop_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_workshop_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_workshop_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_workshop_level_3.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_workshop_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_workshop_level_3.buildTime,
       level: 3,
       prerequisites: [{
         buildingType: "HQ",
@@ -89054,8 +89054,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_workshop_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_workshop_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_3.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 4",
@@ -89065,7 +89065,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_workshop_level_4 = {
+  EntityFactory.archetypes.a_b_workshop_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_workshop_level_3",
     ECMesh: {
@@ -89075,12 +89075,12 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_workshop_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_workshop_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_workshop_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_workshop_level_4.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_workshop_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_workshop_level_4.buildTime,
       level: 4,
       prerequisites: [{
         buildingType: "HQ",
@@ -89088,8 +89088,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_workshop_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_workshop_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_4.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 5",
@@ -89099,7 +89099,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_workshop_level_5 = {
+  EntityFactory.archetypes.a_b_workshop_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_workshop_level_4",
     ECMesh: {
@@ -89109,12 +89109,12 @@
       localOffset: [0, 0, 0]
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_workshop_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_workshop_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_b_workshop_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_workshop_level_5.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_b_workshop_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_workshop_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_workshop_level_5.buildTime,
       level: 5,
       prerequisites: [{
         buildingType: "HQ",
@@ -89122,16 +89122,16 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_workshop_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_workshop_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_workshop_level_5.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_lumbermillworkshop = {
+  EntityFactory.archetypes.a_b_lumbermillworkshop = {
     shouldPlayerSave: !0,
     familyName: "lumbermillworkshop",
     ECMesh: {
@@ -89157,7 +89157,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       disableWhenCapReached: !0,
       contents: [{
@@ -89167,9 +89167,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_stonemillworkshop = {
+  EntityFactory.archetypes.a_b_stonemillworkshop = {
     shouldPlayerSave: !0,
     familyName: "stonemillworkshop",
     ECMesh: {
@@ -89195,7 +89195,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       disableWhenCapReached: !0,
       contents: [{
@@ -89205,9 +89205,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_amberchestworkshop = {
+  EntityFactory.archetypes.a_b_amberchestworkshop = {
     shouldPlayerSave: !0,
     familyName: "amberchestworkshop",
     ECMesh: {
@@ -89216,7 +89216,7 @@
       path: "environment/models/workshop_chest.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 1.1,
       offsetY: 0.4,
@@ -89227,7 +89227,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       disableWhenCapReached: !0,
       contents: [{
@@ -89237,9 +89237,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_defencefactoryworkshop = {
+  EntityFactory.archetypes.a_b_defencefactoryworkshop = {
     shouldPlayerSave: !0,
     familyName: "defencefactoryworkshop",
     ECMesh: {
@@ -89265,7 +89265,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       disableWhenCapReached: !0,
       contents: [{
@@ -89275,9 +89275,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_outpostworkshop = {
+  EntityFactory.archetypes.a_b_outpostworkshop = {
     shouldPlayerSave: !0,
     familyName: "outpostworkshop",
     ECMesh: {
@@ -89286,7 +89286,7 @@
       path: "environment/models/workshop_outpost.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89297,7 +89297,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/outpostshell.dae",
       contents: [{
@@ -89307,9 +89307,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_lumberstorageworkshop = {
+  EntityFactory.archetypes.a_b_lumberstorageworkshop = {
     shouldPlayerSave: !0,
     familyName: "lumberstorageworkshop",
     ECMesh: {
@@ -89318,7 +89318,7 @@
       path: "environment/models/workshop_storage.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89329,7 +89329,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/lumberstorageshell.dae",
       contents: [{
@@ -89339,9 +89339,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_stonestorageworkshop = {
+  EntityFactory.archetypes.a_b_stonestorageworkshop = {
     shouldPlayerSave: !0,
     familyName: "stonestorageworkshop",
     ECMesh: {
@@ -89350,7 +89350,7 @@
       path: "environment/models/workshop_stonestorage.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89361,7 +89361,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/stonestorageshell.dae",
       contents: [{
@@ -89371,9 +89371,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_libraryworkshop = {
+  EntityFactory.archetypes.a_b_libraryworkshop = {
     shouldPlayerSave: !0,
     familyName: "libraryworkshop",
     ECMesh: {
@@ -89382,7 +89382,7 @@
       path: "environment/models/workshop_library.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0,
@@ -89393,7 +89393,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       disableWhenCapReached: !0,
       contents: [{
@@ -89403,9 +89403,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_buildlinghutworkshop = {
+  EntityFactory.archetypes.a_b_buildlinghutworkshop = {
     shouldPlayerSave: !0,
     familyName: "buildlinghutworkshop",
     ECMesh: {
@@ -89414,7 +89414,7 @@
       path: "environment/models/workshop_wildling.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89425,7 +89425,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       disableWhenCapReached: !0,
       showUnavailableDueToPrerequisites: !1,
@@ -89456,9 +89456,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_workshoprepairer = {
+  EntityFactory.archetypes.a_b_workshoprepairer = {
     shouldPlayerSave: !0,
     familyName: "workshoprepairer",
     ECMesh: {
@@ -89467,7 +89467,7 @@
       path: "environment/models/workshop_spanner.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.2,
@@ -89478,7 +89478,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECRepairer: {
       includeScaffoldTypes: ["normal"],
       excludeBuildingTypes: ["Outpost"],
@@ -89486,9 +89486,9 @@
       repairAllText: "GAME_HUD_REPAIR_ALL_WORKSHOP",
       nothingToRepairText: "GAME_HUD_REPAIR_NOTHING_TO_DO_WORKSHOP"
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_towerworkshop = {
+  EntityFactory.archetypes.a_b_towerworkshop = {
     shouldPlayerSave: !0,
     familyName: "towerworkshop",
     ECMesh: {
@@ -89497,7 +89497,7 @@
       path: "environment/models/workshop_tower.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89508,7 +89508,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/towershell.dae",
       contents: [{
@@ -89518,9 +89518,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_workshopmarketplace = {
+  EntityFactory.archetypes.a_b_workshopmarketplace = {
     shouldPlayerSave: !0,
     familyName: "marketplaceworkshop",
     ECMesh: {
@@ -89529,7 +89529,7 @@
       path: "environment/models/workshop_marketplace.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89540,7 +89540,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/marketplaceshell.dae",
       contents: [{
@@ -89550,9 +89550,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_wallworkshop = {
+  EntityFactory.archetypes.a_b_wallworkshop = {
     shouldPlayerSave: !0,
     familyName: "wallworkshop",
     ECMesh: {
@@ -89561,7 +89561,7 @@
       path: "environment/models/workshop_wall.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89572,7 +89572,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/wallshell.dae",
       contents: [{
@@ -89582,9 +89582,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_hqworkshop = {
+  EntityFactory.archetypes.a_b_hqworkshop = {
     shouldPlayerSave: !0,
     familyName: "hqworkshop",
     ECMesh: {
@@ -89610,7 +89610,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       disableWhenCapReached: !0,
       contents: [{
@@ -89620,9 +89620,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_gateworkshop = {
+  EntityFactory.archetypes.a_b_gateworkshop = {
     shouldPlayerSave: !0,
     familyName: "gateworkshop",
     ECMesh: {
@@ -89631,7 +89631,7 @@
       path: "environment/models/workshop_gate.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89642,7 +89642,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/gateshell.dae",
       contents: [{
@@ -89652,16 +89652,16 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_workshop_smoke = {
+  EntityFactory.archetypes.a_b_workshop_smoke = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_workshop_smoke.dae"
     }
   };
-  e.archetypes.a_b_marketplace = {
+  EntityFactory.archetypes.a_b_marketplace = {
     shouldPlayerSave: !0,
     familyName: "Marketplace",
     ECMesh: {
@@ -89678,22 +89678,22 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_marketplace.health,
+      health: EntityFactory.balanceBuildings.a_b_marketplace.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_marketplace.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_marketplace.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_marketplace.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_marketplace.maxResourceRepairCost
     },
     ECBuilding: {
       resourceCost: 0,
       secondaryResourceCost: 200,
-      buildTime: e.balanceBuildings.a_b_marketplace.buildTime,
+      buildTime: EntityFactory.balanceBuildings.a_b_marketplace.buildTime,
       autoRebuild: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Marketplace",
@@ -89778,7 +89778,7 @@
       onCreateEffect: "sfx_crt_building",
       onDeathEffect: "sfx_dth_building"
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Marketplace",
       text2: "Level 1",
@@ -89789,7 +89789,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_tilemarketplace = {
+  EntityFactory.archetypes.a_b_tilemarketplace = {
     shouldPlayerSave: !0,
     familyName: "tilemarketplace",
     ECMesh: {
@@ -89798,7 +89798,7 @@
       path: "environment/models/marketplace_tiles.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0,
@@ -89809,7 +89809,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/tileshell.dae",
       contents: [{
@@ -89824,9 +89824,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_flagmarketplace = {
+  EntityFactory.archetypes.a_b_flagmarketplace = {
     shouldPlayerSave: !0,
     familyName: "flagmarketplace",
     ECMesh: {
@@ -89835,7 +89835,7 @@
       path: "environment/models/marketplace_flags.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89846,7 +89846,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/flagshell.dae",
       contents: [{
@@ -89856,9 +89856,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_lightmarketplace = {
+  EntityFactory.archetypes.a_b_lightmarketplace = {
     shouldPlayerSave: !0,
     familyName: "lightmarketplace",
     ECMesh: {
@@ -89867,7 +89867,7 @@
       path: "environment/models/marketplace_lights.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89878,7 +89878,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/lightshell.dae",
       contents: [{
@@ -89903,9 +89903,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_monumentmarketplace = {
+  EntityFactory.archetypes.a_b_monumentmarketplace = {
     shouldPlayerSave: !0,
     familyName: "monumentmarketplace",
     ECMesh: {
@@ -89914,7 +89914,7 @@
       path: "environment/models/marketplace_monuments.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.4,
@@ -89925,7 +89925,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/monumentshell.dae",
       contents: [{
@@ -89947,9 +89947,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_naturemarketplace = {
+  EntityFactory.archetypes.a_b_naturemarketplace = {
     shouldPlayerSave: !0,
     familyName: "naturemarketplace",
     ECMesh: {
@@ -89958,7 +89958,7 @@
       path: "environment/models/marketplace_nature.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 0.75,
       offsetY: 0.2,
@@ -89969,7 +89969,7 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       meshWhenCapReached: "environment/models/natureshell.dae",
       contents: [{
@@ -89989,9 +89989,9 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_socket_glow = {
+  EntityFactory.archetypes.v_socket_glow = {
     ECSprite: {
       size: 0.7,
       path: "textures/glowfull.dds",
@@ -89999,7 +89999,7 @@
       color: [1, 174 / 255, 0, 0.2]
     }
   };
-  e.archetypes.e_s_cloud_big = {
+  EntityFactory.archetypes.e_s_cloud_big = {
     shouldLevelSave: !0,
     ECMesh: {
       scale: 1,
@@ -90015,7 +90015,7 @@
       maxLife: 200
     }
   };
-  e.archetypes.e_s_cloud_med = {
+  EntityFactory.archetypes.e_s_cloud_med = {
     shouldLevelSave: !0,
     ECMesh: {
       scale: 1,
@@ -90031,7 +90031,7 @@
       maxLife: 200
     }
   };
-  e.archetypes.e_s_cloud_small = {
+  EntityFactory.archetypes.e_s_cloud_small = {
     shouldLevelSave: !0,
     ECMesh: {
       scale: 1,
@@ -90047,7 +90047,7 @@
       maxLife: 200
     }
   };
-  e.archetypes.e_s_cloudSpawner = {
+  EntityFactory.archetypes.e_s_cloudSpawner = {
     ECEntitySpawnManager: {
       minTimeBetweenAddingNewEntity: 30,
       maxTimeBetweenAddingNewEntity: 60,
@@ -90065,7 +90065,7 @@
       randomGenerateRadius: 60
     }
   };
-  e.archetypes.e_s_torchpost = {
+  EntityFactory.archetypes.e_s_torchpost = {
     shouldLevelSave: !0,
     ECMesh: {
       scale: 1,
@@ -90085,7 +90085,7 @@
       }]
     }
   };
-  e.archetypes.v_socket_glow_torch = {
+  EntityFactory.archetypes.v_socket_glow_torch = {
     ECSprite: {
       size: 1,
       offsetY: 0,
@@ -90094,7 +90094,7 @@
       color: [1, 174 / 255, 0, 0.4]
     }
   };
-  e.archetypes.e_s_floating_gun = {
+  EntityFactory.archetypes.e_s_floating_gun = {
     shouldLevelSave: !1,
     shouldPlayerSave: !0,
     familyName: "tutorialgun",
@@ -90121,7 +90121,7 @@
       item: "wp_h_shotgun_cone01"
     }
   };
-  e.archetypes.e_s_floating_crate = {
+  EntityFactory.archetypes.e_s_floating_crate = {
     shouldLevelSave: !0,
     ECMesh: {
       scale: 1,
@@ -90136,7 +90136,7 @@
       v3OscillateFrequency: [0.4, 0, 0.5]
     }
   };
-  e.archetypes.e_s_floating_plank = {
+  EntityFactory.archetypes.e_s_floating_plank = {
     shouldLevelSave: !0,
     ECMesh: {
       scale: 1,
@@ -90151,7 +90151,7 @@
       v3OscillateFrequency: [0.4, 0, 0.5]
     }
   };
-  e.archetypes.e_s_breakable_crate = {
+  EntityFactory.archetypes.e_s_breakable_crate = {
     shouldLevelSave: !1,
     shouldPlayerSave: !0,
     ECMesh: {
@@ -90186,7 +90186,7 @@
       onDestroyEffect: "sfx_dth_crate"
     }
   };
-  e.archetypes.e_s_tutorial_crate = {
+  EntityFactory.archetypes.e_s_tutorial_crate = {
     shouldLevelSave: !1,
     shouldPlayerSave: !0,
     familyName: "tutorialcrate",
@@ -90214,7 +90214,7 @@
       onDestroyEffect: "sfx_dth_crate"
     }
   };
-  e.archetypes.e_s_firefly = {
+  EntityFactory.archetypes.e_s_firefly = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "firefly",
@@ -90242,7 +90242,7 @@
       v3OscillateFrequency: [0.125, 0.025, 0.07 * 1.25]
     }
   };
-  e.archetypes.e_s_firefly_group = {
+  EntityFactory.archetypes.e_s_firefly_group = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "fireflygroup",
@@ -90261,7 +90261,7 @@
       incidentalMaxTime: 60
     }
   };
-  e.archetypes.e_s_firefly_two = {
+  EntityFactory.archetypes.e_s_firefly_two = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "fireflygroup",
@@ -90272,7 +90272,7 @@
       }]
     }
   };
-  e.archetypes.e_aud_drippingcave = {
+  EntityFactory.archetypes.e_aud_drippingcave = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     ECEffectSpawner: {
@@ -90286,7 +90286,7 @@
       height: 0
     }
   };
-  e.archetypes.e_aud_runningwater = {
+  EntityFactory.archetypes.e_aud_runningwater = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     ECEffectSpawner: {
@@ -90300,7 +90300,7 @@
       height: 0
     }
   };
-  e.archetypes.e_s_rockcliffwaterfall = {
+  EntityFactory.archetypes.e_s_rockcliffwaterfall = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     ECMesh: {
@@ -90313,7 +90313,7 @@
       incidentalMaxTime: 5
     }
   };
-  e.archetypes.e_aud_waves = {
+  EntityFactory.archetypes.e_aud_waves = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     ECEffectSpawner: {
@@ -90327,7 +90327,7 @@
       height: 0
     }
   };
-  e.archetypes.a_s_buildRadius = {
+  EntityFactory.archetypes.a_s_buildRadius = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "buildRadius",
@@ -90338,7 +90338,7 @@
       invalidBuildingTypes: ["Barricade", "Barricade Gate", "Turret", "Trap", "Outpost"]
     }
   };
-  e.archetypes.a_s_buildAntiRadius = {
+  EntityFactory.archetypes.a_s_buildAntiRadius = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "buildRadius",
@@ -90348,7 +90348,7 @@
       invalidBuildingTypes: ["all"]
     }
   };
-  e.archetypes.v_tile_square = {
+  EntityFactory.archetypes.v_tile_square = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_floortiles01.dae",
@@ -90382,11 +90382,11 @@
     ECSelectable: {
       smartRadiusFactor: 0.2
     },
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_tile_rounded = {
+  EntityFactory.archetypes.v_tile_rounded = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_floortiles02.dae",
@@ -90420,11 +90420,11 @@
     ECSelectable: {
       smartRadiusFactor: 0.2
     },
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_post = {
+  EntityFactory.archetypes.v_light_crystal_post = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_stand.dae",
@@ -90497,12 +90497,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_post_yellow = {
+  EntityFactory.archetypes.v_light_crystal_post_yellow = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_stand.dae",
@@ -90574,12 +90574,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_post_pink = {
+  EntityFactory.archetypes.v_light_crystal_post_pink = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_stand.dae",
@@ -90651,12 +90651,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_post_red = {
+  EntityFactory.archetypes.v_light_crystal_post_red = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_stand.dae",
@@ -90728,12 +90728,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_post_blue = {
+  EntityFactory.archetypes.v_light_crystal_post_blue = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_stand.dae",
@@ -90805,12 +90805,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_post_green = {
+  EntityFactory.archetypes.v_light_crystal_post_green = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_stand.dae",
@@ -90882,12 +90882,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_post_purple = {
+  EntityFactory.archetypes.v_light_crystal_post_purple = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_stand.dae",
@@ -90959,12 +90959,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_lantern_yellow = {
+  EntityFactory.archetypes.v_light_lantern_yellow = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_lantern.dae",
@@ -91008,12 +91008,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_lantern_stand_yellow = {
+  EntityFactory.archetypes.v_light_lantern_stand_yellow = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_lightlantern.dae",
@@ -91057,12 +91057,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal = {
+  EntityFactory.archetypes.v_light_crystal = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_crystalplate.dae",
@@ -91135,12 +91135,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_yellow = {
+  EntityFactory.archetypes.v_light_crystal_yellow = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_crystalplate.dae",
@@ -91212,12 +91212,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_pink = {
+  EntityFactory.archetypes.v_light_crystal_pink = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_crystalplatepink.dae",
@@ -91289,12 +91289,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_red = {
+  EntityFactory.archetypes.v_light_crystal_red = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_crystalplatered.dae",
@@ -91366,12 +91366,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_blue = {
+  EntityFactory.archetypes.v_light_crystal_blue = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_crystalplateblue.dae",
@@ -91443,12 +91443,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_green = {
+  EntityFactory.archetypes.v_light_crystal_green = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_crystalplategreen.dae",
@@ -91520,12 +91520,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_purple = {
+  EntityFactory.archetypes.v_light_crystal_purple = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_crystalplatepurple.dae",
@@ -91597,12 +91597,12 @@
       stackable: !1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_light_crystal_yellow_top = {
+  EntityFactory.archetypes.v_light_crystal_yellow_top = {
     ECMesh: {
       path: "environment/models/e_v_crystalplate.dae",
       scale: 1,
@@ -91616,7 +91616,7 @@
       }]
     }
   };
-  e.archetypes.v_light_crystal_pink_top = {
+  EntityFactory.archetypes.v_light_crystal_pink_top = {
     ECMesh: {
       path: "environment/models/e_v_crystalplatepink.dae",
       scale: 1,
@@ -91630,7 +91630,7 @@
       }]
     }
   };
-  e.archetypes.v_light_crystal_red_top = {
+  EntityFactory.archetypes.v_light_crystal_red_top = {
     ECMesh: {
       path: "environment/models/e_v_crystalplatered.dae",
       scale: 1,
@@ -91644,7 +91644,7 @@
       }]
     }
   };
-  e.archetypes.v_light_crystal_blue_top = {
+  EntityFactory.archetypes.v_light_crystal_blue_top = {
     ECMesh: {
       path: "environment/models/e_v_crystalplateblue.dae",
       scale: 1,
@@ -91658,7 +91658,7 @@
       }]
     }
   };
-  e.archetypes.v_light_crystal_green_top = {
+  EntityFactory.archetypes.v_light_crystal_green_top = {
     ECMesh: {
       path: "environment/models/e_v_crystalplategreen.dae",
       scale: 1,
@@ -91672,7 +91672,7 @@
       }]
     }
   };
-  e.archetypes.v_light_crystal_purple_top = {
+  EntityFactory.archetypes.v_light_crystal_purple_top = {
     ECMesh: {
       path: "environment/models/e_v_crystalplatepurple.dae",
       scale: 1,
@@ -91686,7 +91686,7 @@
       }]
     }
   };
-  e.archetypes.v_socket_glow_sage = {
+  EntityFactory.archetypes.v_socket_glow_sage = {
     ECSprite: {
       size: 1,
       path: "textures/glowfull.dds",
@@ -91694,7 +91694,7 @@
       color: [1, 174 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_yellow = {
+  EntityFactory.archetypes.v_socket_glow_yellow = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91703,7 +91703,7 @@
       color: [1, 174 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_yellow_small = {
+  EntityFactory.archetypes.v_socket_glow_yellow_small = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91712,7 +91712,7 @@
       color: [1, 174 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_pink = {
+  EntityFactory.archetypes.v_socket_glow_pink = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91721,7 +91721,7 @@
       color: [1, 6 / 255, 141 / 255, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_pink_small = {
+  EntityFactory.archetypes.v_socket_glow_pink_small = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91730,7 +91730,7 @@
       color: [1, 6 / 255, 141 / 255, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_blue = {
+  EntityFactory.archetypes.v_socket_glow_blue = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91739,7 +91739,7 @@
       color: [0, 252 / 255, 231 / 255, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_blue_small = {
+  EntityFactory.archetypes.v_socket_glow_blue_small = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91748,7 +91748,7 @@
       color: [0, 252 / 255, 231 / 255, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_red = {
+  EntityFactory.archetypes.v_socket_glow_red = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91757,7 +91757,7 @@
       color: [1, 54 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_top_red = {
+  EntityFactory.archetypes.v_socket_glow_top_red = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91766,7 +91766,7 @@
       color: [1, 54 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_red_small = {
+  EntityFactory.archetypes.v_socket_glow_red_small = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91775,7 +91775,7 @@
       color: [1, 54 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_top_green = {
+  EntityFactory.archetypes.v_socket_glow_top_green = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91784,7 +91784,7 @@
       color: [126 / 255, 223 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_green_small = {
+  EntityFactory.archetypes.v_socket_glow_green_small = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91793,7 +91793,7 @@
       color: [126 / 255, 223 / 255, 0, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_top_purple = {
+  EntityFactory.archetypes.v_socket_glow_top_purple = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91802,7 +91802,7 @@
       color: [126 / 255, 42 / 255, 239 / 255, 0.4]
     }
   };
-  e.archetypes.v_socket_glow_purple_small = {
+  EntityFactory.archetypes.v_socket_glow_purple_small = {
     ECSprite: {
       size: 1.1,
       offsetY: 0,
@@ -91811,7 +91811,7 @@
       color: [126 / 255, 42 / 255, 239 / 255, 0.4]
     }
   };
-  e.archetypes.v_statue_sage = {
+  EntityFactory.archetypes.v_statue_sage = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_statuesage.dae",
@@ -91849,12 +91849,12 @@
       level: 1,
       addedFootprintSize: 1
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_bell = {
+  EntityFactory.archetypes.v_bell = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_citybell.dae",
@@ -91888,12 +91888,12 @@
       level: 1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_gong = {
+  EntityFactory.archetypes.v_gong = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_citygong.dae",
@@ -91927,12 +91927,12 @@
       level: 1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_fountain = {
+  EntityFactory.archetypes.v_fountain = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_fountain01.dae",
@@ -91964,12 +91964,12 @@
       level: 1,
       addedFootprintSize: 1
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_flowerbed = {
+  EntityFactory.archetypes.v_flowerbed = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flowerpot.dae",
@@ -92005,12 +92005,12 @@
       level: 1,
       addedFootprintSize: 0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_v_seed_tree = {
+  EntityFactory.archetypes.a_v_seed_tree = {
     shouldPlayerSave: !0,
     shouldLevelSave: !1,
     familyName: "vanitytree",
@@ -92061,7 +92061,7 @@
       animationSet: "tree02"
     }
   };
-  e.archetypes.a_v_seed_rock = {
+  EntityFactory.archetypes.a_v_seed_rock = {
     shouldPlayerSave: !0,
     shouldLevelSave: !1,
     familyName: "vanityrock",
@@ -92109,7 +92109,7 @@
       chanceOfSoftCurrencyPerInteraction: 0.005
     }
   };
-  e.archetypes.v_flag = {
+  EntityFactory.archetypes.v_flag = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92186,12 +92186,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_flag_red = {
+  EntityFactory.archetypes.v_flag_red = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92267,12 +92267,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_s_flag_red = {
+  EntityFactory.archetypes.v_s_flag_red = {
     ECMesh: {
       path: "environment/models/flagred.dae",
       scale: 0.8,
@@ -92287,7 +92287,7 @@
       bobPeriod: 2
     }
   };
-  e.archetypes.v_flag_yellow = {
+  EntityFactory.archetypes.v_flag_yellow = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92363,12 +92363,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_s_flag_yellow = {
+  EntityFactory.archetypes.v_s_flag_yellow = {
     ECMesh: {
       path: "environment/models/flagyellow.dae",
       scale: 0.8,
@@ -92383,7 +92383,7 @@
       bobPeriod: 2.1
     }
   };
-  e.archetypes.v_flag_blue = {
+  EntityFactory.archetypes.v_flag_blue = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92459,12 +92459,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_s_flag_blue = {
+  EntityFactory.archetypes.v_s_flag_blue = {
     ECMesh: {
       path: "environment/models/flagblue.dae",
       scale: 0.8,
@@ -92479,7 +92479,7 @@
       bobPeriod: 2.2
     }
   };
-  e.archetypes.v_flag_green = {
+  EntityFactory.archetypes.v_flag_green = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92555,12 +92555,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_s_flag_green = {
+  EntityFactory.archetypes.v_s_flag_green = {
     ECMesh: {
       path: "environment/models/flaggreen.dae",
       scale: 0.8,
@@ -92575,7 +92575,7 @@
       bobPeriod: 2.3
     }
   };
-  e.archetypes.v_flag_purple = {
+  EntityFactory.archetypes.v_flag_purple = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92651,12 +92651,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_s_flag_purple = {
+  EntityFactory.archetypes.v_s_flag_purple = {
     ECMesh: {
       path: "environment/models/flagpurple.dae",
       scale: 0.8,
@@ -92671,7 +92671,7 @@
       bobPeriod: 2.4
     }
   };
-  e.archetypes.v_flag_white = {
+  EntityFactory.archetypes.v_flag_white = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92747,12 +92747,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_s_flag_white = {
+  EntityFactory.archetypes.v_s_flag_white = {
     ECMesh: {
       path: "environment/models/flagwhite.dae",
       scale: 0.8,
@@ -92767,7 +92767,7 @@
       bobPeriod: 2.5
     }
   };
-  e.archetypes.v_flag_black = {
+  EntityFactory.archetypes.v_flag_black = {
     shouldPlayerSave: !0,
     ECMesh: {
       path: "environment/models/e_v_flagpole.dae",
@@ -92843,12 +92843,12 @@
       addedFootprintSize: 0,
       noRotate: !0
     },
-    ECSelectable: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.v_s_flag_black = {
+  EntityFactory.archetypes.v_s_flag_black = {
     ECMesh: {
       path: "environment/models/flagdark.dae",
       scale: 0.8,
@@ -92863,7 +92863,7 @@
       bobPeriod: 2.6
     }
   };
-  e.archetypes.a_b_outpost = {
+  EntityFactory.archetypes.a_b_outpost = {
     shouldPlayerSave: !0,
     familyName: "outpost",
     ECMesh: {
@@ -92879,7 +92879,7 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost.health,
+      health: EntityFactory.balanceBuildings.a_b_outpost.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
@@ -92889,9 +92889,9 @@
     ECSelectable: {
       selectType: "selectTypePrepare"
     },
-    ECTarget: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECResourceDestination: {
       validType: "selectTypeCampaign"
     },
@@ -92913,9 +92913,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost.secondaryResourceCost,
       canPlaceAnywhere: !0,
       autoRebuild: !0,
       canSpeedUpWithSoftCurrency: !0,
@@ -92929,8 +92929,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 8,
@@ -92942,7 +92942,7 @@
       upgradeArchetypeName: "a_b_outpost_level_2",
       upgradeInfo: "outpost"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECSockets: {
       sockets: [{
         archetypeName: "a_b_turretworkshop",
@@ -92958,7 +92958,7 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "sfx_crt_building",
       onDeathEffect: "sfx_dth_building"
@@ -92973,14 +92973,14 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_outpost_level_2 = {
+  EntityFactory.archetypes.a_b_outpost_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost",
     ECMesh: {
       path: "environment/models/e_b_outpost_level02.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_2.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_2.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -92998,9 +92998,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_2.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93011,8 +93011,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_2.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 12,
@@ -93038,19 +93038,19 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 2"
     }
   };
-  e.archetypes.a_b_outpost_level_3 = {
+  EntityFactory.archetypes.a_b_outpost_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_2",
     ECMesh: {
       path: "environment/models/e_b_outpost_level03.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_3.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_3.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93068,9 +93068,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_3.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93081,8 +93081,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_3.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 16,
@@ -93108,12 +93108,12 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 3"
     }
   };
-  e.archetypes.a_b_outpost_level_4 = {
+  EntityFactory.archetypes.a_b_outpost_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_3",
     ECPhysicsCube: {
@@ -93123,7 +93123,7 @@
       path: "environment/models/e_b_outpost_level04.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_4.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_4.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93141,9 +93141,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_4.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93155,8 +93155,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_4.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 20,
@@ -93182,19 +93182,19 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 4"
     }
   };
-  e.archetypes.a_b_outpost_level_5 = {
+  EntityFactory.archetypes.a_b_outpost_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_4",
     ECMesh: {
       path: "environment/models/e_b_outpost_level05.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_5.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_5.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93212,9 +93212,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_5.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93225,8 +93225,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_5.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 24,
@@ -93252,19 +93252,19 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_outpost_level_6 = {
+  EntityFactory.archetypes.a_b_outpost_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_5",
     ECMesh: {
       path: "environment/models/e_b_outpost_level06.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_6.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_6.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93282,9 +93282,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_6.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93295,8 +93295,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_6.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 24,
@@ -93322,19 +93322,19 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 6"
     }
   };
-  e.archetypes.a_b_outpost_level_7 = {
+  EntityFactory.archetypes.a_b_outpost_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_6",
     ECMesh: {
       path: "environment/models/e_b_outpost_level07.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_7.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_7.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93352,9 +93352,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_7.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93365,8 +93365,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_7.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 24,
@@ -93392,19 +93392,19 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 7"
     }
   };
-  e.archetypes.a_b_outpost_level_8 = {
+  EntityFactory.archetypes.a_b_outpost_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_7",
     ECMesh: {
       path: "environment/models/e_b_outpost_level08.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_8.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_8.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93422,9 +93422,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_8.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93435,8 +93435,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_8.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 24,
@@ -93462,19 +93462,19 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 8"
     }
   };
-  e.archetypes.a_b_outpost_level_9 = {
+  EntityFactory.archetypes.a_b_outpost_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_8",
     ECMesh: {
       path: "environment/models/e_b_outpost_level09.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_9.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_9.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93492,9 +93492,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_9.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_9.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93505,8 +93505,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_9.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 24,
@@ -93532,19 +93532,19 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 9"
     }
   };
-  e.archetypes.a_b_outpost_level_10 = {
+  EntityFactory.archetypes.a_b_outpost_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_outpost_level_9",
     ECMesh: {
       path: "environment/models/e_b_outpost_level010.dae"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_b_outpost_level_10.health
+      health: EntityFactory.balanceBuildings.a_b_outpost_level_10.health
     },
     ECPlacedBuildingTracker: {
       localCaps: [{
@@ -93562,9 +93562,9 @@
       }]
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_b_outpost_level_10.buildTime,
-      resourceCost: e.balanceBuildings.a_b_outpost_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_b_outpost_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_b_outpost_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_b_outpost_level_10.secondaryResourceCost,
       canPlaceAnywhere: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Outpost",
@@ -93575,15 +93575,15 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_b_outpost_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_b_outpost_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_b_outpost_level_10.maxResourceRepairCost
     },
     ECBuildingPlacementRadius: {
       buildingRadius: 24,
       trapRadius: 32
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECSockets: {
       sockets: [{
         archetypeName: "a_b_turretworkshop_level_10",
@@ -93599,12 +93599,12 @@
         localOffset: [2.5 * Math.cos(6 * Math.PI / 4), 1, 2.5 * Math.sin(6 * Math.PI / 4)]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_outpostrepairer = {
+  EntityFactory.archetypes.a_b_outpostrepairer = {
     shouldPlayerSave: !0,
     ECMesh: {
       scale: 1.3 * WorkshopSettings.iconSize,
@@ -93612,7 +93612,7 @@
       path: "environment/models/outpost_spanner.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 1,
       offsetY: 0.2,
@@ -93623,16 +93623,16 @@
     ECSelectable: {
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECRepairer: {
       placedBuildings: !0,
       owner: !0,
       repairAllText: "GAME_HUD_REPAIR_ALL_OUTPOST",
       nothingToRepairText: "GAME_HUD_REPAIR_NOTHING_TO_DO_OUTPOST"
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_b_barricadeworkshop = {
+  EntityFactory.archetypes.a_b_barricadeworkshop = {
     shouldPlayerSave: !0,
     familyName: "barricadeworkshop",
     ECMesh: {
@@ -93641,7 +93641,7 @@
       path: "environment/models/outpost_barricade.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 1,
       offsetY: 0.4,
@@ -93653,7 +93653,7 @@
       selectType: "selectTypeNormal",
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       showUnavailableDueToPrerequisites: !1,
       meshWhenCapReached: "environment/models/barricadeshell.dae",
@@ -93709,7 +93709,7 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Barricades",
       onScreenGuiArchetype: "tipIconBarricades",
@@ -93719,7 +93719,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_barricadeworkshop_level_2 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop",
     ECDispenser: {
@@ -93777,39 +93777,39 @@
       }]
     }
   };
-  e.archetypes.a_b_barricadeworkshop_level_3 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_2"
   };
-  e.archetypes.a_b_barricadeworkshop_level_4 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_3"
   };
-  e.archetypes.a_b_barricadeworkshop_level_5 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_4"
   };
-  e.archetypes.a_b_barricadeworkshop_level_6 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_5"
   };
-  e.archetypes.a_b_barricadeworkshop_level_7 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_6"
   };
-  e.archetypes.a_b_barricadeworkshop_level_8 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_7"
   };
-  e.archetypes.a_b_barricadeworkshop_level_9 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_8"
   };
-  e.archetypes.a_b_barricadeworkshop_level_10 = {
+  EntityFactory.archetypes.a_b_barricadeworkshop_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_barricadeworkshop_level_9"
   };
-  e.archetypes.a_b_turretworkshop = {
+  EntityFactory.archetypes.a_b_turretworkshop = {
     shouldPlayerSave: !0,
     familyName: "turretworkshop",
     ECMesh: {
@@ -93818,7 +93818,7 @@
       path: "environment/models/outpost_turrets.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 1,
       offsetY: 0.4,
@@ -93830,7 +93830,7 @@
       selectType: "selectTypeNormal",
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       showUnavailableDueToPrerequisites: !1,
       meshWhenCapReached: "environment/models/turretshell.dae",
@@ -93861,7 +93861,7 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Towers",
       onScreenGuiArchetype: "tipIconTowers",
@@ -93871,11 +93871,11 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_turretworkshop_level_2 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop"
   };
-  e.archetypes.a_b_turretworkshop_level_3 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_2",
     ECDispenser: {
@@ -93933,11 +93933,11 @@
       }]
     }
   };
-  e.archetypes.a_b_turretworkshop_level_4 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_3"
   };
-  e.archetypes.a_b_turretworkshop_level_5 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_4",
     ECDispenser: {
@@ -94020,27 +94020,27 @@
       }]
     }
   };
-  e.archetypes.a_b_turretworkshop_level_6 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_5"
   };
-  e.archetypes.a_b_turretworkshop_level_7 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_6"
   };
-  e.archetypes.a_b_turretworkshop_level_8 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_7"
   };
-  e.archetypes.a_b_turretworkshop_level_9 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_8"
   };
-  e.archetypes.a_b_turretworkshop_level_10 = {
+  EntityFactory.archetypes.a_b_turretworkshop_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_turretworkshop_level_9"
   };
-  e.archetypes.a_b_trapworkshop = {
+  EntityFactory.archetypes.a_b_trapworkshop = {
     shouldPlayerSave: !0,
     familyName: "trapworkshop",
     ECMesh: {
@@ -94049,7 +94049,7 @@
       path: "environment/models/outpost_explosive.dae",
       localOffset: [0, 0, 0]
     },
-    ECMeshAnimation: e.EC_DEFAULT,
+    ECMeshAnimation: EntityFactory.EC_DEFAULT,
     ECSprite: {
       size: 1,
       offsetY: 0.4,
@@ -94061,7 +94061,7 @@
       selectType: "selectTypeNormal",
       hideMeshWhenInvalid: !0
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECDispenser: {
       showUnavailableDueToPrerequisites: !1,
       meshWhenCapReached: "environment/models/explosiveshell.dae",
@@ -94092,7 +94092,7 @@
         quantityPerPurchase: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Traps",
       onScreenGuiArchetype: "tipIconTraps",
@@ -94102,11 +94102,11 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_b_trapworkshop_level_2 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop"
   };
-  e.archetypes.a_b_trapworkshop_level_3 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_2",
     ECDispenser: {
@@ -94163,7 +94163,7 @@
       }]
     }
   };
-  e.archetypes.a_b_trapworkshop_level_4 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_3",
     ECDispenser: {
@@ -94245,41 +94245,41 @@
       }]
     }
   };
-  e.archetypes.a_b_trapworkshop_level_5 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_4"
   };
-  e.archetypes.a_b_trapworkshop_level_6 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_5"
   };
-  e.archetypes.a_b_trapworkshop_level_7 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_6"
   };
-  e.archetypes.a_b_trapworkshop_level_8 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_7"
   };
-  e.archetypes.a_b_trapworkshop_level_9 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_8"
   };
-  e.archetypes.a_b_trapworkshop_level_10 = {
+  EntityFactory.archetypes.a_b_trapworkshop_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_b_trapworkshop_level_9"
   };
-  e.archetypes.a_d_turret_tutorial = {
+  EntityFactory.archetypes.a_d_turret_tutorial = {
     shouldPlayerSave: !0,
     familyName: "turret_tutorial",
     parent: "a_d_turret_level_1",
     ECBuilding: {
       buildingType: "Turret Tutorial"
     },
-    ECSelectable: e.EC_REMOVE,
-    ECWorldGui: e.EC_REMOVE
+    ECSelectable: EntityFactory.EC_REMOVE,
+    ECWorldGui: EntityFactory.EC_REMOVE
   };
-  e.archetypes.a_d_turret_level_1 = {
+  EntityFactory.archetypes.a_d_turret_level_1 = {
     shouldPlayerSave: !0,
     familyName: "Turret",
     ECMesh: {
@@ -94297,19 +94297,19 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_level_1.health,
+      health: EntityFactory.balanceTurrets.a_d_turret_level_1.health,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       selectType: "selectTypePrepare"
     },
-    ECTarget: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_level_1.resourceCost,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_level_1.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceTurrets.a_d_turret_level_1.buildTime,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_level_1.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Turret",
       buildingName: "Gatling",
@@ -94338,14 +94338,14 @@
     ECAttackerLimit: {
       maxAttackers: 1
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onDeathEffect: "sfx_dth_building"
     },
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_level_1.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_level_1.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_1.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_1.maxResourceRepairCost,
       canBeDestroyed: !0
     },
     ECWorldGui: {
@@ -94358,7 +94358,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_d_turret_level_2 = {
+  EntityFactory.archetypes.a_d_turret_level_2 = {
     parent: "a_d_turret_level_1",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94366,11 +94366,11 @@
       path: "environment/models/e_b_towersniper_level02.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_level_2.health
+      health: EntityFactory.balanceTurrets.a_d_turret_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_level_2.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_level_2.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_level_2.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_level_2.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94392,14 +94392,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_2.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_turret_level_3 = {
+  EntityFactory.archetypes.a_d_turret_level_3 = {
     parent: "a_d_turret_level_2",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94407,11 +94407,11 @@
       path: "environment/models/e_b_towersniper_level03.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_level_3.health
+      health: EntityFactory.balanceTurrets.a_d_turret_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_level_3.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_level_3.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_level_3.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_level_3.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94433,14 +94433,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_3.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_turret_level_4 = {
+  EntityFactory.archetypes.a_d_turret_level_4 = {
     parent: "a_d_turret_level_3",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94448,11 +94448,11 @@
       path: "environment/models/e_b_towersniper_level04.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_level_4.health
+      health: EntityFactory.balanceTurrets.a_d_turret_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_level_4.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_level_4.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_level_4.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_level_4.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94474,14 +94474,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_4.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_turret_level_5 = {
+  EntityFactory.archetypes.a_d_turret_level_5 = {
     parent: "a_d_turret_level_4",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94489,11 +94489,11 @@
       path: "environment/models/e_b_towersniper_level05.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_level_5.health
+      health: EntityFactory.balanceTurrets.a_d_turret_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_level_5.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_level_5.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_level_5.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_level_5.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94515,14 +94515,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_level_5.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_d_turret_top_level_1 = {
+  EntityFactory.archetypes.a_d_turret_top_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -94552,9 +94552,9 @@
         ignorePathing: !0
       }]
     },
-    ECFaction: e.EC_DEFAULT
+    ECFaction: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_d_turret_top_level_2 = {
+  EntityFactory.archetypes.a_d_turret_top_level_2 = {
     parent: "a_d_turret_top_level_1",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -94564,7 +94564,7 @@
       weapon: "wp_d_turret_gun02"
     }
   };
-  e.archetypes.a_d_turret_top_level_3 = {
+  EntityFactory.archetypes.a_d_turret_top_level_3 = {
     parent: "a_d_turret_top_level_2",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -94574,7 +94574,7 @@
       weapon: "wp_d_turret_gun03"
     }
   };
-  e.archetypes.a_d_turret_top_level_4 = {
+  EntityFactory.archetypes.a_d_turret_top_level_4 = {
     parent: "a_d_turret_top_level_3",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -94584,7 +94584,7 @@
       weapon: "wp_d_turret_gun04"
     }
   };
-  e.archetypes.a_d_turret_top_level_5 = {
+  EntityFactory.archetypes.a_d_turret_top_level_5 = {
     parent: "a_d_turret_top_level_4",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -94600,7 +94600,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_level_1.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_level_1.reloadDuration,
     minRange: 0,
     maxRange: 15,
     clipSize: 1,
@@ -94613,7 +94613,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_level_2.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_level_2.reloadDuration,
     minRange: 0,
     maxRange: 15,
     clipSize: 1,
@@ -94626,7 +94626,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_level_3.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_level_3.reloadDuration,
     minRange: 0,
     maxRange: 15,
     clipSize: 1,
@@ -94639,7 +94639,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_level_4.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_level_4.reloadDuration,
     minRange: 0,
     maxRange: 15,
     clipSize: 1,
@@ -94652,14 +94652,14 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_level_5.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_level_5.reloadDuration,
     minRange: 0,
     maxRange: 15,
     clipSize: 1,
     rechamberDuration: 0,
     randomSpreadAngle: 0
   };
-  e.archetypes.pj_d_turret_gun01 = {
+  EntityFactory.archetypes.pj_d_turret_gun01 = {
     shouldPlayerSave: !1,
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
@@ -94673,28 +94673,28 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_turret_gun02 = {
+  EntityFactory.archetypes.pj_d_turret_gun02 = {
     parent: "pj_d_turret_gun01",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_turret_gun02"
     }
   };
-  e.archetypes.pj_d_turret_gun03 = {
+  EntityFactory.archetypes.pj_d_turret_gun03 = {
     parent: "pj_d_turret_gun02",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_turret_gun03"
     }
   };
-  e.archetypes.pj_d_turret_gun04 = {
+  EntityFactory.archetypes.pj_d_turret_gun04 = {
     parent: "pj_d_turret_gun03",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_turret_gun04"
     }
   };
-  e.archetypes.pj_d_turret_gun05 = {
+  EntityFactory.archetypes.pj_d_turret_gun05 = {
     parent: "pj_d_turret_gun04",
     shouldPlayerSave: !1,
     ECProjectile: {
@@ -94702,51 +94702,51 @@
     }
   };
   B.archetypes.dg_d_turret_gun01 = B.create("dg_d_turret_gun01", {
-    radius: e.balanceTurrets.a_d_turret_level_1.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_level_1.radius,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_level_1.damage,
-    forceBack: e.balanceTurrets.a_d_turret_level_1.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_level_1.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_level_1.forceRadial,
+    damage: EntityFactory.balanceTurrets.a_d_turret_level_1.damage,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_level_1.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_level_1.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_level_1.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_turret_gun02 = B.create("dg_d_turret_gun02", {
-    radius: e.balanceTurrets.a_d_turret_level_2.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_level_2.radius,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_level_2.damage,
-    forceBack: e.balanceTurrets.a_d_turret_level_2.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_level_2.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_level_2.forceRadial,
+    damage: EntityFactory.balanceTurrets.a_d_turret_level_2.damage,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_level_2.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_level_2.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_level_2.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_turret_gun03 = B.create("dg_d_turret_gun03", {
-    radius: e.balanceTurrets.a_d_turret_level_3.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_level_3.radius,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_level_3.damage,
-    forceBack: e.balanceTurrets.a_d_turret_level_3.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_level_3.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_level_3.forceRadial,
+    damage: EntityFactory.balanceTurrets.a_d_turret_level_3.damage,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_level_3.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_level_3.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_level_3.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_turret_gun04 = B.create("dg_d_turret_gun04", {
-    radius: e.balanceTurrets.a_d_turret_level_4.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_level_4.radius,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_level_4.damage,
-    forceBack: e.balanceTurrets.a_d_turret_level_4.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_level_4.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_level_4.forceRadial,
+    damage: EntityFactory.balanceTurrets.a_d_turret_level_4.damage,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_level_4.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_level_4.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_level_4.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_turret_gun05 = B.create("dg_d_turret_gun05", {
-    radius: e.balanceTurrets.a_d_turret_level_5.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_level_5.radius,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_level_5.damage,
-    forceBack: e.balanceTurrets.a_d_turret_level_5.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_level_5.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_level_5.forceRadial,
+    damage: EntityFactory.balanceTurrets.a_d_turret_level_5.damage,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_level_5.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_level_5.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_level_5.forceRadial,
     forceTangential: 0
   });
-  e.archetypes.a_d_turret_mortar_level_1 = {
+  EntityFactory.archetypes.a_d_turret_mortar_level_1 = {
     shouldPlayerSave: !0,
     familyName: "Turret",
     ECMesh: {
@@ -94764,19 +94764,19 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_mortar_level_1.health,
+      health: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.health,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       selectType: "selectTypePrepare"
     },
-    ECTarget: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_mortar_level_1.resourceCost,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceTurrets.a_d_turret_mortar_level_1.buildTime,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       mustPlaceNearCreator: !0,
       buildingType: "Turret",
@@ -94805,11 +94805,11 @@
     ECAttackerLimit: {
       maxAttackers: 1
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_1.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_1.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.maxResourceRepairCost,
       canBeDestroyed: !0
     },
     ECWorldGui: {
@@ -94822,7 +94822,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_d_turret_mortar_level_2 = {
+  EntityFactory.archetypes.a_d_turret_mortar_level_2 = {
     parent: "a_d_turret_mortar_level_1",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94830,11 +94830,11 @@
       path: "environment/models/e_b_towermortar_level02.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_mortar_level_2.health
+      health: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_mortar_level_2.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_mortar_level_2.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94856,14 +94856,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_turret_mortar_level_3 = {
+  EntityFactory.archetypes.a_d_turret_mortar_level_3 = {
     parent: "a_d_turret_mortar_level_2",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94871,11 +94871,11 @@
       path: "environment/models/e_b_towermortar_level03.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_mortar_level_3.health
+      health: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_mortar_level_3.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_mortar_level_3.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94897,14 +94897,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_turret_mortar_level_4 = {
+  EntityFactory.archetypes.a_d_turret_mortar_level_4 = {
     parent: "a_d_turret_mortar_level_3",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94912,11 +94912,11 @@
       path: "environment/models/e_b_towermortar_level04.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_mortar_level_4.health
+      health: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_mortar_level_4.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_mortar_level_4.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94938,14 +94938,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_turret_mortar_level_5 = {
+  EntityFactory.archetypes.a_d_turret_mortar_level_5 = {
     parent: "a_d_turret_mortar_level_4",
     shouldPlayerSave: !0,
     familyName: "Turret",
@@ -94953,11 +94953,11 @@
       path: "environment/models/e_b_towermortar_level05.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_mortar_level_5.health
+      health: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_mortar_level_5.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_mortar_level_5.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -94979,14 +94979,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_mortar_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_d_turret_mortar_top_level_1 = {
+  EntityFactory.archetypes.a_d_turret_mortar_top_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -95018,9 +95018,9 @@
         ignorePathing: !0
       }]
     },
-    ECFaction: e.EC_DEFAULT
+    ECFaction: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_d_turret_mortar_top_level_2 = {
+  EntityFactory.archetypes.a_d_turret_mortar_top_level_2 = {
     parent: "a_d_turret_mortar_top_level_1",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95030,7 +95030,7 @@
       weapon: "wp_d_turret_mortar_gun02"
     }
   };
-  e.archetypes.a_d_turret_mortar_top_level_3 = {
+  EntityFactory.archetypes.a_d_turret_mortar_top_level_3 = {
     parent: "a_d_turret_mortar_top_level_2",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95040,7 +95040,7 @@
       weapon: "wp_d_turret_mortar_gun03"
     }
   };
-  e.archetypes.a_d_turret_mortar_top_level_4 = {
+  EntityFactory.archetypes.a_d_turret_mortar_top_level_4 = {
     parent: "a_d_turret_mortar_top_level_3",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95050,7 +95050,7 @@
       weapon: "wp_d_turret_mortar_gun04"
     }
   };
-  e.archetypes.a_d_turret_mortar_top_level_5 = {
+  EntityFactory.archetypes.a_d_turret_mortar_top_level_5 = {
     parent: "a_d_turret_mortar_top_level_4",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95066,7 +95066,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_mortar_level_1.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.reloadDuration,
     minRange: 5,
     maxRange: 15,
     clipSize: 1,
@@ -95079,7 +95079,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_mortar_level_2.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.reloadDuration,
     minRange: 5,
     maxRange: 15,
     clipSize: 1,
@@ -95092,7 +95092,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_mortar_level_3.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.reloadDuration,
     minRange: 5,
     maxRange: 15,
     clipSize: 1,
@@ -95105,7 +95105,7 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_mortar_level_4.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.reloadDuration,
     minRange: 5,
     maxRange: 15,
     clipSize: 1,
@@ -95118,14 +95118,14 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_mortar_level_5.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.reloadDuration,
     minRange: 5,
     maxRange: 15,
     clipSize: 1,
     rechamberDuration: 0,
     randomSpreadAngle: 0
   };
-  e.archetypes.pj_d_mortar_gun01 = {
+  EntityFactory.archetypes.pj_d_mortar_gun01 = {
     shouldPlayerSave: !1,
     ECMesh: {
       path: "environment/models/e_b_mortar_bullet.dae",
@@ -95140,28 +95140,28 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_mortar_gun02 = {
+  EntityFactory.archetypes.pj_d_mortar_gun02 = {
     parent: "pj_d_mortar_gun01",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_mortar_explode02"
     }
   };
-  e.archetypes.pj_d_mortar_gun03 = {
+  EntityFactory.archetypes.pj_d_mortar_gun03 = {
     parent: "pj_d_mortar_gun02",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_mortar_explode03"
     }
   };
-  e.archetypes.pj_d_mortar_gun04 = {
+  EntityFactory.archetypes.pj_d_mortar_gun04 = {
     parent: "pj_d_mortar_gun03",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_mortar_explode04"
     }
   };
-  e.archetypes.pj_d_mortar_gun05 = {
+  EntityFactory.archetypes.pj_d_mortar_gun05 = {
     parent: "pj_d_mortar_gun04",
     shouldPlayerSave: !1,
     ECProjectile: {
@@ -95169,61 +95169,61 @@
     }
   };
   B.archetypes.dg_d_mortar_explode01 = B.create("Mortar", {
-    radius: e.balanceTurrets.a_d_turret_mortar_level_1.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.radius,
     isExplosion: !0,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_mortar_level_1.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_mortar_level_1.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_mortar_level_1.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_mortar_level_1.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_mortar_level_1.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_mortar_explode02 = B.create("Mortar", {
-    radius: e.balanceTurrets.a_d_turret_mortar_level_2.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.radius,
     isExplosion: !0,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_mortar_level_2.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_mortar_level_2.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_mortar_level_2.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_mortar_level_2.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_mortar_level_2.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_mortar_explode03 = B.create("Mortar", {
-    radius: e.balanceTurrets.a_d_turret_mortar_level_3.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.radius,
     isExplosion: !0,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_mortar_level_3.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_mortar_level_3.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_mortar_level_3.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_mortar_level_3.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_mortar_level_3.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_mortar_explode04 = B.create("Mortar", {
-    radius: e.balanceTurrets.a_d_turret_mortar_level_4.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.radius,
     isExplosion: !0,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_mortar_level_4.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_mortar_level_4.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_mortar_level_4.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_mortar_level_4.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_mortar_level_4.forceRadial,
     forceTangential: 0
   });
   B.archetypes.dg_d_mortar_explode05 = B.create("Mortar", {
-    radius: e.balanceTurrets.a_d_turret_mortar_level_5.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.radius,
     isExplosion: !0,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_mortar_level_5.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_mortar_level_5.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_mortar_level_5.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_mortar_level_5.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_mortar_level_5.forceRadial,
     forceTangential: 0
   });
-  e.archetypes.a_d_turret_thumper_level_1 = {
+  EntityFactory.archetypes.a_d_turret_thumper_level_1 = {
     shouldPlayerSave: !0,
     familyName: "defence",
     ECMesh: {
@@ -95241,18 +95241,18 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_thumper_level_1.health,
+      health: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECSelectable: {
       selectType: "selectTypePrepare"
     },
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_thumper_level_1.resourceCost,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceTurrets.a_d_turret_thumper_level_1.buildTime,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       mustPlaceNearCreator: !0,
       buildingType: "Turret",
@@ -95278,11 +95278,11 @@
         localOffset: [0, 4, 0]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_1.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_1.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.maxResourceRepairCost,
       canBeDestroyed: !0
     },
     ECWorldGui: {
@@ -95295,7 +95295,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_d_turret_thumper_level_2 = {
+  EntityFactory.archetypes.a_d_turret_thumper_level_2 = {
     parent: "a_d_turret_thumper_level_1",
     shouldPlayerSave: !0,
     familyName: "defence",
@@ -95303,11 +95303,11 @@
       path: "environment/models/e_b_towerthumper_level02.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_thumper_level_2.health
+      health: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_thumper_level_2.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_thumper_level_2.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -95329,14 +95329,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_turret_thumper_level_3 = {
+  EntityFactory.archetypes.a_d_turret_thumper_level_3 = {
     parent: "a_d_turret_thumper_level_2",
     shouldPlayerSave: !0,
     familyName: "defence",
@@ -95344,11 +95344,11 @@
       path: "environment/models/e_b_towerthumper_level03.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_thumper_level_3.health
+      health: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_thumper_level_3.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_thumper_level_3.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -95370,14 +95370,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_turret_thumper_level_4 = {
+  EntityFactory.archetypes.a_d_turret_thumper_level_4 = {
     parent: "a_d_turret_thumper_level_3",
     shouldPlayerSave: !0,
     familyName: "defence",
@@ -95385,11 +95385,11 @@
       path: "environment/models/e_b_towerthumper_level04.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_thumper_level_4.health
+      health: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_thumper_level_4.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_thumper_level_4.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -95411,14 +95411,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_turret_thumper_level_5 = {
+  EntityFactory.archetypes.a_d_turret_thumper_level_5 = {
     parent: "a_d_turret_thumper_level_4",
     shouldPlayerSave: !0,
     familyName: "defence",
@@ -95426,11 +95426,11 @@
       path: "environment/models/e_b_towerthumper_level05.dae"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_thumper_level_5.health
+      health: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_thumper_level_5.resourceCost,
-      buildTime: e.balanceTurrets.a_d_turret_thumper_level_5.buildTime,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.resourceCost,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.buildTime,
       prerequisites: [{
         buildingType: "Defence Factory",
         level: 1
@@ -95452,14 +95452,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_thumper_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_d_turret_thumper_top_level_1 = {
+  EntityFactory.archetypes.a_d_turret_thumper_top_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -95485,14 +95485,14 @@
         aimDuration: 0.2
       }, {
         name: "AIActionChooseRangedTarget",
-        maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_1.radius - 2, 1),
+        maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.radius - 2, 1),
         minRange: 0,
         ignorePathing: !0
       }]
     },
-    ECFaction: e.EC_DEFAULT
+    ECFaction: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_d_turret_thumper_top_level_2 = {
+  EntityFactory.archetypes.a_d_turret_thumper_top_level_2 = {
     parent: "a_d_turret_thumper_top_level_1",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95509,13 +95509,13 @@
         aimDuration: 0.2
       }, {
         name: "AIActionChooseRangedTarget",
-        maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_2.radius - 2, 1),
+        maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.radius - 2, 1),
         minRange: 0,
         ignorePathing: !0
       }]
     }
   };
-  e.archetypes.a_d_turret_thumper_top_level_3 = {
+  EntityFactory.archetypes.a_d_turret_thumper_top_level_3 = {
     parent: "a_d_turret_thumper_top_level_2",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95532,13 +95532,13 @@
         aimDuration: 0.2
       }, {
         name: "AIActionChooseRangedTarget",
-        maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_3.radius - 2, 1),
+        maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.radius - 2, 1),
         minRange: 0,
         ignorePathing: !0
       }]
     }
   };
-  e.archetypes.a_d_turret_thumper_top_level_4 = {
+  EntityFactory.archetypes.a_d_turret_thumper_top_level_4 = {
     parent: "a_d_turret_thumper_top_level_3",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95555,13 +95555,13 @@
         aimDuration: 0.2
       }, {
         name: "AIActionChooseRangedTarget",
-        maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_4.radius - 2, 1),
+        maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.radius - 2, 1),
         minRange: 0,
         ignorePathing: !0
       }]
     }
   };
-  e.archetypes.a_d_turret_thumper_top_level_5 = {
+  EntityFactory.archetypes.a_d_turret_thumper_top_level_5 = {
     parent: "a_d_turret_thumper_top_level_4",
     shouldPlayerSave: !1,
     ECMesh: {
@@ -95578,7 +95578,7 @@
         aimDuration: 0.2
       }, {
         name: "AIActionChooseRangedTarget",
-        maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_5.radius - 2, 1),
+        maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.radius - 2, 1),
         minRange: 0,
         ignorePathing: !0
       }]
@@ -95591,9 +95591,9 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_thumper_level_1.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.reloadDuration,
     minRange: 0,
-    maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_1.radius - 2, 1),
+    maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.radius - 2, 1),
     clipSize: 1,
     rechamberDuration: 0,
     randomSpreadAngle: 0
@@ -95605,9 +95605,9 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_thumper_level_2.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.reloadDuration,
     minRange: 0,
-    maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_2.radius - 2, 1),
+    maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.radius - 2, 1),
     clipSize: 1,
     rechamberDuration: 0,
     randomSpreadAngle: 0
@@ -95619,9 +95619,9 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_thumper_level_3.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.reloadDuration,
     minRange: 0,
-    maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_3.radius - 2, 1),
+    maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.radius - 2, 1),
     clipSize: 1,
     rechamberDuration: 0,
     randomSpreadAngle: 0
@@ -95633,9 +95633,9 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_thumper_level_4.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.reloadDuration,
     minRange: 0,
-    maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_4.radius - 2, 1),
+    maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.radius - 2, 1),
     clipSize: 1,
     rechamberDuration: 0,
     randomSpreadAngle: 0
@@ -95647,14 +95647,14 @@
     cockSound: "pistolcock",
     reloadSound: "pistolcock",
     dryFireSound: "pistoldryfire",
-    reloadDuration: e.balanceTurrets.a_d_turret_thumper_level_5.reloadDuration,
+    reloadDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.reloadDuration,
     minRange: 0,
-    maxRange: Math.max(e.balanceTurrets.a_d_turret_thumper_level_5.radius - 2, 1),
+    maxRange: Math.max(EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.radius - 2, 1),
     clipSize: 1,
     rechamberDuration: 0,
     randomSpreadAngle: 0
   };
-  e.archetypes.pj_d_thumper_bullet01 = {
+  EntityFactory.archetypes.pj_d_thumper_bullet01 = {
     shouldPlayerSave: !1,
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
@@ -95666,28 +95666,28 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_thumper_bullet02 = {
+  EntityFactory.archetypes.pj_d_thumper_bullet02 = {
     parent: "pj_d_thumper_bullet01",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_thump02"
     }
   };
-  e.archetypes.pj_d_thumper_bullet03 = {
+  EntityFactory.archetypes.pj_d_thumper_bullet03 = {
     parent: "pj_d_thumper_bullet02",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_thump03"
     }
   };
-  e.archetypes.pj_d_thumper_bullet04 = {
+  EntityFactory.archetypes.pj_d_thumper_bullet04 = {
     parent: "pj_d_thumper_bullet03",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_d_thump04"
     }
   };
-  e.archetypes.pj_d_thumper_bullet05 = {
+  EntityFactory.archetypes.pj_d_thumper_bullet05 = {
     parent: "pj_d_thumper_bullet04",
     shouldPlayerSave: !1,
     ECProjectile: {
@@ -95695,75 +95695,75 @@
     }
   };
   B.archetypes.dg_d_thump01 = B.create("Thump", {
-    radius: e.balanceTurrets.a_d_turret_thumper_level_1.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.radius,
     friendlyFire: 1,
-    damage: e.balanceTurrets.a_d_turret_thumper_level_1.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_thumper_level_1.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_thumper_level_1.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_thumper_level_1.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.forceRadial,
     forceTangential: 0,
-    stunDuration: e.balanceTurrets.a_d_turret_thumper_level_1.stunDuration,
+    stunDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_1.stunDuration,
     arcAngle: 60
   });
   B.archetypes.dg_d_thump02 = B.create("Thump", {
-    radius: e.balanceTurrets.a_d_turret_thumper_level_2.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.radius,
     friendlyFire: 1,
-    damage: e.balanceTurrets.a_d_turret_thumper_level_2.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_thumper_level_2.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_thumper_level_2.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_thumper_level_2.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.forceRadial,
     forceTangential: 0,
-    stunDuration: e.balanceTurrets.a_d_turret_thumper_level_2.stunDuration,
+    stunDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_2.stunDuration,
     arcAngle: 60
   });
   B.archetypes.dg_d_thump03 = B.create("Thump", {
-    radius: e.balanceTurrets.a_d_turret_thumper_level_3.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.radius,
     friendlyFire: 1,
-    damage: e.balanceTurrets.a_d_turret_thumper_level_3.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_thumper_level_3.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_thumper_level_3.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_thumper_level_3.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.forceRadial,
     forceTangential: 0,
-    stunDuration: e.balanceTurrets.a_d_turret_thumper_level_3.stunDuration,
+    stunDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_3.stunDuration,
     arcAngle: 60
   });
   B.archetypes.dg_d_thump04 = B.create("Thump", {
-    radius: e.balanceTurrets.a_d_turret_thumper_level_4.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.radius,
     friendlyFire: 1,
-    damage: e.balanceTurrets.a_d_turret_thumper_level_4.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_thumper_level_4.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_thumper_level_4.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_thumper_level_4.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.forceRadial,
     forceTangential: 0,
-    stunDuration: e.balanceTurrets.a_d_turret_thumper_level_4.stunDuration,
+    stunDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_4.stunDuration,
     arcAngle: 60
   });
   B.archetypes.dg_d_thump05 = B.create("Thump", {
-    radius: e.balanceTurrets.a_d_turret_thumper_level_5.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.radius,
     friendlyFire: 1,
-    damage: e.balanceTurrets.a_d_turret_thumper_level_5.damage,
+    damage: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.damage,
     buildingDamage: 0,
-    forceBack: e.balanceTurrets.a_d_turret_thumper_level_5.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_thumper_level_5.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_thumper_level_5.forceRadial,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.forceRadial,
     forceTangential: 0,
-    stunDuration: e.balanceTurrets.a_d_turret_thumper_level_5.stunDuration,
+    stunDuration: EntityFactory.balanceTurrets.a_d_turret_thumper_level_5.stunDuration,
     arcAngle: 60
   });
   B.archetypes.dg_d_sniper_gun01 = B.create("Sniper", {
-    radius: e.balanceTurrets.a_d_turret_sniper.radius,
+    radius: EntityFactory.balanceTurrets.a_d_turret_sniper.radius,
     friendlyFire: 0,
-    damage: e.balanceTurrets.a_d_turret_sniper.damage,
-    forceBack: e.balanceTurrets.a_d_turret_sniper.forceBack,
-    forceLift: e.balanceTurrets.a_d_turret_sniper.forceLift,
-    forceRadial: e.balanceTurrets.a_d_turret_sniper.forceRadial,
+    damage: EntityFactory.balanceTurrets.a_d_turret_sniper.damage,
+    forceBack: EntityFactory.balanceTurrets.a_d_turret_sniper.forceBack,
+    forceLift: EntityFactory.balanceTurrets.a_d_turret_sniper.forceLift,
+    forceRadial: EntityFactory.balanceTurrets.a_d_turret_sniper.forceRadial,
     forceTangential: 0
   });
-  e.archetypes.pj_d_sniper_bullet01 = {
+  EntityFactory.archetypes.pj_d_sniper_bullet01 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 0.8
@@ -95789,7 +95789,7 @@
     rechamberDuration: 3,
     randomSpreadAngle: 0
   };
-  e.archetypes.a_d_turret_sniper = {
+  EntityFactory.archetypes.a_d_turret_sniper = {
     shouldPlayerSave: !0,
     familyName: "Turret",
     ECMesh: {
@@ -95807,19 +95807,19 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceTurrets.a_d_turret_sniper.health,
+      health: EntityFactory.balanceTurrets.a_d_turret_sniper.health,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       selectType: "selectTypePrepare"
     },
-    ECTarget: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceTurrets.a_d_turret_sniper.resourceCost,
+      resourceCost: EntityFactory.balanceTurrets.a_d_turret_sniper.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceTurrets.a_d_turret_sniper.buildTime,
+      buildTime: EntityFactory.balanceTurrets.a_d_turret_sniper.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       mustPlaceNearCreator: !0,
       buildingType: "Turret",
@@ -95842,15 +95842,15 @@
     ECAttackerLimit: {
       maxAttackers: 1
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECRepairable: {
       damagedEntityArchetype: "a_s_damaged_small",
-      minResourceRepairCost: e.balanceTurrets.a_d_turret_sniper.repairCost,
-      maxResourceRepairCost: e.balanceTurrets.a_d_turret_sniper.repairCost,
+      minResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_sniper.repairCost,
+      maxResourceRepairCost: EntityFactory.balanceTurrets.a_d_turret_sniper.repairCost,
       canBeDestroyed: !0
     }
   };
-  e.archetypes.a_d_turret_sniper_top = {
+  EntityFactory.archetypes.a_d_turret_sniper_top = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -95880,20 +95880,20 @@
         ignorePathing: !0
       }]
     },
-    ECFaction: e.EC_DEFAULT
+    ECFaction: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_d_barricadegate_tutorial = {
+  EntityFactory.archetypes.a_d_barricadegate_tutorial = {
     shouldPlayerSave: !0,
     familyName: "barricadegate_tutorial",
     parent: "a_d_barricadegate_level_3",
     ECBuilding: {
       buildingType: "Barricade Gate Tutorial"
     },
-    ECSelectable: e.EC_REMOVE,
-    ECWorldGui: e.EC_REMOVE,
-    ECRepairable: e.EC_REMOVE
+    ECSelectable: EntityFactory.EC_REMOVE,
+    ECWorldGui: EntityFactory.EC_REMOVE,
+    ECRepairable: EntityFactory.EC_REMOVE
   };
-  e.archetypes.a_d_barricadegate = {
+  EntityFactory.archetypes.a_d_barricadegate = {
     shouldPlayerSave: !0,
     familyName: "barricade gate",
     ECMesh: {
@@ -95910,20 +95910,20 @@
       terrainType: "barricadeGate1"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricadegate.health
+      health: EntityFactory.balanceBarricades.a_d_barricadegate.health
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       smartRadiusFactor: 0.3,
       selectType: "selectTypePrepare"
     },
-    ECGate: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGate: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricadegate.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricadegate.resourceCost,
       secondaryResourceCost: 0,
       autoRebuild: !1,
-      buildTime: e.balanceBarricades.a_d_barricadegate.buildTime,
+      buildTime: EntityFactory.balanceBarricades.a_d_barricadegate.buildTime,
       rebuildTime: 0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Barricade Gate",
@@ -95948,8 +95948,8 @@
       maxLinePlacementLength: 5
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricadegate.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricadegate.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate.maxResourceRepairCost,
       damagedEntityArchetype: null,
       canBeDestroyed: !0
     },
@@ -95959,7 +95959,7 @@
         localOffset: [0, 0, 0]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Wooden Gate",
       text2: "Level 1",
@@ -95970,7 +95970,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_d_barricadegate_level_2 = {
+  EntityFactory.archetypes.a_d_barricadegate_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricadegate",
     ECMesh: {
@@ -95986,10 +95986,10 @@
       terrainType: "barricadeGate2"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricadegate_level_2.health
+      health: EntityFactory.balanceBarricades.a_d_barricadegate_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricadegate_level_2.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_2.resourceCost,
       secondaryResourceCost: 0,
       level: 2,
       addedFootprintSize: 0,
@@ -96008,8 +96008,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_2.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -96021,7 +96021,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_barricadegate_level_3 = {
+  EntityFactory.archetypes.a_d_barricadegate_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricadegate_level_2",
     ECMesh: {
@@ -96037,10 +96037,10 @@
       terrainType: "barricadeGate3"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricadegate_level_3.health
+      health: EntityFactory.balanceBarricades.a_d_barricadegate_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricadegate_level_3.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_3.resourceCost,
       secondaryResourceCost: 0,
       level: 3,
       addedFootprintSize: 0,
@@ -96059,8 +96059,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_3.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -96072,7 +96072,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_barricadegate_level_4 = {
+  EntityFactory.archetypes.a_d_barricadegate_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricadegate_level_3",
     ECMesh: {
@@ -96088,10 +96088,10 @@
       terrainType: "barricadeGate4"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricadegate_level_4.health
+      health: EntityFactory.balanceBarricades.a_d_barricadegate_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricadegate_level_4.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_4.resourceCost,
       secondaryResourceCost: 0,
       level: 4,
       addedFootprintSize: 0,
@@ -96110,8 +96110,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_4.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -96123,7 +96123,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_barricadegate_level_5 = {
+  EntityFactory.archetypes.a_d_barricadegate_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricadegate_level_4",
     ECMesh: {
@@ -96139,10 +96139,10 @@
       terrainType: "barricadeGate5"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricadegate_level_5.health
+      health: EntityFactory.balanceBarricades.a_d_barricadegate_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricadegate_level_5.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_5.resourceCost,
       secondaryResourceCost: 0,
       level: 5,
       addedFootprintSize: 0,
@@ -96161,8 +96161,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricadegate_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricadegate_level_5.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -96174,18 +96174,18 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_d_barricade_tutorial = {
+  EntityFactory.archetypes.a_d_barricade_tutorial = {
     shouldPlayerSave: !0,
     familyName: "barricade_tutorial",
     parent: "a_d_barricade_level_3",
     ECBuilding: {
       buildingType: "Barricade Tutorial"
     },
-    ECSelectable: e.EC_REMOVE,
-    ECWorldGui: e.EC_REMOVE,
-    ECRepairable: e.EC_REMOVE
+    ECSelectable: EntityFactory.EC_REMOVE,
+    ECWorldGui: EntityFactory.EC_REMOVE,
+    ECRepairable: EntityFactory.EC_REMOVE
   };
-  e.archetypes.a_d_barricade = {
+  EntityFactory.archetypes.a_d_barricade = {
     shouldPlayerSave: !0,
     familyName: "barricade",
     ECMesh: {
@@ -96197,24 +96197,24 @@
       numInstances: 32
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricade.health,
+      health: EntityFactory.balanceBarricades.a_d_barricade.health,
       shrinkMeshWhenLowHealth: !0
     },
     ECPhysicsCube: {
       stationary: !0,
       terrainType: "barricade1"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       smartRadiusFactor: 0.3,
       selectType: "selectTypePrepare"
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricade.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricade.resourceCost,
       secondaryResourceCost: 0,
       autoRebuild: !1,
-      buildTime: e.balanceBarricades.a_d_barricade.buildTime,
+      buildTime: EntityFactory.balanceBarricades.a_d_barricade.buildTime,
       rebuildTime: 0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Barricade",
@@ -96239,8 +96239,8 @@
       maxLinePlacementLength: 10
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricade.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricade.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade.maxResourceRepairCost,
       damagedEntityArchetype: null,
       canBeDestroyed: !0
     },
@@ -96253,9 +96253,9 @@
       visibleOnActivated: !1,
       visibleOnHover: !0
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_d_barricade_level_2 = {
+  EntityFactory.archetypes.a_d_barricade_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricade",
     ECMesh: {
@@ -96270,11 +96270,11 @@
       terrainType: "barricade2"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricade_level_2.health,
+      health: EntityFactory.balanceBarricades.a_d_barricade_level_2.health,
       shrinkMeshWhenLowHealth: !0
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricade_level_2.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricade_level_2.resourceCost,
       secondaryResourceCost: 0,
       level: 2,
       addedFootprintSize: 0,
@@ -96293,18 +96293,18 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricade_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricade_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_2.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_barricade_level_3 = {
+  EntityFactory.archetypes.a_d_barricade_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricade_level_2",
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricade_level_3.health,
+      health: EntityFactory.balanceBarricades.a_d_barricade_level_3.health,
       shrinkMeshWhenLowHealth: !0
     },
     ECPhysicsCube: {
@@ -96319,7 +96319,7 @@
       path: "environment/models/e_b_barricade_level03.dae"
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricade_level_3.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricade_level_3.resourceCost,
       secondaryResourceCost: 0,
       level: 3,
       addedFootprintSize: 0,
@@ -96338,14 +96338,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricade_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricade_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_3.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_barricade_level_4 = {
+  EntityFactory.archetypes.a_d_barricade_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricade_level_3",
     ECMesh: {
@@ -96360,11 +96360,11 @@
       terrainType: "barricade4"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricade_level_4.health,
+      health: EntityFactory.balanceBarricades.a_d_barricade_level_4.health,
       shrinkMeshWhenLowHealth: !0
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricade_level_4.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricade_level_4.resourceCost,
       secondaryResourceCost: 0,
       level: 4,
       addedFootprintSize: 0,
@@ -96383,14 +96383,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricade_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricade_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_4.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_barricade_level_5 = {
+  EntityFactory.archetypes.a_d_barricade_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_d_barricade_level_4",
     ECMesh: {
@@ -96405,11 +96405,11 @@
       terrainType: "barricade5"
     },
     ECHealth: {
-      health: e.balanceBarricades.a_d_barricade_level_5.health,
+      health: EntityFactory.balanceBarricades.a_d_barricade_level_5.health,
       shrinkMeshWhenLowHealth: !0
     },
     ECBuilding: {
-      resourceCost: e.balanceBarricades.a_d_barricade_level_5.resourceCost,
+      resourceCost: EntityFactory.balanceBarricades.a_d_barricade_level_5.resourceCost,
       secondaryResourceCost: 0,
       level: 5,
       addedFootprintSize: 0,
@@ -96428,14 +96428,14 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBarricades.a_d_barricade_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBarricades.a_d_barricade_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBarricades.a_d_barricade_level_5.maxResourceRepairCost
     },
     ECWorldGui: {
       text2: "Level 5"
     }
   };
-  e.archetypes.a_b_barricadegatebase_level_1 = {
+  EntityFactory.archetypes.a_b_barricadegatebase_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -96444,7 +96444,7 @@
       path: "environment/models/e_b_barricadegate_base.dae"
     }
   };
-  e.archetypes.a_b_barricadegatebase_level_2 = {
+  EntityFactory.archetypes.a_b_barricadegatebase_level_2 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -96453,7 +96453,7 @@
       path: "environment/models/e_b_barricadegate_base_level02.dae"
     }
   };
-  e.archetypes.a_b_barricadegatebase_level_3 = {
+  EntityFactory.archetypes.a_b_barricadegatebase_level_3 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -96462,7 +96462,7 @@
       path: "environment/models/e_b_barricadegate_base_level03.dae"
     }
   };
-  e.archetypes.a_b_barricadegatebase_level_4 = {
+  EntityFactory.archetypes.a_b_barricadegatebase_level_4 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -96471,7 +96471,7 @@
       path: "environment/models/e_b_barricadegate_base_level04.dae"
     }
   };
-  e.archetypes.a_b_barricadegatebase_level_5 = {
+  EntityFactory.archetypes.a_b_barricadegatebase_level_5 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scaleX: 1,
@@ -96570,7 +96570,7 @@
     forceRadial: 0.2,
     forceTangential: 0
   });
-  e.archetypes.pj_d_tower_gun01 = {
+  EntityFactory.archetypes.pj_d_tower_gun01 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96583,7 +96583,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun02 = {
+  EntityFactory.archetypes.pj_d_tower_gun02 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96596,7 +96596,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun03 = {
+  EntityFactory.archetypes.pj_d_tower_gun03 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96609,7 +96609,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun04 = {
+  EntityFactory.archetypes.pj_d_tower_gun04 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96622,7 +96622,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun05 = {
+  EntityFactory.archetypes.pj_d_tower_gun05 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96635,7 +96635,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun06 = {
+  EntityFactory.archetypes.pj_d_tower_gun06 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96648,7 +96648,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun07 = {
+  EntityFactory.archetypes.pj_d_tower_gun07 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96661,7 +96661,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun08 = {
+  EntityFactory.archetypes.pj_d_tower_gun08 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96674,7 +96674,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun09 = {
+  EntityFactory.archetypes.pj_d_tower_gun09 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96687,7 +96687,7 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_d_tower_gun10 = {
+  EntityFactory.archetypes.pj_d_tower_gun10 = {
     ECMesh: {
       path: "environment/models/e_b_towerbullet.dae",
       scale: 1
@@ -96830,7 +96830,7 @@
     rechamberDuration: 0,
     randomSpreadAngle: 1
   };
-  e.archetypes.a_d_tower = {
+  EntityFactory.archetypes.a_d_tower = {
     shouldPlayerSave: !0,
     familyName: "tower",
     ECMesh: {
@@ -96846,25 +96846,25 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower.health,
+      health: EntityFactory.balanceBuildings.a_d_tower.health,
       drawInWorldBarIfDamagedRecently: !0,
       drawOffScreenIconIfDamagedRecently: !0
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       selectType: "selectTypeNormal"
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECUpgradable: {
       upgradeName: "Level 2",
       upgradeArchetypeName: "a_d_tower_level_2",
       upgradeInfo: "tower"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower.secondaryResourceCost,
       autoRebuild: !0,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Tower",
@@ -96879,8 +96879,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -96888,7 +96888,7 @@
         localOffset: [0, 3, 0]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Stone Tower",
       text2: "Level 1",
@@ -96899,7 +96899,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_d_tower_level_2 = {
+  EntityFactory.archetypes.a_d_tower_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower",
     ECMesh: {
@@ -96908,7 +96908,7 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_2.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_2.health
     },
     ECUpgradable: {
       upgradeName: "Level 3",
@@ -96916,9 +96916,9 @@
       upgradeInfo: "tower"
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_2.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_2.secondaryResourceCost,
       level: 2,
       prerequisites: [{
         buildingType: "HQ",
@@ -96927,8 +96927,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_2.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_2.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -96940,7 +96940,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_tower_level_3 = {
+  EntityFactory.archetypes.a_d_tower_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_2",
     ECMesh: {
@@ -96949,7 +96949,7 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_3.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_3.health
     },
     ECUpgradable: {
       upgradeName: "Level 4",
@@ -96957,9 +96957,9 @@
       upgradeInfo: "tower"
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_3.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_3.secondaryResourceCost,
       level: 3,
       prerequisites: [{
         buildingType: "HQ",
@@ -96968,8 +96968,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_3.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_3.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -96981,7 +96981,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_tower_level_4 = {
+  EntityFactory.archetypes.a_d_tower_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_3",
     ECMesh: {
@@ -96990,7 +96990,7 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_4.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_4.health
     },
     ECUpgradable: {
       upgradeName: "Level 5",
@@ -96998,9 +96998,9 @@
       upgradeInfo: "tower"
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_4.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_4.secondaryResourceCost,
       level: 4,
       prerequisites: [{
         buildingType: "HQ",
@@ -97009,8 +97009,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_4.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_4.maxResourceRepairCost
     },
     ECSockets: {
       sockets: [{
@@ -97022,7 +97022,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_tower_level_5 = {
+  EntityFactory.archetypes.a_d_tower_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_4",
     ECMesh: {
@@ -97031,12 +97031,12 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_5.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_5.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_5.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_5.secondaryResourceCost,
       level: 5,
       prerequisites: [{
         buildingType: "HQ",
@@ -97045,8 +97045,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_5.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_5.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 6",
@@ -97063,7 +97063,7 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_d_tower_level_6 = {
+  EntityFactory.archetypes.a_d_tower_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_5",
     ECMesh: {
@@ -97072,12 +97072,12 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_6.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_6.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_6.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_6.secondaryResourceCost,
       level: 6,
       prerequisites: [{
         buildingType: "HQ",
@@ -97086,8 +97086,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_6.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_6.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 7",
@@ -97104,7 +97104,7 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_d_tower_level_7 = {
+  EntityFactory.archetypes.a_d_tower_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_6",
     ECMesh: {
@@ -97113,12 +97113,12 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_7.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_7.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_7.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_7.secondaryResourceCost,
       level: 7,
       prerequisites: [{
         buildingType: "HQ",
@@ -97127,8 +97127,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_7.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_7.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 8",
@@ -97145,7 +97145,7 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_d_tower_level_8 = {
+  EntityFactory.archetypes.a_d_tower_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_7",
     ECMesh: {
@@ -97154,12 +97154,12 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_8.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_8.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_8.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_8.secondaryResourceCost,
       level: 8,
       prerequisites: [{
         buildingType: "HQ",
@@ -97168,8 +97168,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_8.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_8.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 9",
@@ -97186,7 +97186,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_d_tower_level_9 = {
+  EntityFactory.archetypes.a_d_tower_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_8",
     ECMesh: {
@@ -97195,12 +97195,12 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_9.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_9.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_9.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_9.secondaryResourceCost,
       level: 9,
       prerequisites: [{
         buildingType: "HQ",
@@ -97209,8 +97209,8 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_9.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_9.maxResourceRepairCost
     },
     ECUpgradable: {
       upgradeName: "Level 10",
@@ -97227,7 +97227,7 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_d_tower_level_10 = {
+  EntityFactory.archetypes.a_d_tower_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_d_tower_level_9",
     ECMesh: {
@@ -97236,12 +97236,12 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_tower_level_10.health
+      health: EntityFactory.balanceBuildings.a_d_tower_level_10.health
     },
     ECBuilding: {
-      buildTime: e.balanceBuildings.a_d_tower_level_10.buildTime,
-      resourceCost: e.balanceBuildings.a_d_tower_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_tower_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_tower_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_tower_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_tower_level_10.secondaryResourceCost,
       level: 10,
       prerequisites: [{
         buildingType: "HQ",
@@ -97250,11 +97250,11 @@
       defenceLevel: 0
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_tower_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_tower_level_10.maxResourceRepairCost
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_tower_level_10.maxResourceRepairCost
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECSockets: {
       sockets: [{
         archetypeName: "a_d_tower_top_level_10",
@@ -97265,7 +97265,7 @@
       text2: "Level 10"
     }
   };
-  e.archetypes.a_d_tower_top = {
+  EntityFactory.archetypes.a_d_tower_top = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -97293,9 +97293,9 @@
         ignorePathing: !0
       }]
     },
-    ECFaction: e.EC_DEFAULT
+    ECFaction: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_d_tower_top_level_2 = {
+  EntityFactory.archetypes.a_d_tower_top_level_2 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top",
     ECMesh: {
@@ -97305,7 +97305,7 @@
       weapon: "wp_d_tower_gun02"
     }
   };
-  e.archetypes.a_d_tower_top_level_3 = {
+  EntityFactory.archetypes.a_d_tower_top_level_3 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_2",
     ECMesh: {
@@ -97315,7 +97315,7 @@
       weapon: "wp_d_tower_gun03"
     }
   };
-  e.archetypes.a_d_tower_top_level_4 = {
+  EntityFactory.archetypes.a_d_tower_top_level_4 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_3",
     ECMesh: {
@@ -97325,7 +97325,7 @@
       weapon: "wp_d_tower_gun04"
     }
   };
-  e.archetypes.a_d_tower_top_level_5 = {
+  EntityFactory.archetypes.a_d_tower_top_level_5 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_4",
     ECMesh: {
@@ -97335,7 +97335,7 @@
       weapon: "wp_d_tower_gun05"
     }
   };
-  e.archetypes.a_d_tower_top_level_6 = {
+  EntityFactory.archetypes.a_d_tower_top_level_6 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_5",
     ECMesh: {
@@ -97345,7 +97345,7 @@
       weapon: "wp_d_tower_gun06"
     }
   };
-  e.archetypes.a_d_tower_top_level_7 = {
+  EntityFactory.archetypes.a_d_tower_top_level_7 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_6",
     ECMesh: {
@@ -97355,7 +97355,7 @@
       weapon: "wp_d_tower_gun07"
     }
   };
-  e.archetypes.a_d_tower_top_level_8 = {
+  EntityFactory.archetypes.a_d_tower_top_level_8 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_7",
     ECMesh: {
@@ -97365,7 +97365,7 @@
       weapon: "wp_d_tower_gun08"
     }
   };
-  e.archetypes.a_d_tower_top_level_9 = {
+  EntityFactory.archetypes.a_d_tower_top_level_9 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_8",
     ECMesh: {
@@ -97375,7 +97375,7 @@
       weapon: "wp_d_tower_gun09"
     }
   };
-  e.archetypes.a_d_tower_top_level_10 = {
+  EntityFactory.archetypes.a_d_tower_top_level_10 = {
     shouldPlayerSave: !1,
     parent: "a_d_tower_top_level_9",
     ECMesh: {
@@ -97385,7 +97385,7 @@
       weapon: "wp_d_tower_gun10"
     }
   };
-  e.archetypes.a_d_gate = {
+  EntityFactory.archetypes.a_d_gate = {
     shouldPlayerSave: !0,
     familyName: "gate",
     ECMesh: {
@@ -97402,18 +97402,18 @@
       terrainType: "gate1"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate.health
+      health: EntityFactory.balanceBuildings.a_d_gate.health
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       smartRadiusFactor: 0.3
     },
-    ECGate: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGate: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate.buildTime,
       autoRebuild: !1,
       canSpeedUpWithSoftCurrency: !1,
       buildingType: "Gate",
@@ -97429,8 +97429,8 @@
       maxLinePlacementLength: 5
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97440,14 +97440,14 @@
         localOffset: [0, 0, 0]
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECUpgradable: {
       upgradeName: "Level 2",
       maxNearbyEntitiesToUpgrade: 5,
       upgradeArchetypeName: "a_d_gate_level_2",
       upgradeInfo: "gate"
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Stone Gate",
       text2: "Level 1",
@@ -97458,7 +97458,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_d_gate_level_2 = {
+  EntityFactory.archetypes.a_d_gate_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate",
     ECMesh: {
@@ -97474,12 +97474,12 @@
       terrainType: "gate2"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_2.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_2.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_2.buildTime,
       level: 2,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97488,8 +97488,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_2.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_2.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97508,7 +97508,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_gate_level_3 = {
+  EntityFactory.archetypes.a_d_gate_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_2",
     ECMesh: {
@@ -97524,12 +97524,12 @@
       terrainType: "gate3"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_3.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_3.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_3.buildTime,
       level: 3,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97538,8 +97538,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_3.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_3.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97558,7 +97558,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_gate_level_4 = {
+  EntityFactory.archetypes.a_d_gate_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_3",
     ECMesh: {
@@ -97574,12 +97574,12 @@
       terrainType: "gate4"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_4.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_4.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_4.buildTime,
       level: 4,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97588,8 +97588,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_4.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_4.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97608,7 +97608,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_gate_level_5 = {
+  EntityFactory.archetypes.a_d_gate_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_4",
     ECMesh: {
@@ -97624,12 +97624,12 @@
       terrainType: "gate5"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_5.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_5.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_5.buildTime,
       level: 5,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97638,8 +97638,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_5.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_5.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97658,7 +97658,7 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_d_gate_level_6 = {
+  EntityFactory.archetypes.a_d_gate_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_5",
     ECMesh: {
@@ -97674,12 +97674,12 @@
       terrainType: "gate6"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_6.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_6.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_6.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_6.buildTime,
       level: 6,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97688,8 +97688,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_6.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_6.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97708,7 +97708,7 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_d_gate_level_7 = {
+  EntityFactory.archetypes.a_d_gate_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_6",
     ECMesh: {
@@ -97724,12 +97724,12 @@
       terrainType: "gate7"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_7.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_7.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_7.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_7.buildTime,
       level: 7,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97738,8 +97738,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_7.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_7.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97758,7 +97758,7 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_d_gate_level_8 = {
+  EntityFactory.archetypes.a_d_gate_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_7",
     ECMesh: {
@@ -97774,12 +97774,12 @@
       terrainType: "gate8"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_8.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_8.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_8.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_8.buildTime,
       level: 8,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97788,8 +97788,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_8.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_8.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97808,7 +97808,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_d_gate_level_9 = {
+  EntityFactory.archetypes.a_d_gate_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_8",
     ECMesh: {
@@ -97824,12 +97824,12 @@
       terrainType: "gate9"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_9.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_9.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_9.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_9.buildTime,
       level: 9,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97838,8 +97838,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_9.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_9.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97858,7 +97858,7 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_d_gate_level_10 = {
+  EntityFactory.archetypes.a_d_gate_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_d_gate_level_9",
     ECMesh: {
@@ -97874,12 +97874,12 @@
       terrainType: "gate10"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_gate_level_10.health
+      health: EntityFactory.balanceBuildings.a_d_gate_level_10.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_gate_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_gate_level_10.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_gate_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_gate_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_gate_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_gate_level_10.buildTime,
       level: 10,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -97888,8 +97888,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_gate_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_gate_level_10.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_gate_level_10.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -97899,13 +97899,13 @@
         localOffset: [0, 0, 0]
       }]
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_d_wall = {
+  EntityFactory.archetypes.a_d_wall = {
     shouldPlayerSave: !0,
     familyName: "wall",
     ECMesh: {
@@ -97917,7 +97917,7 @@
       numInstances: 32
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall.health
+      health: EntityFactory.balanceBuildings.a_d_wall.health
     },
     ECPhysicsCube: {
       stationary: !0,
@@ -97925,15 +97925,15 @@
       v3Scale: [1, 0.6, 1],
       offsetY: -0.2
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       smartRadiusFactor: 0.3
     },
-    ECInteractable: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall.buildTime,
       autoRebuild: !1,
       canSpeedUpWithSoftCurrency: !1,
       buildingType: "Wall",
@@ -97950,19 +97950,19 @@
       maxLinePlacementLength: 10
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
-    ECRadialMenu: e.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECUpgradable: {
       upgradeName: "Level 2",
       upgradeArchetypeName: "a_d_wall_level_2",
       upgradeInfo: "wall",
       maxNearbyEntitiesToUpgrade: 5
     },
-    ECUpgrader: e.EC_DEFAULT,
+    ECUpgrader: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Stone Wall",
       text2: "Level 1",
@@ -97973,7 +97973,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_d_wall_level_2 = {
+  EntityFactory.archetypes.a_d_wall_level_2 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall",
     ECMesh: {
@@ -97988,12 +97988,12 @@
       terrainType: "wall2"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_2.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_2.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_2.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_2.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_2.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_2.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_2.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_2.buildTime,
       level: 2,
       prerequisites: [{
         buildingType: "HQ",
@@ -98001,8 +98001,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_2.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_2.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_2.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_2.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98015,7 +98015,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_d_wall_level_3 = {
+  EntityFactory.archetypes.a_d_wall_level_3 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_2",
     ECMesh: {
@@ -98030,12 +98030,12 @@
       terrainType: "wall3"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_3.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_3.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_3.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_3.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_3.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_3.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_3.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_3.buildTime,
       level: 3,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98044,8 +98044,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_3.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_3.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_3.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_3.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98058,7 +98058,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_d_wall_level_4 = {
+  EntityFactory.archetypes.a_d_wall_level_4 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_3",
     ECMesh: {
@@ -98073,12 +98073,12 @@
       terrainType: "wall4"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_4.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_4.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_4.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_4.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_4.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_4.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_4.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_4.buildTime,
       level: 4,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98087,8 +98087,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_4.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_4.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_4.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_4.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98101,7 +98101,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_d_wall_level_5 = {
+  EntityFactory.archetypes.a_d_wall_level_5 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_4",
     ECMesh: {
@@ -98118,12 +98118,12 @@
       offsetY: 0
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_5.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_5.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_5.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_5.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_5.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_5.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_5.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_5.buildTime,
       level: 5,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98132,8 +98132,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_5.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_5.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_5.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_5.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98146,7 +98146,7 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_d_wall_level_6 = {
+  EntityFactory.archetypes.a_d_wall_level_6 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_5",
     ECMesh: {
@@ -98161,12 +98161,12 @@
       terrainType: "wall6"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_6.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_6.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_6.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_6.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_6.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_6.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_6.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_6.buildTime,
       level: 6,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98175,8 +98175,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_6.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_6.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_6.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_6.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98189,7 +98189,7 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_d_wall_level_7 = {
+  EntityFactory.archetypes.a_d_wall_level_7 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_6",
     ECMesh: {
@@ -98204,12 +98204,12 @@
       terrainType: "wall7"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_7.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_7.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_7.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_7.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_7.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_7.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_7.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_7.buildTime,
       level: 7,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98218,8 +98218,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_7.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_7.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_7.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_7.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98232,7 +98232,7 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_d_wall_level_8 = {
+  EntityFactory.archetypes.a_d_wall_level_8 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_7",
     ECMesh: {
@@ -98247,12 +98247,12 @@
       terrainType: "wall8"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_8.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_8.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_8.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_8.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_8.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_8.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_8.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_8.buildTime,
       level: 8,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98261,8 +98261,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_8.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_8.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_8.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_8.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98275,7 +98275,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_d_wall_level_9 = {
+  EntityFactory.archetypes.a_d_wall_level_9 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_8",
     ECMesh: {
@@ -98290,12 +98290,12 @@
       terrainType: "wall9"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_9.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_9.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_9.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_9.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_9.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_9.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_9.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_9.buildTime,
       level: 9,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98304,8 +98304,8 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_9.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_9.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_9.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_9.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
@@ -98318,7 +98318,7 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_d_wall_level_10 = {
+  EntityFactory.archetypes.a_d_wall_level_10 = {
     shouldPlayerSave: !0,
     parent: "a_d_wall_level_9",
     ECMesh: {
@@ -98333,12 +98333,12 @@
       terrainType: "wall10"
     },
     ECHealth: {
-      health: e.balanceBuildings.a_d_wall_level_10.health
+      health: EntityFactory.balanceBuildings.a_d_wall_level_10.health
     },
     ECBuilding: {
-      resourceCost: e.balanceBuildings.a_d_wall_level_10.resourceCost,
-      secondaryResourceCost: e.balanceBuildings.a_d_wall_level_10.secondaryResourceCost,
-      buildTime: e.balanceBuildings.a_d_wall_level_10.buildTime,
+      resourceCost: EntityFactory.balanceBuildings.a_d_wall_level_10.resourceCost,
+      secondaryResourceCost: EntityFactory.balanceBuildings.a_d_wall_level_10.secondaryResourceCost,
+      buildTime: EntityFactory.balanceBuildings.a_d_wall_level_10.buildTime,
       level: 10,
       addedFootprintSize: 0,
       prerequisites: [{
@@ -98347,18 +98347,18 @@
       }]
     },
     ECRepairable: {
-      minResourceRepairCost: e.balanceBuildings.a_d_wall_level_10.minResourceRepairCost,
-      maxResourceRepairCost: e.balanceBuildings.a_d_wall_level_10.maxResourceRepairCost,
+      minResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_10.minResourceRepairCost,
+      maxResourceRepairCost: EntityFactory.balanceBuildings.a_d_wall_level_10.maxResourceRepairCost,
       damagedMeshPath: "environment/models/e_b_debris.dae",
       disablePhysicsWhenBroken: !0
     },
-    ECUpgradable: e.EC_REMOVE,
-    ECUpgrader: e.EC_REMOVE,
+    ECUpgradable: EntityFactory.EC_REMOVE,
+    ECUpgrader: EntityFactory.EC_REMOVE,
     ECWorldGui: {
       text2: "Level 10"
     }
   };
-  e.archetypes.a_b_gatebase_level_1 = {
+  EntityFactory.archetypes.a_b_gatebase_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
@@ -98366,35 +98366,35 @@
       numInstances: 16
     }
   };
-  e.archetypes.a_b_gatebase_level_2 = {
+  EntityFactory.archetypes.a_b_gatebase_level_2 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_gatebase_level_2.dae"
     }
   };
-  e.archetypes.a_b_gatebase_level_3 = {
+  EntityFactory.archetypes.a_b_gatebase_level_3 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_gatebase_level_3.dae"
     }
   };
-  e.archetypes.a_b_gatebase_level_4 = {
+  EntityFactory.archetypes.a_b_gatebase_level_4 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_gatebase_level_4.dae"
     }
   };
-  e.archetypes.a_b_gatebase_level_5 = {
+  EntityFactory.archetypes.a_b_gatebase_level_5 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 1,
       path: "environment/models/e_b_gatebase_level_5.dae"
     }
   };
-  e.archetypes.a_e_bannerling = {
+  EntityFactory.archetypes.a_e_bannerling = {
     shouldPlayerSave: !1,
     familyName: "bannerling",
     ECMesh: {
@@ -98412,13 +98412,13 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bannerling.health,
+      health: EntityFactory.balanceEnemies.a_e_bannerling.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bannerling.speed,
-      fastSpeed: e.balanceEnemies.a_e_bannerling.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bannerling.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bannerling.speed,
       angleLerpFactor: 0.5,
       animationRate: 1.9,
       animationWobble: 0.2
@@ -98431,32 +98431,32 @@
       }, "AIActionChooseMeleeTarget"],
       priorityTargetType: "Outposts",
       shouldAggroWhenAttacked: !1,
-      xp: e.balanceEnemies.a_e_bannerling.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bannerling.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_bannerling.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bannerling.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_bannerling.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_BANNERLING"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bannerling.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bannerling.drops
     },
     ECMelee: {},
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_commando_sword_level_1"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       onCreateEffect: "sfx_crt_e_bannerling",
       impactEffect: "sfx_hit_e_basicmelee",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_bannerling_bombthrower = {
+  EntityFactory.archetypes.a_e_bannerling_bombthrower = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98467,7 +98467,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_boss = {
+  EntityFactory.archetypes.a_e_bannerling_boss = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98478,7 +98478,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_charger = {
+  EntityFactory.archetypes.a_e_bannerling_charger = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98489,7 +98489,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_commando = {
+  EntityFactory.archetypes.a_e_bannerling_commando = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98500,7 +98500,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_death = {
+  EntityFactory.archetypes.a_e_bannerling_death = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98511,7 +98511,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_mob = {
+  EntityFactory.archetypes.a_e_bannerling_mob = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98522,7 +98522,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_ranged = {
+  EntityFactory.archetypes.a_e_bannerling_ranged = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98533,7 +98533,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_thief = {
+  EntityFactory.archetypes.a_e_bannerling_thief = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98544,7 +98544,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_bannerling_treasuredropper = {
+  EntityFactory.archetypes.a_e_bannerling_treasuredropper = {
     parent: "a_e_bannerling",
     shouldPlayerSave: !1,
     familyName: "bannerling",
@@ -98555,7 +98555,7 @@
       offsetY: -0.6
     }
   };
-  e.archetypes.a_e_basicmelee_level_1 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_1 = {
     shouldPlayerSave: !1,
     familyName: "basicmelee",
     ECMesh: {
@@ -98573,13 +98573,13 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
@@ -98589,36 +98589,36 @@
         initiativeDuration: 0,
         overrideMeleeRange: 1
       }, "AIActionChooseMeleeTarget"],
-      xp: e.balanceEnemies.a_e_basicmelee_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_basic_melee.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_BASIC_MELEE"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.drops
     },
     ECMelee: {},
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_1"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_basicmelee",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_aardvark_basicmelee_level_1 = {
+  EntityFactory.archetypes.a_aardvark_basicmelee_level_1 = {
     parent: "a_e_basicmelee_level_1",
     shouldPlayerSave: !1,
     familyName: "basicmelee"
   };
-  e.archetypes.a_e_basicmelee_level_2 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_2 = {
     parent: "a_e_basicmelee_level_1",
     shouldPlayerSave: !1,
     familyName: "basicmelee",
@@ -98629,25 +98629,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_basicmelee_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.drops
     },
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_2"
     }
   };
-  e.archetypes.a_e_basicmelee_level_3 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_3 = {
     parent: "a_e_basicmelee_level_2",
     shouldPlayerSave: !1,
     familyName: "basicmelee",
@@ -98658,25 +98658,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_basicmelee_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.drops
     },
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_3"
     }
   };
-  e.archetypes.a_e_basicmelee_level_4 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_4 = {
     parent: "a_e_basicmelee_level_3",
     shouldPlayerSave: !1,
     familyName: "basicmelee",
@@ -98687,25 +98687,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_basicmelee_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.drops
     },
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_4"
     }
   };
-  e.archetypes.a_e_basicmelee_level_5 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_5 = {
     parent: "a_e_basicmelee_level_4",
     shouldPlayerSave: !1,
     familyName: "basicmelee",
@@ -98716,25 +98716,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_basicmelee_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.drops
     },
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_5"
     }
   };
-  e.archetypes.a_e_basicmelee_level_6 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_6 = {
     parent: "a_e_basicmelee_level_5",
     shouldPlayerSave: !1,
     familyName: "basicmelee",
@@ -98745,25 +98745,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_basicmelee_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.drops
     },
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_6"
     }
   };
-  e.archetypes.a_e_basicmelee_level_7 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_7 = {
     parent: "a_e_basicmelee_level_6",
     shouldPlayerSave: !1,
     familyName: "basicmelee",
@@ -98774,25 +98774,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_basicmelee_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.drops
     },
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_7"
     }
   };
-  e.archetypes.a_e_basicmelee_level_8 = {
+  EntityFactory.archetypes.a_e_basicmelee_level_8 = {
     parent: "a_e_basicmelee_level_7",
     shouldPlayerSave: !1,
     familyName: "basicmelee",
@@ -98803,19 +98803,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_basicmelee_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_basicmelee_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_basicmelee_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_basicmelee_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_basicmelee_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_basicmelee_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.drops
     },
     ECInventory: {
       weapon: "wp_e_basicmelee_sword_level_8"
@@ -98902,9 +98902,9 @@
     attackImpactSound: "punch"
   };
   B.archetypes.dg_e_basicmelee_sword_level_1 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_1.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98913,9 +98913,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_basicmelee_sword_level_2 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_2.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98924,9 +98924,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_basicmelee_sword_level_3 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_3.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98935,9 +98935,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_basicmelee_sword_level_4 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_4.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98946,9 +98946,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_basicmelee_sword_level_5 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_5.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98957,9 +98957,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_basicmelee_sword_level_6 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_6.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98968,9 +98968,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_basicmelee_sword_level_7 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_7.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98979,9 +98979,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_basicmelee_sword_level_8 = B.create("Basic Melee Sword Attack", {
-    damage: e.balanceEnemies.a_e_basicmelee_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_basicmelee_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_basicmelee_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_basicmelee_level_8.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -98989,7 +98989,7 @@
     radius: 0,
     friendlyFire: 0
   });
-  e.archetypes.a_e_ranged_level_1 = {
+  EntityFactory.archetypes.a_e_ranged_level_1 = {
     shouldPlayerSave: !1,
     familyName: "ranged",
     ECMesh: {
@@ -99011,13 +99011,13 @@
       shootOffset: [0, -0.4, 0.75]
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
@@ -99032,30 +99032,30 @@
         initiativeDuration: 0
       }, "AIActionChooseRangedTarget"],
       priorityTargetType: "Heroes",
-      xp: e.balanceEnemies.a_e_ranged_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_ranged.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_RANGED"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_1.drops
     },
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_ranged_level_1"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_ranged",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_ranged_level_2 = {
+  EntityFactory.archetypes.a_e_ranged_level_2 = {
     parent: "a_e_ranged_level_1",
     shouldPlayerSave: !1,
     familyName: "ranged",
@@ -99069,25 +99069,25 @@
       weapon: "wp_e_ranged_level_2"
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_ranged_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_2.drops
     },
     ECInventory: {
       weapon: "wp_e_ranged_level_2"
     }
   };
-  e.archetypes.a_e_ranged_level_3 = {
+  EntityFactory.archetypes.a_e_ranged_level_3 = {
     parent: "a_e_ranged_level_2",
     shouldPlayerSave: !1,
     familyName: "ranged",
@@ -99101,25 +99101,25 @@
       weapon: "wp_e_ranged_level_3"
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_ranged_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_3.drops
     },
     ECInventory: {
       weapon: "wp_e_ranged_level_3"
     }
   };
-  e.archetypes.a_e_ranged_level_4 = {
+  EntityFactory.archetypes.a_e_ranged_level_4 = {
     parent: "a_e_ranged_level_3",
     shouldPlayerSave: !1,
     familyName: "ranged",
@@ -99133,25 +99133,25 @@
       weapon: "wp_e_ranged_level_4"
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_ranged_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_4.drops
     },
     ECInventory: {
       weapon: "wp_e_ranged_level_4"
     }
   };
-  e.archetypes.a_e_ranged_level_5 = {
+  EntityFactory.archetypes.a_e_ranged_level_5 = {
     parent: "a_e_ranged_level_4",
     shouldPlayerSave: !1,
     familyName: "ranged",
@@ -99165,25 +99165,25 @@
       weapon: "wp_e_ranged_level_5"
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_ranged_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_5.drops
     },
     ECInventory: {
       weapon: "wp_e_ranged_level_5"
     }
   };
-  e.archetypes.a_e_ranged_level_6 = {
+  EntityFactory.archetypes.a_e_ranged_level_6 = {
     parent: "a_e_ranged_level_5",
     shouldPlayerSave: !1,
     familyName: "ranged",
@@ -99197,25 +99197,25 @@
       weapon: "wp_e_ranged_level_6"
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_ranged_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_6.drops
     },
     ECInventory: {
       weapon: "wp_e_ranged_level_6"
     }
   };
-  e.archetypes.a_e_ranged_level_7 = {
+  EntityFactory.archetypes.a_e_ranged_level_7 = {
     parent: "a_e_ranged_level_6",
     shouldPlayerSave: !1,
     familyName: "ranged",
@@ -99229,25 +99229,25 @@
       weapon: "wp_e_ranged_level_7"
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_ranged_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_7.drops
     },
     ECInventory: {
       weapon: "wp_e_ranged_level_7"
     }
   };
-  e.archetypes.a_e_ranged_level_8 = {
+  EntityFactory.archetypes.a_e_ranged_level_8 = {
     parent: "a_e_ranged_level_7",
     shouldPlayerSave: !1,
     familyName: "ranged",
@@ -99261,19 +99261,19 @@
       weapon: "wp_e_ranged_level_8"
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_ranged_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_ranged_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_ranged_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_ranged_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_ranged_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_ranged_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_ranged_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_ranged_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_ranged_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_ranged_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_ranged_level_8.drops
     },
     ECInventory: {
       weapon: "wp_e_ranged_level_8"
@@ -99391,7 +99391,7 @@
     clipSize: 3,
     randomSpreadAngle: 30
   };
-  e.archetypes.pj_e_ranged_level_1 = {
+  EntityFactory.archetypes.pj_e_ranged_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       path: "characters/models/mucus.dae",
@@ -99411,49 +99411,49 @@
       incidentalMaxTime: 0.2
     }
   };
-  e.archetypes.pj_e_ranged_level_2 = {
+  EntityFactory.archetypes.pj_e_ranged_level_2 = {
     parent: "pj_e_ranged_level_1",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_ranged_spit_level_2"
     }
   };
-  e.archetypes.pj_e_ranged_level_3 = {
+  EntityFactory.archetypes.pj_e_ranged_level_3 = {
     parent: "pj_e_ranged_level_2",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_ranged_spit_level_3"
     }
   };
-  e.archetypes.pj_e_ranged_level_4 = {
+  EntityFactory.archetypes.pj_e_ranged_level_4 = {
     parent: "pj_e_ranged_level_3",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_ranged_spit_level_4"
     }
   };
-  e.archetypes.pj_e_ranged_level_5 = {
+  EntityFactory.archetypes.pj_e_ranged_level_5 = {
     parent: "pj_e_ranged_level_4",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_ranged_spit_level_5"
     }
   };
-  e.archetypes.pj_e_ranged_level_6 = {
+  EntityFactory.archetypes.pj_e_ranged_level_6 = {
     parent: "pj_e_ranged_level_5",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_ranged_spit_level_6"
     }
   };
-  e.archetypes.pj_e_ranged_level_7 = {
+  EntityFactory.archetypes.pj_e_ranged_level_7 = {
     parent: "pj_e_ranged_level_6",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_ranged_spit_level_7"
     }
   };
-  e.archetypes.pj_e_ranged_level_8 = {
+  EntityFactory.archetypes.pj_e_ranged_level_8 = {
     parent: "pj_e_ranged_level_7",
     shouldPlayerSave: !1,
     ECProjectile: {
@@ -99461,9 +99461,9 @@
     }
   };
   B.archetypes.dg_e_ranged_spit_level_1 = B.create("dg_e_ranged_spit_level_1", {
-    damage: e.balanceEnemies.a_e_ranged_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_1.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99472,9 +99472,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_ranged_spit_level_2 = B.create("dg_e_ranged_spit_level_2", {
-    damage: e.balanceEnemies.a_e_ranged_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_2.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99483,9 +99483,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_ranged_spit_level_3 = B.create("dg_e_ranged_spit_level_3", {
-    damage: e.balanceEnemies.a_e_ranged_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_3.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99494,9 +99494,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_ranged_spit_level_4 = B.create("dg_e_ranged_spit_level_4", {
-    damage: e.balanceEnemies.a_e_ranged_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_4.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99505,9 +99505,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_ranged_spit_level_5 = B.create("dg_e_ranged_spit_level_5", {
-    damage: e.balanceEnemies.a_e_ranged_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_5.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99516,9 +99516,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_ranged_spit_level_6 = B.create("dg_e_ranged_spit_level_6", {
-    damage: e.balanceEnemies.a_e_ranged_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_6.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99527,9 +99527,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_ranged_spit_level_7 = B.create("dg_e_ranged_spit_level_7", {
-    damage: e.balanceEnemies.a_e_ranged_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_7.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99538,9 +99538,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_ranged_spit_level_8 = B.create("dg_e_ranged_spit_level_8", {
-    damage: e.balanceEnemies.a_e_ranged_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_ranged_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_ranged_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_ranged_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_ranged_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_ranged_level_8.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0,
@@ -99548,7 +99548,7 @@
     radius: 0,
     friendlyFire: 0
   });
-  e.archetypes.a_e_berserker_level_1 = {
+  EntityFactory.archetypes.a_e_berserker_level_1 = {
     shouldPlayerSave: !1,
     familyName: "berserker",
     ECMesh: {
@@ -99566,13 +99566,13 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_1.speed,
       angleLerpFactor: 0.5,
       animationWobble: 0.25
     },
@@ -99585,13 +99585,13 @@
       priorityTargetType: "Buildings",
       shouldAggroWhenAttacked: !1,
       stunnable: !1,
-      xp: e.balanceEnemies.a_e_berserker_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_berserker.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_BERSERKER"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_1.drops
     },
     ECMelee: {
       attackType: "MeleeExplode",
@@ -99602,20 +99602,20 @@
       explodeOnDeath: !0,
       sfxArchetype: "sfx_explosionBerserker"
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       ambientEffect: "sfx_amb_e_berserker",
       impactEffect: "sfx_hit_e_berserker",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_berserker_level_2 = {
+  EntityFactory.archetypes.a_e_berserker_level_2 = {
     parent: "a_e_berserker_level_1",
     shouldPlayerSave: !1,
     familyName: "berserker",
@@ -99626,25 +99626,25 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_berserker_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_2.drops
     },
     ECExplode: {
       damageType: "dg_e_berserker_explode_level_2"
     }
   };
-  e.archetypes.a_e_berserker_level_3 = {
+  EntityFactory.archetypes.a_e_berserker_level_3 = {
     parent: "a_e_berserker_level_2",
     shouldPlayerSave: !1,
     familyName: "berserker",
@@ -99655,25 +99655,25 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_berserker_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_3.drops
     },
     ECExplode: {
       damageType: "dg_e_berserker_explode_level_3"
     }
   };
-  e.archetypes.a_e_berserker_level_4 = {
+  EntityFactory.archetypes.a_e_berserker_level_4 = {
     parent: "a_e_berserker_level_3",
     shouldPlayerSave: !1,
     familyName: "berserker",
@@ -99684,25 +99684,25 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_berserker_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_4.drops
     },
     ECExplode: {
       damageType: "dg_e_berserker_explode_level_4"
     }
   };
-  e.archetypes.a_e_berserker_level_5 = {
+  EntityFactory.archetypes.a_e_berserker_level_5 = {
     parent: "a_e_berserker_level_4",
     shouldPlayerSave: !1,
     familyName: "berserker",
@@ -99713,25 +99713,25 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_berserker_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_5.drops
     },
     ECExplode: {
       damageType: "dg_e_berserker_explode_level_5"
     }
   };
-  e.archetypes.a_e_berserker_level_6 = {
+  EntityFactory.archetypes.a_e_berserker_level_6 = {
     parent: "a_e_berserker_level_5",
     shouldPlayerSave: !1,
     familyName: "berserker",
@@ -99742,25 +99742,25 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_berserker_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_6.drops
     },
     ECExplode: {
       damageType: "dg_e_berserker_explode_level_6"
     }
   };
-  e.archetypes.a_e_berserker_level_7 = {
+  EntityFactory.archetypes.a_e_berserker_level_7 = {
     parent: "a_e_berserker_level_6",
     shouldPlayerSave: !1,
     familyName: "berserker",
@@ -99771,25 +99771,25 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_berserker_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_7.drops
     },
     ECExplode: {
       damageType: "dg_e_berserker_explode_level_7"
     }
   };
-  e.archetypes.a_e_berserker_level_8 = {
+  EntityFactory.archetypes.a_e_berserker_level_8 = {
     parent: "a_e_berserker_level_7",
     shouldPlayerSave: !1,
     familyName: "berserker",
@@ -99800,28 +99800,28 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_berserker_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_berserker_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_berserker_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_berserker_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_berserker_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_berserker_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_berserker_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_berserker_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_berserker_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_berserker_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_berserker_level_8.drops
     },
     ECExplode: {
       damageType: "dg_e_berserker_explode_level_8"
     }
   };
   B.archetypes.dg_e_berserker_explode_level_1 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_1.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99831,9 +99831,9 @@
     isExplosion: !0
   });
   B.archetypes.dg_e_berserker_explode_level_2 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_2.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99843,9 +99843,9 @@
     isExplosion: !0
   });
   B.archetypes.dg_e_berserker_explode_level_3 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_3.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99855,9 +99855,9 @@
     isExplosion: !0
   });
   B.archetypes.dg_e_berserker_explode_level_4 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_4.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99867,9 +99867,9 @@
     isExplosion: !0
   });
   B.archetypes.dg_e_berserker_explode_level_5 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_5.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99879,9 +99879,9 @@
     isExplosion: !0
   });
   B.archetypes.dg_e_berserker_explode_level_6 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_6.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99891,9 +99891,9 @@
     isExplosion: !0
   });
   B.archetypes.dg_e_berserker_explode_level_7 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_7.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99903,9 +99903,9 @@
     isExplosion: !0
   });
   B.archetypes.dg_e_berserker_explode_level_8 = B.create("Berserker Explosion", {
-    damage: e.balanceEnemies.a_e_berserker_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_berserker_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_berserker_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_berserker_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_berserker_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_berserker_level_8.wallDamage,
     forceBack: 0,
     forceLift: 1,
     forceRadial: 1,
@@ -99914,7 +99914,7 @@
     radius: 2.5,
     isExplosion: !0
   });
-  e.archetypes.a_e_bombthrower_level_1 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_1 = {
     shouldPlayerSave: !1,
     familyName: "bombthrower",
     ECMesh: {
@@ -99933,13 +99933,13 @@
     },
     ECFirearm: {},
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
@@ -99952,15 +99952,15 @@
         name: "AIActionMoveIntoFirearmRange",
         initiativeDuration: 0
       }, "AIActionChooseRangedTarget"],
-      xp: e.balanceEnemies.a_e_bombthrower_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_bomb_thrower.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_BOMB_THROWER"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.drops
     },
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_bombs_level_1"
     },
@@ -99969,18 +99969,18 @@
       explodeOnDeath: !0,
       sfxArchetype: "sfx_explosion"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_bombthrower",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_bombthrower_level_2 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_2 = {
     parent: "a_e_bombthrower_level_1",
     shouldPlayerSave: !1,
     familyName: "bombthrower",
@@ -99991,19 +99991,19 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_bombthrower_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.drops
     },
     ECInventory: {
       weapon: "wp_e_bombs_level_2"
@@ -100012,7 +100012,7 @@
       damageType: "dg_e_bomb_explode_level_2"
     }
   };
-  e.archetypes.a_e_bombthrower_level_3 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_3 = {
     parent: "a_e_bombthrower_level_2",
     shouldPlayerSave: !1,
     familyName: "bombthrower",
@@ -100023,19 +100023,19 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_bombthrower_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.drops
     },
     ECInventory: {
       weapon: "wp_e_bombs_level_3"
@@ -100044,7 +100044,7 @@
       damageType: "dg_e_bomb_explode_level_3"
     }
   };
-  e.archetypes.a_e_bombthrower_level_4 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_4 = {
     parent: "a_e_bombthrower_level_3",
     shouldPlayerSave: !1,
     familyName: "bombthrower",
@@ -100055,19 +100055,19 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_bombthrower_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.drops
     },
     ECInventory: {
       weapon: "wp_e_bombs_level_4"
@@ -100076,7 +100076,7 @@
       damageType: "dg_e_bomb_explode_level_4"
     }
   };
-  e.archetypes.a_e_bombthrower_level_5 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_5 = {
     parent: "a_e_bombthrower_level_4",
     shouldPlayerSave: !1,
     familyName: "bombthrower",
@@ -100087,19 +100087,19 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_bombthrower_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.drops
     },
     ECInventory: {
       weapon: "wp_e_bombs_level_5"
@@ -100108,7 +100108,7 @@
       damageType: "dg_e_bomb_explode_level_5"
     }
   };
-  e.archetypes.a_e_bombthrower_level_6 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_6 = {
     parent: "a_e_bombthrower_level_5",
     shouldPlayerSave: !1,
     familyName: "bombthrower",
@@ -100119,19 +100119,19 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_bombthrower_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.drops
     },
     ECInventory: {
       weapon: "wp_e_bombs_level_6"
@@ -100140,7 +100140,7 @@
       damageType: "dg_e_bomb_explode_level_6"
     }
   };
-  e.archetypes.a_e_bombthrower_level_7 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_7 = {
     parent: "a_e_bombthrower_level_6",
     shouldPlayerSave: !1,
     familyName: "bombthrower",
@@ -100151,19 +100151,19 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_bombthrower_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.drops
     },
     ECInventory: {
       weapon: "wp_e_bombs_level_7"
@@ -100172,7 +100172,7 @@
       damageType: "dg_e_bomb_explode_level_7"
     }
   };
-  e.archetypes.a_e_bombthrower_level_8 = {
+  EntityFactory.archetypes.a_e_bombthrower_level_8 = {
     parent: "a_e_bombthrower_level_7",
     shouldPlayerSave: !1,
     familyName: "bombthrower",
@@ -100183,19 +100183,19 @@
       offsetY: -0.7
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_bombthrower_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_bombthrower_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_bombthrower_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_bombthrower_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_bombthrower_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_bombthrower_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.drops
     },
     ECInventory: {
       weapon: "wp_e_bombs_level_8"
@@ -100324,7 +100324,7 @@
     maxRange: 7.5,
     randomSpreadAngle: 5
   };
-  e.archetypes.pj_e_bomb_level_1 = {
+  EntityFactory.archetypes.pj_e_bomb_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       path: "characters/models/dynamite.dae",
@@ -100342,49 +100342,49 @@
       ambientEffect: "sfx_amb_dynamite"
     }
   };
-  e.archetypes.pj_e_bomb_level_2 = {
+  EntityFactory.archetypes.pj_e_bomb_level_2 = {
     parent: "pj_e_bomb_level_1",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_bomb_explode_level_2"
     }
   };
-  e.archetypes.pj_e_bomb_level_3 = {
+  EntityFactory.archetypes.pj_e_bomb_level_3 = {
     parent: "pj_e_bomb_level_2",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_bomb_explode_level_3"
     }
   };
-  e.archetypes.pj_e_bomb_level_4 = {
+  EntityFactory.archetypes.pj_e_bomb_level_4 = {
     parent: "pj_e_bomb_level_3",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_bomb_explode_level_4"
     }
   };
-  e.archetypes.pj_e_bomb_level_5 = {
+  EntityFactory.archetypes.pj_e_bomb_level_5 = {
     parent: "pj_e_bomb_level_4",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_bomb_explode_level_5"
     }
   };
-  e.archetypes.pj_e_bomb_level_6 = {
+  EntityFactory.archetypes.pj_e_bomb_level_6 = {
     parent: "pj_e_bomb_level_5",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_bomb_explode_level_6"
     }
   };
-  e.archetypes.pj_e_bomb_level_7 = {
+  EntityFactory.archetypes.pj_e_bomb_level_7 = {
     parent: "pj_e_bomb_level_6",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_bomb_explode_level_7"
     }
   };
-  e.archetypes.pj_e_bomb_level_8 = {
+  EntityFactory.archetypes.pj_e_bomb_level_8 = {
     parent: "pj_e_bomb_level_7",
     shouldPlayerSave: !1,
     ECProjectile: {
@@ -100392,9 +100392,9 @@
     }
   };
   B.archetypes.dg_e_bomb_explode_level_1 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_1.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100404,9 +100404,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_bomb_explode_level_2 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_2.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100416,9 +100416,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_bomb_explode_level_3 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_3.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100428,9 +100428,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_bomb_explode_level_4 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_4.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100440,9 +100440,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_bomb_explode_level_5 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_5.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100452,9 +100452,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_bomb_explode_level_6 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_6.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100464,9 +100464,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_bomb_explode_level_7 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_7.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100476,9 +100476,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_bomb_explode_level_8 = B.create("Bomb Explosion", {
-    damage: e.balanceEnemies.a_e_bombthrower_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_bombthrower_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_bombthrower_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_bombthrower_level_8.wallDamage,
     forceBack: 0,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100487,7 +100487,7 @@
     isExplosion: !0,
     friendlyFire: 0
   });
-  e.archetypes.a_e_charger_level_1 = {
+  EntityFactory.archetypes.a_e_charger_level_1 = {
     shouldPlayerSave: !1,
     familyName: "charger",
     ECMesh: {
@@ -100505,13 +100505,13 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
@@ -100523,13 +100523,13 @@
       crashIntoSolidObjectStunDuration: 1,
       priorityTargetType: "Heroes",
       shouldAggroWhenAttacked: !1,
-      xp: e.balanceEnemies.a_e_charger_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_charger.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_CHARGER"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_1.drops
     },
     ECMelee: {
       attackDuration: 0.8,
@@ -100548,19 +100548,19 @@
       beginAttackSound: "roar",
       attackImpactSound: "punch"
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_charger",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_charger_level_2 = {
+  EntityFactory.archetypes.a_e_charger_level_2 = {
     parent: "a_e_charger_level_1",
     shouldPlayerSave: !1,
     familyName: "charger",
@@ -100571,25 +100571,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_2.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_charge_level_2"
     }
   };
-  e.archetypes.a_e_charger_level_3 = {
+  EntityFactory.archetypes.a_e_charger_level_3 = {
     parent: "a_e_charger_level_2",
     shouldPlayerSave: !1,
     familyName: "charger",
@@ -100600,48 +100600,48 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_3.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_charge_level_3"
     }
   };
-  e.archetypes.a_e_charger_level_4 = {
+  EntityFactory.archetypes.a_e_charger_level_4 = {
     parent: "a_e_charger_level_3",
     shouldPlayerSave: !1,
     familyName: "charger",
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_4.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_charge_level_4"
     }
   };
-  e.archetypes.a_e_charger_level_5 = {
+  EntityFactory.archetypes.a_e_charger_level_5 = {
     parent: "a_e_charger_level_4",
     shouldPlayerSave: !1,
     familyName: "charger",
@@ -100652,25 +100652,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_5.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_charge_level_5"
     }
   };
-  e.archetypes.a_e_charger_level_6 = {
+  EntityFactory.archetypes.a_e_charger_level_6 = {
     parent: "a_e_charger_level_5",
     shouldPlayerSave: !1,
     familyName: "charger",
@@ -100681,25 +100681,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_6.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_charge_level_6"
     }
   };
-  e.archetypes.a_e_charger_level_7 = {
+  EntityFactory.archetypes.a_e_charger_level_7 = {
     parent: "a_e_charger_level_6",
     shouldPlayerSave: !1,
     familyName: "charger",
@@ -100710,25 +100710,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_7.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_charge_level_7"
     }
   };
-  e.archetypes.a_e_charger_level_8 = {
+  EntityFactory.archetypes.a_e_charger_level_8 = {
     parent: "a_e_charger_level_7",
     shouldPlayerSave: !1,
     familyName: "charger",
@@ -100739,28 +100739,28 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_level_8.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_level_8.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_charge_level_8"
     }
   };
   B.archetypes.dg_e_charger_charge_level_1 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_1.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100770,9 +100770,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_charge_level_2 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_2.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100782,9 +100782,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_charge_level_3 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_3.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100794,9 +100794,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_charge_level_4 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_4.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100806,9 +100806,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_charge_level_5 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_5.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100818,9 +100818,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_charge_level_6 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_6.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100830,9 +100830,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_charge_level_7 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_7.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100842,9 +100842,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_charge_level_8 = B.create("Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_level_8.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -100853,7 +100853,7 @@
     friendlyFire: 0.25,
     stunDuration: 2
   });
-  e.archetypes.a_e_mini_charger_level_1 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_1 = {
     shouldPlayerSave: !1,
     familyName: "mini_charger",
     ECMesh: {
@@ -100871,13 +100871,13 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
@@ -100887,14 +100887,14 @@
         initiativeDuration: 0.1
       }, "AIActionChooseMeleeTarget"],
       crashIntoSolidObjectStunDuration: 1,
-      xp: e.balanceEnemies.a_e_mini_charger_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.importantBuildingDamageLimit,
       iconGuiArchetype: "miniChargerIcon",
       iconSpritePath: "textures/enemy_minicharger.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_MINI_CHARGER"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.drops
     },
     ECMelee: {
       attackDuration: 0.6,
@@ -100913,19 +100913,19 @@
       beginAttackSound: "mini_wildling_roar",
       attackImpactSound: "punch"
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_charger",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_mini_charger_level_2 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_2 = {
     parent: "a_e_mini_charger_level_1",
     shouldPlayerSave: !1,
     familyName: "mini_charger",
@@ -100936,25 +100936,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_mini_charger_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.drops
     },
     ECMelee: {
       damageType: "dg_e_mini_charger_charge_level_2"
     }
   };
-  e.archetypes.a_e_mini_charger_level_3 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_3 = {
     parent: "a_e_mini_charger_level_2",
     shouldPlayerSave: !1,
     familyName: "mini_charger",
@@ -100965,25 +100965,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_mini_charger_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.drops
     },
     ECMelee: {
       damageType: "dg_e_mini_charger_charge_level_3"
     }
   };
-  e.archetypes.a_e_mini_charger_level_4 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_4 = {
     parent: "a_e_mini_charger_level_3",
     shouldPlayerSave: !1,
     familyName: "mini_charger",
@@ -100994,25 +100994,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_mini_charger_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.drops
     },
     ECMelee: {
       damageType: "dg_e_mini_charger_charge_level_4"
     }
   };
-  e.archetypes.a_e_mini_charger_level_5 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_5 = {
     parent: "a_e_mini_charger_level_4",
     shouldPlayerSave: !1,
     familyName: "mini_charger",
@@ -101023,25 +101023,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_mini_charger_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.drops
     },
     ECMelee: {
       damageType: "dg_e_mini_charger_charge_level_5"
     }
   };
-  e.archetypes.a_e_mini_charger_level_6 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_6 = {
     parent: "a_e_mini_charger_level_5",
     shouldPlayerSave: !1,
     familyName: "mini_charger",
@@ -101052,25 +101052,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_mini_charger_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.drops
     },
     ECMelee: {
       damageType: "dg_e_mini_charger_charge_level_6"
     }
   };
-  e.archetypes.a_e_mini_charger_level_7 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_7 = {
     parent: "a_e_mini_charger_level_6",
     shouldPlayerSave: !1,
     familyName: "mini_charger",
@@ -101081,25 +101081,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_mini_charger_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.drops
     },
     ECMelee: {
       damageType: "dg_e_mini_charger_charge_level_7"
     }
   };
-  e.archetypes.a_e_mini_charger_level_8 = {
+  EntityFactory.archetypes.a_e_mini_charger_level_8 = {
     parent: "a_e_mini_charger_level_7",
     shouldPlayerSave: !1,
     familyName: "mini_charger",
@@ -101110,28 +101110,28 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_mini_charger_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_mini_charger_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_mini_charger_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_mini_charger_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_mini_charger_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_mini_charger_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.drops
     },
     ECMelee: {
       damageType: "dg_e_mini_charger_charge_level_8"
     }
   };
   B.archetypes.dg_e_mini_charger_charge_level_1 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_1.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101141,9 +101141,9 @@
     stunDuration: 0
   });
   B.archetypes.dg_e_mini_charger_charge_level_2 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_2.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101153,9 +101153,9 @@
     stunDuration: 0
   });
   B.archetypes.dg_e_mini_charger_charge_level_3 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_3.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101165,9 +101165,9 @@
     stunDuration: 0
   });
   B.archetypes.dg_e_mini_charger_charge_level_4 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_4.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101177,9 +101177,9 @@
     stunDuration: 0
   });
   B.archetypes.dg_e_mini_charger_charge_level_5 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_5.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101189,9 +101189,9 @@
     stunDuration: 0
   });
   B.archetypes.dg_e_mini_charger_charge_level_6 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_6.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101201,9 +101201,9 @@
     stunDuration: 0
   });
   B.archetypes.dg_e_mini_charger_charge_level_7 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_7.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101213,9 +101213,9 @@
     stunDuration: 0
   });
   B.archetypes.dg_e_mini_charger_charge_level_8 = B.create("Mini Charger Charge Attack", {
-    damage: e.balanceEnemies.a_e_mini_charger_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_mini_charger_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_mini_charger_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_mini_charger_level_8.wallDamage,
     forceBack: 0.2,
     forceLift: 0.2,
     forceRadial: 0.2,
@@ -101224,7 +101224,7 @@
     friendlyFire: 0.25,
     stunDuration: 0
   });
-  e.archetypes.a_e_charger_boss_level_1 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_1 = {
     parent: "a_e_charger_level_1",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101238,25 +101238,25 @@
       mass: 500
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.health,
       barLevel: 1,
       drawInWorldBar: !0,
       worldBarRow: -8,
       healthBarScale: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_1.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.speed
     },
     ECAgent: {
       crashIntoSolidObjectStunDuration: 1,
-      xp: e.balanceEnemies.a_e_charger_boss_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_boss.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_CHARGER_BOSS"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.drops
     },
     ECMelee: {
       attackParameters: {
@@ -101281,7 +101281,7 @@
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_charger_boss_level_2 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_2 = {
     parent: "a_e_charger_boss_level_1",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101292,19 +101292,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_boss_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_boss_charge_level_2"
@@ -101316,7 +101316,7 @@
       }]
     }
   };
-  e.archetypes.a_e_charger_boss_level_3 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_3 = {
     parent: "a_e_charger_boss_level_2",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101327,19 +101327,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_boss_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_boss_charge_level_3"
@@ -101351,7 +101351,7 @@
       }]
     }
   };
-  e.archetypes.a_e_charger_boss_level_4 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_4 = {
     parent: "a_e_charger_boss_level_3",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101362,19 +101362,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_boss_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_boss_charge_level_4"
@@ -101386,7 +101386,7 @@
       }]
     }
   };
-  e.archetypes.a_e_charger_boss_level_5 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_5 = {
     parent: "a_e_charger_boss_level_4",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101397,19 +101397,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_boss_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_boss_charge_level_5"
@@ -101421,7 +101421,7 @@
       }]
     }
   };
-  e.archetypes.a_e_charger_boss_level_6 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_6 = {
     parent: "a_e_charger_boss_level_5",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101432,19 +101432,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_boss_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_boss_charge_level_6"
@@ -101456,7 +101456,7 @@
       }]
     }
   };
-  e.archetypes.a_e_charger_boss_level_7 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_7 = {
     parent: "a_e_charger_boss_level_6",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101467,19 +101467,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_boss_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_boss_charge_level_7"
@@ -101491,7 +101491,7 @@
       }]
     }
   };
-  e.archetypes.a_e_charger_boss_level_8 = {
+  EntityFactory.archetypes.a_e_charger_boss_level_8 = {
     parent: "a_e_charger_boss_level_7",
     familyName: "charger_boss",
     shouldPlayerSave: !1,
@@ -101502,19 +101502,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_charger_boss_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_charger_boss_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_charger_boss_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_charger_boss_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_charger_boss_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_charger_boss_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.drops
     },
     ECMelee: {
       damageType: "dg_e_charger_boss_charge_level_8"
@@ -101527,9 +101527,9 @@
     }
   };
   B.archetypes.dg_e_charger_boss_charge_level_1 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101539,9 +101539,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_boss_charge_level_2 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101551,9 +101551,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_boss_charge_level_3 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101563,9 +101563,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_boss_charge_level_4 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101575,9 +101575,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_boss_charge_level_5 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101587,9 +101587,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_boss_charge_level_6 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101599,9 +101599,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_boss_charge_level_7 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101611,9 +101611,9 @@
     stunDuration: 2
   });
   B.archetypes.dg_e_charger_boss_charge_level_8 = B.create("Charger (Boss) Charge Attack", {
-    damage: e.balanceEnemies.a_e_charger_boss_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_charger_boss_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_charger_boss_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.wallDamage,
     forceBack: 1.5,
     forceLift: 1,
     forceRadial: 0.5,
@@ -101622,7 +101622,7 @@
     friendlyFire: 1,
     stunDuration: 2
   });
-  e.archetypes.a_e_charger_boss_turret_level_1 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_1 = {
     shouldPlayerSave: !1,
     ECMesh: {
       scale: 0,
@@ -101646,51 +101646,51 @@
         ignorePathing: !0
       }]
     },
-    ECFaction: e.EC_DEFAULT
+    ECFaction: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_e_charger_boss_turret_level_2 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_2 = {
     parent: "a_e_charger_boss_turret_level_1",
     shouldPlayerSave: !1,
     ECFirearm: {
       weapon: "wp_e_charger_boss_gun02"
     }
   };
-  e.archetypes.a_e_charger_boss_turret_level_3 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_3 = {
     parent: "a_e_charger_boss_turret_level_2",
     shouldPlayerSave: !1,
     ECFirearm: {
       weapon: "wp_e_charger_boss_gun03"
     }
   };
-  e.archetypes.a_e_charger_boss_turret_level_4 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_4 = {
     parent: "a_e_charger_boss_turret_level_3",
     shouldPlayerSave: !1,
     ECFirearm: {
       weapon: "wp_e_charger_boss_gun04"
     }
   };
-  e.archetypes.a_e_charger_boss_turret_level_5 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_5 = {
     parent: "a_e_charger_boss_turret_level_4",
     shouldPlayerSave: !1,
     ECFirearm: {
       weapon: "wp_e_charger_boss_gun05"
     }
   };
-  e.archetypes.a_e_charger_boss_turret_level_6 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_6 = {
     parent: "a_e_charger_boss_turret_level_5",
     shouldPlayerSave: !1,
     ECFirearm: {
       weapon: "wp_e_charger_boss_gun06"
     }
   };
-  e.archetypes.a_e_charger_boss_turret_level_7 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_7 = {
     parent: "a_e_charger_boss_turret_level_6",
     shouldPlayerSave: !1,
     ECFirearm: {
       weapon: "wp_e_charger_boss_gun07"
     }
   };
-  e.archetypes.a_e_charger_boss_turret_level_8 = {
+  EntityFactory.archetypes.a_e_charger_boss_turret_level_8 = {
     parent: "a_e_charger_boss_turret_level_7",
     shouldPlayerSave: !1,
     ECFirearm: {
@@ -101801,7 +101801,7 @@
     rechamberDuration: 0,
     randomSpreadAngle: 0
   };
-  e.archetypes.pj_e_charger_boss_gun01 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun01 = {
     shouldPlayerSave: !1,
     ECMesh: {
       path: "characters/models/dynamite.dae",
@@ -101816,49 +101816,49 @@
       ignoresAllies: !0
     }
   };
-  e.archetypes.pj_e_charger_boss_gun02 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun02 = {
     parent: "pj_e_charger_boss_gun01",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_charger_boss_gun02"
     }
   };
-  e.archetypes.pj_e_charger_boss_gun03 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun03 = {
     parent: "pj_e_charger_boss_gun02",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_charger_boss_gun03"
     }
   };
-  e.archetypes.pj_e_charger_boss_gun04 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun04 = {
     parent: "pj_e_charger_boss_gun03",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_charger_boss_gun04"
     }
   };
-  e.archetypes.pj_e_charger_boss_gun05 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun05 = {
     parent: "pj_e_charger_boss_gun04",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_charger_boss_gun05"
     }
   };
-  e.archetypes.pj_e_charger_boss_gun06 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun06 = {
     parent: "pj_e_charger_boss_gun05",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_charger_boss_gun06"
     }
   };
-  e.archetypes.pj_e_charger_boss_gun07 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun07 = {
     parent: "pj_e_charger_boss_gun06",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_e_charger_boss_gun07"
     }
   };
-  e.archetypes.pj_e_charger_boss_gun08 = {
+  EntityFactory.archetypes.pj_e_charger_boss_gun08 = {
     parent: "pj_e_charger_boss_gun07",
     shouldPlayerSave: !1,
     ECProjectile: {
@@ -101868,7 +101868,7 @@
   B.archetypes.dg_e_charger_boss_gun01 = B.create("dg_e_charger_boss_gun01", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_1.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_1.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
@@ -101877,7 +101877,7 @@
   B.archetypes.dg_e_charger_boss_gun02 = B.create("dg_e_charger_boss_gun02", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_2.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_2.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
@@ -101886,7 +101886,7 @@
   B.archetypes.dg_e_charger_boss_gun03 = B.create("dg_e_charger_boss_gun03", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_3.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_3.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
@@ -101895,7 +101895,7 @@
   B.archetypes.dg_e_charger_boss_gun04 = B.create("dg_e_charger_boss_gun04", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_4.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_4.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
@@ -101904,7 +101904,7 @@
   B.archetypes.dg_e_charger_boss_gun05 = B.create("dg_e_charger_boss_gun05", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_5.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_5.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
@@ -101913,7 +101913,7 @@
   B.archetypes.dg_e_charger_boss_gun06 = B.create("dg_e_charger_boss_gun06", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_6.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_6.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
@@ -101922,7 +101922,7 @@
   B.archetypes.dg_e_charger_boss_gun07 = B.create("dg_e_charger_boss_gun07", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_7.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_7.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
@@ -101931,13 +101931,13 @@
   B.archetypes.dg_e_charger_boss_gun08 = B.create("dg_e_charger_boss_gun08", {
     radius: 1.5,
     friendlyFire: 1,
-    damage: e.balanceEnemies.a_e_charger_boss_level_8.rangedDamage,
+    damage: EntityFactory.balanceEnemies.a_e_charger_boss_level_8.rangedDamage,
     forceBack: 0.1,
     forceLift: 0,
     forceRadial: 0,
     forceTangential: 0
   });
-  e.archetypes.a_e_death = {
+  EntityFactory.archetypes.a_e_death = {
     shouldPlayerSave: !1,
     familyName: "death",
     ECMesh: {
@@ -101955,15 +101955,15 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_death.health,
+      health: EntityFactory.balanceEnemies.a_e_death.health,
       canTakeDamage: !1,
       regen: -100,
       regenDelay: 0,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_death.speed,
-      fastSpeed: e.balanceEnemies.a_e_death.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_death.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_death.speed,
       angleLerpFactor: 0.2,
       animationRate: 0.1
     },
@@ -101979,13 +101979,13 @@
       priorityTargetType: "Heroes",
       shouldAggroWhenAttacked: !1,
       stunnable: !1,
-      xp: e.balanceEnemies.a_e_death.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_death.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_death.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_death.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_death.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_DEATH"
     },
     ECDeathAgent: {
-      minDistanceFromTarget: e.balanceEnemies.a_e_death.minDistanceFromTarget
+      minDistanceFromTarget: EntityFactory.balanceEnemies.a_e_death.minDistanceFromTarget
     },
     ECMelee: {
       attackDuration: 0.1,
@@ -101996,8 +101996,8 @@
       damageType: "dg_e_death_attack",
       attackImpactSound: "aud_attack_death"
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       ambientEffect: "sfx_amb_e_death",
       onDeathEffect: "sfx_dth_e_death",
@@ -102007,9 +102007,9 @@
     }
   };
   B.archetypes.dg_e_death_attack = B.create("Death Attack", {
-    damage: e.balanceEnemies.a_e_death.damage,
-    buildingDamage: e.balanceEnemies.a_e_death.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_death.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_death.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_death.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_death.wallDamage,
     forceBack: 0.5,
     forceLift: 0.5,
     forceRadial: 0.5,
@@ -102017,7 +102017,7 @@
     radius: 1.7,
     friendlyFire: 0
   });
-  e.archetypes.a_e_treasuredropper_level_1 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_1 = {
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECMesh: {
@@ -102034,35 +102034,35 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
       aggro: 0,
       actions: ["AIActionWanderAndEscape"],
-      xp: e.balanceEnemies.a_e_treasuredropper_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_treasure_dropper.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_TREASURE_DROPPER"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_1.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_1.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_1.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_1.damageDrops,
       numHitsThatDropLoot: 3
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_treasure",
       onDestroyEffect: "dfx_dth_e_generic"
@@ -102075,161 +102075,161 @@
       visibleOnHover: !1
     }
   };
-  e.archetypes.a_e_treasuredropper_level_2 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_2 = {
     parent: "a_e_treasuredropper_level_1",
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_treasuredropper_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_2.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_2.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_2.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_2.damageDrops,
       numHitsThatDropLoot: 3
     }
   };
-  e.archetypes.a_e_treasuredropper_level_3 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_3 = {
     parent: "a_e_treasuredropper_level_2",
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_treasuredropper_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_3.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_3.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_3.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_3.damageDrops,
       numHitsThatDropLoot: 3
     }
   };
-  e.archetypes.a_e_treasuredropper_level_4 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_4 = {
     parent: "a_e_treasuredropper_level_3",
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_treasuredropper_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_4.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_4.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_4.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_4.damageDrops,
       numHitsThatDropLoot: 3
     }
   };
-  e.archetypes.a_e_treasuredropper_level_5 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_5 = {
     parent: "a_e_treasuredropper_level_4",
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_treasuredropper_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_5.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_5.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_5.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_5.damageDrops,
       numHitsThatDropLoot: 3
     }
   };
-  e.archetypes.a_e_treasuredropper_level_6 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_6 = {
     parent: "a_e_treasuredropper_level_5",
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_treasuredropper_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_6.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_6.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_6.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_6.damageDrops,
       numHitsThatDropLoot: 3
     }
   };
-  e.archetypes.a_e_treasuredropper_level_7 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_7 = {
     parent: "a_e_treasuredropper_level_6",
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_treasuredropper_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_7.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_7.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_7.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_7.damageDrops,
       numHitsThatDropLoot: 3
     }
   };
-  e.archetypes.a_e_treasuredropper_level_8 = {
+  EntityFactory.archetypes.a_e_treasuredropper_level_8 = {
     parent: "a_e_treasuredropper_level_7",
     shouldPlayerSave: !1,
     familyName: "treasuredropper",
     ECHealth: {
-      health: e.balanceEnemies.a_e_treasuredropper_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_treasuredropper_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_treasuredropper_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_treasuredropper_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_treasuredropper_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_treasuredropper_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_treasuredropper_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_treasuredropper_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_treasuredropper_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_treasuredropper_level_8.drops,
-      lootToDropWhenDamaged: e.balanceEnemies.a_e_treasuredropper_level_8.damageDrops,
+      coinGroups: EntityFactory.balanceEnemies.a_e_treasuredropper_level_8.drops,
+      lootToDropWhenDamaged: EntityFactory.balanceEnemies.a_e_treasuredropper_level_8.damageDrops,
       numHitsThatDropLoot: 3
     }
   };
-  e.archetypes.a_e_commando_level_1 = {
+  EntityFactory.archetypes.a_e_commando_level_1 = {
     shouldPlayerSave: !1,
     familyName: "commando",
     ECMesh: {
@@ -102247,13 +102247,13 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
@@ -102264,31 +102264,31 @@
       }, "AIActionChooseMeleeTarget"],
       priorityTargetType: "HQs",
       shouldAggroWhenAttacked: !1,
-      xp: e.balanceEnemies.a_e_commando_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_commando.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_COMMANDO"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_1.drops
     },
     ECMelee: {},
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_commando_sword_level_1"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_commando",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_commando_level_2 = {
+  EntityFactory.archetypes.a_e_commando_level_2 = {
     parent: "a_e_commando_level_1",
     shouldPlayerSave: !1,
     familyName: "commando",
@@ -102299,25 +102299,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_commando_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_2.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_2"
     }
   };
-  e.archetypes.a_e_commando_level_3 = {
+  EntityFactory.archetypes.a_e_commando_level_3 = {
     parent: "a_e_commando_level_2",
     shouldPlayerSave: !1,
     familyName: "commando",
@@ -102328,25 +102328,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_commando_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_3.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_3"
     }
   };
-  e.archetypes.a_e_commando_level_4 = {
+  EntityFactory.archetypes.a_e_commando_level_4 = {
     parent: "a_e_commando_level_3",
     shouldPlayerSave: !1,
     familyName: "commando",
@@ -102357,25 +102357,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_commando_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_4.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_4"
     }
   };
-  e.archetypes.a_e_commando_level_5 = {
+  EntityFactory.archetypes.a_e_commando_level_5 = {
     parent: "a_e_commando_level_4",
     shouldPlayerSave: !1,
     familyName: "commando",
@@ -102386,25 +102386,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_commando_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_5.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_5"
     }
   };
-  e.archetypes.a_e_commando_level_6 = {
+  EntityFactory.archetypes.a_e_commando_level_6 = {
     parent: "a_e_commando_level_5",
     shouldPlayerSave: !1,
     familyName: "commando",
@@ -102415,25 +102415,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_commando_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_6.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_6"
     }
   };
-  e.archetypes.a_e_commando_level_7 = {
+  EntityFactory.archetypes.a_e_commando_level_7 = {
     parent: "a_e_commando_level_6",
     shouldPlayerSave: !1,
     familyName: "commando",
@@ -102444,25 +102444,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_commando_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_7.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_7"
     }
   };
-  e.archetypes.a_e_commando_level_8 = {
+  EntityFactory.archetypes.a_e_commando_level_8 = {
     parent: "a_e_commando_level_7",
     shouldPlayerSave: !1,
     familyName: "commando",
@@ -102473,19 +102473,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_commando_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_commando_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_commando_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_commando_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_commando_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_commando_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_commando_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_commando_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_commando_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_commando_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_commando_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_commando_level_8.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_8"
@@ -102572,9 +102572,9 @@
     attackImpactSound: "punch"
   };
   B.archetypes.dg_e_commando_sword_level_1 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_1.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102583,9 +102583,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_2 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_2.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102594,9 +102594,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_3 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_3.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102605,9 +102605,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_4 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_4.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102616,9 +102616,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_5 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_5.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102627,9 +102627,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_6 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_6.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102638,9 +102638,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_7 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_7.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102649,9 +102649,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_8 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_8.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -102659,7 +102659,7 @@
     radius: 0,
     friendlyFire: 0
   });
-  e.archetypes.a_e_thief_level_1 = {
+  EntityFactory.archetypes.a_e_thief_level_1 = {
     shouldPlayerSave: !1,
     familyName: "thief",
     ECMesh: {
@@ -102677,13 +102677,13 @@
       height: 0.8
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_1.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_1.health,
       barLevel: 1,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_1.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_1.speed,
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_1.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_1.speed,
       angleLerpFactor: 0.5
     },
     ECAgent: {
@@ -102694,31 +102694,31 @@
       }, "AIActionChooseMeleeTarget"],
       priorityTargetType: "Storage",
       shouldAggroWhenAttacked: !1,
-      xp: e.balanceEnemies.a_e_thief_level_1.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_1.importantBuildingDamageLimit,
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_1.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_1.importantBuildingDamageLimit,
       iconSpritePath: "textures/enemy_thief.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_THIEF"
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_1.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_1.drops
     },
     ECMelee: {},
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_commando_sword_level_1"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_basicmelee",
       onDestroyEffect: "dfx_dth_e_generic"
     }
   };
-  e.archetypes.a_e_thief_level_2 = {
+  EntityFactory.archetypes.a_e_thief_level_2 = {
     parent: "a_e_thief_level_1",
     shouldPlayerSave: !1,
     familyName: "thief",
@@ -102729,25 +102729,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_2.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_2.health,
       barLevel: 2
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_2.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_2.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_2.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_2.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_thief_level_2.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_2.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_2.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_2.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_2.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_2.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_2"
     }
   };
-  e.archetypes.a_e_thief_level_3 = {
+  EntityFactory.archetypes.a_e_thief_level_3 = {
     parent: "a_e_thief_level_2",
     shouldPlayerSave: !1,
     familyName: "thief",
@@ -102758,25 +102758,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_3.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_3.health,
       barLevel: 3
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_3.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_3.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_3.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_3.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_thief_level_3.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_3.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_3.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_3.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_3.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_3.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_3"
     }
   };
-  e.archetypes.a_e_thief_level_4 = {
+  EntityFactory.archetypes.a_e_thief_level_4 = {
     parent: "a_e_thief_level_3",
     shouldPlayerSave: !1,
     familyName: "thief",
@@ -102787,25 +102787,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_4.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_4.health,
       barLevel: 4
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_4.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_4.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_4.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_4.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_thief_level_4.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_4.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_4.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_4.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_4.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_4.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_4"
     }
   };
-  e.archetypes.a_e_thief_level_5 = {
+  EntityFactory.archetypes.a_e_thief_level_5 = {
     parent: "a_e_thief_level_4",
     shouldPlayerSave: !1,
     familyName: "thief",
@@ -102816,25 +102816,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_5.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_5.health,
       barLevel: 5
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_5.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_5.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_5.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_5.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_thief_level_5.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_5.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_5.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_5.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_5.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_5.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_5"
     }
   };
-  e.archetypes.a_e_thief_level_6 = {
+  EntityFactory.archetypes.a_e_thief_level_6 = {
     parent: "a_e_thief_level_5",
     shouldPlayerSave: !1,
     familyName: "thief",
@@ -102845,25 +102845,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_6.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_6.health,
       barLevel: 6
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_6.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_6.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_6.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_6.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_thief_level_6.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_6.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_6.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_6.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_6.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_6.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_6"
     }
   };
-  e.archetypes.a_e_thief_level_7 = {
+  EntityFactory.archetypes.a_e_thief_level_7 = {
     parent: "a_e_thief_level_6",
     shouldPlayerSave: !1,
     familyName: "thief",
@@ -102874,25 +102874,25 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_7.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_7.health,
       barLevel: 7
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_7.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_7.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_7.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_7.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_thief_level_7.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_7.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_7.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_7.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_7.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_7.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_7"
     }
   };
-  e.archetypes.a_e_thief_level_8 = {
+  EntityFactory.archetypes.a_e_thief_level_8 = {
     parent: "a_e_thief_level_7",
     shouldPlayerSave: !1,
     familyName: "thief",
@@ -102903,19 +102903,19 @@
       offsetY: -0.6
     },
     ECHealth: {
-      health: e.balanceEnemies.a_e_thief_level_8.health,
+      health: EntityFactory.balanceEnemies.a_e_thief_level_8.health,
       barLevel: 8
     },
     ECLocomotion: {
-      normalSpeed: e.balanceEnemies.a_e_thief_level_8.speed,
-      fastSpeed: e.balanceEnemies.a_e_thief_level_8.speed
+      normalSpeed: EntityFactory.balanceEnemies.a_e_thief_level_8.speed,
+      fastSpeed: EntityFactory.balanceEnemies.a_e_thief_level_8.speed
     },
     ECAgent: {
-      xp: e.balanceEnemies.a_e_thief_level_8.xp,
-      importantBuildingDamageLimit: e.balanceEnemies.a_e_thief_level_8.importantBuildingDamageLimit
+      xp: EntityFactory.balanceEnemies.a_e_thief_level_8.xp,
+      importantBuildingDamageLimit: EntityFactory.balanceEnemies.a_e_thief_level_8.importantBuildingDamageLimit
     },
     ECLootDropper: {
-      coinGroups: e.balanceEnemies.a_e_thief_level_8.drops
+      coinGroups: EntityFactory.balanceEnemies.a_e_thief_level_8.drops
     },
     ECInventory: {
       weapon: "wp_e_commando_sword_level_8"
@@ -103002,9 +103002,9 @@
     attackImpactSound: "punch"
   };
   B.archetypes.dg_e_commando_sword_level_1 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_1.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_1.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_1.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_1.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_1.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_1.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103013,9 +103013,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_2 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_2.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_2.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_2.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_2.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_2.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_2.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103024,9 +103024,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_3 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_3.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_3.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_3.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_3.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_3.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_3.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103035,9 +103035,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_4 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_4.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_4.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_4.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_4.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_4.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_4.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103046,9 +103046,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_5 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_5.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_5.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_5.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_5.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_5.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_5.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103057,9 +103057,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_6 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_6.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_6.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_6.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_6.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_6.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_6.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103068,9 +103068,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_7 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_7.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_7.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_7.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_7.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_7.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_7.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103079,9 +103079,9 @@
     friendlyFire: 0
   });
   B.archetypes.dg_e_commando_sword_level_8 = B.create("Commando Sword Attack", {
-    damage: e.balanceEnemies.a_e_commando_level_8.damage,
-    buildingDamage: e.balanceEnemies.a_e_commando_level_8.buildingDamage,
-    wallDamage: e.balanceEnemies.a_e_commando_level_8.wallDamage,
+    damage: EntityFactory.balanceEnemies.a_e_commando_level_8.damage,
+    buildingDamage: EntityFactory.balanceEnemies.a_e_commando_level_8.buildingDamage,
+    wallDamage: EntityFactory.balanceEnemies.a_e_commando_level_8.wallDamage,
     forceBack: 0.01,
     forceLift: 0,
     forceRadial: 0,
@@ -103089,7 +103089,7 @@
     radius: 0,
     friendlyFire: 0
   });
-  e.archetypes.a_e_dday_melee = {
+  EntityFactory.archetypes.a_e_dday_melee = {
     shouldPlayerSave: !1,
     familyName: "tutorialenemy",
     ECMesh: {
@@ -103129,16 +103129,16 @@
       displayNameTextId: "ENEMY_DISPLAY_NAME_BASIC_MELEE"
     },
     ECMelee: {},
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_dday_sword"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_basicmelee",
       onDestroyEffect: "dfx_dth_e_generic"
@@ -103165,7 +103165,7 @@
     radius: 0,
     friendlyFire: 0
   });
-  e.archetypes.a_e_dday_ranged = {
+  EntityFactory.archetypes.a_e_dday_ranged = {
     shouldPlayerSave: !1,
     familyName: "tutorialenemy",
     ECMesh: {
@@ -103213,16 +103213,16 @@
       iconSpritePath: "textures/enemy_ranged.dds",
       displayNameTextId: "ENEMY_DISPLAY_NAME_RANGED"
     },
-    ECNav: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
     ECInventory: {
       weapon: "wp_e_dday_ranged"
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       radiusFactor: 2,
       smart: !1
     },
-    ECTarget: e.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       impactEffect: "sfx_hit_e_ranged",
       onDestroyEffect: "dfx_dth_e_generic"
@@ -103242,7 +103242,7 @@
     clipSize: 1,
     randomSpreadAngle: 30
   };
-  e.archetypes.pj_e_dday_ranged = {
+  EntityFactory.archetypes.pj_e_dday_ranged = {
     shouldPlayerSave: !1,
     ECMesh: {
       path: "characters/models/mucus.dae",
@@ -103273,7 +103273,7 @@
     radius: 0,
     friendlyFire: 0
   });
-  e.archetypes.a_f_wildling = {
+  EntityFactory.archetypes.a_f_wildling = {
     shouldPlayerSave: !1,
     familyName: "friendlyWildling",
     ECMesh: {
@@ -103301,8 +103301,8 @@
       smart: !0,
       smartRadiusFactor: 1.2
     },
-    ECGateTriggerer: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGateTriggerer: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECWildlingAgent: {
       buildingAssistRate: 0.1,
       offlineBuildingAssistRate: 0.1,
@@ -103328,15 +103328,15 @@
       }],
       orders: ["Gather Lumber", "Gather Stone", "Assist With Building", "Assist With WarBuilding"]
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECResourceCarrier: {
       maxResource: [10, 10],
       maxUnemcumberedResource: 1,
       resourcesPerBlock: [10, 10]
     }
   };
-  e.archetypes.a_f_lumberling = {
+  EntityFactory.archetypes.a_f_lumberling = {
     shouldPlayerSave: !1,
     familyName: "friendlyLumberling",
     ECMesh: {
@@ -103364,8 +103364,8 @@
       smart: !0,
       smartRadiusFactor: 1.2
     },
-    ECGateTriggerer: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGateTriggerer: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECWildlingAgent: {
       offlineResourcePerMinute: 50 / 60,
       offlineMinutesBeforeSleeping: 150,
@@ -103384,8 +103384,8 @@
       }],
       orders: ["Gather Lumber"]
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECResourceCarrier: {
       maxResource: [10, 0],
       maxUnemcumberedResource: 10,
@@ -103402,7 +103402,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_f_lumberling_level_2 = {
+  EntityFactory.archetypes.a_f_lumberling_level_2 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling",
     ECMesh: {
@@ -103428,7 +103428,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_f_lumberling_level_3 = {
+  EntityFactory.archetypes.a_f_lumberling_level_3 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_2",
     ECMesh: {
@@ -103454,7 +103454,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_f_lumberling_level_4 = {
+  EntityFactory.archetypes.a_f_lumberling_level_4 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_3",
     ECMesh: {
@@ -103480,7 +103480,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_f_lumberling_level_5 = {
+  EntityFactory.archetypes.a_f_lumberling_level_5 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_4",
     ECMesh: {
@@ -103506,7 +103506,7 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_f_lumberling_level_6 = {
+  EntityFactory.archetypes.a_f_lumberling_level_6 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_5",
     ECMesh: {
@@ -103532,7 +103532,7 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_f_lumberling_level_7 = {
+  EntityFactory.archetypes.a_f_lumberling_level_7 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_6",
     ECMesh: {
@@ -103558,7 +103558,7 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_f_lumberling_level_8 = {
+  EntityFactory.archetypes.a_f_lumberling_level_8 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_7",
     ECMesh: {
@@ -103584,7 +103584,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_f_lumberling_level_9 = {
+  EntityFactory.archetypes.a_f_lumberling_level_9 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_8",
     ECMesh: {
@@ -103610,7 +103610,7 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_f_lumberling_level_10 = {
+  EntityFactory.archetypes.a_f_lumberling_level_10 = {
     shouldPlayerSave: !1,
     parent: "a_f_lumberling_level_9",
     ECMesh: {
@@ -103636,7 +103636,7 @@
       text2: "Level 10"
     }
   };
-  e.archetypes.a_f_stoneling = {
+  EntityFactory.archetypes.a_f_stoneling = {
     shouldPlayerSave: !1,
     familyName: "friendlyStoneling",
     ECMesh: {
@@ -103664,8 +103664,8 @@
       smart: !0,
       smartRadiusFactor: 1.2
     },
-    ECGateTriggerer: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGateTriggerer: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECWildlingAgent: {
       offlineResourcePerMinute: 25 / 60,
       offlineMinutesBeforeSleeping: 150,
@@ -103684,8 +103684,8 @@
       }],
       orders: ["Gather Stone"]
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECResourceCarrier: {
       maxResource: [0, 10],
       maxUnemcumberedResource: 10,
@@ -103702,7 +103702,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_f_stoneling_level_2 = {
+  EntityFactory.archetypes.a_f_stoneling_level_2 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling",
     ECMesh: {
@@ -103728,7 +103728,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_f_stoneling_level_3 = {
+  EntityFactory.archetypes.a_f_stoneling_level_3 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_2",
     ECMesh: {
@@ -103754,7 +103754,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_f_stoneling_level_4 = {
+  EntityFactory.archetypes.a_f_stoneling_level_4 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_3",
     ECMesh: {
@@ -103780,7 +103780,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_f_stoneling_level_5 = {
+  EntityFactory.archetypes.a_f_stoneling_level_5 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_4",
     ECMesh: {
@@ -103806,7 +103806,7 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_f_stoneling_level_6 = {
+  EntityFactory.archetypes.a_f_stoneling_level_6 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_5",
     ECMesh: {
@@ -103832,7 +103832,7 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_f_stoneling_level_7 = {
+  EntityFactory.archetypes.a_f_stoneling_level_7 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_6",
     ECMesh: {
@@ -103858,7 +103858,7 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_f_stoneling_level_8 = {
+  EntityFactory.archetypes.a_f_stoneling_level_8 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_7",
     ECMesh: {
@@ -103884,7 +103884,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_f_stoneling_level_9 = {
+  EntityFactory.archetypes.a_f_stoneling_level_9 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_8",
     ECMesh: {
@@ -103910,7 +103910,7 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_f_stoneling_level_10 = {
+  EntityFactory.archetypes.a_f_stoneling_level_10 = {
     shouldPlayerSave: !1,
     parent: "a_f_stoneling_level_9",
     ECMesh: {
@@ -103936,7 +103936,7 @@
       text2: "Level 10"
     }
   };
-  e.archetypes.a_f_buildling = {
+  EntityFactory.archetypes.a_f_buildling = {
     shouldPlayerSave: !1,
     familyName: "friendlyBuildling",
     ECMesh: {
@@ -103964,8 +103964,8 @@
       smart: !0,
       smartRadiusFactor: 1.2
     },
-    ECGateTriggerer: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGateTriggerer: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECWildlingAgent: {
       buildingAssistRate: 1,
       offlineBuildingAssistRate: 1,
@@ -103987,8 +103987,8 @@
       }],
       orders: ["Assist With Building"]
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Buildling",
       onScreenGuiArchetype: "tipBuildling",
@@ -103998,7 +103998,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_f_warling = {
+  EntityFactory.archetypes.a_f_warling = {
     shouldPlayerSave: !1,
     familyName: "friendlyWarling",
     ECMesh: {
@@ -104026,8 +104026,8 @@
       smart: !0,
       smartRadiusFactor: 1.2
     },
-    ECGateTriggerer: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
+    ECGateTriggerer: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
     ECWildlingAgent: {
       buildingAssistRate: 1,
       offlineBuildingAssistRate: 1,
@@ -104054,8 +104054,8 @@
       }],
       orders: ["Assist With WarBuilding"]
     },
-    ECNav: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
+    ECNav: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECWorldGui: {
       text1: "Defendling",
       text2: "Level 1",
@@ -104066,7 +104066,7 @@
       visibleOnHover: !0
     }
   };
-  e.archetypes.a_f_warling_level_2 = {
+  EntityFactory.archetypes.a_f_warling_level_2 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling",
     ECMesh: {
@@ -104086,7 +104086,7 @@
       text2: "Level 2"
     }
   };
-  e.archetypes.a_f_warling_level_3 = {
+  EntityFactory.archetypes.a_f_warling_level_3 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_2",
     ECMesh: {
@@ -104106,7 +104106,7 @@
       text2: "Level 3"
     }
   };
-  e.archetypes.a_f_warling_level_4 = {
+  EntityFactory.archetypes.a_f_warling_level_4 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_3",
     ECMesh: {
@@ -104126,7 +104126,7 @@
       text2: "Level 4"
     }
   };
-  e.archetypes.a_f_warling_level_5 = {
+  EntityFactory.archetypes.a_f_warling_level_5 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_4",
     ECMesh: {
@@ -104146,7 +104146,7 @@
       text2: "Level 5"
     }
   };
-  e.archetypes.a_f_warling_level_6 = {
+  EntityFactory.archetypes.a_f_warling_level_6 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_5",
     ECMesh: {
@@ -104166,7 +104166,7 @@
       text2: "Level 6"
     }
   };
-  e.archetypes.a_f_warling_level_7 = {
+  EntityFactory.archetypes.a_f_warling_level_7 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_6",
     ECMesh: {
@@ -104186,7 +104186,7 @@
       text2: "Level 7"
     }
   };
-  e.archetypes.a_f_warling_level_8 = {
+  EntityFactory.archetypes.a_f_warling_level_8 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_7",
     ECMesh: {
@@ -104206,7 +104206,7 @@
       text2: "Level 8"
     }
   };
-  e.archetypes.a_f_warling_level_9 = {
+  EntityFactory.archetypes.a_f_warling_level_9 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_8",
     ECMesh: {
@@ -104226,7 +104226,7 @@
       text2: "Level 9"
     }
   };
-  e.archetypes.a_f_warling_level_10 = {
+  EntityFactory.archetypes.a_f_warling_level_10 = {
     shouldPlayerSave: !1,
     parent: "a_f_warling_level_9",
     ECMesh: {
@@ -104479,7 +104479,7 @@
     forceTangential: 0,
     radius: 1
   });
-  e.archetypes.pj_h_pistol_weak = {
+  EntityFactory.archetypes.pj_h_pistol_weak = {
     ECMesh: {
       path: "characters/models/bullet.dae",
       scale: 5
@@ -104493,7 +104493,7 @@
       hurtSound: "dartHitFlesh"
     }
   };
-  e.archetypes.pj_h_pistol_medium = {
+  EntityFactory.archetypes.pj_h_pistol_medium = {
     ECMesh: {
       path: "characters/models/bullet.dae",
       scale: 5
@@ -104505,7 +104505,7 @@
       hurtSound: "dartHitFlesh"
     }
   };
-  e.archetypes.pj_h_pistol_strong = {
+  EntityFactory.archetypes.pj_h_pistol_strong = {
     ECMesh: {
       path: "characters/models/bullet.dae",
       scale: 5
@@ -104517,7 +104517,7 @@
       hurtSound: "dartHitFlesh"
     }
   };
-  e.archetypes.pj_h_pistol_superstrong = {
+  EntityFactory.archetypes.pj_h_pistol_superstrong = {
     ECMesh: {
       path: "characters/models/bullet.dae",
       scale: 5
@@ -104529,7 +104529,7 @@
       hurtSound: "dartHitFleshCharged"
     }
   };
-  e.archetypes.pj_h_bomb = {
+  EntityFactory.archetypes.pj_h_bomb = {
     ECMesh: {
       path: "models/bomb.dae",
       scale: 0.5
@@ -104542,7 +104542,7 @@
       hurtEffect: "sfx_explosion"
     }
   };
-  e.archetypes.pj_h_shotgun_pellet = {
+  EntityFactory.archetypes.pj_h_shotgun_pellet = {
     ECMesh: {
       path: "characters/models/bullet.dae",
       scale: 2.5
@@ -104562,7 +104562,7 @@
       incidentalMaxTime: 0.2
     }
   };
-  e.archetypes.pj_h_shotgun_pellet_nodamage = {
+  EntityFactory.archetypes.pj_h_shotgun_pellet_nodamage = {
     ECMesh: {
       path: "characters/models/bullet.dae",
       scale: 2.5
@@ -104580,7 +104580,7 @@
       incidentalMaxTime: 0.001
     }
   };
-  e.archetypes.pj_h_boomerang = {
+  EntityFactory.archetypes.pj_h_boomerang = {
     ECMesh: {
       path: "environment/models/e_i_amber.dae",
       scale: 0.9
@@ -104605,7 +104605,7 @@
       returningMaxSpeed: 30
     }
   };
-  e.archetypes.pj_h_shotgun_blast_cone01 = {
+  EntityFactory.archetypes.pj_h_shotgun_blast_cone01 = {
     shouldPlayerSave: !1,
     ECProjectile: {
       explodeInstantly: !0,
@@ -104613,28 +104613,28 @@
       hitSound: "dartHit"
     }
   };
-  e.archetypes.pj_h_shotgun_blast_cone02 = {
+  EntityFactory.archetypes.pj_h_shotgun_blast_cone02 = {
     parent: "pj_h_shotgun_blast_cone01",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_h_shotgun_blast_cone02"
     }
   };
-  e.archetypes.pj_h_shotgun_blast_cone03 = {
+  EntityFactory.archetypes.pj_h_shotgun_blast_cone03 = {
     parent: "pj_h_shotgun_blast_cone02",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_h_shotgun_blast_cone03"
     }
   };
-  e.archetypes.pj_h_shotgun_blast_cone04 = {
+  EntityFactory.archetypes.pj_h_shotgun_blast_cone04 = {
     parent: "pj_h_shotgun_blast_cone03",
     shouldPlayerSave: !1,
     ECProjectile: {
       damageType: "dg_h_shotgun_blast_cone04"
     }
   };
-  e.archetypes.pj_h_shotgun_blast_cone05 = {
+  EntityFactory.archetypes.pj_h_shotgun_blast_cone05 = {
     parent: "pj_h_shotgun_blast_cone04",
     shouldPlayerSave: !1,
     ECProjectile: {
@@ -104801,7 +104801,7 @@
     speedModRechambering: 1,
     speedModReloading: 1
   };
-  e.archetypes.a_h_hero_01 = {
+  EntityFactory.archetypes.a_h_hero_01 = {
     shouldPlayerSave: !1,
     familyName: "hero",
     ECMesh: {
@@ -104810,7 +104810,7 @@
       localOffset: [0, 0, 0],
       offsetY: -0.6
     },
-    ECSleeping: e.EC_DEFAULT,
+    ECSleeping: EntityFactory.EC_DEFAULT,
     ECPhysicsSphere: {
       radius: 0.4,
       usesGravity: !0,
@@ -104830,7 +104830,7 @@
       minimumSpeed: 2,
       cooldownDuration: 0.6
     },
-    ECHeroTorch: e.EC_DEFAULT,
+    ECHeroTorch: EntityFactory.EC_DEFAULT,
     ECHealth: {
       invunTime: 0.75,
       health: 50,
@@ -104849,9 +104849,9 @@
       normalMinDistance: 1,
       hasLookAhead: !0
     },
-    ECHero: e.EC_DEFAULT,
-    ECFaction: e.EC_DEFAULT,
-    ECPlayerData: e.EC_DEFAULT,
+    ECHero: EntityFactory.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECPlayerData: EntityFactory.EC_DEFAULT,
     ECResourceCarrier: {
       maxResource: [50, 50],
       maxUnemcumberedResource: 25,
@@ -104861,7 +104861,7 @@
       fractionDroppedPerHit: 0.25
     },
     ECInventory: {},
-    ECMeleeTarget: e.EC_DEFAULT,
+    ECMeleeTarget: EntityFactory.EC_DEFAULT,
     ECAttackerLimit: {
       maxAttackers: 2,
       maxHighPriorityAttackers: 4
@@ -104882,9 +104882,9 @@
       maxPlayerBuildCloseness: 8,
       needsDoubleClickWhenClose: !1
     },
-    ECSmartSelectableTrigger: e.EC_DEFAULT,
-    ECGateTriggerer: e.EC_DEFAULT,
-    ECWildlingLeader: e.EC_DEFAULT,
+    ECSmartSelectableTrigger: EntityFactory.EC_DEFAULT,
+    ECGateTriggerer: EntityFactory.EC_DEFAULT,
+    ECWildlingLeader: EntityFactory.EC_DEFAULT,
     ECNav: {
       canClimb: !0,
       canDrop: !0
@@ -104905,7 +104905,7 @@
       chopExtraBlocks: [0, 1, 2, 3, 4, 5]
     }
   };
-  e.archetypes.a_h_hero_02 = {
+  EntityFactory.archetypes.a_h_hero_02 = {
     parent: "a_h_hero_01",
     familyName: "hero",
     ECHealth: {
@@ -104919,7 +104919,7 @@
       damageType: "dg_h_melee_bump02"
     }
   };
-  e.archetypes.a_h_hero_03 = {
+  EntityFactory.archetypes.a_h_hero_03 = {
     parent: "a_h_hero_02",
     ECHealth: {
       health: 75
@@ -104932,7 +104932,7 @@
       weapon: "wp_h_shotgun_cone02"
     }
   };
-  e.archetypes.a_h_hero_04 = {
+  EntityFactory.archetypes.a_h_hero_04 = {
     parent: "a_h_hero_03",
     ECHealth: {
       health: 75
@@ -104945,7 +104945,7 @@
       damageType: "dg_h_melee_bump03"
     }
   };
-  e.archetypes.a_h_hero_05 = {
+  EntityFactory.archetypes.a_h_hero_05 = {
     parent: "a_h_hero_04",
     ECHealth: {
       health: 100
@@ -104958,7 +104958,7 @@
       weapon: "wp_h_shotgun_cone03"
     }
   };
-  e.archetypes.a_h_hero_06 = {
+  EntityFactory.archetypes.a_h_hero_06 = {
     parent: "a_h_hero_05",
     ECHealth: {
       health: 100
@@ -104971,7 +104971,7 @@
       damageType: "dg_h_melee_bump04"
     }
   };
-  e.archetypes.a_h_hero_07 = {
+  EntityFactory.archetypes.a_h_hero_07 = {
     parent: "a_h_hero_06",
     ECHealth: {
       health: 125
@@ -104984,7 +104984,7 @@
       weapon: "wp_h_shotgun_cone04"
     }
   };
-  e.archetypes.a_h_hero_08 = {
+  EntityFactory.archetypes.a_h_hero_08 = {
     parent: "a_h_hero_07",
     ECHealth: {
       health: 125
@@ -104997,7 +104997,7 @@
       damageType: "dg_h_melee_bump05"
     }
   };
-  e.archetypes.a_h_hero_09 = {
+  EntityFactory.archetypes.a_h_hero_09 = {
     parent: "a_h_hero_08",
     ECHealth: {
       health: 150
@@ -105010,7 +105010,7 @@
       weapon: "wp_h_shotgun_cone05"
     }
   };
-  e.archetypes.a_h_hero_10 = {
+  EntityFactory.archetypes.a_h_hero_10 = {
     parent: "a_h_hero_09",
     ECHealth: {
       health: 200
@@ -105020,7 +105020,7 @@
       maxUnemcumberedResource: 50
     }
   };
-  e.archetypes.a_lm_tutorialGun = {
+  EntityFactory.archetypes.a_lm_tutorialGun = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "tutorialGun",
@@ -105029,7 +105029,7 @@
       type: "tutorialLocation"
     }
   };
-  e.archetypes.a_lm_triggerBridge = {
+  EntityFactory.archetypes.a_lm_triggerBridge = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "triggerBridge",
@@ -105038,7 +105038,7 @@
       type: "tutorialLocation"
     }
   };
-  e.archetypes.a_lm_resourceArea = {
+  EntityFactory.archetypes.a_lm_resourceArea = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "resourceArea",
@@ -105047,7 +105047,7 @@
       type: "tutorialLocation"
     }
   };
-  e.archetypes.a_lm_suggestHq = {
+  EntityFactory.archetypes.a_lm_suggestHq = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "suggestHq",
@@ -105056,7 +105056,7 @@
       type: "tutorialLocation"
     }
   };
-  e.archetypes.a_lm_suggestOutpost = {
+  EntityFactory.archetypes.a_lm_suggestOutpost = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "suggestOutpost",
@@ -105065,7 +105065,7 @@
       type: "tutorialLocation"
     }
   };
-  e.archetypes.a_lm_suggestBarricade = {
+  EntityFactory.archetypes.a_lm_suggestBarricade = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "suggestBarricade",
@@ -105074,7 +105074,7 @@
       type: "tutorialLocation"
     }
   };
-  e.archetypes.a_lm_suggestGatling = {
+  EntityFactory.archetypes.a_lm_suggestGatling = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "suggestGatling",
@@ -105083,7 +105083,7 @@
       type: "tutorialLocation"
     }
   };
-  e.archetypes.a_lm_tutEnemy = {
+  EntityFactory.archetypes.a_lm_tutEnemy = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "tutorialEnemy",
@@ -105091,7 +105091,7 @@
       locationName: "tutorialEnemy"
     }
   };
-  e.archetypes.a_lm_tutEnemy1 = {
+  EntityFactory.archetypes.a_lm_tutEnemy1 = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "tutorialEnemy1",
@@ -105099,7 +105099,7 @@
       locationName: "tutorialEnemy1"
     }
   };
-  e.archetypes.a_lm_tutEnemy2 = {
+  EntityFactory.archetypes.a_lm_tutEnemy2 = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "tutorialEnemy2",
@@ -105107,7 +105107,7 @@
       locationName: "tutorialEnemy2"
     }
   };
-  e.archetypes.a_lm_tutEnemy3 = {
+  EntityFactory.archetypes.a_lm_tutEnemy3 = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "tutorialEnemy3",
@@ -105115,7 +105115,7 @@
       locationName: "tutorialEnemy3"
     }
   };
-  e.archetypes.a_lm_tutEnemy4 = {
+  EntityFactory.archetypes.a_lm_tutEnemy4 = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "tutorialEnemy4",
@@ -105123,7 +105123,7 @@
       locationName: "tutorialEnemy4"
     }
   };
-  e.archetypes.a_lm_tutEnemy5 = {
+  EntityFactory.archetypes.a_lm_tutEnemy5 = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     familyName: "tutorialEnemy5",
@@ -105131,14 +105131,14 @@
       locationName: "tutorialEnemy5"
     }
   };
-  e.archetypes.a_lm_heroSpawnLocation = {
+  EntityFactory.archetypes.a_lm_heroSpawnLocation = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     ECLocationMarker: {
       type: "heroSpawnLocation"
     }
   };
-  e.archetypes.a_as_war_new_n = {
+  EntityFactory.archetypes.a_as_war_new_n = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     ECLocationMarker: {
@@ -105146,7 +105146,7 @@
       locationName: "N"
     }
   };
-  e.archetypes.a_lm_campaign_starter_n = {
+  EntityFactory.archetypes.a_lm_campaign_starter_n = {
     shouldPlayerSave: !1,
     shouldLevelSave: !0,
     ECLocationMarker: {
@@ -105155,7 +105155,7 @@
       type: "campaignStarter"
     }
   };
-  e.archetypes.a_r_lumber = {
+  EntityFactory.archetypes.a_r_lumber = {
     shouldPlayerSave: !1,
     familyName: "lumber",
     ECSprite: {
@@ -105180,7 +105180,7 @@
       onDestroyEffect: "sfx_dst_r_lumber"
     }
   };
-  e.archetypes.a_r_lumber_large = {
+  EntityFactory.archetypes.a_r_lumber_large = {
     shouldPlayerSave: !1,
     familyName: "lumber",
     ECSprite: {
@@ -105205,7 +105205,7 @@
       onDestroyEffect: "sfx_dst_r_lumber"
     }
   };
-  e.archetypes.a_r_stone = {
+  EntityFactory.archetypes.a_r_stone = {
     shouldPlayerSave: !1,
     familyName: "rock",
     ECSprite: {
@@ -105230,7 +105230,7 @@
       onDestroyEffect: "sfx_dst_r_stone"
     }
   };
-  e.archetypes.a_r_stone_large = {
+  EntityFactory.archetypes.a_r_stone_large = {
     shouldPlayerSave: !1,
     familyName: "rock",
     ECSprite: {
@@ -105255,7 +105255,7 @@
       onDestroyEffect: "sfx_dst_r_stone"
     }
   };
-  e.archetypes.a_r_amber = {
+  EntityFactory.archetypes.a_r_amber = {
     familyName: "amber",
     ECSprite: {
       size: 0.8,
@@ -105282,7 +105282,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_big_amber = {
+  EntityFactory.archetypes.a_r_big_amber = {
     familyName: "amber",
     ECSprite: {
       size: 1.6,
@@ -105308,7 +105308,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp1 = {
+  EntityFactory.archetypes.a_r_xp1 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.6,
@@ -105334,7 +105334,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp2 = {
+  EntityFactory.archetypes.a_r_xp2 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.6,
@@ -105360,7 +105360,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp3 = {
+  EntityFactory.archetypes.a_r_xp3 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.6,
@@ -105386,7 +105386,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp4 = {
+  EntityFactory.archetypes.a_r_xp4 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.6,
@@ -105412,7 +105412,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp5 = {
+  EntityFactory.archetypes.a_r_xp5 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.7,
@@ -105438,7 +105438,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp6 = {
+  EntityFactory.archetypes.a_r_xp6 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.7,
@@ -105464,7 +105464,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp7 = {
+  EntityFactory.archetypes.a_r_xp7 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.7,
@@ -105490,7 +105490,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp8 = {
+  EntityFactory.archetypes.a_r_xp8 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.7,
@@ -105516,7 +105516,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp9 = {
+  EntityFactory.archetypes.a_r_xp9 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.7,
@@ -105542,7 +105542,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp10 = {
+  EntityFactory.archetypes.a_r_xp10 = {
     familyName: "xpshard",
     ECSprite: {
       size: 0.8,
@@ -105568,7 +105568,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp20 = {
+  EntityFactory.archetypes.a_r_xp20 = {
     familyName: "xpshard",
     ECSprite: {
       size: 1.2,
@@ -105594,7 +105594,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp50 = {
+  EntityFactory.archetypes.a_r_xp50 = {
     familyName: "xpshard",
     ECSprite: {
       size: 1.5,
@@ -105620,7 +105620,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp100 = {
+  EntityFactory.archetypes.a_r_xp100 = {
     familyName: "xpshard",
     ECSprite: {
       size: 2,
@@ -105646,7 +105646,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_r_xp500 = {
+  EntityFactory.archetypes.a_r_xp500 = {
     familyName: "xpshard",
     ECSprite: {
       size: 3,
@@ -105672,7 +105672,7 @@
       incidentalMaxTime: 8
     }
   };
-  e.archetypes.a_p_bombs = {
+  EntityFactory.archetypes.a_p_bombs = {
     familyName: "bomb",
     ECMesh: {
       scale: 0.5,
@@ -105686,7 +105686,7 @@
       lifeTime: 15
     }
   };
-  e.archetypes.a_p_bomb = {
+  EntityFactory.archetypes.a_p_bomb = {
     familyName: "bomb",
     ECMesh: {
       scale: 1,
@@ -105701,7 +105701,7 @@
       lifeTime: -1
     }
   };
-  e.archetypes.a_p_heal = {
+  EntityFactory.archetypes.a_p_heal = {
     familyName: "bomb",
     ECMesh: {
       scale: 2,
@@ -105714,7 +105714,7 @@
       lifeTime: -1
     }
   };
-  e.archetypes.a_r_tree01 = {
+  EntityFactory.archetypes.a_r_tree01 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "tree",
@@ -105755,7 +105755,7 @@
       animationSet: "tree01"
     }
   };
-  e.archetypes.a_r_tree02 = {
+  EntityFactory.archetypes.a_r_tree02 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "tree",
@@ -105796,7 +105796,7 @@
       animationSet: "tree02"
     }
   };
-  e.archetypes.a_r_tree04 = {
+  EntityFactory.archetypes.a_r_tree04 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "tree",
@@ -105837,7 +105837,7 @@
       animationSet: "tree04"
     }
   };
-  e.archetypes.a_scenerytest_BIGROCK_nophys = {
+  EntityFactory.archetypes.a_scenerytest_BIGROCK_nophys = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "scenery",
@@ -105866,7 +105866,7 @@
       chanceOfSoftCurrencyPerInteraction: 0.005
     }
   };
-  e.archetypes.a_r_rock01 = {
+  EntityFactory.archetypes.a_r_rock01 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "rock",
@@ -105904,7 +105904,7 @@
       chanceOfSoftCurrencyPerInteraction: 0.005
     }
   };
-  e.archetypes.a_r_rock02 = {
+  EntityFactory.archetypes.a_r_rock02 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "rock",
@@ -105942,7 +105942,7 @@
       chanceOfSoftCurrencyPerInteraction: 0.005
     }
   };
-  e.archetypes.a_r_rock03 = {
+  EntityFactory.archetypes.a_r_rock03 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "rock",
@@ -105980,7 +105980,7 @@
       chanceOfSoftCurrencyPerInteraction: 0.005
     }
   };
-  e.archetypes.a_r_rock04 = {
+  EntityFactory.archetypes.a_r_rock04 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "rock",
@@ -106018,7 +106018,7 @@
       chanceOfSoftCurrencyPerInteraction: 0.005
     }
   };
-  e.archetypes.a_r_mushroomMap = {
+  EntityFactory.archetypes.a_r_mushroomMap = {
     shouldPlayerSave: !0,
     shouldLevelSave: !1,
     familyName: "mushroom",
@@ -106064,7 +106064,7 @@
       onDestroyEffect: "sfx_mushroom1_puff"
     }
   };
-  e.archetypes.a_r_mushroomR1 = {
+  EntityFactory.archetypes.a_r_mushroomR1 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "mushroom",
@@ -106110,7 +106110,7 @@
       onDestroyEffect: "sfx_mushroom1_puff"
     }
   };
-  e.archetypes.a_r_mushroomR2 = {
+  EntityFactory.archetypes.a_r_mushroomR2 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "mushroom",
@@ -106156,7 +106156,7 @@
       onDestroyEffect: "sfx_mushroom2_puff"
     }
   };
-  e.archetypes.a_r_mushroomR3 = {
+  EntityFactory.archetypes.a_r_mushroomR3 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "mushroom",
@@ -106202,7 +106202,7 @@
       onDestroyEffect: "sfx_mushroom3_puff"
     }
   };
-  e.archetypes.a_r_mushroom_patch_small = {
+  EntityFactory.archetypes.a_r_mushroom_patch_small = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     ECEntitySpawnManager: {
@@ -106222,7 +106222,7 @@
       randomGenerateRadius: 4
     }
   };
-  e.archetypes.a_r_mushroom_single = {
+  EntityFactory.archetypes.a_r_mushroom_single = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     ECEntitySpawnManager: {
@@ -106242,7 +106242,7 @@
       randomGenerateRadius: 0.5
     }
   };
-  e.archetypes.v_socket_glow_purple = {
+  EntityFactory.archetypes.v_socket_glow_purple = {
     ECSprite: {
       size: 0.6,
       offsetY: 0,
@@ -106251,7 +106251,7 @@
       color: [225 / 255, 32 / 255, 122 / 255, 0.3]
     }
   };
-  e.archetypes.v_socket_glow_green = {
+  EntityFactory.archetypes.v_socket_glow_green = {
     ECSprite: {
       size: 0.7,
       offsetY: 0,
@@ -106260,7 +106260,7 @@
       color: [31 / 255, 1, 0, 0.2]
     }
   };
-  e.archetypes.v_socket_glow_red = {
+  EntityFactory.archetypes.v_socket_glow_red = {
     ECSprite: {
       size: 0.6,
       offsetY: 0,
@@ -106269,7 +106269,7 @@
       color: [1, 60 / 255, 0, 0.2]
     }
   };
-  e.archetypes.a_r_xpplantMap = {
+  EntityFactory.archetypes.a_r_xpplantMap = {
     shouldPlayerSave: !0,
     shouldLevelSave: !1,
     familyName: "xpplant",
@@ -106315,7 +106315,7 @@
       onDestroyEffect: "sfx_mushroom1_puff"
     }
   };
-  e.archetypes.a_r_xpplant1 = {
+  EntityFactory.archetypes.a_r_xpplant1 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "xpplant",
@@ -106361,7 +106361,7 @@
       onDestroyEffect: "sfx_mushroom1_puff"
     }
   };
-  e.archetypes.a_r_xpplant2 = {
+  EntityFactory.archetypes.a_r_xpplant2 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "xpplant",
@@ -106407,7 +106407,7 @@
       onDestroyEffect: "sfx_mushroom2_puff"
     }
   };
-  e.archetypes.a_r_xpplant3 = {
+  EntityFactory.archetypes.a_r_xpplant3 = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     familyName: "xpplant",
@@ -106453,7 +106453,7 @@
       onDestroyEffect: "sfx_mushroom3_puff"
     }
   };
-  e.archetypes.a_r_xpplant_patch_small = {
+  EntityFactory.archetypes.a_r_xpplant_patch_small = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     ECEntitySpawnManager: {
@@ -106473,7 +106473,7 @@
       randomGenerateRadius: 3
     }
   };
-  e.archetypes.a_r_xpplant_single = {
+  EntityFactory.archetypes.a_r_xpplant_single = {
     shouldPlayerSave: !0,
     shouldLevelSave: !0,
     ECEntitySpawnManager: {
@@ -106493,7 +106493,7 @@
       randomGenerateRadius: 0.5
     }
   };
-  e.archetypes.v_socket_glow_xpp_purple = {
+  EntityFactory.archetypes.v_socket_glow_xpp_purple = {
     ECSprite: {
       size: 0.7,
       offsetY: 0,
@@ -106502,7 +106502,7 @@
       color: [225 / 255, 32 / 255, 122 / 255, 0.2]
     }
   };
-  e.archetypes.v_socket_glow_xpp_green = {
+  EntityFactory.archetypes.v_socket_glow_xpp_green = {
     ECSprite: {
       size: 0.7,
       offsetY: 0,
@@ -106511,7 +106511,7 @@
       color: [31 / 255, 1, 0, 0.2]
     }
   };
-  e.archetypes.v_socket_glow_xpp_red = {
+  EntityFactory.archetypes.v_socket_glow_xpp_red = {
     ECSprite: {
       size: 0.6,
       offsetY: 0,
@@ -106520,439 +106520,439 @@
       color: [1, 60 / 255, 0, 0.2]
     }
   };
-  M.archetypes.a_bl_invisible_impass = {
+  BlockFactory.archetypes.a_bl_invisible_impass = {
     isBuildZone: !1,
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_invisible_nobuild = {
+  BlockFactory.archetypes.a_bl_invisible_nobuild = {
     isBuildZone: !1,
     hasPhysics: !0
   };
-  M.archetypes.a_bl_invisible_no_terrain = {
+  BlockFactory.archetypes.a_bl_invisible_no_terrain = {
     hasPhysics: !0,
     isBuildZone: !0
   };
-  M.archetypes.a_bl_invisible_build_zone = {
+  BlockFactory.archetypes.a_bl_invisible_build_zone = {
     hasPhysics: !0,
     isBuildZone: !0
   };
-  M.archetypes.a_bl_grasscube_impass = {
+  BlockFactory.archetypes.a_bl_grasscube_impass = {
     path: "models/CubeHill.dae",
     hasPhysics: !0,
     isBuildZone: !1,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_proto_cube = {
+  BlockFactory.archetypes.a_bl_proto_cube = {
     path: "environment/models/prototype_cube.dae",
     hasPhysics: !0,
     isBuildZone: !0
   };
-  M.archetypes.a_bl_proto_cube_no_build = {
+  BlockFactory.archetypes.a_bl_proto_cube_no_build = {
     path: "environment/models/prototype_cube.dae",
     hasPhysics: !0,
     isBuildZone: !1
   };
-  M.archetypes.a_bl_proto_cube02 = {
+  BlockFactory.archetypes.a_bl_proto_cube02 = {
     path: "environment/models/prototype_cube02.dae",
     hasPhysics: !0,
     isBuildZone: !0
   };
-  M.archetypes.a_bl_proto_cube02_no_build = {
+  BlockFactory.archetypes.a_bl_proto_cube02_no_build = {
     path: "environment/models/prototype_cube02.dae",
     hasPhysics: !0,
     isBuildZone: !1
   };
-  M.archetypes.a_bl_proto_cube03 = {
+  BlockFactory.archetypes.a_bl_proto_cube03 = {
     path: "environment/models/prototype_cube03.dae",
     hasPhysics: !0,
     isBuildZone: !0
   };
-  M.archetypes.a_bl_e_d_rockcliffedge01 = {
+  BlockFactory.archetypes.a_bl_e_d_rockcliffedge01 = {
     path: "environment/models/e_s_rockcliffedge01.dae"
   };
-  M.archetypes.a_bl_e_d_rockcliffedge02 = {
+  BlockFactory.archetypes.a_bl_e_d_rockcliffedge02 = {
     path: "environment/models/e_s_rockcliffedge02.dae"
   };
-  M.archetypes.a_bl_e_d_rockcliffedge03 = {
+  BlockFactory.archetypes.a_bl_e_d_rockcliffedge03 = {
     path: "environment/models/e_s_rockcliffedge03.dae"
   };
-  M.archetypes.a_bl_e_d_rockcavern = {
+  BlockFactory.archetypes.a_bl_e_d_rockcavern = {
     path: "environment/models/e_s_invasioncavern.dae"
   };
-  M.archetypes.a_bl_e_d_hillbig = {
+  BlockFactory.archetypes.a_bl_e_d_hillbig = {
     path: "environment/models/e_s_rockcliff20by20.dae",
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_e_d_hillmed = {
+  BlockFactory.archetypes.a_bl_e_d_hillmed = {
     path: "environment/models/e_s_rockcliff10by10.dae",
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_e_d_hillsml = {
+  BlockFactory.archetypes.a_bl_e_d_hillsml = {
     path: "environment/models/e_s_rockcliff3by3.dae",
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_e_d_rockcliffarch01 = {
+  BlockFactory.archetypes.a_bl_e_d_rockcliffarch01 = {
     path: "environment/models/e_s_rockseacliff01.dae"
   };
-  M.archetypes.a_bl_e_d_rockcliffarch02 = {
+  BlockFactory.archetypes.a_bl_e_d_rockcliffarch02 = {
     path: "environment/models/e_s_rockseacliff02.dae"
   };
-  M.archetypes.a_bl_e_d_rockspikebig = {
+  BlockFactory.archetypes.a_bl_e_d_rockspikebig = {
     path: "environment/models/e_s_rockspikebig.dae",
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_e_d_rockspikemed = {
+  BlockFactory.archetypes.a_bl_e_d_rockspikemed = {
     path: "environment/models/e_s_rockspikemed.dae",
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_e_d_rockspikesml = {
+  BlockFactory.archetypes.a_bl_e_d_rockspikesml = {
     path: "environment/models/e_s_rockspikesmall.dae",
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_e_d_patchsand = {
+  BlockFactory.archetypes.a_bl_e_d_patchsand = {
     path: "environment/models/e_s_sandpatchbig.dae"
   };
-  M.archetypes.a_bl_e_d_patchgrass = {
+  BlockFactory.archetypes.a_bl_e_d_patchgrass = {
     path: "environment/models/e_s_patchgrassbig.dae"
   };
-  M.archetypes.a_bl_e_d_torchpost = {
+  BlockFactory.archetypes.a_bl_e_d_torchpost = {
     path: "environment/models/e_s_torchpost.dae",
     hasPhysics: !0,
     terrainType: "impass"
   };
-  M.archetypes.a_bl_e_d_grass01 = {
+  BlockFactory.archetypes.a_bl_e_d_grass01 = {
     path: "environment/models/e_s_grassblade01.dae"
   };
-  M.archetypes.a_bl_e_d_grass02 = {
+  BlockFactory.archetypes.a_bl_e_d_grass02 = {
     path: "environment/models/e_s_grassblade02.dae"
   };
-  M.archetypes.a_bl_e_d_patchdeco01 = {
+  BlockFactory.archetypes.a_bl_e_d_patchdeco01 = {
     path: "environment/models/e_s_decopatch01.dae"
   };
-  M.archetypes.a_bl_e_d_patchdeco02 = {
+  BlockFactory.archetypes.a_bl_e_d_patchdeco02 = {
     path: "environment/models/e_s_decopatch02.dae"
   };
-  M.archetypes.a_bl_e_d_patchdeco03 = {
+  BlockFactory.archetypes.a_bl_e_d_patchdeco03 = {
     path: "environment/models/e_s_decopatch03.dae"
   };
-  M.archetypes.a_bl_e_d_patchdeco04 = {
+  BlockFactory.archetypes.a_bl_e_d_patchdeco04 = {
     path: "environment/models/e_s_decopatch04.dae"
   };
-  M.archetypes.a_bl_e_d_rockcliffwaterfall = {
+  BlockFactory.archetypes.a_bl_e_d_rockcliffwaterfall = {
     path: "environment/models/rockprop_01.dae"
   };
-  M.archetypes.a_bl_e_d_hillstepcorner = {
+  BlockFactory.archetypes.a_bl_e_d_hillstepcorner = {
     path: "environment/models/e_s_hillstepcorner.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1, 1, 1]
   };
-  M.archetypes.a_bl_e_d_hillstep_02 = {
+  BlockFactory.archetypes.a_bl_e_d_hillstep_02 = {
     path: "environment/models/e_s_hillstep_02.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1, 1, 1]
   };
-  M.archetypes.a_bl_e_d_hillstep_01 = {
+  BlockFactory.archetypes.a_bl_e_d_hillstep_01 = {
     path: "environment/models/e_s_hillstep_01.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1, 1, 1]
   };
-  M.archetypes.a_bl_e_d_hillstep_double = {
+  BlockFactory.archetypes.a_bl_e_d_hillstep_double = {
     path: "environment/models/e_s_hillstep_double.dae",
     hasPhysics: !0,
     v3PhysicsScale: [2, 1, 1]
   };
-  M.archetypes.a_bl_e_d_hillsteptop = {
+  BlockFactory.archetypes.a_bl_e_d_hillsteptop = {
     path: "environment/models/e_s_hillsteptop02.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1, 1, 1],
     v3PhysicsOffset: [0, -0.5, 0]
   };
-  M.archetypes.a_bl_e_d_hillsteptop_double = {
+  BlockFactory.archetypes.a_bl_e_d_hillsteptop_double = {
     path: "environment/models/e_s_hillsteptop_double.dae",
     hasPhysics: !0,
     v3PhysicsScale: [2, 1, 1],
     v3PhysicsOffset: [0, -0.5, 0]
   };
-  M.archetypes.a_bl_e_d_hillcorner = {
+  BlockFactory.archetypes.a_bl_e_d_hillcorner = {
     path: "environment/models/e_s_hillcorner.dae",
     hasPhysics: !0
   };
-  M.archetypes.a_bl_e_d_hillcorner_hole = {
+  BlockFactory.archetypes.a_bl_e_d_hillcorner_hole = {
     path: "environment/models/e_s_hillcorner_hole.dae",
     hasPhysics: !0
   };
-  M.archetypes.a_bl_e_d_hill_02 = {
+  BlockFactory.archetypes.a_bl_e_d_hill_02 = {
     path: "environment/models/e_s_hill_02.dae",
     hasPhysics: !0
   };
-  M.archetypes.a_bl_e_d_hill_01 = {
+  BlockFactory.archetypes.a_bl_e_d_hill_01 = {
     path: "environment/models/e_s_hill_01.dae",
     hasPhysics: !0
   };
-  M.archetypes.a_bl_e_d_hill_double = {
+  BlockFactory.archetypes.a_bl_e_d_hill_double = {
     path: "environment/models/e_s_hill_double.dae",
     hasPhysics: !0
   };
-  M.archetypes.a_bl_e_d_hilltop = {
+  BlockFactory.archetypes.a_bl_e_d_hilltop = {
     path: "environment/models/e_s_hilltop02.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1, 1, 1],
     v3PhysicsOffset: [0, -0.5, 0]
   };
-  M.archetypes.a_bl_e_d_hilltop_double = {
+  BlockFactory.archetypes.a_bl_e_d_hilltop_double = {
     path: "environment/models/e_s_hilltop_double.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1, 1, 1],
     v3PhysicsOffset: [0, -0.5, 0]
   };
-  M.archetypes.a_bl_e_d_wildlingtunnel = {
+  BlockFactory.archetypes.a_bl_e_d_wildlingtunnel = {
     path: "environment/models/e_s_wildlingtunnel.dae"
   };
-  M.archetypes.a_bl_e_d_tunnelblocker = {
+  BlockFactory.archetypes.a_bl_e_d_tunnelblocker = {
     path: "environment/models/e_s_tunnelblocker.dae"
   };
-  M.archetypes.a_bl_e_d_patchbrownsmall = {
+  BlockFactory.archetypes.a_bl_e_d_patchbrownsmall = {
     path: "environment/models/e_s_patchbrownsmall.dae"
   };
-  M.archetypes.a_bl_e_s_skywind = {
+  BlockFactory.archetypes.a_bl_e_s_skywind = {
     path: "environment/models/e_s_skywind.dae"
   };
-  M.archetypes.a_bl_e_s_skywind_curved = {
+  BlockFactory.archetypes.a_bl_e_s_skywind_curved = {
     path: "environment/models/e_s_skywind_curved.dae"
   };
-  M.archetypes.a_bl_e_s_skywind_twirl = {
+  BlockFactory.archetypes.a_bl_e_s_skywind_twirl = {
     path: "environment/models/e_s_skywind_twirl.dae"
   };
-  M.archetypes.a_bl_e_s_skydome = {
+  BlockFactory.archetypes.a_bl_e_s_skydome = {
     path: "environment/models/e_s_skydome.dae"
   };
-  M.archetypes.a_bl_e_v_marketplace = {
+  BlockFactory.archetypes.a_bl_e_v_marketplace = {
     path: "environment/models/e_v_marketplace.dae"
   };
-  M.archetypes.a_bl_e_v_lightcrystal = {
+  BlockFactory.archetypes.a_bl_e_v_lightcrystal = {
     path: "environment/models/e_v_lightcrystal.dae"
   };
-  M.archetypes.a_bl_e_v_lightcrystalpurple = {
+  BlockFactory.archetypes.a_bl_e_v_lightcrystalpurple = {
     path: "environment/models/e_v_lightcrystalpurple.dae"
   };
-  M.archetypes.a_bl_e_v_lightcrystalblue = {
+  BlockFactory.archetypes.a_bl_e_v_lightcrystalblue = {
     path: "environment/models/e_v_lightcrystalblue.dae"
   };
-  M.archetypes.a_bl_e_v_lightcrystalgreen = {
+  BlockFactory.archetypes.a_bl_e_v_lightcrystalgreen = {
     path: "environment/models/e_v_lightcrystalgreen.dae"
   };
-  M.archetypes.a_bl_e_v_lightcrystalpink = {
+  BlockFactory.archetypes.a_bl_e_v_lightcrystalpink = {
     path: "environment/models/e_v_lightcrystalpink.dae"
   };
-  M.archetypes.a_bl_e_v_lightcrystalred = {
+  BlockFactory.archetypes.a_bl_e_v_lightcrystalred = {
     path: "environment/models/e_v_lightcrystalred.dae"
   };
-  M.archetypes.a_bl_e_v_lightcrystalyellow = {
+  BlockFactory.archetypes.a_bl_e_v_lightcrystalyellow = {
     path: "environment/models/e_v_lightcrystalyellow.dae"
   };
-  M.archetypes.a_bl_e_v_lightlantern = {
+  BlockFactory.archetypes.a_bl_e_v_lightlantern = {
     path: "environment/models/e_v_lightlantern.dae"
   };
-  M.archetypes.a_bl_e_v_citybell = {
+  BlockFactory.archetypes.a_bl_e_v_citybell = {
     path: "environment/models/e_v_citybell.dae"
   };
-  M.archetypes.a_bl_e_v_citygong = {
+  BlockFactory.archetypes.a_bl_e_v_citygong = {
     path: "environment/models/e_v_citygong.dae"
   };
-  M.archetypes.a_bl_e_v_crystalplate = {
+  BlockFactory.archetypes.a_bl_e_v_crystalplate = {
     path: "environment/models/e_v_crystalplate.dae"
   };
-  M.archetypes.a_bl_e_v_crystalplateyellow = {
+  BlockFactory.archetypes.a_bl_e_v_crystalplateyellow = {
     path: "environment/models/e_v_crystalplateyellow.dae"
   };
-  M.archetypes.a_bl_e_v_crystalplatered = {
+  BlockFactory.archetypes.a_bl_e_v_crystalplatered = {
     path: "environment/models/e_v_crystalplatered.dae"
   };
-  M.archetypes.a_bl_e_v_crystalplateblue = {
+  BlockFactory.archetypes.a_bl_e_v_crystalplateblue = {
     path: "environment/models/e_v_crystalplateblue.dae"
   };
-  M.archetypes.a_bl_e_v_crystalplategreen = {
+  BlockFactory.archetypes.a_bl_e_v_crystalplategreen = {
     path: "environment/models/e_v_crystalplategreen.dae"
   };
-  M.archetypes.a_bl_e_v_crystalplatepurple = {
+  BlockFactory.archetypes.a_bl_e_v_crystalplatepurple = {
     path: "environment/models/e_v_crystalplatepurple.dae"
   };
-  M.archetypes.a_bl_e_v_crystalplatepink = {
+  BlockFactory.archetypes.a_bl_e_v_crystalplatepink = {
     path: "environment/models/e_v_crystalplatepink.dae"
   };
-  M.archetypes.a_bl_e_v_flowerpot = {
+  BlockFactory.archetypes.a_bl_e_v_flowerpot = {
     path: "environment/models/e_v_flowerpot.dae"
   };
-  M.archetypes.a_bl_e_v_statuesage = {
+  BlockFactory.archetypes.a_bl_e_v_statuesage = {
     path: "environment/models/e_v_statuesage.dae"
   };
-  M.archetypes.a_bl_e_v_flagred = {
+  BlockFactory.archetypes.a_bl_e_v_flagred = {
     path: "environment/models/e_v_flagred.dae"
   };
-  M.archetypes.a_bl_e_v_flagyellow = {
+  BlockFactory.archetypes.a_bl_e_v_flagyellow = {
     path: "environment/models/e_v_flagyellow.dae"
   };
-  M.archetypes.a_bl_e_v_flagblue = {
+  BlockFactory.archetypes.a_bl_e_v_flagblue = {
     path: "environment/models/e_v_flagblue.dae"
   };
-  M.archetypes.a_bl_e_v_flaggreen = {
+  BlockFactory.archetypes.a_bl_e_v_flaggreen = {
     path: "environment/models/e_v_flaggreen.dae"
   };
-  M.archetypes.a_bl_e_v_flagpurple = {
+  BlockFactory.archetypes.a_bl_e_v_flagpurple = {
     path: "environment/models/e_v_flagpurple.dae"
   };
-  M.archetypes.a_bl_e_v_flagdark = {
+  BlockFactory.archetypes.a_bl_e_v_flagdark = {
     path: "environment/models/e_v_flagdark.dae"
   };
-  M.archetypes.a_bl_e_v_flagblack = {
+  BlockFactory.archetypes.a_bl_e_v_flagblack = {
     path: "environment/models/e_v_flagblack.dae"
   };
-  M.archetypes.a_bl_e_v_flagwhite = {
+  BlockFactory.archetypes.a_bl_e_v_flagwhite = {
     path: "environment/models/e_v_flagwhite.dae"
   };
-  M.archetypes.a_bl_e_v_fountain01 = {
+  BlockFactory.archetypes.a_bl_e_v_fountain01 = {
     path: "environment/models/e_v_fountain01.dae"
   };
-  M.archetypes.a_bl_e_v_floortiles01 = {
+  BlockFactory.archetypes.a_bl_e_v_floortiles01 = {
     path: "environment/models/e_v_floortiles01.dae"
   };
-  M.archetypes.a_bl_e_v_floortiles02 = {
+  BlockFactory.archetypes.a_bl_e_v_floortiles02 = {
     path: "environment/models/e_v_floortiles02.dae"
   };
-  M.archetypes.a_bl_e_s_bridge = {
+  BlockFactory.archetypes.a_bl_e_s_bridge = {
     path: "environment/models/e_s_bridge.dae"
   };
-  M.archetypes.a_bl_e_s_shipwreck = {
+  BlockFactory.archetypes.a_bl_e_s_shipwreck = {
     path: "environment/models/e_s_shipwreck.dae"
   };
-  M.archetypes.a_bl_e_s_crate = {
+  BlockFactory.archetypes.a_bl_e_s_crate = {
     path: "environment/models/e_s_crate.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1, 1, 1]
   };
-  M.archetypes.a_bl_e_s_plank = {
+  BlockFactory.archetypes.a_bl_e_s_plank = {
     path: "environment/models/e_s_floatingplank.dae",
     hasPhysics: !0,
     v3PhysicsScale: [1.3, 0.1, 0.5]
   };
-  M.archetypes.a_bl_e_s_ripple_circ = {
+  BlockFactory.archetypes.a_bl_e_s_ripple_circ = {
     path: "environment/models/e_s_circularripple.dae"
   };
-  M.archetypes.a_bl_e_s_weaponcrate = {
+  BlockFactory.archetypes.a_bl_e_s_weaponcrate = {
     path: "environment/models/e_s_weaponcrate.dae",
     hasPhysics: !0,
     v3PhysicsScale: [2, 1, 1]
   };
-  M.archetypes.a_bl_e_s_grassbladeflower01 = {
+  BlockFactory.archetypes.a_bl_e_s_grassbladeflower01 = {
     path: "environment/models/e_s_grassbladeflower01.dae"
   };
-  M.archetypes.a_bl_e_s_grassbladeflower02 = {
+  BlockFactory.archetypes.a_bl_e_s_grassbladeflower02 = {
     path: "environment/models/e_s_grassbladeflower02.dae"
   };
-  M.archetypes.a_bl_e_s_grassbladeflower03 = {
+  BlockFactory.archetypes.a_bl_e_s_grassbladeflower03 = {
     path: "environment/models/e_s_grassbladeflower03.dae"
   };
-  M.archetypes.a_bl_e_i_tree04 = {
+  BlockFactory.archetypes.a_bl_e_i_tree04 = {
     path: "environment/models/e_i_tree04.dae"
   };
-  M.archetypes.a_bl_e_s_skull01 = {
+  BlockFactory.archetypes.a_bl_e_s_skull01 = {
     path: "environment/models/e_s_skull01.dae"
   };
-  M.archetypes.a_bl_e_s_pathtiles = {
+  BlockFactory.archetypes.a_bl_e_s_pathtiles = {
     path: "environment/models/e_s_pathtiles.dae"
   };
-  M.archetypes.a_bl_e_s_pathcurve = {
+  BlockFactory.archetypes.a_bl_e_s_pathcurve = {
     path: "environment/models/e_s_pathcurve.dae"
   };
-  M.archetypes.a_bl_e_s_path_l = {
+  BlockFactory.archetypes.a_bl_e_s_path_l = {
     path: "environment/models/e_s_path01.dae"
   };
-  M.archetypes.a_bl_e_s_path_m = {
+  BlockFactory.archetypes.a_bl_e_s_path_m = {
     path: "environment/models/e_s_path02.dae"
   };
-  M.archetypes.a_bl_e_s_path_s = {
+  BlockFactory.archetypes.a_bl_e_s_path_s = {
     path: "environment/models/e_s_path03.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_top06 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_top06 = {
     path: "environment/models/e_s_riverbank_top06.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_top05 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_top05 = {
     path: "environment/models/e_s_riverbank_top05.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_top04 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_top04 = {
     path: "environment/models/e_s_riverbank_top04.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_top03 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_top03 = {
     path: "environment/models/e_s_riverbank_top03.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_top02 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_top02 = {
     path: "environment/models/e_s_riverbank_top02.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_top01 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_top01 = {
     path: "environment/models/e_s_riverbank_top01.dae"
   };
-  M.archetypes.a_bl_e_s_sea10by10 = {
+  BlockFactory.archetypes.a_bl_e_s_sea10by10 = {
     path: "environment/models/e_s_sea10by10.dae"
   };
-  M.archetypes.a_bl_e_s_seashore10by10_03 = {
+  BlockFactory.archetypes.a_bl_e_s_seashore10by10_03 = {
     path: "environment/models/e_s_seashore10by10_03.dae"
   };
-  M.archetypes.a_bl_e_s_seashore10by10_02 = {
+  BlockFactory.archetypes.a_bl_e_s_seashore10by10_02 = {
     path: "environment/models/e_s_seashore10by10_02.dae"
   };
-  M.archetypes.a_bl_e_s_seashore10by10_01 = {
+  BlockFactory.archetypes.a_bl_e_s_seashore10by10_01 = {
     path: "environment/models/e_s_seashore10by10_01.dae"
   };
-  M.archetypes.a_bl_e_s_riverend01right = {
+  BlockFactory.archetypes.a_bl_e_s_riverend01right = {
     path: "environment/models/e_s_riverend01right.dae"
   };
-  M.archetypes.a_bl_e_s_riverend01 = {
+  BlockFactory.archetypes.a_bl_e_s_riverend01 = {
     path: "environment/models/e_s_riverend01.dae"
   };
-  M.archetypes.a_bl_e_s_lake20by20_04 = {
+  BlockFactory.archetypes.a_bl_e_s_lake20by20_04 = {
     path: "environment/models/e_s_lake20by20_04.dae"
   };
-  M.archetypes.a_bl_e_s_lake20by20_03 = {
+  BlockFactory.archetypes.a_bl_e_s_lake20by20_03 = {
     path: "environment/models/e_s_lake20by20_03.dae"
   };
-  M.archetypes.a_bl_e_s_lake20by20_02 = {
+  BlockFactory.archetypes.a_bl_e_s_lake20by20_02 = {
     path: "environment/models/e_s_lake20by20_02.dae"
   };
-  M.archetypes.a_bl_e_s_lake20by20_01 = {
+  BlockFactory.archetypes.a_bl_e_s_lake20by20_01 = {
     path: "environment/models/e_s_lake20by20_01.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_bott06 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_bott06 = {
     path: "environment/models/e_s_riverbank_bott06.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_bott05 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_bott05 = {
     path: "environment/models/e_s_riverbank_bott05.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_bott04 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_bott04 = {
     path: "environment/models/e_s_riverbank_bott04.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_bott03 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_bott03 = {
     path: "environment/models/e_s_riverbank_bott03.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_bott02 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_bott02 = {
     path: "environment/models/e_s_riverbank_bott02.dae"
   };
-  M.archetypes.a_bl_e_s_riverbank_bott01 = {
+  BlockFactory.archetypes.a_bl_e_s_riverbank_bott01 = {
     path: "environment/models/e_s_riverbank_bott01.dae"
   };
-  M.archetypes.a_bl_e_s_lake10by10 = {
+  BlockFactory.archetypes.a_bl_e_s_lake10by10 = {
     path: "environment/models/e_s_lake10by10.dae"
   };
-  M.archetypes.a_bl_e_s_grasspatch10by10 = {
+  BlockFactory.archetypes.a_bl_e_s_grasspatch10by10 = {
     path: "environment/models/e_s_grasspatch10by10.dae"
   };
-  e.archetypes.a_d_bombplant = {
+  EntityFactory.archetypes.a_d_bombplant = {
     shouldPlayerSave: !0,
     familyName: "resupply",
     ECMesh: {
@@ -106972,8 +106972,8 @@
       health: 5,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       resourceCost: 20,
       secondaryResourceCost: 0,
@@ -107004,7 +107004,7 @@
       randomGenerateRadius: 0
     }
   };
-  e.archetypes.a_d_healplant = {
+  EntityFactory.archetypes.a_d_healplant = {
     shouldPlayerSave: !0,
     familyName: "resupply",
     ECMesh: {
@@ -107024,8 +107024,8 @@
       health: 5,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECFaction: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECBuilding: {
       resourceCost: 20,
       secondaryResourceCost: 0,
@@ -107061,7 +107061,7 @@
       randomGenerateRadius: 0
     }
   };
-  e.archetypes.a_d_barrel = {
+  EntityFactory.archetypes.a_d_barrel = {
     shouldPlayerSave: !0,
     familyName: "barrel",
     ECMesh: {
@@ -107088,23 +107088,23 @@
       onlyTargetedByFriendlyUnits: !0
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_barrel.health,
+      health: EntityFactory.balanceDefences.a_d_barrel.health,
       takesFullDamageFromFriendlyFire: !0,
       canOnlyBeDamagedByHero: !0,
       immuneToIndirectHits: !0,
       deathBehavior: "none",
       rooted: !0
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECExplode: {
       damageType: "dg_d_barrel",
       explodeOnDeath: !0,
       sfxArchetype: "sfx_explosionBarrel"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_barrel.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_barrel.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_barrel.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_barrel.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       buildingName: "Barrel",
@@ -107124,20 +107124,20 @@
         maximumQuantity: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
   B.archetypes.dg_d_barrel = B.create("Barrel Explosion", {
-    damage: e.balanceDefences.a_d_barrel.damage,
-    buildingDamage: e.balanceDefences.a_d_barrel.buildingDamage,
-    forceBack: e.balanceDefences.a_d_barrel.forceBack,
-    forceLift: e.balanceDefences.a_d_barrel.forceLift,
-    forceRadial: e.balanceDefences.a_d_barrel.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_barrel.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_barrel.buildingDamage,
+    forceBack: EntityFactory.balanceDefences.a_d_barrel.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_barrel.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_barrel.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_barrel.radius,
+    radius: EntityFactory.balanceDefences.a_d_barrel.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_barrel.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_barrel.friendlyFire
   });
-  e.archetypes.a_d_barrel_level_2 = {
+  EntityFactory.archetypes.a_d_barrel_level_2 = {
     parent: "a_d_barrel",
     ECMesh: {
       scale: 1,
@@ -107145,7 +107145,7 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_barrel_level_2.health,
+      health: EntityFactory.balanceDefences.a_d_barrel_level_2.health,
       takesFullDamageFromFriendlyFire: !0,
       canOnlyBeDamagedByHero: !0,
       immuneToIndirectHits: !0,
@@ -107158,9 +107158,9 @@
       sfxArchetype: "sfx_explosionBarrel"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_barrel_level_2.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_barrel_level_2.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_barrel_level_2.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_barrel_level_2.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107184,17 +107184,17 @@
     }
   };
   B.archetypes.dg_d_barrel_level_2 = B.create("Barrel Explosion", {
-    damage: e.balanceDefences.a_d_barrel_level_2.damage,
-    buildingDamage: e.balanceDefences.a_d_barrel_level_2.buildingDamage,
-    forceBack: e.balanceDefences.a_d_barrel_level_2.forceBack,
-    forceLift: e.balanceDefences.a_d_barrel_level_2.forceLift,
-    forceRadial: e.balanceDefences.a_d_barrel_level_2.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_barrel_level_2.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_barrel_level_2.buildingDamage,
+    forceBack: EntityFactory.balanceDefences.a_d_barrel_level_2.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_barrel_level_2.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_barrel_level_2.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_barrel_level_2.radius,
+    radius: EntityFactory.balanceDefences.a_d_barrel_level_2.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_barrel_level_2.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_barrel_level_2.friendlyFire
   });
-  e.archetypes.a_d_barrel_level_3 = {
+  EntityFactory.archetypes.a_d_barrel_level_3 = {
     parent: "a_d_barrel_level_2",
     ECMesh: {
       scale: 1,
@@ -107202,7 +107202,7 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_barrel_level_3.health,
+      health: EntityFactory.balanceDefences.a_d_barrel_level_3.health,
       takesFullDamageFromFriendlyFire: !0,
       canOnlyBeDamagedByHero: !0,
       immuneToIndirectHits: !0,
@@ -107215,9 +107215,9 @@
       sfxArchetype: "sfx_explosionBarrel"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_barrel_level_3.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_barrel_level_3.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_barrel_level_3.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_barrel_level_3.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107241,17 +107241,17 @@
     }
   };
   B.archetypes.dg_d_barrel_level_3 = B.create("Barrel Explosion", {
-    damage: e.balanceDefences.a_d_barrel_level_3.damage,
-    buildingDamage: e.balanceDefences.a_d_barrel_level_3.buildingDamage,
-    forceBack: e.balanceDefences.a_d_barrel_level_3.forceBack,
-    forceLift: e.balanceDefences.a_d_barrel_level_3.forceLift,
-    forceRadial: e.balanceDefences.a_d_barrel_level_3.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_barrel_level_3.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_barrel_level_3.buildingDamage,
+    forceBack: EntityFactory.balanceDefences.a_d_barrel_level_3.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_barrel_level_3.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_barrel_level_3.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_barrel_level_3.radius,
+    radius: EntityFactory.balanceDefences.a_d_barrel_level_3.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_barrel_level_3.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_barrel_level_3.friendlyFire
   });
-  e.archetypes.a_d_barrel_level_4 = {
+  EntityFactory.archetypes.a_d_barrel_level_4 = {
     parent: "a_d_barrel_level_3",
     ECMesh: {
       scale: 1,
@@ -107259,7 +107259,7 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_barrel_level_4.health,
+      health: EntityFactory.balanceDefences.a_d_barrel_level_4.health,
       takesFullDamageFromFriendlyFire: !0,
       canOnlyBeDamagedByHero: !0,
       immuneToIndirectHits: !0,
@@ -107272,9 +107272,9 @@
       sfxArchetype: "sfx_explosionBarrel"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_barrel_level_4.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_barrel_level_4.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_barrel_level_4.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_barrel_level_4.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107298,17 +107298,17 @@
     }
   };
   B.archetypes.dg_d_barrel_level_4 = B.create("Barrel Explosion", {
-    damage: e.balanceDefences.a_d_barrel_level_4.damage,
-    buildingDamage: e.balanceDefences.a_d_barrel_level_4.buildingDamage,
-    forceBack: e.balanceDefences.a_d_barrel_level_4.forceBack,
-    forceLift: e.balanceDefences.a_d_barrel_level_4.forceLift,
-    forceRadial: e.balanceDefences.a_d_barrel_level_4.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_barrel_level_4.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_barrel_level_4.buildingDamage,
+    forceBack: EntityFactory.balanceDefences.a_d_barrel_level_4.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_barrel_level_4.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_barrel_level_4.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_barrel_level_4.radius,
+    radius: EntityFactory.balanceDefences.a_d_barrel_level_4.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_barrel_level_4.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_barrel_level_4.friendlyFire
   });
-  e.archetypes.a_d_barrel_level_5 = {
+  EntityFactory.archetypes.a_d_barrel_level_5 = {
     parent: "a_d_barrel_level_4",
     ECMesh: {
       scale: 1,
@@ -107316,7 +107316,7 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_barrel_level_5.health,
+      health: EntityFactory.balanceDefences.a_d_barrel_level_5.health,
       takesFullDamageFromFriendlyFire: !0,
       canOnlyBeDamagedByHero: !0,
       immuneToIndirectHits: !0,
@@ -107329,9 +107329,9 @@
       sfxArchetype: "sfx_explosionBarrel"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_barrel_level_5.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_barrel_level_5.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_barrel_level_5.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_barrel_level_5.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107355,17 +107355,17 @@
     }
   };
   B.archetypes.dg_d_barrel_level_5 = B.create("Barrel Explosion", {
-    damage: e.balanceDefences.a_d_barrel_level_5.damage,
-    buildingDamage: e.balanceDefences.a_d_barrel_level_5.buildingDamage,
-    forceBack: e.balanceDefences.a_d_barrel_level_5.forceBack,
-    forceLift: e.balanceDefences.a_d_barrel_level_5.forceLift,
-    forceRadial: e.balanceDefences.a_d_barrel_level_5.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_barrel_level_5.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_barrel_level_5.buildingDamage,
+    forceBack: EntityFactory.balanceDefences.a_d_barrel_level_5.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_barrel_level_5.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_barrel_level_5.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_barrel_level_5.radius,
+    radius: EntityFactory.balanceDefences.a_d_barrel_level_5.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_barrel_level_5.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_barrel_level_5.friendlyFire
   });
-  e.archetypes.a_d_mine = {
+  EntityFactory.archetypes.a_d_mine = {
     shouldPlayerSave: !0,
     familyName: "mine",
     ECMesh: {
@@ -107380,16 +107380,16 @@
       v3Scale: [1, 0.1, 1]
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_mine.health,
+      health: EntityFactory.balanceDefences.a_d_mine.health,
       canTakeDamage: !1,
       deathBehavior: "none",
       rooted: !0
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECExchanger: {
-      heroCollide: e.balanceDefences.a_d_mine.triggeredByHeroTouch,
-      agentCollide: e.balanceDefences.a_d_mine.triggeredByEnemyTouch,
-      wildlingCollide: e.balanceDefences.a_d_mine.triggeredByWildlingTouch,
+      heroCollide: EntityFactory.balanceDefences.a_d_mine.triggeredByHeroTouch,
+      agentCollide: EntityFactory.balanceDefences.a_d_mine.triggeredByEnemyTouch,
+      wildlingCollide: EntityFactory.balanceDefences.a_d_mine.triggeredByWildlingTouch,
       killSelf: !0
     },
     ECExplode: {
@@ -107398,9 +107398,9 @@
       sfxArchetype: "sfx_explosionMine"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_mine.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_mine.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_mine.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_mine.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       buildingName: "Mine",
@@ -107422,18 +107422,18 @@
     }
   };
   B.archetypes.dg_d_mine = B.create("Mine Explosion", {
-    damage: e.balanceDefences.a_d_mine.damage,
-    buildingDamage: e.balanceDefences.a_d_mine.buildingDamage,
-    stunDuration: e.balanceDefences.a_d_mine.stunDuration,
-    forceBack: e.balanceDefences.a_d_mine.forceBack,
-    forceLift: e.balanceDefences.a_d_mine.forceLift,
-    forceRadial: e.balanceDefences.a_d_mine.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_mine.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_mine.buildingDamage,
+    stunDuration: EntityFactory.balanceDefences.a_d_mine.stunDuration,
+    forceBack: EntityFactory.balanceDefences.a_d_mine.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_mine.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_mine.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_mine.radius,
+    radius: EntityFactory.balanceDefences.a_d_mine.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_mine.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_mine.friendlyFire
   });
-  e.archetypes.a_d_mine_level_2 = {
+  EntityFactory.archetypes.a_d_mine_level_2 = {
     parent: "a_d_mine",
     ECMesh: {
       scale: 1,
@@ -107441,15 +107441,15 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_mine_level_2.health,
+      health: EntityFactory.balanceDefences.a_d_mine_level_2.health,
       canTakeDamage: !1,
       deathBehavior: "none",
       rooted: !0
     },
     ECExchanger: {
-      heroCollide: e.balanceDefences.a_d_mine_level_2.triggeredByHeroTouch,
-      agentCollide: e.balanceDefences.a_d_mine_level_2.triggeredByEnemyTouch,
-      wildlingCollide: e.balanceDefences.a_d_mine_level_2.triggeredByWildlingTouch,
+      heroCollide: EntityFactory.balanceDefences.a_d_mine_level_2.triggeredByHeroTouch,
+      agentCollide: EntityFactory.balanceDefences.a_d_mine_level_2.triggeredByEnemyTouch,
+      wildlingCollide: EntityFactory.balanceDefences.a_d_mine_level_2.triggeredByWildlingTouch,
       killSelf: !0
     },
     ECExplode: {
@@ -107458,9 +107458,9 @@
       sfxArchetype: "sfx_explosionMine"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_mine_level_2.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_mine_level_2.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_mine_level_2.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_mine_level_2.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107484,18 +107484,18 @@
     }
   };
   B.archetypes.dg_d_mine_level_2 = B.create("Mine Explosion", {
-    damage: e.balanceDefences.a_d_mine_level_2.damage,
-    buildingDamage: e.balanceDefences.a_d_mine_level_2.buildingDamage,
-    stunDuration: e.balanceDefences.a_d_mine_level_2.stunDuration,
-    forceBack: e.balanceDefences.a_d_mine_level_2.forceBack,
-    forceLift: e.balanceDefences.a_d_mine_level_2.forceLift,
-    forceRadial: e.balanceDefences.a_d_mine_level_2.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_mine_level_2.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_mine_level_2.buildingDamage,
+    stunDuration: EntityFactory.balanceDefences.a_d_mine_level_2.stunDuration,
+    forceBack: EntityFactory.balanceDefences.a_d_mine_level_2.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_mine_level_2.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_mine_level_2.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_mine_level_2.radius,
+    radius: EntityFactory.balanceDefences.a_d_mine_level_2.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_mine_level_2.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_mine_level_2.friendlyFire
   });
-  e.archetypes.a_d_mine_level_3 = {
+  EntityFactory.archetypes.a_d_mine_level_3 = {
     parent: "a_d_mine_level_2",
     ECMesh: {
       scale: 1,
@@ -107503,15 +107503,15 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_mine_level_3.health,
+      health: EntityFactory.balanceDefences.a_d_mine_level_3.health,
       canTakeDamage: !1,
       deathBehavior: "none",
       rooted: !0
     },
     ECExchanger: {
-      heroCollide: e.balanceDefences.a_d_mine_level_3.triggeredByHeroTouch,
-      agentCollide: e.balanceDefences.a_d_mine_level_3.triggeredByEnemyTouch,
-      wildlingCollide: e.balanceDefences.a_d_mine_level_3.triggeredByWildlingTouch,
+      heroCollide: EntityFactory.balanceDefences.a_d_mine_level_3.triggeredByHeroTouch,
+      agentCollide: EntityFactory.balanceDefences.a_d_mine_level_3.triggeredByEnemyTouch,
+      wildlingCollide: EntityFactory.balanceDefences.a_d_mine_level_3.triggeredByWildlingTouch,
       killSelf: !0
     },
     ECExplode: {
@@ -107520,9 +107520,9 @@
       sfxArchetype: "sfx_explosionMine"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_mine_level_3.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_mine_level_3.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_mine_level_3.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_mine_level_3.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107546,18 +107546,18 @@
     }
   };
   B.archetypes.dg_d_mine_level_3 = B.create("Mine Explosion", {
-    damage: e.balanceDefences.a_d_mine_level_3.damage,
-    buildingDamage: e.balanceDefences.a_d_mine_level_3.buildingDamage,
-    stunDuration: e.balanceDefences.a_d_mine_level_3.stunDuration,
-    forceBack: e.balanceDefences.a_d_mine_level_3.forceBack,
-    forceLift: e.balanceDefences.a_d_mine_level_3.forceLift,
-    forceRadial: e.balanceDefences.a_d_mine_level_3.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_mine_level_3.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_mine_level_3.buildingDamage,
+    stunDuration: EntityFactory.balanceDefences.a_d_mine_level_3.stunDuration,
+    forceBack: EntityFactory.balanceDefences.a_d_mine_level_3.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_mine_level_3.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_mine_level_3.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_mine_level_3.radius,
+    radius: EntityFactory.balanceDefences.a_d_mine_level_3.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_mine_level_3.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_mine_level_3.friendlyFire
   });
-  e.archetypes.a_d_mine_level_4 = {
+  EntityFactory.archetypes.a_d_mine_level_4 = {
     parent: "a_d_mine_level_3",
     ECMesh: {
       scale: 1,
@@ -107565,15 +107565,15 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_mine_level_4.health,
+      health: EntityFactory.balanceDefences.a_d_mine_level_4.health,
       canTakeDamage: !1,
       deathBehavior: "none",
       rooted: !0
     },
     ECExchanger: {
-      heroCollide: e.balanceDefences.a_d_mine_level_4.triggeredByHeroTouch,
-      agentCollide: e.balanceDefences.a_d_mine_level_4.triggeredByEnemyTouch,
-      wildlingCollide: e.balanceDefences.a_d_mine_level_4.triggeredByWildlingTouch,
+      heroCollide: EntityFactory.balanceDefences.a_d_mine_level_4.triggeredByHeroTouch,
+      agentCollide: EntityFactory.balanceDefences.a_d_mine_level_4.triggeredByEnemyTouch,
+      wildlingCollide: EntityFactory.balanceDefences.a_d_mine_level_4.triggeredByWildlingTouch,
       killSelf: !0
     },
     ECExplode: {
@@ -107582,9 +107582,9 @@
       sfxArchetype: "sfx_explosionMine"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_mine_level_4.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_mine_level_4.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_mine_level_4.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_mine_level_4.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107608,18 +107608,18 @@
     }
   };
   B.archetypes.dg_d_mine_level_4 = B.create("Mine Explosion", {
-    damage: e.balanceDefences.a_d_mine_level_4.damage,
-    buildingDamage: e.balanceDefences.a_d_mine_level_4.buildingDamage,
-    stunDuration: e.balanceDefences.a_d_mine_level_4.stunDuration,
-    forceBack: e.balanceDefences.a_d_mine_level_4.forceBack,
-    forceLift: e.balanceDefences.a_d_mine_level_4.forceLift,
-    forceRadial: e.balanceDefences.a_d_mine_level_4.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_mine_level_4.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_mine_level_4.buildingDamage,
+    stunDuration: EntityFactory.balanceDefences.a_d_mine_level_4.stunDuration,
+    forceBack: EntityFactory.balanceDefences.a_d_mine_level_4.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_mine_level_4.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_mine_level_4.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_mine_level_4.radius,
+    radius: EntityFactory.balanceDefences.a_d_mine_level_4.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_mine_level_4.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_mine_level_4.friendlyFire
   });
-  e.archetypes.a_d_mine_level_5 = {
+  EntityFactory.archetypes.a_d_mine_level_5 = {
     parent: "a_d_mine_level_4",
     ECMesh: {
       scale: 1,
@@ -107627,15 +107627,15 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_mine_level_5.health,
+      health: EntityFactory.balanceDefences.a_d_mine_level_5.health,
       canTakeDamage: !1,
       deathBehavior: "none",
       rooted: !0
     },
     ECExchanger: {
-      heroCollide: e.balanceDefences.a_d_mine_level_5.triggeredByHeroTouch,
-      agentCollide: e.balanceDefences.a_d_mine_level_5.triggeredByEnemyTouch,
-      wildlingCollide: e.balanceDefences.a_d_mine_level_5.triggeredByWildlingTouch,
+      heroCollide: EntityFactory.balanceDefences.a_d_mine_level_5.triggeredByHeroTouch,
+      agentCollide: EntityFactory.balanceDefences.a_d_mine_level_5.triggeredByEnemyTouch,
+      wildlingCollide: EntityFactory.balanceDefences.a_d_mine_level_5.triggeredByWildlingTouch,
       killSelf: !0
     },
     ECExplode: {
@@ -107644,9 +107644,9 @@
       sfxArchetype: "sfx_explosionMine"
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_mine_level_5.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_mine_level_5.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_mine_level_5.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_mine_level_5.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107670,18 +107670,18 @@
     }
   };
   B.archetypes.dg_d_mine_level_5 = B.create("Mine Explosion", {
-    damage: e.balanceDefences.a_d_mine_level_5.damage,
-    buildingDamage: e.balanceDefences.a_d_mine_level_5.buildingDamage,
-    stunDuration: e.balanceDefences.a_d_mine_level_5.stunDuration,
-    forceBack: e.balanceDefences.a_d_mine_level_5.forceBack,
-    forceLift: e.balanceDefences.a_d_mine_level_5.forceLift,
-    forceRadial: e.balanceDefences.a_d_mine_level_5.forceRadial,
+    damage: EntityFactory.balanceDefences.a_d_mine_level_5.damage,
+    buildingDamage: EntityFactory.balanceDefences.a_d_mine_level_5.buildingDamage,
+    stunDuration: EntityFactory.balanceDefences.a_d_mine_level_5.stunDuration,
+    forceBack: EntityFactory.balanceDefences.a_d_mine_level_5.forceBack,
+    forceLift: EntityFactory.balanceDefences.a_d_mine_level_5.forceLift,
+    forceRadial: EntityFactory.balanceDefences.a_d_mine_level_5.forceRadial,
     forceTangential: 0,
-    radius: e.balanceDefences.a_d_mine_level_5.radius,
+    radius: EntityFactory.balanceDefences.a_d_mine_level_5.radius,
     isExplosion: !0,
-    friendlyFire: e.balanceDefences.a_d_mine_level_5.friendlyFire
+    friendlyFire: EntityFactory.balanceDefences.a_d_mine_level_5.friendlyFire
   });
-  e.archetypes.a_d_decoy = {
+  EntityFactory.archetypes.a_d_decoy = {
     shouldPlayerSave: !0,
     familyName: "decoy",
     ECMesh: {
@@ -107697,22 +107697,22 @@
       terrainType: "building"
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_decoy.health,
+      health: EntityFactory.balanceDefences.a_d_decoy.health,
       drawInWorldBarIfDamagedRecently: !0
     },
-    ECFaction: e.EC_DEFAULT,
+    ECFaction: EntityFactory.EC_DEFAULT,
     ECSelectable: {
       selectType: "selectTypePrepare"
     },
-    ECInteractable: e.EC_DEFAULT,
-    ECTarget: e.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECTarget: EntityFactory.EC_DEFAULT,
     ECAttackerLimit: {
-      maxAttackers: e.balanceDefences.a_d_decoy.maxAttackers
+      maxAttackers: EntityFactory.balanceDefences.a_d_decoy.maxAttackers
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_decoy.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_decoy.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_decoy.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_decoy.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       buildingName: "Decoy",
@@ -107732,9 +107732,9 @@
         maximumQuantity: 1
       }]
     },
-    ECRadialMenu: e.EC_DEFAULT
+    ECRadialMenu: EntityFactory.EC_DEFAULT
   };
-  e.archetypes.a_d_decoy_level_2 = {
+  EntityFactory.archetypes.a_d_decoy_level_2 = {
     parent: "a_d_decoy",
     ECMesh: {
       scale: 1,
@@ -107742,16 +107742,16 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_decoy_level_2.health,
+      health: EntityFactory.balanceDefences.a_d_decoy_level_2.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECAttackerLimit: {
-      maxAttackers: e.balanceDefences.a_d_decoy_level_2.maxAttackers
+      maxAttackers: EntityFactory.balanceDefences.a_d_decoy_level_2.maxAttackers
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_decoy_level_2.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_decoy_level_2.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_decoy_level_2.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_decoy_level_2.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107774,7 +107774,7 @@
       }]
     }
   };
-  e.archetypes.a_d_decoy_level_3 = {
+  EntityFactory.archetypes.a_d_decoy_level_3 = {
     parent: "a_d_decoy_level_2",
     ECMesh: {
       scale: 1,
@@ -107782,16 +107782,16 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_decoy_level_3.health,
+      health: EntityFactory.balanceDefences.a_d_decoy_level_3.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECAttackerLimit: {
-      maxAttackers: e.balanceDefences.a_d_decoy_level_3.maxAttackers
+      maxAttackers: EntityFactory.balanceDefences.a_d_decoy_level_3.maxAttackers
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_decoy_level_3.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_decoy_level_3.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_decoy_level_3.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_decoy_level_3.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107814,7 +107814,7 @@
       }]
     }
   };
-  e.archetypes.a_d_decoy_level_4 = {
+  EntityFactory.archetypes.a_d_decoy_level_4 = {
     parent: "a_d_decoy_level_3",
     ECMesh: {
       scale: 1,
@@ -107822,16 +107822,16 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_decoy_level_4.health,
+      health: EntityFactory.balanceDefences.a_d_decoy_level_4.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECAttackerLimit: {
-      maxAttackers: e.balanceDefences.a_d_decoy_level_4.maxAttackers
+      maxAttackers: EntityFactory.balanceDefences.a_d_decoy_level_4.maxAttackers
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_decoy_level_4.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_decoy_level_4.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_decoy_level_4.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_decoy_level_4.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107854,7 +107854,7 @@
       }]
     }
   };
-  e.archetypes.a_d_decoy_level_5 = {
+  EntityFactory.archetypes.a_d_decoy_level_5 = {
     parent: "a_d_decoy_level_4",
     ECMesh: {
       scale: 1,
@@ -107862,16 +107862,16 @@
       offsetY: -0.5
     },
     ECHealth: {
-      health: e.balanceDefences.a_d_decoy_level_5.health,
+      health: EntityFactory.balanceDefences.a_d_decoy_level_5.health,
       drawInWorldBarIfDamagedRecently: !0
     },
     ECAttackerLimit: {
-      maxAttackers: e.balanceDefences.a_d_decoy_level_5.maxAttackers
+      maxAttackers: EntityFactory.balanceDefences.a_d_decoy_level_5.maxAttackers
     },
     ECBuilding: {
-      resourceCost: e.balanceDefences.a_d_decoy_level_5.resourceCost,
+      resourceCost: EntityFactory.balanceDefences.a_d_decoy_level_5.resourceCost,
       secondaryResourceCost: 0,
-      buildTime: e.balanceDefences.a_d_decoy_level_5.buildTime,
+      buildTime: EntityFactory.balanceDefences.a_d_decoy_level_5.buildTime,
       canSpeedUpWithSoftCurrency: !0,
       buildingType: "Trap",
       obeysScaffoldCap: !1,
@@ -107894,7 +107894,7 @@
       }]
     }
   };
-  e.archetypes.a_s_damaged_big = {
+  EntityFactory.archetypes.a_s_damaged_big = {
     shouldPlayerSave: !1,
     familyName: "damagedEffect",
     ECMesh: {
@@ -107909,7 +107909,7 @@
       onDestroyEffect: "sfx_dst_fire"
     }
   };
-  e.archetypes.a_s_damaged_small = {
+  EntityFactory.archetypes.a_s_damaged_small = {
     shouldPlayerSave: !1,
     familyName: "damagedEffect",
     ECMesh: {
@@ -108955,7 +108955,7 @@
       boss: "infoPanelFlagBoss"
     },
     ca = {};
-  e.archetypes.a_cs_test = {
+  EntityFactory.archetypes.a_cs_test = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -108972,17 +108972,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_mob",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_pyro = {
+  EntityFactory.archetypes.a_cs_pyro = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -108999,17 +108999,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_bombthrower",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_boss = {
+  EntityFactory.archetypes.a_cs_boss = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109026,17 +109026,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_boss",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_charger = {
+  EntityFactory.archetypes.a_cs_charger = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109053,17 +109053,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_charger",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_commando = {
+  EntityFactory.archetypes.a_cs_commando = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109080,17 +109080,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_commando",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_death = {
+  EntityFactory.archetypes.a_cs_death = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109107,17 +109107,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_death",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_mob = {
+  EntityFactory.archetypes.a_cs_mob = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109134,17 +109134,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_mob",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_ranged = {
+  EntityFactory.archetypes.a_cs_ranged = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109161,17 +109161,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_ranged",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_thief = {
+  EntityFactory.archetypes.a_cs_thief = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109188,17 +109188,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_thief",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_cs_treasure = {
+  EntityFactory.archetypes.a_cs_treasure = {
     shouldPlayerSave: !1,
     shouldLevelSave: !1,
     familyName: "mapbannerling",
@@ -109215,17 +109215,17 @@
       offsetY: 1,
       terrainType: "impass"
     },
-    ECCampaignStarter: e.EC_DEFAULT,
-    ECInteractable: e.EC_DEFAULT,
-    ECSelectable: e.EC_DEFAULT,
-    ECRadialMenu: e.EC_DEFAULT,
+    ECCampaignStarter: EntityFactory.EC_DEFAULT,
+    ECInteractable: EntityFactory.EC_DEFAULT,
+    ECSelectable: EntityFactory.EC_DEFAULT,
+    ECRadialMenu: EntityFactory.EC_DEFAULT,
     ECEffectSpawner: {
       incidentalEffect: "sfx_bannerling_alert_treasuredropper",
       incidentalMinTime: 4,
       incidentalMaxTime: 4
     }
   };
-  e.archetypes.a_warm_campaigns = {
+  EntityFactory.archetypes.a_warm_campaigns = {
     shouldPlayerSave: !0,
     ECWarManager: {
       groupName: "warnew01",
@@ -109714,7 +109714,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 10
     }]
   };
-  e.archetypes.a_wm_battle_tutorial_01 = {
+  EntityFactory.archetypes.a_wm_battle_tutorial_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -109824,7 +109824,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_tutorial_02 = {
+  EntityFactory.archetypes.a_wm_battle_tutorial_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -109861,7 +109861,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_tutorial_03 = {
+  EntityFactory.archetypes.a_wm_battle_tutorial_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -109906,7 +109906,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_tutorial_04 = {
+  EntityFactory.archetypes.a_wm_battle_tutorial_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -109971,7 +109971,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_tutorial_05 = {
+  EntityFactory.archetypes.a_wm_battle_tutorial_05 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -110163,7 +110163,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 40
     }]
   };
-  e.archetypes.a_wm_battle_easy_01 = {
+  EntityFactory.archetypes.a_wm_battle_easy_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -110277,7 +110277,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_easy_02 = {
+  EntityFactory.archetypes.a_wm_battle_easy_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -110421,7 +110421,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_easy_03 = {
+  EntityFactory.archetypes.a_wm_battle_easy_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -110603,7 +110603,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_easy_04 = {
+  EntityFactory.archetypes.a_wm_battle_easy_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -110701,7 +110701,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_easy_05 = {
+  EntityFactory.archetypes.a_wm_battle_easy_05 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -110894,7 +110894,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 70
     }]
   };
-  e.archetypes.a_wm_battle_medium_01 = {
+  EntityFactory.archetypes.a_wm_battle_medium_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -111008,7 +111008,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_medium_02 = {
+  EntityFactory.archetypes.a_wm_battle_medium_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -111182,7 +111182,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_medium_03 = {
+  EntityFactory.archetypes.a_wm_battle_medium_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -111467,7 +111467,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_pyro_01 = {
+  EntityFactory.archetypes.a_wm_battle_pyro_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -111534,7 +111534,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_pyro_02 = {
+  EntityFactory.archetypes.a_wm_battle_pyro_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -111620,7 +111620,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_pyro_03 = {
+  EntityFactory.archetypes.a_wm_battle_pyro_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -111706,7 +111706,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_pyro_04 = {
+  EntityFactory.archetypes.a_wm_battle_pyro_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -112103,7 +112103,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_moba_01 = {
+  EntityFactory.archetypes.a_wm_battle_moba_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -112214,126 +112214,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_moba_02 = {
-    shouldPlayerSave: !1,
-    ECAttackWavesManager: {
-      waves: [{
-        enemyThreshold: 0,
-        postThresholdDelay: 10,
-        families: [{
-          familyName: "ranged",
-          min: 1,
-          max: 1
-        }, {
-          familyName: "basicMelee",
-          min: 2,
-          max: 2
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "berserker",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "bombThrower",
-          min: 1,
-          max: 1
-        }, {
-          familyName: "basicMelee",
-          min: 2,
-          max: 2
-        }]
-      }, {
-        enemyThreshold: 1,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 10,
-        families: [{
-          familyName: "death",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 14,
-        families: [{
-          familyName: "bombThrower",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "berserker",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 2,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        enemyThreshold: 3,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "bombThrower",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "treasureDropper",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 4,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }]
-    }
-  };
-  e.archetypes.a_wm_battle_moba_03 = {
+  EntityFactory.archetypes.a_wm_battle_moba_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -112449,18 +112330,10 @@
           min: 3,
           max: 3
         }]
-      }, {
-        enemyThreshold: 4,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "chargerBoss",
-          min: 0,
-          max: 1
-        }]
       }]
     }
   };
-  e.archetypes.a_wm_battle_moba_04 = {
+  EntityFactory.archetypes.a_wm_battle_moba_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -112587,7 +112460,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_moba_05 = {
+  EntityFactory.archetypes.a_wm_battle_moba_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -112714,7 +112587,134 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_moba_06 = {
+  EntityFactory.archetypes.a_wm_battle_moba_05 = {
+    shouldPlayerSave: !1,
+    ECAttackWavesManager: {
+      waves: [{
+        enemyThreshold: 0,
+        postThresholdDelay: 10,
+        families: [{
+          familyName: "ranged",
+          min: 1,
+          max: 1
+        }, {
+          familyName: "basicMelee",
+          min: 2,
+          max: 2
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "berserker",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "bombThrower",
+          min: 1,
+          max: 1
+        }, {
+          familyName: "basicMelee",
+          min: 2,
+          max: 2
+        }]
+      }, {
+        enemyThreshold: 1,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 10,
+        families: [{
+          familyName: "death",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 14,
+        families: [{
+          familyName: "bombThrower",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "berserker",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 2,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 3,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "bombThrower",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "treasureDropper",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 4,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 4,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "chargerBoss",
+          min: 0,
+          max: 1
+        }]
+      }]
+    }
+  };
+  EntityFactory.archetypes.a_wm_battle_moba_06 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -113072,7 +113072,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_mobb_01 = {
+  EntityFactory.archetypes.a_wm_battle_mobb_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -113183,126 +113183,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobb_02 = {
-    shouldPlayerSave: !1,
-    ECAttackWavesManager: {
-      waves: [{
-        enemyThreshold: 0,
-        postThresholdDelay: 10,
-        families: [{
-          familyName: "ranged",
-          min: 1,
-          max: 1
-        }, {
-          familyName: "basicMelee",
-          min: 2,
-          max: 2
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "berserker",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "charger",
-          min: 1,
-          max: 1
-        }, {
-          familyName: "basicMelee",
-          min: 2,
-          max: 2
-        }]
-      }, {
-        enemyThreshold: 1,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 10,
-        families: [{
-          familyName: "death",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 14,
-        families: [{
-          familyName: "charger",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "berserker",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 2,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        enemyThreshold: 3,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "charger",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "treasureDropper",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 4,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }]
-    }
-  };
-  e.archetypes.a_wm_battle_mobb_03 = {
+  EntityFactory.archetypes.a_wm_battle_mobb_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -113418,18 +113299,10 @@
           min: 3,
           max: 3
         }]
-      }, {
-        enemyThreshold: 4,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "chargerBoss",
-          min: 0,
-          max: 1
-        }]
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobb_04 = {
+  EntityFactory.archetypes.a_wm_battle_mobb_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -113556,7 +113429,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobb_05 = {
+  EntityFactory.archetypes.a_wm_battle_mobb_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -113683,7 +113556,134 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobb_06 = {
+  EntityFactory.archetypes.a_wm_battle_mobb_05 = {
+    shouldPlayerSave: !1,
+    ECAttackWavesManager: {
+      waves: [{
+        enemyThreshold: 0,
+        postThresholdDelay: 10,
+        families: [{
+          familyName: "ranged",
+          min: 1,
+          max: 1
+        }, {
+          familyName: "basicMelee",
+          min: 2,
+          max: 2
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "berserker",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "charger",
+          min: 1,
+          max: 1
+        }, {
+          familyName: "basicMelee",
+          min: 2,
+          max: 2
+        }]
+      }, {
+        enemyThreshold: 1,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 10,
+        families: [{
+          familyName: "death",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 14,
+        families: [{
+          familyName: "charger",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "berserker",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 2,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 3,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "charger",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "treasureDropper",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 4,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 4,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "chargerBoss",
+          min: 0,
+          max: 1
+        }]
+      }]
+    }
+  };
+  EntityFactory.archetypes.a_wm_battle_mobb_06 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -114041,7 +114041,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_mobc_01 = {
+  EntityFactory.archetypes.a_wm_battle_mobc_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -114152,126 +114152,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobc_02 = {
-    shouldPlayerSave: !1,
-    ECAttackWavesManager: {
-      waves: [{
-        enemyThreshold: 0,
-        postThresholdDelay: 10,
-        families: [{
-          familyName: "ranged",
-          min: 1,
-          max: 1
-        }, {
-          familyName: "basicMelee",
-          min: 2,
-          max: 2
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "berserker",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "miniCharger",
-          min: 1,
-          max: 1
-        }, {
-          familyName: "basicMelee",
-          min: 2,
-          max: 2
-        }]
-      }, {
-        enemyThreshold: 1,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 10,
-        families: [{
-          familyName: "death",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 0,
-        postThresholdDelay: 14,
-        families: [{
-          familyName: "miniCharger",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "berserker",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 2,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        enemyThreshold: 3,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "miniCharger",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }, {
-        postThresholdDelay: 0,
-        families: [{
-          familyName: "treasureDropper",
-          min: 0,
-          max: 1
-        }]
-      }, {
-        enemyThreshold: 4,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "ranged",
-          min: 2,
-          max: 2
-        }, {
-          familyName: "basicMelee",
-          min: 3,
-          max: 3
-        }]
-      }]
-    }
-  };
-  e.archetypes.a_wm_battle_mobc_03 = {
+  EntityFactory.archetypes.a_wm_battle_mobc_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -114387,18 +114268,10 @@
           min: 3,
           max: 3
         }]
-      }, {
-        enemyThreshold: 4,
-        postThresholdDelay: 7,
-        families: [{
-          familyName: "chargerBoss",
-          min: 0,
-          max: 1
-        }]
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobc_04 = {
+  EntityFactory.archetypes.a_wm_battle_mobc_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -114525,7 +114398,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobc_05 = {
+  EntityFactory.archetypes.a_wm_battle_mobc_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -114652,7 +114525,134 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_mobc_06 = {
+  EntityFactory.archetypes.a_wm_battle_mobc_05 = {
+    shouldPlayerSave: !1,
+    ECAttackWavesManager: {
+      waves: [{
+        enemyThreshold: 0,
+        postThresholdDelay: 10,
+        families: [{
+          familyName: "ranged",
+          min: 1,
+          max: 1
+        }, {
+          familyName: "basicMelee",
+          min: 2,
+          max: 2
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "berserker",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "miniCharger",
+          min: 1,
+          max: 1
+        }, {
+          familyName: "basicMelee",
+          min: 2,
+          max: 2
+        }]
+      }, {
+        enemyThreshold: 1,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 10,
+        families: [{
+          familyName: "death",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 0,
+        postThresholdDelay: 14,
+        families: [{
+          familyName: "miniCharger",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "berserker",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 2,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 3,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "miniCharger",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        postThresholdDelay: 0,
+        families: [{
+          familyName: "treasureDropper",
+          min: 0,
+          max: 1
+        }]
+      }, {
+        enemyThreshold: 4,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "ranged",
+          min: 2,
+          max: 2
+        }, {
+          familyName: "basicMelee",
+          min: 3,
+          max: 3
+        }]
+      }, {
+        enemyThreshold: 4,
+        postThresholdDelay: 7,
+        families: [{
+          familyName: "chargerBoss",
+          min: 0,
+          max: 1
+        }]
+      }]
+    }
+  };
+  EntityFactory.archetypes.a_wm_battle_mobc_06 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -114889,7 +114889,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_boss_01 = {
+  EntityFactory.archetypes.a_wm_battle_boss_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115016,7 +115016,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_boss_02 = {
+  EntityFactory.archetypes.a_wm_battle_boss_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115110,7 +115110,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_boss_03 = {
+  EntityFactory.archetypes.a_wm_battle_boss_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115218,7 +115218,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_boss_04 = {
+  EntityFactory.archetypes.a_wm_battle_boss_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115324,7 +115324,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_boss_05 = {
+  EntityFactory.archetypes.a_wm_battle_boss_05 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115588,7 +115588,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_ranged_01 = {
+  EntityFactory.archetypes.a_wm_battle_ranged_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115638,7 +115638,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_ranged_02 = {
+  EntityFactory.archetypes.a_wm_battle_ranged_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115680,7 +115680,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_ranged_03 = {
+  EntityFactory.archetypes.a_wm_battle_ranged_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115728,7 +115728,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_ranged_04 = {
+  EntityFactory.archetypes.a_wm_battle_ranged_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115896,7 +115896,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_thief_01 = {
+  EntityFactory.archetypes.a_wm_battle_thief_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -115954,7 +115954,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_thief_02 = {
+  EntityFactory.archetypes.a_wm_battle_thief_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116012,7 +116012,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_thief_03 = {
+  EntityFactory.archetypes.a_wm_battle_thief_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116071,7 +116071,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_thief_04 = {
+  EntityFactory.archetypes.a_wm_battle_thief_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116259,7 +116259,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_charger_01 = {
+  EntityFactory.archetypes.a_wm_battle_charger_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116338,7 +116338,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_charger_02 = {
+  EntityFactory.archetypes.a_wm_battle_charger_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116444,7 +116444,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_charger_03 = {
+  EntityFactory.archetypes.a_wm_battle_charger_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116542,7 +116542,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_charger_04 = {
+  EntityFactory.archetypes.a_wm_battle_charger_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116816,7 +116816,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_treasure_01 = {
+  EntityFactory.archetypes.a_wm_battle_treasure_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116882,7 +116882,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_treasure_02 = {
+  EntityFactory.archetypes.a_wm_battle_treasure_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -116948,7 +116948,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_treasure_03 = {
+  EntityFactory.archetypes.a_wm_battle_treasure_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117015,7 +117015,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_treasure_04 = {
+  EntityFactory.archetypes.a_wm_battle_treasure_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117219,7 +117219,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_commando_01 = {
+  EntityFactory.archetypes.a_wm_battle_commando_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117277,7 +117277,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_commando_02 = {
+  EntityFactory.archetypes.a_wm_battle_commando_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117335,7 +117335,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_commando_03 = {
+  EntityFactory.archetypes.a_wm_battle_commando_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117398,7 +117398,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_commando_04 = {
+  EntityFactory.archetypes.a_wm_battle_commando_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117611,7 +117611,7 @@
       minNumberOfFeralsKilledByHeroForSuccess: 30
     }]
   };
-  e.archetypes.a_wm_battle_death_01 = {
+  EntityFactory.archetypes.a_wm_battle_death_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117730,7 +117730,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_death_02 = {
+  EntityFactory.archetypes.a_wm_battle_death_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117832,7 +117832,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_death_03 = {
+  EntityFactory.archetypes.a_wm_battle_death_03 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -117932,7 +117932,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_battle_death_04 = {
+  EntityFactory.archetypes.a_wm_battle_death_04 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -118120,7 +118120,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_tutorial_01 = {
+  EntityFactory.archetypes.a_wm_trickle_tutorial_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -118302,7 +118302,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_commando_01 = {
+  EntityFactory.archetypes.a_wm_trickle_commando_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -119147,7 +119147,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_commando_02 = {
+  EntityFactory.archetypes.a_wm_trickle_commando_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -119992,7 +119992,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_thief_01 = {
+  EntityFactory.archetypes.a_wm_trickle_thief_01 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -120837,7 +120837,7 @@
       }]
     }
   };
-  e.archetypes.a_wm_trickle_thief_02 = {
+  EntityFactory.archetypes.a_wm_trickle_thief_02 = {
     shouldPlayerSave: !1,
     ECAttackWavesManager: {
       waves: [{
@@ -121833,8 +121833,8 @@
     hour: 24,
     keyframe: "midnight"
   }];
-  e.archetypes.l_torch = {};
-  e.archetypes.l_wallTorch = {
+  EntityFactory.archetypes.l_torch = {};
+  EntityFactory.archetypes.l_wallTorch = {
     ECLight: {
       colour: [2, 1.5, 1.5],
       radius: 6,
@@ -121844,7 +121844,7 @@
       shadows: !1
     }
   };
-  e.archetypes.l_wallTorchFlickering = {
+  EntityFactory.archetypes.l_wallTorchFlickering = {
     ECLight: {
       colour: [2, 1.5, 1.5],
       radius: 6,
@@ -121854,7 +121854,7 @@
       shadows: !1
     }
   };
-  e.archetypes.l_roomBig = {
+  EntityFactory.archetypes.l_roomBig = {
     ECLight: {
       colour: [1, 1, 1],
       radius: 9,
@@ -121864,7 +121864,7 @@
       shadows: !1
     }
   };
-  e.archetypes.l_roomHuge = {};
+  EntityFactory.archetypes.l_roomHuge = {};
   O.archetypes.footStep = {
     random: !0,
     sounds: [{
@@ -138334,7 +138334,7 @@
       }
     }]
   };
-  e.archetypes.a_tlm_tasklocationmarker = {
+  EntityFactory.archetypes.a_tlm_tasklocationmarker = {
     shouldLevelSave: !1,
     shouldPlayerSave: !1,
     familyName: "tasklocationmarker",
@@ -138349,7 +138349,7 @@
       v3OffsetFrequency: [0, 0.75, 0]
     }
   };
-  e.archetypes.a_tle_tasklocationeffect = {
+  EntityFactory.archetypes.a_tle_tasklocationeffect = {
     shouldLevelSave: !1,
     shouldPlayerSave: !1,
     familyName: "tasklocationeffect",
@@ -138364,7 +138364,7 @@
       visibleOnActivated: !0
     }
   };
-  e.archetypes.a_tlm_criticaltasklocationmarker = {
+  EntityFactory.archetypes.a_tlm_criticaltasklocationmarker = {
     shouldLevelSave: !1,
     shouldPlayerSave: !1,
     familyName: "tasklocationmarker",
@@ -138379,7 +138379,7 @@
       v3OffsetFrequency: [0, 0.75, 0]
     }
   };
-  e.archetypes.a_tle_criticaltasklocationeffect = {
+  EntityFactory.archetypes.a_tle_criticaltasklocationeffect = {
     shouldLevelSave: !1,
     shouldPlayerSave: !1,
     familyName: "tasklocationeffect",
@@ -140262,7 +140262,7 @@
     camera: !0,
     delayedLoad: !0
   };
-  e.archetypes.sfx_hero_heal = {
+  EntityFactory.archetypes.sfx_hero_heal = {
     shouldPlayerSave: !1,
     ECEffectSpawner: {
       onCreateEffect: void 0,
@@ -145064,7 +145064,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, lb.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L }, { archetypes: ca, enabled: function () { return Sb.campaignsEnabled; }, create: GamestatePrepareForCampaign.create, createScore: GamestateCampaignScore.create });
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, GameEntity.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L }, { archetypes: ca, enabled: function () { return Sb.campaignsEnabled; }, create: GamestatePrepareForCampaign.create, createScore: GamestateCampaignScore.create });
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };
