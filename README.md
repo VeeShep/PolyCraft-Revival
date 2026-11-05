@@ -104,13 +104,46 @@ If joining fails, keep the exact error and choose **Copy connection report** bef
 
 Use complete fresh invitations/replies and matching development builds. Room-name play requires protocol 4 and matching current clients; game compatibility is listed above. Check your room-service address, host approval, firewall and STUN/TURN configuration. If direct routes fail and no relay is configured, a room code alone cannot make the connection reachable. Deployment, physical LAN/WAN, cross-platform and multi-hour acceptance remain open; [RESTORATION_STATUS.md](RESTORATION_STATUS.md) records verified evidence separately. Historical developer-console procedures and earlier build limitations remain in Git history and the restoration checkpoints.
 
+### Disposable playtest checklist
+
+These are **pending manual checks**, not passed tests. Run once with two players and again with four, using separate computers where possible. Start fresh named test islands and matching Beta 78 packages; record each package’s version and source from `BUILD_INFO.json`. Use the joining steps above. Give reconnecting guests their same saved hero. Keep personal islands out of the test.
+
+| Check | What to do and compare |
+| --- | --- |
+| Movement and resync | Have every player walk, hold/drag, release, use WASD, rotate their own camera and attack while others move. Compare hero positions, facing and hits on all screens. Note stutter, snapping, duplicate heroes or actions, and whether a reconnect restores agreement. |
+| Online menus | Open pause, Craft Resource and other available menus on host and guests in turn. Confirm the menu opens, local movement stops, and AI/countdowns/other heroes continue. Close with the original button or Escape; test alt-tab and return. Host Cheats must also leave the online world running. |
+| Shared spending | With limited shared Amber and available storage, have guests attempt Craft Resource purchases together. Compare balances and storage on every screen; successful purchases must be charged once at normal prices, without overspending. Check full storage, changed offers and the close button. |
+| Buildings | Construct, place/cancel, repair, upgrade and demolish eligible buildings as different players. Check costs/capacity everywhere. Try HQ and workshop demolition: both must remain protected. |
+| Hero progression and quests | Give different heroes different levels/totem upgrades, complete a shared quest, and collect its reward. After reconnect and host save/reload, compare each assigned hero’s progress and shared quest state; rewards must not repeat. Campaign XP allocation and exact midbattle continuation remain design questions, so report observations without assuming a new policy. |
+| PvP | Start a session with PvP off and verify heroes cannot damage each other. End it normally, host with PvP on, and verify hero damage works while friendly workers/buildings remain protected. The setting must stay fixed during each session. |
+| Disconnect and host exit | Disconnect one guest while the others continue; rejoin as that saved hero. Then end hosting normally and confirm guests leave. Host the saved island again and check resources, buildings, quests and each guest’s progression. Compare a guest’s separate solo island before/after. |
+| Cheat history | On a separate fresh test island, confirm **Clean**, enable host Cheats, disable them, and save/reload. Save selection must still say **Cheats used**. Repeat through rename and export/import. Guests must not control host cheats or free premium claims. Leave legacy migration/recovery checks untested unless using a designated disposable fixture. |
+
+Repeat the joining/reconnect checks on a real LAN and across separate internet connections. Record the **actual selected path** for every guest, not just the settings entered: manual forwarding, opted-in UPnP, STUN-direct, or TURN fallback. Include a mixed direct/relayed group when the operator has a relay configured. A missing public room/TURN service is an unavailable test setup, not proof that a route passed or failed. Do not claim UPnP success from STUN address discovery alone.
+
+For endurance, keep an active two/four-player session going for two to four hours, moving, gathering and building periodically. Record disconnects, drift, recovery and resource/progression consistency. A service-issued relay session must remain usable beyond its initial credential expiry; manually entered credentials do not automatically renew. Opening menus must keep the world advancing throughout. These runs and native Windows/Linux/Intel Mac gameplay remain unverified until a tester supplies results.
+
+For each failure, copy connection reports from host and affected guest **before ending the session**, note the approximate time and exact actions, and include relevant local log excerpts. Record **Pass / Fail / Not tested** per check; package success alone is not a gameplay pass. Do not include room passwords, invitations, replies or relay credentials.
+
+```text
+Build/version and source:
+Players and host OS/CPU; guest OS/CPU:
+GPU/driver (for graphics issues):
+LAN or separate internet networks; selected path per guest:
+Check and exact steps:
+Expected / observed; approximate time:
+Reconnect and save/reload result:
+Duration; Pass / Fail / Not tested:
+Host/guest connection reports and relevant log excerpts:
+```
+
 ## Shop and cheats
 
 - Cheats are hidden until enabled. Click the game canvas and type **`moreamberplease`**, all lowercase, without pausing more than three seconds between letters. This opens Cheats and enables cheat mode for that island. A **Cheats** button then stays in the header while cheat mode is enabled, including after reloading that island. Turning cheats off hides it again. Typing in name or number fields does not trigger the code.
 - Premium claims are **disabled by default**. While cheat mode is enabled, the Amber Shop becomes available: Amber packs, the Amber Crown and the Amber Well are free to claim. Packs can be claimed repeatedly. Owned items remain unique.
 - Uncheck **Cheats enabled** to disable premium claims, invincibility and instant building. The setting saves per island. Previously edited stats, resources and owned items remain. Type the code again to reopen and enable Cheats.
 - Normal building costs, progression and unlock requirements remain.
-- **Cheats** pauses the game and lets you heal the hero, set Amber/wood/stone, fill storage, enable hero invincibility, or finish construction/upgrades without waiting.
+- **Cheats** pauses solo play; the online world continues. It lets the host heal the hero, set Amber/wood/stone, fill storage, enable hero invincibility, or finish construction/upgrades without waiting.
 - **Hero level**, **XP in this level** and **Unspent hero points** are editable in Cheats. Levels follow the original 0–40 curve. Spend points at the map’s totems; each upgrade consumes one point. Setting level/XP also sets the unspent points shown in the form. Quests and upgrade prerequisites still apply, and lowering a level keeps purchased upgrades.
 - **Totem stats** expands inside Cheats and lets you set all eight totem upgrade levels directly from 0–5. These edits bypass totem visits, level/prerequisite gates and point spending; unspent points stay unchanged. Applying saves immediately and refreshes the hero’s actual abilities. Set a field to 0 to remove that upgrade.
 - Wood and stone still require storage capacity. Cheat switches are saved separately for each island.
