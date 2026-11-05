@@ -180,6 +180,30 @@ test('native drag steering uses fixed native run/collision modes, cannot spend p
   f.time(5000); f.input.apply(f.hero, f.game, f.controls); assert.ok(f.locomotion.destination, 'released navigation retains the native destination');
   for (const mode of [undefined, 'teleport', true]) assert.throws(() => new HostMovement().receive({ type: 'walk', sequence: 1, location: [1, 2, 3], mode }), /Invalid/);
 });
+test('drag steering advances native held movement and bump charge per host tick rather than per received packet', () => {
+  const ast = require('./runtime-ast.cjs'), movement = ast.component('ECLocomotion'), bumpMethods = ast.component('ECBumpAttack');
+  for (const fps of [30, 60, 120]) {
+    const f = walkingFixture(), globals = f.game.globals; f.state.blocked = false;
+    globals.gameTimeStep = 1 / fps;
+    Object.assign(globals.mathDevice, { v3BuildZero: () => [0, 0, 0], v3LengthSq: v => v.reduce((sum, x) => sum + x * x, 0), v3Normalize(v, out = v) { const length = Math.hypot(...v); for (let i = 0; i < 3; i++) out[i] = v[i] / length; return out; } });
+    Object.assign(f.locomotion, { globals, timeHeld: 0, _super() {}, updateLocomotion() {},
+      ...Object.fromEntries(['setDestination', 'clearDestination', 'getDestination', 'hasDestination', 'getTimeHeld', 'update'].map(name => [name, movement[name]])) });
+    const enemy = { shouldBeDestroyed: () => false, getEC: name => name === 'ECAgent' ? {} : null, getv3Location: () => [12, 2, 20] };
+    f.hero.isFriendlyWith = () => false;
+    f.game.applyToEntitiesInGridCellsWithinRadius = (_point, radius, visit) => { assert.equal(radius, 3); visit(enemy); };
+    const bump = Object.assign(Object.create(bumpMethods), { globals, gameManager: f.game, entity: f.hero, scratchpad: {}, _super() {}, getv3Location: () => f.hero.getv3Location(), getEntityEC: name => f.hero.getEC(name) });
+    let sequence = 0, nextPacket = 0;
+    for (let frame = 0; frame < fps; frame++) {
+      const now = frame * 1000 / fps; f.time(now);
+      if (now + 1e-6 >= nextPacket) { f.input.receive({ type: 'walk', mode: 'drag', sequence: ++sequence, location: [30, 999, 20] }); nextPacket += 50; }
+      f.input.apply(f.hero, f.game, f.controls); f.locomotion.update();
+    }
+    assert.ok(f.locomotion.getTimeHeld() > 0.9, fps + ' Hz native held time must advance between 20 Hz packets');
+    bump.update(); assert.equal(bump.targetEntity, enemy); assert.equal(bump.getSpeedMod(), 1.5);
+    assert.equal(f.input.sequence, sequence); assert.equal(f.input.walkTokens, 4); assert.equal(f.state.queries, 0, 'retained drag must not issue path searches');
+    f.time(1601); f.input.apply(f.hero, f.game, f.controls); bump.update(); assert.equal(bump.targetEntity, undefined); assert.equal(bump.getSpeedMod(), 1);
+  }
+});
 test('a cancelled pointer intent stays cancelled if focus returns before a slow send completes', async () => {
   const input = Object.create(GuestMovement.prototype), sent = []; let finish, available = true;
   Object.assign(input, { sequence: 0, lastMove: [0, 0], lastSent: -Infinity, available: () => available, direction: () => [0, 0],

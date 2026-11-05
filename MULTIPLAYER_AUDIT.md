@@ -2,7 +2,15 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current checkpoint — Beta 74, 2026-11-05
+## Current checkpoint — Beta 76, 2026-11-05
+
+Host drag steering now reapplies the latest validated intent every simulation tick, matching native held movement rather than packet arrival frequency. Native ECLocomotion.setDestination adds twice the simulation step to timeHeld; native update subtracts one step, while ECBumpAttack.findTargetEnemy requires at least 0.25 seconds held. Previously only incoming drag packets refreshed that clock, so held time and charging depended on the host/packet rate ratio instead of elapsed simulation time. Retaining the validated pending drag lets the existing native movement path run each tick. Its script/life/construction guards, 600 ms stale deadline, neutral/key takeover and forced-stop cleanup remain active. Drag still cannot issue native path searches or spend their quota. Click/release navigation retains its previous behavior; no client field, packet frequency, movement speed or attack balance value changes.
+
+The new regression fails before the fix and passes afterward using actual ECLocomotion update/setDestination/getTimeHeld plus ECBumpAttack update/findTargetEnemy/getSpeedMod at 30/60/120 Hz with 20 Hz packets. It verifies native held time, charge eligibility/speed factor, stale-input loss of eligibility, unchanged sequence/path-query budget and existing cancellation checks. Thirteen focused input checks and 510 full checks pass. This proves the input-clock boundary; full physics impact, damage, cooldown artwork and visual/native/network gameplay remain open. The host needs Beta 76; wire compatibility with Beta 74–76 is unchanged.
+
+Combat inventory reconfirms the earlier source audit: the ten declared hero archetypes use inherited ECBumpAttack/ECFirearm/ECAutoFire, and do not configure ECChargeableShot or ECSuper. Their mere presence in the engine does not justify enabling them during restoration. No unused charged-shot/super feature or expansion upgrade was introduced. Evidence and build handles are in RESTORATION_STATUS.md.
+
+## Previous checkpoint — Beta 74, 2026-11-05
 
 Guest Shop/Craft Resource interaction now uses the original GamestateShop prototype and artwork with a guest-owned presentation/input facade. Only the native resource panel is exposed; Amber/free-claim tabs are removed even when the host enables cheats. Native pricing tiers, six fixed stone/wood fraction slots, duplicate-price hiding, full/no-storage messages and normal currency/resource adjustment methods are retained. No native shop enter/exit/pause or solo persistence path runs on a guest.
 

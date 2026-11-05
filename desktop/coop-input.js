@@ -46,6 +46,8 @@
         view.collisionInfo = methods.collision.call(view, location);
         methods.destination.call(view, !steering, requested.mode !== 'click', !steering);
         this.walking = true; this.steering = steering;
+        // Native held movement advances every simulation tick, independently of packet frequency.
+        if (steering) this.pendingWalk = requested;
         return;
       }
       if (this.walking) {
