@@ -79,8 +79,7 @@ jobs:
             arch: arm64
             arguments: --mac zip --arm64
           - id: mac-x64
-            os: macos-15
-            runnerArch: arm64
+            os: macos-15-intel
             platform: darwin
             arch: x64
             arguments: --mac zip --x64
