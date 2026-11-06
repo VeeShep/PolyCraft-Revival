@@ -4,6 +4,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
+  assert.ok(process.argv.slice(2).every(argument => argument === '--backup'), 'Only --backup is supported.');
+  const backup = process.argv.includes('--backup');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_REWARD_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(path.dirname(fixture)).startsWith('polycraft-session-ui-') && path.basename(fixture) === 'host', 'Only an existing disposable session-test host fixture is accepted.');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-reward-recovery-'));
@@ -11,10 +13,11 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   const files = fs.readdirSync(path.join(directory, 'saves')).filter(name => name.endsWith('.json'));
   assert.equal(files.length, 1);
   const file = path.join(directory, 'saves', files[0]);
-  const read = () => { const data = JSON.parse(fs.readFileSync(file)).state.userData; return { coop: JSON.parse(data.desktopCoop), rewards: JSON.parse(data.desktopCampaignRewards) }; };
+  const read = () => { const state = JSON.parse(fs.readFileSync(file)).state, data = state.userData; return { coop: JSON.parse(data.desktopCoop), rewards: JSON.parse(data.desktopCampaignRewards), everEnabled: state.cheats.everEnabled }; };
   const original = read(), reward = original.rewards.pending[0];
   assert.equal(original.rewards.pending.length, 1); assert.equal(reward.owner, original.coop.host);
   const before = original.coop.players.find(row => row.id === original.coop.host);
+  if (backup) { fs.copyFileSync(file, file + '.bak'); fs.writeFileSync(file, '{broken disposable primary'); }
   let app, page;
   const errors = [];
   async function focus() {
@@ -40,11 +43,14 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     await page.waitForFunction(() => !!window.polycraft.controls.onlineWorld?.players); await click('#close-multiplayer');
   }
   try {
-    console.log('Disposable campaign recovery profile:', directory);
+    console.log('Disposable campaign recovery profile:', directory, 'backup:', backup);
     app = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: directory }, timeout: 90000 });
     page = await app.firstWindow(); page.on('pageerror', error => errors.push(error.message));
     await app.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Test window must be visible.'); window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary host — campaign reward recovery'); });
-    await load(); await host();
+    if (backup) { await page.locator('#save-list article').first().waitFor(); assert.match(await page.locator('#save-list article').first().textContent(), /Recovery backup available/); }
+    await load();
+    assert.deepEqual(await page.evaluate(() => JSON.parse(window.polycraft.bridge.state.userData.desktopCampaignRewards)), original.rewards);
+    await host();
     await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestateCampaignScore');
     assert.deepEqual(await page.evaluate(() => window.polycraft.controls.manager().desktopCampaignRewards.current()), reward);
     await focus();
@@ -60,6 +66,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     await page.waitForFunction(() => !window.polycraft.controls.manager().desktopCampaignRewards.current());
     await page.evaluate(() => window.polycraft.checkpoint(true));
     const awarded = read(), player = awarded.coop.players.find(row => row.id === awarded.coop.host);
+    assert.equal(awarded.everEnabled, original.everEnabled);
     assert.equal(player.progress.xp, before.progress.xp + reward.score.xpBonus);
     assert.equal(awarded.coop.economy.resource[0], original.coop.economy.resource[0] + reward.score.resourceBonusList[0]);
     assert.equal(awarded.coop.economy.resource[1], original.coop.economy.resource[1] + reward.score.resourceBonusList[1]);
@@ -70,6 +77,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     assert.equal(await page.evaluate(id => window.polycraft.controls.manager().desktopCampaignRewards.award(id, () => { throw new Error('Duplicate reward callback'); }), reward.id), false);
     await page.evaluate(() => window.polycraft.checkpoint(true));
     const reloaded = read(); assert.deepEqual(reloaded.coop.economy, awarded.coop.economy);
+    assert.equal(reloaded.everEnabled, original.everEnabled);
     assert.deepEqual(reloaded.coop.players.find(row => row.id === reloaded.coop.host).progress, player.progress); assert.equal(reloaded.rewards.pending.length, 0);
     assert.deepEqual(errors, []); console.log('PASS: original host reward panel restores after load/hosting; native click awards exact XP/resources once, disk/reload/rehost retain them and stale claim cannot repeat.');
   } catch (error) { if (page) await page.screenshot({ path: 'test-results/campaign-recovery-failure.png' }).catch(() => {}); throw error; }
