@@ -61,11 +61,26 @@ module.exports = function questAcceptance(host, guest, focusGuest, hero) {
         const totem = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECHeroShrine')).find(entity => entity.getEC('ECHeroShrine').archetype.upgradeTypes[0].upgradeType === 'movementSpeed');
         const location = Array.from(totem.getv3Location()); location[0] += 3;
         entity.getEC('ECLocomotion').clearDestination(); entity.teleport(location, game.globals.mathDevice.v3Sub(location, entity.getv3Location()));
+        window.questAcceptancePickupNames = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup')).map(entity => entity.getName());
       }), hero);
       await guest.evaluate(() => { window.polycraft.controls.guestWorld.lastTargetResult = null; });
       await button('guest-idAcceptTaskRewardButton' + id, 'taskAcceptRewardButton');
       await guest.waitForFunction(() => window.polycraft.controls.guestWorld.lastTargetResult?.type === 'questReward');
       assert.equal(await guest.evaluate(() => window.polycraft.controls.guestWorld.lastTargetResult.message), 'Quest reward dropped and saved.');
+      const drops = await host.evaluate(() => window.polycraft.controls.manager().getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup'))
+        .filter(entity => !window.questAcceptancePickupNames.includes(entity.getName())).map(entity => entity.getName()));
+      assert.ok(drops.length <= 2, 'Only the two expected quest drops may appear in this fixture.');
+      // Native drops scatter over grid cells; standing still need not attract every pickup.
+      for (const name of drops) {
+        await host.waitForFunction(name => { const entity = window.polycraft.controls.manager().getGameEntityByName(name); return !entity || entity.shouldBeDestroyed() || entity.getEC('ECPickup').animatedIn; }, name);
+        await host.evaluate(({ hero, name }) => window.polycraft.controls.onlineWorld.atBoundary(() => {
+          const world = window.polycraft.controls.onlineWorld, drop = world.game.getGameEntityByName(name);
+          if (!drop || drop.shouldBeDestroyed() || drop.getEC('ECPickup').hasBeenPickedUp()) return;
+          const entity = world.players.active.get(hero).hero, location = Array.from(drop.getv3Location());
+          entity.getEC('ECLocomotion').clearDestination(); entity.teleport(location, world.game.globals.mathDevice.v3Sub(location, entity.getv3Location()));
+        }), { hero, name });
+        await host.waitForFunction(name => { const entity = window.polycraft.controls.manager().getGameEntityByName(name); return !entity || entity.shouldBeDestroyed() || entity.getEC('ECPickup').hasBeenPickedUp(); }, name);
+      }
       await host.waitForFunction(({ hero, xp, amber }) => {
         const controls = window.polycraft.controls;
         return controls.onlineWorld.players.active.get(hero).model.getXP() === xp + 20 && controls.amounts().amber === amber + 1;
