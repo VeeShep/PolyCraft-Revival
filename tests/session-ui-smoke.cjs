@@ -269,6 +269,7 @@ const restorationAcceptance = require('./coop-restoration-acceptance.cjs');
     console.error('Connection UI failure stage:', stage);
     fs.mkdirSync('test-results', { recursive: true });
     for (let index = 0; index < pages.length; index++) try {
+      console.error('Guest interaction:', index, await pages[index].evaluate(() => { const world = window.polycraft?.controls.guestWorld; return world ? { lastType: world.lastTargetResult?.type, lastMessage: world.lastTargetResult?.message, selected: world.selectedBuilding?.id, construction: world.construction.menu?.source, request: world.selectionRequest, nativeFocused: world.movement.nativeFocused, guiCaptured: world.game.getIMGui().hasCapturedInput() } : null; }));
       console.error('Connection UI state:', index, await pages[index].evaluate(() => ({ status: document.getElementById('multiplayer-status').textContent, menu: document.getElementById('multiplayer-dialog').open, warning: document.getElementById('multiplayer-warning').open, host: !!window.polycraft?.controls.onlineWorld, guest: !!window.polycraft?.controls.guestWorld, focused: document.hasFocus() })));
       await pages[index].screenshot({ path: 'test-results/session-ui-failure-' + index + '.png', mask: [pages[index].locator('#connection-outgoing'), pages[index].locator('#guest-reply'), pages[index].locator('#join-invitation')] });
     } catch {}
