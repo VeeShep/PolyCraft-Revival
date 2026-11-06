@@ -28,7 +28,8 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     await focus();
     let waypoint = Math.min(1, target.route.length - 1), ready = false;
     for (let step = 0; step < 300; step++) {
-      ready = await host.evaluate(({ hero, target }) => { const world = window.hostWorld, actor = world.players.active.get(hero).hero, tree = world.game.getGameEntityByName(target.id); return tree.getDistanceUsingSize(actor.getv3Location()) <= (target.approach ? actor.getRadius() + 0.45 : target.pickupRadius); }, { hero, target });
+      // Non-approach trees still need framing clear of the HUD for an actual canvas click.
+      ready = await host.evaluate(({ hero, target }) => { const world = window.hostWorld, actor = world.players.active.get(hero).hero, tree = world.game.getGameEntityByName(target.id); return tree.getDistanceUsingSize(actor.getv3Location()) <= (target.approach ? actor.getRadius() + 0.45 : 8); }, { hero, target });
       if (ready) break;
       const next = await guest.evaluate(location => {
         const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, m = w.controls.app.globals.camera.matrix;
@@ -40,15 +41,17 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       try { await guest.waitForTimeout(100); } finally { for (const key of next.keys) await guest.keyboard.up(key); }
       await guest.waitForTimeout(100);
     }
-    assert.equal(ready, true, 'The guest must walk into the original interaction/wood-pickup area.');
+    assert.ok(ready, 'The guest must bring the tree into view, approaching only when required by its original interaction rule.');
     await guest.waitForTimeout(1000);
     let clicks = 0;
     for (; clicks < 80; clicks++) {
       if (await host.evaluate(() => window.hostWorld.game.getPlayerData().getTaskFlags().chopATree === true)) break;
       const point = await guest.evaluate(id => {
         const w = window.guestWorld, entry = w.scene.entities.get(id), g = w.controls.app.globals, p = g.camera.worldToScreen(entry.displayLocation || entry.record.location), b = w.movement.canvas.getBoundingClientRect();
-        return { x: b.left + p[0] * b.width / g.graphicsDevice.width, y: b.top + p[1] * b.height / g.graphicsDevice.height, sequence: w.lastTargetResult?.sequence || 0 };
+        const x = p[0] * b.width / g.graphicsDevice.width, y = p[1] * b.height / g.graphicsDevice.height;
+        return { x: b.left + x, y: b.top + y, clear: x > 100 && x < b.width - 300 && y > 100 && y < b.height - 100, sequence: w.lastTargetResult?.sequence || 0 };
       }, target.id);
+      assert.ok(point.clear, 'The tree click must be visibly inside the canvas and clear of the resource HUD.');
       await guest.mouse.move(point.x, point.y); await guest.waitForTimeout(150);
       assert.equal(await guest.evaluate(point => window.PolycraftCoopActions.pickTarget(window.guestWorld, { clientX: point.x, clientY: point.y }), point), target.id);
       await guest.mouse.click(point.x, point.y, { delay: 100 });

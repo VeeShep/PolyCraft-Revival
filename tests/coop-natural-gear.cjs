@@ -34,7 +34,8 @@ module.exports = function naturalGear({ host, focus, headquarters = false, pendi
       await host.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
       await focus(); const canvas = host.locator('#turbulenz_game_engine_canvas'), bounds = await canvas.boundingBox();
       const point = await host.evaluate(() => Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)));
-      await canvas.focus(); await host.mouse.move(bounds.x + point[0], bounds.y + point[1]);
+      await canvas.focus(); await host.mouse.move(10, 10);
+      await host.mouse.move(bounds.x + point[0], bounds.y + point[1], { steps: 5 });
       await host.waitForFunction(() => window.polycraft.controls.manager().activeGameState.readyToPlay);
       await host.mouse.click(bounds.x + point[0], bounds.y + point[1], { delay: 100 });
       await host.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestatePlaying');
