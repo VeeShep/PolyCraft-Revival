@@ -5,6 +5,8 @@ const os = require('node:os');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 (async () => {
+  const relay = process.env.POLYCRAFT_TEST_TURN ? JSON.parse(process.env.POLYCRAFT_TEST_TURN) : null;
+  if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-coop-identities-'));
   const applications = [], pages = [], errors = [], requests = [], originals = [];
   try {
@@ -42,6 +44,10 @@ const assert = require('node:assert/strict');
       });
       const saves = path.join(directory, role, 'saves'), file = path.join(saves, fs.readdirSync(saves).find(name => name.endsWith('.json')));
       originals.push({ state, file, bytes: fs.readFileSync(file) });
+      if (relay) await page.evaluate(server => {
+        const PeerConnection = window.RTCPeerConnection;
+        window.RTCPeerConnection = class extends PeerConnection { constructor(configuration) { super({ ...configuration, iceServers: [server], iceTransportPolicy: 'relay' }); } };
+      }, relay);
       console.log('Visible temporary game ready:', role);
     }
     const host = pages[0];
@@ -83,6 +89,12 @@ const assert = require('node:assert/strict');
       assert.equal(await pages[index].evaluate(() => window.connection.closed), false, await pages[index].evaluate(() => JSON.stringify(window.connectionErrors)));
       const result = await pages[index].evaluate(() => ({ identity: window.guestWorld.identity, hero: window.guestWorld.scene.snapshot.hero, tick: window.guestWorld.scene.tick }));
       assert.equal(result.identity.playerId, ids[index - 1]); assert.equal(result.hero, result.identity.entity);
+      if (relay) {
+        const guestPath = await pages[index].evaluate(() => window.connection.connectionPath());
+        const hostPath = await host.evaluate(peer => window.hostSession.peers.get(peer).connectionPath(), offer.peer);
+        assert.equal(guestPath, 'relayed'); assert.equal(hostPath, 'relayed');
+        console.log('Verified full-game relay path:', index, { host: hostPath, guest: guestPath });
+      }
       console.log('Assigned guest hero:', index, result.identity.playerId);
       return offer;
     }
@@ -678,7 +690,7 @@ const assert = require('node:assert/strict');
     } catch {}
     console.log('Renderer errors:', errors); throw error;
   } finally {
-    for (const application of applications) await application.evaluate(({ app }) => app.exit()).catch(() => {});
+    for (const application of applications) { await application.evaluate(({ app }) => app.exit()).catch(() => {}); application.process().kill('SIGKILL'); }
     console.log('Disposable profiles:', directory);
   }
 })().catch(error => { console.error(error); process.exitCode = 1; });
