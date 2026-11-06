@@ -30,6 +30,12 @@ test('replication captures unsaved heroes and transient objects, excludes destro
   assert.equal(JSON.stringify(snapshot), before, 'Later simulation cannot mutate queued network state');
   assert.deepEqual(JSON.parse(before), snapshot, 'Transfer is plain JSON without typed-array objects');
 });
+test('campaign starters remain selectable without borrowing combat, building or resource components', () => {
+  const { game, entities } = fixture(), banner = entities[1], get = banner.getEC;
+  banner.getEC = name => name === 'ECCampaignStarter' ? {} : get(name);
+  const snapshot = captureSnapshot(game);
+  assert.equal(snapshot.spaces[0].entities.find(entity => entity.id === 'pickup').interactive, true);
+});
 test('actual original health rules supply bars and timed damage metadata without querying the host camera or changing health', () => {
   const f = fixture(), original = require('./runtime-ast.cjs').component('ECHealth'), get = f.entities[0].getEC;
   const health = Object.assign(Object.create(original), { health: 31, startHealth: 50, healthChangedTime: 0.4, healthBarScale: 2, globals: f.game.globals,

@@ -27,7 +27,7 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
     await guest.mouse.move(point.x, point.y); await guest.waitForFunction(id => window.polycraft.controls.guestWorld.game.getIMGui().isHot(id), id);
     await guest.mouse.click(point.x, point.y, { delay: 100 });
   }
-  async function pickUp(id) {
+  async function selectTarget(id) {
     await focus(1);
     await guest.locator('#turbulenz_game_engine_canvas').focus();
     await guest.waitForFunction(() => window.polycraft.controls.guestWorld.movement.available());
@@ -43,6 +43,9 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
     await guest.mouse.move(sourcePoint.x, sourcePoint.y); await guest.waitForTimeout(150);
     const currentPoint = await guest.evaluate(id => { const world = window.polycraft.controls.guestWorld, point = world.controls.app.globals.camera.worldToScreen(world.scene.entities.get(id).record.location), bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice; return { x: bounds.left + point[0] * bounds.width / device.width, y: bounds.top + point[1] * bounds.height / device.height }; }, id);
     await guest.mouse.click(currentPoint.x, currentPoint.y, { delay: 100 });
+  }
+  async function pickUp(id) {
+    await selectTarget(id);
     await guest.evaluate(() => {
       const construction = window.polycraft.controls.guestWorld.construction, receive = construction.receive;
       // Placement previews can replace lastTargetResult before the test polls it.
@@ -344,4 +347,5 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
   console.log('Restored native inventory:', { temporary: restoredInventory.inventory, equipped: restoredInventory.equipped, fallback: restoredFallback });
   await end();
   console.log('PASS: staged native pistol/bomb weapon, partial clip, temporary ammo, equipped fallback and carried resources survive actual host reload/rejoin; guest renders its restored bomb model, native return to pistol persists through a second reload and guest solo bytes stay unchanged.');
+  await require('./coop-campaign-acceptance.cjs')({ host, guest, hero, join, end, nativeButton, selectTarget });
 };

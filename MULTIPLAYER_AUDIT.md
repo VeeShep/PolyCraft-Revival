@@ -2,7 +2,11 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current checkpoint — Beta 81, 2026-11-06
+## Current checkpoint — Beta 82, 2026-11-06
+
+The host snapshot now marks original `ECCampaignStarter` banners interactive, fixing guest canvas selection without changing message/save formats or host campaign guards. All 522 checks pass; the visible two-game source run passes nine flows, including actual campaign preview/cancel/confirm and the native preparation-to-battle transition while the guest Pause menu stays open. Prerequisites are staged; victory/rewards, enemy AI, natural progression and packaged Beta 82 acceptance remain open. [Fix and evidence](RESTORATION_STATUS.md#current-source-beta-82-selectable-campaign-banners--2026-11-06).
+
+## Previous checkpoint — Beta 81, 2026-11-06
 
 Use the [current requirement audit](RESTORATION_STATUS.md#current-requirement-audit-beta-81--2026-11-06) for completed work, current evidence and open gates. The full source suite freshly passes 521 checks. Beta 81 CI is complete/success with eight unexpired artifacts; the finished ARM64 Mac package again passes complete source/icon/architecture/signature verification. Beta 79's finished-Mac four-player WebRTC test and Beta 81's eight-flow connection/recovery/construction/inventory tests provide controlled full-game evidence on one Mac. The older deferred-test statements below are superseded within those scopes.
 
