@@ -14,12 +14,16 @@ const assert = require('node:assert/strict');
   const naturalBridge = process.argv.includes('--natural-bridge');
   const naturalBandits = process.argv.includes('--natural-bandits');
   const naturalGear = process.argv.includes('--natural-gear');
+  const naturalVillage = process.argv.includes('--natural-village');
+  const naturalHq = process.argv.includes('--natural-hq');
   assert.ok(!early || natural, 'Early hosting requires the natural-spawn flow.');
   assert.ok(!naturalWeapon || natural, 'Natural weapon testing requires the natural-spawn flow.');
   assert.ok(!naturalCrate || naturalWeapon, 'Natural shooting requires natural weapon acquisition.');
   assert.ok(!naturalBridge || naturalCrate, 'Natural bridge progression requires the original shooting task.');
   assert.ok(!naturalBandits || naturalBridge, 'Natural bandit combat requires original bridge activation.');
   assert.ok(!naturalGear || naturalWeapon, 'Natural gear checks require original weapon acquisition.');
+  assert.ok(!naturalVillage || naturalBandits, 'Natural village progression requires original bandit combat.');
+  assert.ok(!naturalHq || naturalVillage, 'Natural HQ construction requires original village arrival.');
   assert.ok(!natural || process.argv.includes('--movement-only'), 'Natural spawn testing is limited to the movement-only acceptance flow.');
   assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
@@ -332,6 +336,8 @@ const assert = require('node:assert/strict');
       if (naturalCrate) await require('./coop-natural-crate.cjs')(controls);
       if (naturalBridge) await require('./coop-natural-bridge.cjs')(controls);
       if (naturalBandits) await require('./coop-natural-bandits.cjs')(controls);
+      if (naturalVillage) await require('./coop-natural-village.cjs')(controls);
+      if (naturalHq) await require('./coop-natural-hq.cjs')(controls);
     }
     if (process.argv.includes('--movement-only')) {
       const gear = naturalGear ? require('./coop-natural-gear.cjs')({ host, focus: () => focus(0) }) : null;
