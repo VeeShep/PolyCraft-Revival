@@ -310,4 +310,38 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
   console.log('Completed restored move:', placed);
   await end();
   console.log('PASS: original storage Move/Cancel UI and source/HQ references survive real host reload/rejoin; offline/live claim protection, cancellation preserves source and balances; re-unlocked original Move, second held reload, actual placement/completion and completed-building reload preserve native smart-pointer continuity, HQ/health/capacity/economy and guest solo bytes.');
+  await join();
+  const inventoryCase = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
+    const world = window.polycraft.controls.onlineWorld, entity = world.players.active.get(hero).hero, inventory = entity.getEC('ECInventory'), firearm = entity.getEC('ECFirearm'), carrier = entity.getEC('ECResourceCarrier');
+    inventory.equipWeapon('wp_h_pistol'); inventory.equipTemporaryWeapon('wp_h_bombs', 13);
+    firearm.ammo = 2; firearm.onAmmoChange();
+    [7, 8].forEach((amount, index) => carrier.adjustResource(index, amount - carrier.getResource(index)));
+    return { inventory: world.players.captureHero(entity).inventory, equipped: [...inventory.getEquippedItems()], economy: window.polycraft.controls.amounts() };
+  }), hero);
+  assert.deepEqual(inventoryCase.inventory, { weapon: 'wp_h_bombs', mainWeapon: 'wp_h_pistol', ammo: 2, temporaryAmmo: 13, carried: [7, 8] });
+  assert.ok(inventoryCase.equipped.includes('wp_h_pistol'));
+  await end();
+  assert.deepEqual(saved().players.find(player => player.id === hero).inventory, inventoryCase.inventory);
+  await reloadHost(); await click(0, '#multiplayer'); await join();
+  const restoredInventory = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
+    const world = window.polycraft.controls.onlineWorld, entity = world.players.active.get(hero).hero, inventory = entity.getEC('ECInventory');
+    return { inventory: world.players.captureHero(entity).inventory, equipped: [...inventory.getEquippedItems()], visual: inventory.heldWeaponEntity?.getName(), economy: window.polycraft.controls.amounts() };
+  }), hero);
+  assert.deepEqual(restoredInventory.inventory, inventoryCase.inventory); assert.deepEqual(restoredInventory.equipped, inventoryCase.equipped); assert.deepEqual(restoredInventory.economy, inventoryCase.economy);
+  assert.ok(restoredInventory.visual);
+  await guest.waitForFunction(id => window.polycraft.controls.guestWorld.scene.entities.get(id)?.record.mesh?.path.endsWith('models/bomb.dae'), restoredInventory.visual);
+  await guest.screenshot({ path: 'test-results/session-ui-restored-inventory.png' });
+  const fallback = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
+    const world = window.polycraft.controls.onlineWorld, entity = world.players.active.get(hero).hero;
+    entity.getEC('ECFirearm').unequipTemporaryWeapon();
+    return world.players.captureHero(entity).inventory;
+  }), hero);
+  assert.deepEqual(fallback, { weapon: 'wp_h_pistol', mainWeapon: 'wp_h_pistol', ammo: 1, temporaryAmmo: 0, carried: [7, 8] });
+  await end(); assert.deepEqual(saved().players.find(player => player.id === hero).inventory, fallback);
+  await reloadHost(); await click(0, '#multiplayer'); await join();
+  const restoredFallback = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => { const world = window.polycraft.controls.onlineWorld; return world.players.captureHero(world.players.active.get(hero).hero).inventory; }), hero);
+  assert.deepEqual(restoredFallback, fallback);
+  console.log('Restored native inventory:', { temporary: restoredInventory.inventory, equipped: restoredInventory.equipped, fallback: restoredFallback });
+  await end();
+  console.log('PASS: staged native pistol/bomb weapon, partial clip, temporary ammo, equipped fallback and carried resources survive actual host reload/rejoin; guest renders its restored bomb model, native return to pistol persists through a second reload and guest solo bytes stay unchanged.');
 };

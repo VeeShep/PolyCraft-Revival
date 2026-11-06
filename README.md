@@ -261,6 +261,8 @@ A seventh finished-app flow covers a staged existing lumber storage: original Mo
 
 The finished Mac preview check also observes the actual guideline draw calls: valid current previews are green; stale, invalid or pending previews are red. All 190 sampled draws match, a screenshot shows the green placement outline, and a focused regression verifies stale outlines cannot place. This is local rendering evidence, not a latency or internet usability guarantee. [Preview evidence](RESTORATION_STATUS.md#finished-beta-81-placement-guideline-colors--2026-11-06).
 
+An eighth finished-Mac flow verifies staged guest inventory: pistol fallback, bomb weapon, partial clip, temporary ammunition and carried wood/stone survive host reload/rejoin, with the restored bomb model replicated to the guest. Native return to the pistol survives another reload. Normal pickup, firing/exhaustion and reload-timer continuity remain unverified. [Inventory evidence](RESTORATION_STATUS.md#finished-beta-81-guest-weapon-and-carried-inventory--2026-11-06).
+
 ### Packaging
 
 CI verifies extracted Windows ZIPs and both Linux archive formats before collecting downloads. It checks every bundled PE/ELF binary against the target architecture, the original Windows icon resources, AppImage desktop association/icons, and all desktop source files/core package metadata/game/window-icon bytes. Mac ZIPs additionally validate the bundle-selected ICNS, packaged window/Dock PNG, the same full-source/metadata guards, every Mach-O architecture and the deep signature. These checks do not open the game or prove native desktop appearance/gameplay. `.gitattributes` keeps packaged source LF on Windows too, while original reference/game-asset bytes are excluded from conversion.
