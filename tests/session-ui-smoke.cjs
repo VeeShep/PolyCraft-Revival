@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const net = require('node:net'), { once } = require('node:events');
 const { createRoomServer } = require('../server/rooms.cjs');
+const questAcceptance = require('./coop-quest-acceptance.cjs');
 (async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-session-ui-'));
   const applications = [], pages = [], errors = [], requests = [];
@@ -24,6 +25,24 @@ const { createRoomServer } = require('../server/rooms.cjs');
     await click(index, '#multiplayer-warning button[value="' + (accept ? 'continue' : 'cancel') + '"]');
     await pages[index].locator('#multiplayer-warning').waitFor({ state: 'hidden' });
   }
+  async function play(index) {
+    const page = pages[index];
+    await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
+    await focus(index);
+    const canvas = page.locator('#turbulenz_game_engine_canvas'), bounds = await canvas.boundingBox();
+    const point = await page.evaluate(() => Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)));
+    await canvas.focus(); await page.mouse.move(10, 10); await page.mouse.move(bounds.x + point[0], bounds.y + point[1], { steps: 5 });
+    await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.readyToPlay, null, { timeout: 5000 });
+    await page.mouse.click(bounds.x + point[0], bounds.y + point[1], { delay: 100 });
+    await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestatePlaying');
+    // Keep tutorial scripts from changing the disposable fixture during connection setup.
+    await page.evaluate(async () => { const game = window.polycraft.controls.manager(); game.runScripts = false; game.setScriptLocked(false); game.activeGameState.setPlayState('PlayStateNormal'); await window.polycraft.checkpoint(); });
+  }
+  async function reloadHost() {
+    await pages[0].reload(); await focus(0);
+    await Promise.all([pages[0].waitForEvent('domcontentloaded'), pages[0].locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
+    await play(0);
+  }
   try {
     for (const role of ['host', 'guest']) {
       stage = 'prepare ' + role;
@@ -42,15 +61,7 @@ const { createRoomServer } = require('../server/rooms.cjs');
       await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#new-game button').click({ noWaitAfter: true })]);
       await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
       assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle()), 'PolyCraft temporary ' + role + ' — connection UI test');
-      await focus(pages.length - 1);
-      const canvas = page.locator('#turbulenz_game_engine_canvas'), bounds = await canvas.boundingBox();
-      const play = await page.evaluate(() => Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)));
-      await canvas.focus(); await page.mouse.move(10, 10); await page.mouse.move(bounds.x + play[0], bounds.y + play[1], { steps: 5 });
-      await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.readyToPlay, null, { timeout: 5000 });
-      await page.mouse.click(bounds.x + play[0], bounds.y + play[1], { delay: 100 });
-      await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestatePlaying');
-      // Keep tutorial scripts from changing the disposable fixture during connection setup.
-      await page.evaluate(async () => { const game = window.polycraft.controls.manager(); game.runScripts = false; game.setScriptLocked(false); game.activeGameState.setPlayState('PlayStateNormal'); await window.polycraft.checkpoint(); });
+      await play(pages.length - 1);
       console.log('Visible connection UI ready:', role);
     }
     const [host, guest] = pages, guestDirectory = path.join(directory, 'guest', 'saves');
@@ -98,6 +109,9 @@ const { createRoomServer } = require('../server/rooms.cjs');
     assert.equal(await host.evaluate(() => !!window.polycraft.controls.paused), false);
     await guest.waitForFunction(() => !window.polycraft.controls.paused && window.polycraft.controls.guestWorld.movement.available());
     await guest.screenshot({ path: 'test-results/session-ui-guest.png' });
+    stage = 'guest quest description and pending reward';
+    const quests = questAcceptance(host, guest, () => focus(1), hero);
+    await quests.prepare();
     stage = 'host ends through menu';
     await click(0, '#multiplayer'); await click(0, '#end-session');
     await host.waitForFunction(() => !window.polycraft.controls.onlineWorld);
@@ -110,6 +124,8 @@ const { createRoomServer } = require('../server/rooms.cjs');
     assert.equal(registry.players.length, 2); assert.ok(registry.players.some(player => player.id === hero && player.name === 'UI friend'));
     assert.deepEqual(errors, []); assert.deepEqual(requests.filter(url => /^https?:/i.test(url)), []);
     console.log('PASS: two visible games join through real Multiplayer warning/hero/invitation/reply controls; menu leaves host simulation running; return-to-game, host-only controls, saved hero and end-session preserve guest solo data.');
+    stage = 'reload host with unclaimed quest reward';
+    await reloadHost(); await quests.pendingAfterReload(); await click(0, '#multiplayer');
     stage = 'local room setup';
     roomService = createRoomServer(); roomService.server.listen(0, '127.0.0.1'); await once(roomService.server, 'listening');
     const serverUrl = 'ws://127.0.0.1:' + roomService.server.address().port + '/signaling';
@@ -155,6 +171,8 @@ const { createRoomServer } = require('../server/rooms.cjs');
     await host.screenshot({ path: 'test-results/session-ui-room-approved.png' });
     await click(0, '#close-multiplayer'); await click(1, '#close-multiplayer');
     await guest.waitForFunction(() => !window.polycraft.controls.paused && window.polycraft.controls.guestWorld.movement.available());
+    stage = 'guest collects restored quest reward';
+    await quests.collect();
     stage = 'room host exits';
     await click(0, '#multiplayer'); await click(0, '#end-session');
     await host.waitForFunction(() => !window.polycraft.controls.onlineWorld);
@@ -165,8 +183,12 @@ const { createRoomServer } = require('../server/rooms.cjs');
     assert.equal(roomRegistry.players.length, 2); assert.equal(roomRegistry.players.filter(player => player.id === hero).length, 1);
     assert.deepEqual(errors, []); assert.deepEqual(requests.filter(url => /^https?:/i.test(url)), []);
     console.log('PASS: real room-name/password controls reject incorrect case, require host approval, reuse the saved hero, choose direct TCP/TLS without invitation copying, keep simulation running and cleanly end the room without changing guest solo saves.');
+    stage = 'reload host with collected quest reward';
+    await reloadHost(); await quests.collectedAfterReload(); await click(0, '#multiplayer');
     stage = 'rehost for signaling outage';
-    await focus(0); await host.locator('#room-password').fill('giggle shits');
+    await focus(0); await host.locator('#room-name').fill('poopedpants123'); await host.locator('#room-password').fill('giggle shits');
+    await click(0, '#direct-settings > summary');
+    await host.locator('#direct-address').fill('127.0.0.1'); await host.locator('#direct-port').fill(String(port));
     await connection(0, '#host-room', true);
     await host.waitForFunction(() => document.getElementById('multiplayer-status').textContent.includes('is open'));
     await click(1, '#multiplayer'); await guest.locator('#room-password').fill('giggle shits');
@@ -178,6 +200,10 @@ const { createRoomServer } = require('../server/rooms.cjs');
     await guest.waitForFunction(() => !!window.polycraft.controls.guestWorld?.identity && !!window.polycraft.controls.guestWorld.scene.snapshot, null, { timeout: 30000 });
     await guest.evaluate(() => { window.sessionUiOutageLink = window.polycraft.controls.guestWorld.connection; });
     await host.waitForFunction(() => { const world = window.polycraft.controls.onlineWorld; return world.peerPlayers.size === 1 && [...world.peerPlayers.values()].every(binding => binding.ready && binding.joined && !binding.connection.probing); });
+    stage = 'duplicate quest claim after reload and rejoin';
+    await click(1, '#close-multiplayer');
+    await quests.rejectRepeat();
+    await click(1, '#multiplayer');
     stage = 'signaling service shutdown';
     await roomService.close(); roomService = undefined;
     for (const page of pages) await page.waitForFunction(() => document.getElementById('multiplayer-status').textContent.includes('disconnected'));
@@ -206,7 +232,11 @@ const { createRoomServer } = require('../server/rooms.cjs');
     } catch {}
     throw error;
   } finally {
-    for (const application of applications) await application.evaluate(({ app }) => app.exit()).catch(() => {});
+    for (const application of applications) {
+      await application.evaluate(({ app }) => app.exit()).catch(() => {});
+      // A failed test must not leave its own disposable process running.
+      application.process().kill('SIGKILL');
+    }
     await roomService?.close();
     console.log('Disposable connection UI profiles:', directory);
   }
