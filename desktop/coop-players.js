@@ -91,6 +91,12 @@
       }
       return false;
     }
+    updateNearbyEntities(space, seen, radius) {
+      for (const { hero } of this.active.values()) {
+        if (hero.shouldBeDestroyed() || hero.getGameSpace() !== space) continue;
+        space.updateEntitiesInList(space.getUpdatingEntitiesNearPosition(hero.getv3Location(), radius), true, seen);
+      }
+    }
     canDamage(victim, aggressor) {
       if (!victim || victim.shouldBeDestroyed() || aggressor?.shouldBeDestroyed()) return false;
       if (!aggressor || victim === aggressor) return true;

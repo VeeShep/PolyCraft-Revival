@@ -2,7 +2,11 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current source checkpoint — Beta 86, 2026-11-06
+## Current source checkpoint — Beta 87, 2026-11-06
+
+Natural progression exposed host-camera-only entity updates and globally disabled hidden dispensers remaining guest targets. The host now updates each registered hero's original native area using the existing deduplication/due checks, and snapshot interaction respects permanent native validity without borrowing host-local selection. The one-line engine inverse proof restores every prior byte. **532 full / 32 focused checks pass**, including actual native methods and snapshot/picker behavior. Native source acceptance and unfinished package/platform/network gates are recorded in the [current roadmap checkpoint](RESTORATION_STATUS.md#current-source-beta-87-guest-area-updates-and-hidden-building-targets--2026-11-06). The user requested a pause after this fix/checkpoint; keep broader restoration incomplete.
+
+## Previous source checkpoint — Beta 86, 2026-11-06
 
 The shared starter pickup left other party members and the returning solo hero unarmed, even though normal native solo reload restored the same hero's default gun. A guarded native inventory reconciliation now ends only the intro's temporary suppression of a hero's own cached starter after shared unlock. Other held/custom equipment and progression are preserved; unsafe lifecycle/construction actors defer, and armed actors are not re-equipped. **529 full / 37 focused checks pass**, and four visible source games verify all-party restoration, normal solo exit/reload consistency, clean history and exact guest solo files. Read-only review found no must-fix. [Fix and scoped evidence](RESTORATION_STATUS.md#current-source-beta-86-restore-unlocked-native-starter-weapons--2026-11-06).
 

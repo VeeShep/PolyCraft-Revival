@@ -17,6 +17,7 @@ const assert = require('node:assert/strict');
   const naturalVillage = process.argv.includes('--natural-village');
   const naturalHq = process.argv.includes('--natural-hq');
   const naturalResources = process.argv.includes('--natural-resources');
+  const naturalLumbermill = process.argv.includes('--natural-lumbermill');
   assert.ok(!early || natural, 'Early hosting requires the natural-spawn flow.');
   assert.ok(!naturalWeapon || natural, 'Natural weapon testing requires the natural-spawn flow.');
   assert.ok(!naturalCrate || naturalWeapon, 'Natural shooting requires natural weapon acquisition.');
@@ -26,6 +27,7 @@ const assert = require('node:assert/strict');
   assert.ok(!naturalVillage || naturalBandits, 'Natural village progression requires original bandit combat.');
   assert.ok(!naturalHq || naturalVillage, 'Natural HQ construction requires original village arrival.');
   assert.ok(!naturalResources || naturalHq, 'Natural resource progression requires the original HQ.');
+  assert.ok(!naturalLumbermill || naturalResources, 'Natural Lumbermill construction requires gathered wood.');
   assert.ok(!natural || process.argv.includes('--movement-only'), 'Natural spawn testing is limited to the movement-only acceptance flow.');
   assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
@@ -355,17 +357,23 @@ const assert = require('node:assert/strict');
     assert.ok(await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex()) > corrupt.tick);
     console.log('Full resync passed: periodic terrain repair and one requested recovery after a deliberately dropped update.', recovery);
     if (naturalWeapon) {
-      const controls = { host, guest: pages[1], focus: () => focus(1), button: id => nativeButton(1, id), hero: ids[0], hostFile: originals[0].file };
+      const controls = { host, guest: pages[1], guests: pages.slice(1), focusGuest: index => focus(index + 1), focus: () => focus(1), button: id => nativeButton(1, id), hero: ids[0], hostFile: originals[0].file };
       await require('./coop-natural-weapon.cjs')(controls);
       if (naturalCrate) await require('./coop-natural-crate.cjs')(controls);
       if (naturalBridge) await require('./coop-natural-bridge.cjs')(controls);
       if (naturalBandits) await require('./coop-natural-bandits.cjs')(controls);
       if (naturalVillage) await require('./coop-natural-village.cjs')(controls);
-      if (naturalHq) await require('./coop-natural-hq.cjs')(controls);
+      if (naturalHq) await require('./coop-natural-building.cjs')(controls);
       if (naturalResources) await require('./coop-natural-resources.cjs')(controls);
+      if (naturalLumbermill) {
+        await require('./coop-natural-deposit.cjs')(controls);
+        await controls.button('guest-idAcceptTaskRewardButtontaskIdcrit_6');
+        await controls.guest.waitForFunction(() => window.guestWorld.quests.state?.tasks.some(task => task.task === 'buildLumbermill'));
+        await require('./coop-natural-building.cjs')({ ...controls, lumbermill: true });
+      }
     }
     if (process.argv.includes('--movement-only')) {
-      const gear = naturalGear ? require('./coop-natural-gear.cjs')({ host, focus: () => focus(0), headquarters: naturalHq, pendingTask: naturalResources ? 'chopATree' : 'buildHq' }) : null;
+      const gear = naturalGear ? require('./coop-natural-gear.cjs')({ host, focus: () => focus(0), headquarters: naturalHq, pendingTask: naturalLumbermill ? 'buildLumbermill' : naturalResources ? 'chopATree' : 'buildHq' }) : null;
       if (gear) await gear.before();
       for (let index = 1; index <= 3; index++) await observeGuestClose(index);
       await host.evaluate(() => window.hostWorld.close());

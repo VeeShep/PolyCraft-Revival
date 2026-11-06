@@ -117,12 +117,13 @@
         })),
         // Save files omit heroes and other transient entities; replication must include them.
         entities: space.getEntityList().filter(entity => !entity.shouldBeDestroyed()).map(entity => {
-          const mesh = entity.getEC('ECMesh'), health = entity.getEC('ECHealth');
+          const mesh = entity.getEC('ECMesh'), health = entity.getEC('ECHealth'), selectable = entity.getEC('ECSelectable');
+          // Native getValid/isSelectable also include host-local UI and proximity, which must not gate guests.
           const skin = mesh?.node?.skinController;
           skin?.update();
           return {
             id: entity.name, archetype: entity.archetypeName || null,
-            interactive: !!(entity.getEC('ECResourceDispenser') || entity.getEC('ECTarget') || entity.getEC('ECBuilding') || entity.getEC('ECDispenser') || entity.getEC('ECHeroShrine') || entity.getEC('ECCampaignStarter')),
+            interactive: selectable?.permanentValid !== false && !!(entity.getEC('ECResourceDispenser') || entity.getEC('ECTarget') || entity.getEC('ECBuilding') || entity.getEC('ECDispenser') || entity.getEC('ECHeroShrine') || entity.getEC('ECCampaignStarter')),
             location: Array.from(entity.getv3Location()), scale: Array.from(entity.getV3Scale()), rotation: entity.getRotationY(),
             mesh: mesh?.node ? { path: mesh.getMeshPath(), transform: Array.from(mesh.getm43Transform()), visible: !mesh.node.disabled, skin: skin ? Array.from(skin.output) : null } : null,
             health: health ? { current: health.getHealth(), maximum: health.getMaxHealth(),

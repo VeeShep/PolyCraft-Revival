@@ -18,7 +18,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       game.eventManager.subscribe('InteractWithResourceDispenser', interact); game.eventManager.subscribe('ResourceDispsenserDepletedByHero', deplete);
       window.restoreNaturalWoodObservers = () => { game.eventManager.unsubscribe('InteractWithResourceDispenser', interact); game.eventManager.unsubscribe('ResourceDispsenserDepletedByHero', deplete); };
       return { id: tree.getName(), actor: actor.getName(), location: Array.from(tree.getv3Location()), resource: tree.getEC('ECResourceDispenser').getResource(), route: path.getWaypointList().map(point => Array.from(point)),
-        approach: tree.getEC('ECInteractable').shouldApproachOnUp(actor), pickupRadius: game.getEntityFactory().getECArchetype('a_r_lumber', 'ECPickup').attractRadius,
+        minimumWood: game.getEntityFactory().getECArchetype('a_b_lumbermill', 'ECBuilding').resourceCost, approach: tree.getEC('ECInteractable').shouldApproachOnUp(actor), pickupRadius: game.getEntityFactory().getECArchetype('a_r_lumber', 'ECPickup').attractRadius,
         otherCarried: [...world.players.active].filter(([id]) => id !== hero).map(([id, entry]) => ({ id, carried: world.players.captureHero(entry.hero).inventory.carried })) };
     }
     throw new Error('No reachable original tree is available.');
@@ -57,13 +57,13 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     }
     await guest.waitForTimeout(500);
     for (let step = 0; step < 80; step++) {
-      const pickup = await host.evaluate(hero => {
+      const pickup = await host.evaluate(({ hero, minimum }) => {
         const w = window.hostWorld, actor = w.players.active.get(hero).hero;
-        if (actor.getEC('ECResourceCarrier').getResource(0) > 0) return { collected: true };
+        if (actor.getEC('ECResourceCarrier').getResource(0) >= minimum) return { collected: true };
         const drops = w.game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup')).filter(entity => !entity.shouldBeDestroyed() && entity.getEC('ECPickup').archetype.carriedResource[0] > 0 && entity.getEC('ECPickup').collectorName === undefined);
         drops.sort((a, b) => a.getDistanceUsingSize(actor.getv3Location()) - b.getDistanceUsingSize(actor.getv3Location()));
         return { collected: false, location: drops[0] && Array.from(drops[0].getv3Location()) };
-      }, hero);
+      }, { hero, minimum: target.minimumWood });
       if (pickup.collected) break;
       if (!pickup.location) { await guest.waitForTimeout(200); continue; }
       const key = await guest.evaluate(location => {
@@ -86,7 +86,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     assert.equal(result.complete, true); assert.equal(result.scripts, true); assert.equal(result.remaining, 0);
     assert.ok(result.events.some(event => event.interactor === target.actor && event.amount > 0));
     assert.ok(result.depletions.some(event => event.hero === target.actor && event.type === 0));
-    assert.ok(result.inventory.carried[0] > 0, 'The guest must collect native dropped wood into its own inventory.');
+    assert.ok(result.inventory.carried[0] >= target.minimumWood, 'The guest must collect native dropped wood into its own inventory.');
     assert.deepEqual(result.otherCarried, target.otherCarried);
     await guest.waitForFunction(() => window.guestWorld.quests.state?.completed?.task === 'chopATree');
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state, coop = JSON.parse(state.userData.desktopCoop);

@@ -64130,6 +64130,7 @@
       pa.start("Update - On Screen Entities");
       a = this.getUpdatingEntitiesNearPosition(a, 30);
       this.updateEntitiesInList(a, !0, b);
+      this.gameManager.desktopPlayers && this.gameManager.desktopPlayers.updateNearbyEntities(this, b, 30);
       pa.stop("Update - On Screen Entities");
       pa.start("Update - Off Screen Entities");
       this.updateEntitiesInList(this.entityAlwaysUpdateList, !1, b);

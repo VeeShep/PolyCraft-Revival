@@ -8,7 +8,8 @@ module.exports = function naturalGear({ host, focus, headquarters = false, pendi
       primary: hero.getEC('ECFirearm').mainWeaponName, pickupComplete: game.getPlayerData().getTaskFlags().pickupWeapon, scripts: game.runScripts,
       ...(headquarters ? { world: {
         hq: game.getBuildingManager().getBuildingsAtMinLevel('HQ', 1, false).filter(entity => !entity.getEC('ECScaffold')).map(entity => ({ name: entity.getName(), archetype: entity.getArchetypeName(), location: Array.from(entity.getv3Location()) })),
-        flags: { goToVillage: game.getPlayerData().getTaskFlags().goToVillage, buildHq: game.getPlayerData().getTaskFlags().buildHq },
+        lumbermills: game.getBuildingManager().getBuildingsAtMinLevel('Lumbermill', 1, false).filter(entity => !entity.getEC('ECScaffold')).map(entity => ({ name: entity.getName(), archetype: entity.getArchetypeName(), location: Array.from(entity.getv3Location()) })),
+        flags: { goToVillage: game.getPlayerData().getTaskFlags().goToVillage, buildHq: game.getPlayerData().getTaskFlags().buildHq, buildLumbermill: game.getPlayerData().getTaskFlags().buildLumbermill === true },
         pending: JSON.parse(window.polycraft.bridge.state.userData.desktopQuests).pending,
         coop: JSON.parse(window.polycraft.bridge.state.userData.desktopCoop), everEnabled: window.polycraft.bridge.state.cheats.everEnabled
       } } : {}) };
@@ -46,8 +47,9 @@ module.exports = function naturalGear({ host, focus, headquarters = false, pendi
       assert.equal(returned.held, returned.primary);
       if (headquarters) {
         assert.equal(returned.world.hq.length, 1); assert.equal(returned.world.hq[0].archetype, 'a_b_hq');
-        assert.deepEqual(returned.world.flags, { goToVillage: true, buildHq: true });
+        assert.deepEqual(returned.world.flags, { goToVillage: true, buildHq: true, buildLumbermill: pendingTask === 'buildLumbermill' });
         assert.ok(returned.world.pending.some(task => task.task === pendingTask));
+        if (pendingTask === 'buildLumbermill') assert.equal(returned.world.lumbermills.length, 1);
         assert.equal(returned.world.coop.players.length, 4); assert.equal(returned.world.everEnabled, false);
         assert.deepEqual(reloaded.world, returned.world, 'The completed HQ, pending reward, shared flags and saved party must survive native solo reload.');
         console.log('Completed HQ, pending shared reward, four saved party records and clean history survive native solo exit/reload.');

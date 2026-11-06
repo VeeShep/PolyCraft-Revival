@@ -36,6 +36,22 @@ test('campaign starters remain selectable without borrowing combat, building or 
   const snapshot = captureSnapshot(game);
   assert.equal(snapshot.spaces[0].entities.find(entity => entity.id === 'pickup').interactive, true);
 });
+test('globally disabled workshop cannot steal a coincident guest click; host-local selection flags do not block guests', () => {
+  const f = fixture(), get = f.entities[1].getEC, disabled = { permanentValid: false }, enabled = { permanentValid: true };
+  const make = (name, selectable) => ({ ...f.entities[1], name, getEC: component => component === 'ECSelectable' ? selectable : component === 'ECDispenser' ? {} : get(component) });
+  disabled.getValid = enabled.getValid = () => assert.fail('Snapshot must not use host-local selection flags');
+  disabled.isSelectable = enabled.isSelectable = () => assert.fail('Snapshot must not use host-local smart proximity');
+  f.entities.push(make('oldHQ', disabled), make('newLumbermill', enabled));
+  const before = captureSnapshot(f.game), { pickTarget } = require('../desktop/coop-actions.js');
+  const world = { identity: { entity: 'hero' }, controls: { app: { globals: { graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: () => [50, 50] } } } },
+    scene: { entities: new Map(before.spaces[0].entities.map(record => [record.id, { record }])) } };
+  assert.equal(pickTarget(world, { clientX: 50, clientY: 50 }), 'newLumbermill');
+  disabled.permanentValid = true; f.game.gameClock.getFrameIndex = () => before.tick + 1;
+  const after = captureSnapshot(f.game), restored = applyDelta(before, createDelta(before, after));
+  assert.equal(restored.spaces[0].entities.find(entity => entity.id === 'oldHQ').interactive, true);
+  assert.equal(before.spaces[0].entities.find(entity => entity.id === 'oldHQ').interactive, false);
+  assert.equal(before.spaces[0].entities.find(entity => entity.id === 'hero').interactive, true, 'Targets without a selectable component retain existing behavior');
+});
 test('actual original health rules supply bars and timed damage metadata without querying the host camera or changing health', () => {
   const f = fixture(), original = require('./runtime-ast.cjs').component('ECHealth'), get = f.entities[0].getEC;
   const health = Object.assign(Object.create(original), { health: 31, startHealth: 50, healthChangedTime: 0.4, healthBarScale: 2, globals: f.game.globals,
