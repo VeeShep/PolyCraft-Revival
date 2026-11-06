@@ -8,6 +8,8 @@ New co-op heroes previously carried the original tutorial pickup weapon already,
 
 Beta 83's seven other CI jobs passed; its Apple Silicon job terminated without acquiring a hosted runner. The independently built/verified local Mac package retains its earlier acceptance. The verified finished local Beta 84 Apple Silicon package also passes the combined natural flow, including explicit disk inventory and clean history checks. Its separate CI run 42208426086 has passed units and is still building; CI packages, broader natural progression, other native OS gameplay, physical networks and endurance remain open.
 
+The finished local Mac's natural flow now also passes the original guest **Shoot crate** task: actual reward/target clicks, native shotgun blast and actor-owned arc damage, crate removal/shared completion, pending reward on disk and clean cheat history. This required a test-observer correction, not a game change. Seven Beta 84 CI jobs and artifacts pass worker checks; Apple Silicon remains queued. Bridge/bandit/village/HQ progression is still unverified. [Shooting evidence](RESTORATION_STATUS.md#finished-local-beta-84-original-tutorial-shooting--2026-11-06).
+
 ## Previous source checkpoint — Beta 83, 2026-11-06
 
 Hosting during the original sleeping-hero tutorial previously destroyed the hero still referenced by its wake-up script, reproducing a native `getEC` crash and save-boundary timeout in the finished Beta 82 app. The shared co-op player constructor now refuses hosting while an active script leaves that hero asleep or movement-disabled, before capture/replacement/economy persistence. Existing Multiplayer status explains how to continue; tutorial, spawn and wire/save formats stay unchanged.

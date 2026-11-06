@@ -10,8 +10,10 @@ const assert = require('node:assert/strict');
   const natural = process.argv.includes('--natural-spawn');
   const early = process.argv.includes('--early-host');
   const naturalWeapon = process.argv.includes('--natural-weapon');
+  const naturalCrate = process.argv.includes('--natural-crate');
   assert.ok(!early || natural, 'Early hosting requires the natural-spawn flow.');
   assert.ok(!naturalWeapon || natural, 'Natural weapon testing requires the natural-spawn flow.');
+  assert.ok(!naturalCrate || naturalWeapon, 'Natural shooting requires natural weapon acquisition.');
   assert.ok(!natural || process.argv.includes('--movement-only'), 'Natural spawn testing is limited to the movement-only acceptance flow.');
   assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
@@ -318,7 +320,11 @@ const assert = require('node:assert/strict');
     assert.deepEqual(fs.readFileSync(originals[1].file), originals[1].bytes);
     assert.ok(await host.evaluate(() => window.hostWorld.game.gameClock.getFrameIndex()) > corrupt.tick);
     console.log('Full resync passed: periodic terrain repair and one requested recovery after a deliberately dropped update.', recovery);
-    if (naturalWeapon) await require('./coop-natural-weapon.cjs')({ host, guest: pages[1], focus: () => focus(1), button: id => nativeButton(1, id), hero: ids[0], hostFile: originals[0].file });
+    if (naturalWeapon) {
+      const controls = { host, guest: pages[1], focus: () => focus(1), button: id => nativeButton(1, id), hero: ids[0], hostFile: originals[0].file };
+      await require('./coop-natural-weapon.cjs')(controls);
+      if (naturalCrate) await require('./coop-natural-crate.cjs')(controls);
+    }
     if (process.argv.includes('--movement-only')) {
       await host.evaluate(() => window.hostWorld.close());
       for (let index = 1; index <= 3; index++) {
