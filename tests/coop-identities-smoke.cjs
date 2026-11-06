@@ -595,10 +595,16 @@ const assert = require('node:assert/strict');
       return cursor && Math.hypot(cursor[0] - location[0], cursor[2] - location[2]) < 0.15;
     }, build.location);
     await guest.waitForFunction(() => { const ui = window.guestWorld.construction; return ui.preview?.valid && ui.matches(ui.preview.location); });
-    const expectedPlacement = await guest.evaluate(() => [...window.guestWorld.construction.preview.position]);
+    let expectedPlacement;
     assert.deepEqual(await host.evaluate(() => window.polycraft.controls.amounts()), build.before, 'Previewing a building spends nothing');
     await guest.screenshot({ path: 'test-results/coop-build-preview.png' });
-    await guest.mouse.click(placementPoint.x, placementPoint.y, { delay: 100 });
+    await guest.mouse.move(placementPoint.x, placementPoint.y); await guest.waitForTimeout(150);
+    await guest.waitForFunction(() => !window.guestWorld.game.getIMGui().hasCapturedInput());
+    await guest.mouse.down();
+    try {
+      await guest.waitForFunction(() => { const world = window.guestWorld, ui = world.construction; return ui.click && !world.game.getIMGui().hasCapturedInput() && ui.preview?.valid && ui.matches(ui.preview.location); });
+      expectedPlacement = await guest.evaluate(() => [...window.guestWorld.construction.preview.position]);
+    } finally { await guest.mouse.up(); }
     await guest.waitForFunction(() => window.guestWorld.construction.lastBuildResult);
     assert.equal(await guest.evaluate(() => window.guestWorld.construction.lastBuildResult.message), 'Building placed and saved.');
     assert.equal(await guest.evaluate(() => !!window.guestWorld.construction.placement), true, 'Original repeat-building products retain the local blueprint');
