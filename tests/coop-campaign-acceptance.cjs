@@ -131,6 +131,15 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   }
   await host.waitForFunction(({ hero, xp, hostXP, killXP }) => { const world = window.polycraft.controls.onlineWorld; return world.players.active.get(hero).hero.getEC('ECPlayerData').getXP() === xp + killXP && world.game.getHero().getEC('ECPlayerData').getXP() === hostXP; }, { ...combat, hero });
   await guest.waitForFunction(xp => { const hud = window.polycraft.controls.guestWorld.hud; return hud.state?.xp === xp && Math.abs(hud.data.getVisibleXP() - xp) < 0.01; }, combat.xp + combat.killXP);
+  await host.waitForFunction(region => {
+    const world = window.polycraft.controls.onlineWorld, war = world.game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0].getEC('ECWarManager');
+    return war.campaignRegionMap[region].currentAttackWaveManager?.getEC('ECAttackWavesManager').spawnedEntityList.some(entity => !entity.shouldBeDestroyed() && entity.getEC('ECHealth').getHealth() > 0);
+  }, campaign.region);
+  const interruptedBattle = await host.evaluate(region => window.polycraft.controls.onlineWorld.atBoundary(() => {
+    const world = window.polycraft.controls.onlineWorld, war = world.game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0].getEC('ECWarManager'), record = war.campaignRegionMap[region], entity = record.currentAttackWaveManager, wave = entity.getEC('ECAttackWavesManager');
+    return { campaign: war.getCampaignArchetypeName(region), active: war.isBattling(region), manager: entity.getName(), nextWaveIndex: wave.nextWaveIndex, enemies: wave.spawnedEntityList.filter(entity => !entity.shouldBeDestroyed()).map(entity => entity.getName()) };
+  }), campaign.region);
+  assert.equal(interruptedBattle.active, true); assert.ok(interruptedBattle.nextWaveIndex > 0); assert.ok(interruptedBattle.enemies.length > 0);
   await host.evaluate(() => window.polycraft.checkpoint(true));
   assert.equal(saved().players.find(player => player.id === hero).progress.xp, combat.xp + combat.killXP);
   assert.equal(saved().players.find(player => player.id === saved().host).progress.xp, combat.hostXP);
@@ -140,6 +149,12 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   await reloadHost(); await click(0, '#multiplayer'); await join();
   const reloadedXP = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => { const world = window.polycraft.controls.onlineWorld; return { guest: world.players.active.get(hero).hero.getEC('ECPlayerData').getXP(), host: world.game.getHero().getEC('ECPlayerData').getXP() }; }), hero);
   assert.deepEqual(reloadedXP, { guest: combat.xp + combat.killXP, host: combat.hostXP });
+  const resetBattle = await host.evaluate(({ region, interrupted }) => window.polycraft.controls.onlineWorld.atBoundary(() => {
+    const world = window.polycraft.controls.onlineWorld, game = world.game, war = game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0].getEC('ECWarManager'), record = war.campaignRegionMap[region], entity = record.currentAttackWaveManager, wave = entity.getEC('ECAttackWavesManager');
+    return { campaign: war.getCampaignArchetypeName(region), active: war.isBattling(region), nextWaveIndex: wave.nextWaveIndex, banner: !!record.campaignStarterEntity && !record.campaignStarterEntity.shouldBeDestroyed(), oldEnemies: interrupted.enemies.filter(id => !!game.getGameEntityByName(id)), campaignActive: game.getScoreInfo().campaignActive, pending: game.desktopCampaignRewards.data.pending.length };
+  }), { region: campaign.region, interrupted: interruptedBattle });
+  assert.deepEqual(resetBattle, { campaign: interruptedBattle.campaign, active: false, nextWaveIndex: 0, banner: true, oldEnemies: [], campaignActive: false, pending: 0 });
+  console.log('Native interrupted battle reload:', JSON.stringify({ before: interruptedBattle, after: resetBattle, xp: reloadedXP }));
   await guest.waitForFunction(xp => window.polycraft.controls.guestWorld.hud.state?.xp === xp, reloadedXP.guest);
   console.log('Native kill XP collection/reload:', { before: { guest: combat.xp, host: combat.hostXP }, killXP: combat.killXP, after: reloadedXP, drops });
   await end();

@@ -279,6 +279,8 @@ A separate finished-Mac recovery test now restores that pending native score pan
 
 The same reward helper's `--backup` mode also passes on the finished Mac app: the launcher recovers a deliberately broken disposable primary from its valid backup, restores the pending reward, and retains exact once-only awards and cheat history through another reload. The normal path was rerun successfully. [Backup recovery evidence](RESTORATION_STATUS.md#finished-beta-82-campaign-reward-backup-recovery--2026-11-06).
 
+**Unfinished battles:** loading a saved island returns an unfinished tutorial campaign to its banner; it does not resume the exact wave or enemy positions. The finished-Mac test saves with a living wave enemy and verifies the reset, preserved earned XP and absence of a false completion reward. This matches the original campaign save rules; exact midbattle continuation is not implemented. [Battle reload evidence](RESTORATION_STATUS.md#finished-beta-82-unfinished-battle-reload-behavior--2026-11-06).
+
 ### Packaging
 
 CI verifies extracted Windows ZIPs and both Linux archive formats before collecting downloads. It checks every bundled PE/ELF binary against the target architecture, the original Windows icon resources, AppImage desktop association/icons, and all desktop source files/core package metadata/game/window-icon bytes. Mac ZIPs additionally validate the bundle-selected ICNS, packaged window/Dock PNG, the same full-source/metadata guards, every Mach-O architecture and the deep signature. These checks do not open the game or prove native desktop appearance/gameplay. `.gitattributes` keeps packaged source LF on Windows too, while original reference/game-asset bytes are excluded from conversion.
