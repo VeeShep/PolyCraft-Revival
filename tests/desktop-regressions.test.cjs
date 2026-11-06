@@ -6,19 +6,22 @@ const path = require('node:path');
 const vm = require('node:vm');
 const runtime = require('./runtime-ast.cjs');
 
-test('fullscreen is allowed only for the local game; the desktop toggle reaches the window', async () => {
+test('fullscreen is allowed only for the local game; the desktop toggle reaches the window', async t => {
   const handlers = {};
   const session = {
     webRequest: { onBeforeRequest() {} },
     setPermissionCheckHandler(handler) { this.check = handler; },
     setPermissionRequestHandler(handler) { this.request = handler; }
   };
-  let window;
+  let window, direct, room;
   class Window {
     constructor() {
       window = this;
-      this.webContents = { session, mainFrame: { url: 'polycraft://game/desktop/index.html' }, setWindowOpenHandler() {}, on() {}, setBackgroundThrottling(value) { this.throttled = value; } };
+      this.contents = { session, mainFrame: { url: 'polycraft://game/desktop/index.html' }, setWindowOpenHandler() {}, on() {}, setBackgroundThrottling(value) { this.throttled = value; },
+        isDestroyed() { return !!this.destroyed; }, sent: [], send(...args) { this.sent.push(args); } };
     }
+    get webContents() { if (this.destroyed) throw new TypeError('Object has been destroyed'); return this.contents; }
+    isDestroyed() { return !!this.destroyed; }
     on() {}
     loadURL() { return Promise.resolve(); }
     isFullScreen() { return !!this.fullscreen; }
@@ -32,7 +35,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
     dialog: {}, Menu: { buildFromTemplate: value => value, setApplicationMenu() {} }
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../desktop/main.cjs'), 'utf8'), {
-    require: name => name === 'electron' ? electron : name === './saves.cjs' ? { Saves: class {} } : name === './logging.cjs' ? { createLogger: () => () => {} } : name === './direct-network.cjs' ? require('../desktop/direct-network.cjs') : name === './room-socket.cjs' ? require('../desktop/room-socket.cjs') : require(name),
+    require: name => name === 'electron' ? electron : name === './saves.cjs' ? { Saves: class {} } : name === './logging.cjs' ? { createLogger: () => () => {} } : name === './direct-network.cjs' ? { DirectNetwork: class extends require('../desktop/direct-network.cjs').DirectNetwork { constructor(emit) { super(emit); direct = this; } } } : name === './room-socket.cjs' ? { RoomSocket: class extends require('../desktop/room-socket.cjs').RoomSocket { constructor(emit) { super(emit); room = this; } } } : require(name),
     __dirname: path.join(__dirname, '../desktop'), process: { env: {}, platform: 'darwin', versions: {}, on() {} }, URL, Response
   });
   await new Promise(resolve => setImmediate(resolve));
@@ -63,6 +66,17 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
   assert.equal(window.isFullScreen(), true);
   await handlers['polycraft:fullscreen'](event);
   assert.equal(window.isFullScreen(), false);
+  await t.test('native room/direct events stop at destroyed contents or window without throwing', () => {
+    const callbacks = [[direct, 'polycraft:direct-event'], [room, 'polycraft:room-event']];
+    const message = { type: 'closed' };
+    for (const [network] of callbacks) network.emit(message);
+    assert.deepEqual(contents.sent, callbacks.map(([, channel]) => [channel, message]));
+    contents.destroyed = true;
+    for (const [network] of callbacks) assert.doesNotThrow(() => network.emit(message));
+    window.destroyed = true;
+    for (const [network] of callbacks) assert.doesNotThrow(() => network.emit(message));
+    assert.equal(contents.sent.length, 2, 'Late events must not reach closed renderer IPC.');
+  });
 });
 
 test('the original Craft Resource menu explains unavailable storage and shows offers as room appears', () => {
