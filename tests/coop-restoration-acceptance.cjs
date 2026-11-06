@@ -345,6 +345,35 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
   const restoredFallback = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => { const world = window.polycraft.controls.onlineWorld; return world.players.captureHero(world.players.active.get(hero).hero).inventory; }), hero);
   assert.deepEqual(restoredFallback, fallback);
   console.log('Restored native inventory:', { temporary: restoredInventory.inventory, equipped: restoredInventory.equipped, fallback: restoredFallback });
+  const lastBomb = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
+    window.addEventListener('error', event => { window.lastBombNativeError = { message: event.message, stack: event.error?.stack, filename: event.filename, line: event.lineno }; });
+    const world = window.polycraft.controls.onlineWorld, game = world.game, actor = world.players.active.get(hero).hero, origin = Array.from(actor.getv3Location());
+    const location = Array.from({ length: 12 }, (_, index) => game.placeOnGround([origin[0] + 5 * Math.cos(index * Math.PI / 6), origin[1], origin[2] + 5 * Math.sin(index * Math.PI / 6)], 0.5)).find(point => !game.getCollisionInfo(origin, point, false, actor));
+    if (!location) throw new Error('Need a clear disposable bomb target position.');
+    game.enableAttacks(); actor.getEC('ECAutoFire').disable(); actor.getEC('ECLocomotion').clearDestination();
+    actor.getEC('ECInventory').equipTemporaryWeapon('wp_h_bombs', 1);
+    const target = game.getEntityFactory().createInactiveEntityInstance('TemporaryAmmoTarget', 'a_e_thief_level_1', location, 0);
+    target.getEC('ECFaction').setFaction(game.getFactionManager().getEnemyFactionName()); target.activate();
+    const factory = game.getProjectileFactory(), create = factory.createProjectile;
+    window.lastBombProjectiles = [];
+    factory.createProjectile = function (...args) { const projectile = create.apply(this, args); if (args[0] === actor) window.lastBombProjectiles.push({ id: projectile.getName(), archetype: projectile.getArchetypeName() }); return projectile; };
+    window.restoreLastBombObserver = () => { factory.createProjectile = create; };
+    return { target: target.getName(), before: world.players.captureHero(actor).inventory };
+  }), hero);
+  assert.equal(lastBomb.before.temporaryAmmo, 1); assert.equal(lastBomb.before.weapon, 'wp_h_bombs');
+  for (let attempt = 0; attempt < 8 && !await host.evaluate(() => window.lastBombProjectiles.some(row => row.archetype === 'pj_h_bomb')); attempt++) {
+    await selectTarget(lastBomb.target); await guest.waitForTimeout(500);
+  }
+  await host.waitForFunction(hero => { const world = window.polycraft.controls.onlineWorld, inventory = world.players.captureHero(world.players.active.get(hero).hero).inventory; return window.lastBombProjectiles.some(row => row.archetype === 'pj_h_bomb') && inventory.weapon === 'wp_h_pistol' && inventory.temporaryAmmo === 0; }, hero).catch(async error => { console.error('Native bomb failure:', await host.evaluate(({ hero, target }) => { const world = window.polycraft.controls.onlineWorld, actor = world.players.active.get(hero).hero, victim = world.game.getGameEntityByName(target), firearm = actor.getEC('ECFirearm'); return { error: window.lastBombNativeError, projectiles: window.lastBombProjectiles, inventory: world.players.captureHero(actor).inventory, canFire: firearm.getCanFire(), autoTarget: actor.getEC('ECAutoFire').getTargetEntity()?.getName(), position: Array.from(actor.getv3Location()), target: victim && { position: Array.from(victim.getv3Location()), health: victim.getEC('ECHealth').getHealth(), valid: victim.getEC('ECTarget').isValidTarget(actor), faction: victim.getEC('ECFaction').getFactionName() } }; }, { hero, target: lastBomb.target })); throw error; });
+  await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => { window.polycraft.controls.onlineWorld.players.active.get(hero).hero.getEC('ECAutoFire').disable(); window.restoreLastBombObserver(); }), hero);
+  await host.waitForFunction(hero => window.polycraft.controls.onlineWorld.players.active.get(hero).hero.getEC('ECFirearm').getAmmo() === 1, hero);
+  const exhausted = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => { const world = window.polycraft.controls.onlineWorld, actor = world.players.active.get(hero).hero; return { inventory: world.players.captureHero(actor).inventory, visual: actor.getEC('ECInventory').heldWeaponEntity?.getName(), projectiles: window.lastBombProjectiles }; }), hero);
+  assert.deepEqual(exhausted.inventory, fallback); assert.ok(exhausted.visual);
+  await guest.waitForFunction(id => window.polycraft.controls.guestWorld.scene.entities.get(id)?.record.mesh?.path.endsWith('characters/models/hero_gunhand.dae'), exhausted.visual);
+  await end(); assert.deepEqual(saved().players.find(player => player.id === hero).inventory, fallback);
+  await reloadHost(); await click(0, '#multiplayer'); await join();
+  assert.deepEqual(await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => { const world = window.polycraft.controls.onlineWorld; return world.players.captureHero(world.players.active.get(hero).hero).inventory; }), hero), fallback);
+  console.log('Native final bomb consumption/reload:', JSON.stringify({ before: lastBomb.before, exhausted }));
   await end();
   console.log('PASS: staged native pistol/bomb weapon, partial clip, temporary ammo, equipped fallback and carried resources survive actual host reload/rejoin; guest renders its restored bomb model, native return to pistol persists through a second reload and guest solo bytes stay unchanged.');
   await require('./coop-campaign-acceptance.cjs')({ host, guest, hero, join, end, nativeButton, selectTarget, click, saved, reloadHost });
