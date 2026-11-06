@@ -1,7 +1,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 
-module.exports = function naturalGear({ host, focus, headquarters = false }) {
+module.exports = function naturalGear({ host, focus, headquarters = false, pendingTask = 'buildHq' }) {
   const solo = () => host.evaluate(headquarters => {
     const game = window.polycraft.controls.manager(), hero = game.getHero();
     return { held: hero.getEC('ECInventory').getHeldWeapon(), armed: hero.getEC('ECFirearm').hasWeapon(),
@@ -47,7 +47,7 @@ module.exports = function naturalGear({ host, focus, headquarters = false }) {
       if (headquarters) {
         assert.equal(returned.world.hq.length, 1); assert.equal(returned.world.hq[0].archetype, 'a_b_hq');
         assert.deepEqual(returned.world.flags, { goToVillage: true, buildHq: true });
-        assert.ok(returned.world.pending.some(task => task.task === 'buildHq'));
+        assert.ok(returned.world.pending.some(task => task.task === pendingTask));
         assert.equal(returned.world.coop.players.length, 4); assert.equal(returned.world.everEnabled, false);
         assert.deepEqual(reloaded.world, returned.world, 'The completed HQ, pending reward, shared flags and saved party must survive native solo reload.');
         console.log('Completed HQ, pending shared reward, four saved party records and clean history survive native solo exit/reload.');
