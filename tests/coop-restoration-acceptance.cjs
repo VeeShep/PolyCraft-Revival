@@ -32,16 +32,16 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
     await guest.locator('#turbulenz_game_engine_canvas').focus();
     await guest.waitForFunction(() => window.polycraft.controls.guestWorld.movement.available());
     await guest.waitForFunction(id => {
-      const world = window.polycraft.controls.guestWorld, record = world.scene.entities.get(id)?.record;
+      const world = window.polycraft.controls.guestWorld, entry = world.scene.entities.get(id), record = entry?.record;
       if (!record) return false;
-      const point = world.controls.app.globals.camera.worldToScreen(record.location), bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice;
+      const point = world.controls.app.globals.camera.worldToScreen(entry.displayLocation || record.location), bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice;
       if (!point) return false;
       const x = point[0] * bounds.width / device.width, y = point[1] * bounds.height / device.height;
       return x > 20 && x < bounds.width - 20 && y > 20 && y < bounds.height - 20 && window.PolycraftCoopActions.pickTarget(world, { clientX: bounds.left + x, clientY: bounds.top + y }) === id;
     }, id);
-    const sourcePoint = await guest.evaluate(id => { const world = window.polycraft.controls.guestWorld, point = world.controls.app.globals.camera.worldToScreen(world.scene.entities.get(id).record.location), bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice; return { x: bounds.left + point[0] * bounds.width / device.width, y: bounds.top + point[1] * bounds.height / device.height }; }, id);
+    const sourcePoint = await guest.evaluate(id => { const world = window.polycraft.controls.guestWorld, point = world.controls.app.globals.camera.worldToScreen(world.scene.entities.get(id).displayLocation || world.scene.entities.get(id).record.location), bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice; return { x: bounds.left + point[0] * bounds.width / device.width, y: bounds.top + point[1] * bounds.height / device.height }; }, id);
     await guest.mouse.move(sourcePoint.x, sourcePoint.y); await guest.waitForTimeout(150);
-    const currentPoint = await guest.evaluate(id => { const world = window.polycraft.controls.guestWorld, point = world.controls.app.globals.camera.worldToScreen(world.scene.entities.get(id).record.location), bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice; return { x: bounds.left + point[0] * bounds.width / device.width, y: bounds.top + point[1] * bounds.height / device.height }; }, id);
+    const currentPoint = await guest.evaluate(id => { const world = window.polycraft.controls.guestWorld, point = world.controls.app.globals.camera.worldToScreen(world.scene.entities.get(id).displayLocation || world.scene.entities.get(id).record.location), bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice; return { x: bounds.left + point[0] * bounds.width / device.width, y: bounds.top + point[1] * bounds.height / device.height }; }, id);
     await guest.mouse.click(currentPoint.x, currentPoint.y, { delay: 100 });
   }
   async function pickUp(id) {

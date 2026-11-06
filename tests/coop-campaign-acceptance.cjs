@@ -81,7 +81,38 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   const hostMenuEnemy = await observeMovement();
   assert.equal(await host.locator('#multiplayer-dialog').evaluate(node => node.open), true);
   await click(0, '#close-multiplayer');
+  const combat = await host.evaluate(({ id, hero }) => window.polycraft.controls.onlineWorld.atBoundary(() => {
+    const world = window.polycraft.controls.onlineWorld, game = world.game, victim = game.getGameEntityByName(id), actor = world.players.active.get(hero).hero;
+    if (!victim || victim.shouldBeDestroyed() || victim.getEC('ECHealth').getHealth() <= 0) throw new Error('Need the live native wave enemy for combat.');
+    const target = Array.from(victim.getv3Location());
+    const location = [[3, 0], [-3, 0], [0, 3], [0, -3]].map(([x, z]) => game.placeOnGround([target[0] + x, target[1], target[2] + z], 0.5)).find(point => !game.getCollisionInfo(target, point, false, victim));
+    if (!location) throw new Error('Need an unobstructed temporary hero position near the wave enemy.');
+    actor.getEC('ECAutoFire').disable(); actor.getEC('ECLocomotion').clearDestination(); actor.teleport(location);
+    actor.getEC('ECInventory').equipWeapon('wp_h_pistol');
+    const factory = game.getProjectileFactory(), create = factory.createProjectile;
+    window.campaignCombatAcceptance = { projectiles: [], impacts: [], kills: [] };
+    factory.createProjectile = function (...args) {
+      const projectile = create.apply(this, args);
+      if (args[0] === actor) {
+        window.campaignCombatAcceptance.projectiles.push(projectile.getName());
+        const component = projectile.getEC('ECProjectile'), impact = component.onImpact;
+        component.onImpact = function (entity, point) { window.campaignCombatAcceptance.impacts.push({ target: entity?.getName(), healthBefore: entity?.getEC('ECHealth')?.getHealth() }); return impact.call(this, entity, point); };
+      }
+      return projectile;
+    };
+    window.restoreCampaignCombatObserver = () => { factory.createProjectile = create; };
+    game.eventManager.subscribe('EnemyKilled', event => window.campaignCombatAcceptance.kills.push({ victim: event.victim.getName(), aggressor: event.aggressor?.getName(), critical: event.isCritical }));
+    return { id, actor: actor.getName(), health: victim.getEC('ECHealth').getHealth(), tick: game.gameClock.getFrameIndex() };
+  }), { id: hostMenuEnemy.id, hero });
+  await selectTarget(combat.id);
+  await host.waitForFunction(({ id, actor }) => window.campaignCombatAcceptance.kills.some(event => event.victim === id && event.aggressor === actor && event.critical), combat, { timeout: 15000 });
+  await guest.waitForFunction(({ id, health, tick }) => { const scene = window.polycraft.controls.guestWorld.scene, record = scene.entities.get(id)?.record; return scene.tick > tick && (!record || record.health?.current < health); }, combat);
+  const trace = await host.evaluate(() => { window.restoreCampaignCombatObserver(); return window.campaignCombatAcceptance; });
+  assert.ok(trace.projectiles.length > 0); assert.ok(trace.impacts.some(impact => impact.target === combat.id && impact.healthBefore === combat.health));
+  assert.equal(trace.kills.filter(event => event.victim === combat.id && event.aggressor === combat.actor).length, 1);
+  console.log('Original wave combat:', { before: combat, trace });
+  await guest.screenshot({ path: 'test-results/session-ui-campaign-combat.png' });
   console.log('Original guest campaign:', { ...campaign, events: await host.evaluate(() => window.campaignAcceptanceEvents), guestPauseEnemy, hostMenuEnemy });
   await end();
-  console.log('PASS: original guest campaign preview/cancel/confirm and preparation-to-battle transition; duplicate start refused; native wave enemies move and replicate during guest Pause and host Multiplayer menus; guest solo bytes unchanged.');
+  console.log('PASS: original guest campaign preview/cancel/confirm and preparation-to-battle transition; duplicate start refused; native wave AI continues through guest/host menus; actual guest click creates a pistol projectile, impacts/kills the wave enemy once with assigned-hero attribution and replicates the health change/removal; guest solo bytes unchanged.');
 };
