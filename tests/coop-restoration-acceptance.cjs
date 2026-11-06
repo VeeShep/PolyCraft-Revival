@@ -257,8 +257,28 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
     return locations.map(location => { const point = globals.camera.worldToScreen([location[0], hero.location[1], location[2]]); return point && { x: bounds.left + point[0] * bounds.width / globals.graphicsDevice.width, y: bounds.top + point[1] * bounds.height / globals.graphicsDevice.height }; }).find(point => point && point.x > bounds.left + bounds.width * 0.4 && point.x < bounds.right - 60 && point.y > bounds.top + 100 && point.y < bounds.bottom - 150);
   }, candidates);
   assert.ok(destination, 'Need a visible destination clear of the original quest and cancel panels.');
+  await guest.evaluate(() => {
+    const world = window.polycraft.controls.guestWorld, construction = world.construction, update = construction.update;
+    world.moveColorAcceptance = { valid: 0, stale: 0, invalid: 0, pending: 0, mismatches: 0 };
+    construction.update = function () {
+      const renderer = world.controls.app.globals.simpleSpriteRenderer, addSprite = renderer.addSprite;
+      renderer.addSprite = value => {
+        const builder = world.game.getHero().getEC('ECPlayerBuilder');
+        if (this.preview && value.texture === builder.getBuildingGuidelineTexture()) {
+          const reason = this.pending ? 'pending' : !this.preview.valid ? 'invalid' : !this.matches(this.preview.location) ? 'stale' : 'valid';
+          const expected = reason === 'valid' ? builder.getv4ValidBuildPositionTextureColor() : builder.getv4InvalidBuildPositionTextureColor();
+          world.moveColorAcceptance[reason]++;
+          if ([0, 1, 2].some(index => value.v4color[index] !== expected[index])) world.moveColorAcceptance.mismatches++;
+          world.moveColorAcceptance.last = { reason, color: Array.from(value.v4color), position: Array.from(value.v3Location) };
+        }
+        return addSprite.call(renderer, value);
+      };
+      try { return update.call(this); } finally { renderer.addSprite = addSprite; }
+    };
+  });
   await guest.mouse.move(destination.x, destination.y);
   await guest.waitForFunction(() => { const construction = window.polycraft.controls.guestWorld.construction; return construction.preview?.valid && construction.matches(construction.preview.location); });
+  await guest.waitForFunction(() => window.polycraft.controls.guestWorld.moveColorAcceptance.valid >= 4 && window.polycraft.controls.guestWorld.moveColorAcceptance.last.reason === 'valid');
   await guest.evaluate(() => {
     const world = window.polycraft.controls.guestWorld, sendBuild = world.sendBuild;
     world.movePlacementAcceptance = [];
@@ -271,6 +291,9 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
   assert.equal(await guest.evaluate(() => window.polycraft.controls.guestWorld.construction.lastBuildResult.message), 'Held building placed and saved.');
   const intent = await guest.evaluate(() => window.polycraft.controls.guestWorld.movePlacementAcceptance);
   assert.equal(intent.length, 1); assert.equal(intent[0].preview.valid, true); assert.deepEqual(intent[0].location, intent[0].preview.location);
+  const colors = await guest.evaluate(() => window.polycraft.controls.guestWorld.moveColorAcceptance);
+  assert.equal(colors.mismatches, 0); assert.ok(colors.valid >= 4);
+  console.log('Original placement guideline colors:', colors);
   const expectedPosition = intent[0].preview.position;
   await host.waitForFunction(position => { const world = window.polycraft.controls.onlineWorld, source = world.moveAcceptancePointer.get(); return source?.getArchetypeName() === 'a_b_lumberstorage' && !source.shouldBeDestroyed() && Math.hypot(source.getv3Location()[0] - position[0], source.getv3Location()[2] - position[2]) < 0.1 && !world.construction.pending.size; }, expectedPosition).catch(async error => {
     console.error('Move completion diagnostics:', { expectedPosition, actual: await host.evaluate(() => { const world = window.polycraft.controls.onlineWorld, source = world.moveAcceptancePointer.get(); return { pointer: source && { name: source.getName(), archetype: source.getArchetypeName(), location: Array.from(source.getv3Location()), destroyed: source.shouldBeDestroyed() }, pending: world.construction.pending.size }; }) });

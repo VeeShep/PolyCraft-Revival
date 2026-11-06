@@ -56,8 +56,11 @@ test('original product artwork selects a repeat blueprint; one outstanding previ
   click('guest-build-cancel'); ui.update(); assert.equal(ui.placement, null); assert.equal(ui.request, null);
   ui.receive(menu(), false); assert.equal(ui.menu, null, 'A cancelled selection does not reopen from a late response');
 });
-test('a stale valid outline cannot place at an old cursor location; blur and vanished sources cancel', () => {
-  const { ui, world, sent, click, preview } = setup(); ui.receive(menu(), true); click('guest-build-Workshop-0'); ui.update(); click(undefined); ui.update(); ui.receive(preview(true), false);
+test('a stale valid outline turns red and cannot place at an old cursor location; blur and vanished sources cancel', () => {
+  const { ui, world, sent, sprites, click, preview } = setup(); ui.receive(menu(), true); click('guest-build-Workshop-0'); ui.update(); click(undefined); ui.update(); ui.receive(preview(true), false);
+  ui.update(); assert.deepEqual(sprites.at(-1).v4color, [0, 1, 0, 1]);
+  ui.cursor = () => [5, 0, 5]; ui.update(); assert.deepEqual(sprites.at(-1).v4color, [1, 0, 0, 1]);
+  ui.cursor = () => [1, 0, 2]; ui.update(); assert.deepEqual(sprites.at(-1).v4color, [0, 1, 0, 1]);
   ui.cursor = () => [5, 0, 5]; ui.pointer('mousedown', { button: 0 }); ui.pointer('mouseup', { button: 0 });
   assert.equal(sent.some(value => value.type === 'build'), false);
   world.movement.nativeFocused = false; ui.update(); assert.equal(ui.placement, null);
