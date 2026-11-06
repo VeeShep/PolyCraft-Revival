@@ -2,7 +2,13 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current checkpoint — Beta 82, 2026-11-06
+## Current source checkpoint — Beta 83, 2026-11-06
+
+Hosting during the original sleeping-hero tutorial previously destroyed the hero still referenced by its wake-up script, reproducing a native `getEC` crash and save-boundary timeout in the finished Beta 82 app. The shared co-op player constructor now refuses hosting while an active script leaves that hero asleep or movement-disabled, before capture/replacement/economy persistence. Existing Multiplayer status explains how to continue; tutorial, spawn and wire/save formats stay unchanged.
+
+All **523 checks** pass. The announced four-visible-game source `--natural-spawn --movement-only --early-host` case passes actual UI refusal, original hero preservation, natural wake-up and subsequent four-player movement, same-tick canonical sync, interpolation, input blocking, resync and guest-save isolation. No native/page errors occur. Finished Beta 83 packages, all scripted interactions, other native platforms, physical networks and endurance remain unverified. [Startup fix and evidence](RESTORATION_STATUS.md#current-source-beta-83-safe-tutorial-hosting--2026-11-06).
+
+## Previous checkpoint — Beta 82, 2026-11-06
 
 The host snapshot now marks original `ECCampaignStarter` banners interactive, fixing guest canvas selection without changing message/save formats or host campaign guards. All 522 checks pass; both source and verified finished Apple Silicon runs pass nine flows, including actual campaign preview/cancel/confirm and the native preparation-to-battle transition while the guest Pause menu stays open. All eight Beta 82 CI jobs/artifacts pass worker source/icon/architecture/native-network checks. Prerequisites are staged; victory/rewards, enemy AI, natural progression, other native-platform gameplay and physical-network acceptance remain open. [Fix and evidence](RESTORATION_STATUS.md#current-source-beta-82-selectable-campaign-banners--2026-11-06).
 

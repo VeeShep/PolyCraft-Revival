@@ -8,6 +8,8 @@ const assert = require('node:assert/strict');
   const relay = process.env.POLYCRAFT_TEST_TURN ? JSON.parse(process.env.POLYCRAFT_TEST_TURN) : null;
   const mixed = process.env.POLYCRAFT_TEST_MIXED === '1';
   const natural = process.argv.includes('--natural-spawn');
+  const early = process.argv.includes('--early-host');
+  assert.ok(!early || natural, 'Early hosting requires the natural-spawn flow.');
   assert.ok(!natural || process.argv.includes('--movement-only'), 'Natural spawn testing is limited to the movement-only acceptance flow.');
   assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
@@ -41,14 +43,7 @@ const assert = require('node:assert/strict');
       await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.readyToPlay, null, { timeout: 5000 });
       await page.mouse.click(bounds.x + play[0], bounds.y + play[1], { delay: 100 });
       await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestatePlaying', null, { timeout: 10000 });
-      if (natural) {
-        await nativeButton(pages.length - 1, 'idTaskHelpButtontaskIdcrit_0');
-        await page.waitForFunction(() => window.polycraft.controls.manager().getHero().getEC('ECInteractable')?.getActive());
-        const point = await page.evaluate(() => { const controls = window.polycraft.controls, point = controls.app.globals.camera.worldToScreen(controls.manager().getHero().getCentreLocation()), canvas = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect(), device = controls.app.globals.graphicsDevice; return { x: canvas.left + point[0] * canvas.width / device.width, y: canvas.top + point[1] * canvas.height / device.height }; });
-        await page.mouse.move(point.x, point.y); await page.waitForTimeout(150); await page.mouse.click(point.x, point.y, { delay: 100 });
-        await page.waitForFunction(() => window.polycraft.controls.manager().getPlayerData().getTaskFlags().wakeUp === true, null, { timeout: 15000 });
-        console.log('Natural wake-up completed:', role, await page.evaluate(() => { const game = window.polycraft.controls.manager(); return { location: Array.from(game.getHero().getv3Location()), respawn: Array.from(game.getHeroRespawnPosition()), runScripts: game.runScripts, scriptLocked: game.isScriptLocked() }; }));
-      }
+      if (natural && (!early || role !== 'host')) await wakeUp(pages.length - 1, role);
       const state = await page.evaluate(async natural => {
         const game = window.polycraft.controls.manager();
         if (!natural) { game.runScripts = false; game.setScriptLocked(false); game.activeGameState.setPlayState('PlayStateNormal'); }
@@ -64,6 +59,15 @@ const assert = require('node:assert/strict');
       console.log('Visible temporary game ready:', role);
     }
     const host = pages[0];
+    async function wakeUp(index, role) {
+      const page = pages[index];
+      await nativeButton(index, 'idTaskHelpButtontaskIdcrit_0');
+      await page.waitForFunction(() => window.polycraft.controls.manager().getHero().getEC('ECInteractable')?.getActive());
+      const point = await page.evaluate(() => { const controls = window.polycraft.controls, point = controls.app.globals.camera.worldToScreen(controls.manager().getHero().getCentreLocation()), canvas = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect(), device = controls.app.globals.graphicsDevice; return { x: canvas.left + point[0] * canvas.width / device.width, y: canvas.top + point[1] * canvas.height / device.height }; });
+      await page.mouse.move(point.x, point.y); await page.waitForTimeout(150); await page.mouse.click(point.x, point.y, { delay: 100 });
+      await page.waitForFunction(() => window.polycraft.controls.manager().getPlayerData().getTaskFlags().wakeUp === true, null, { timeout: 15000 });
+      console.log('Natural wake-up completed:', role, await page.evaluate(() => { const game = window.polycraft.controls.manager(); return { location: Array.from(game.getHero().getv3Location()), respawn: Array.from(game.getHeroRespawnPosition()), runScripts: game.runScripts, scriptLocked: game.isScriptLocked() }; }));
+    }
     async function nativeButton(index, id) {
       await focus(index); const page = pages[index];
       await page.waitForFunction(id => window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap[id]?.scale > 0.95, id);
@@ -83,6 +87,18 @@ const assert = require('node:assert/strict');
           return;
         } catch (error) { if (attempt) throw error; }
       }
+    }
+    if (early) {
+      console.log('Before early hosting:', await host.evaluate(() => { const game = window.polycraft.controls.manager(), hero = window.earlySoloHero = game.getHero(); return { hero: hero.getName(), sleeping: hero.getEC('ECSleeping')?.sleeping, movement: hero.getEC('ECLocomotion').active, runScripts: game.runScripts }; }));
+      await focus(0); await host.locator('#multiplayer').click(); await host.locator('#host-island').click();
+      await host.locator('#multiplayer-warning[open]').waitFor(); await host.locator('#multiplayer-warning button[value="continue"]').click();
+      await host.waitForFunction(() => document.getElementById('multiplayer-status').textContent.includes('Finish waking your hero or the current interaction before hosting'));
+      assert.equal(await host.locator('#error-dialog[open]').count(), 0);
+      const preserved = await host.evaluate(() => { const controls = window.polycraft.controls, game = controls.manager(); return { sameHero: game.getHero() === window.earlySoloHero, hosting: !!controls.onlineWorld, players: !!game.desktopPlayers, sleeping: !!game.getHero().getEC('ECSleeping')?.sleeping, coopSaved: Object.hasOwn(window.polycraft.bridge.state.userData, 'desktopCoop') }; });
+      assert.deepEqual(preserved, { sameHero: true, hosting: false, players: false, sleeping: true, coopSaved: false });
+      await host.locator('#close-multiplayer').click();
+      await wakeUp(0, 'host after refused early hosting');
+      console.log('Early host refusal preserves the original hero; native wake-up completes before retry:', preserved);
     }
     const ids = await host.evaluate(async () => {
       window.hostErrors = [];

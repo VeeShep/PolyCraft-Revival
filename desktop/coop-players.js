@@ -7,6 +7,8 @@
       this.game = game; this.bridge = bridge; this.registry = new CoopData(bridge.state); this.active = new Map();
       this.pendingRefresh = new Set();
       const soloHero = game.getHero(), globals = game.globals;
+      // Tutorial commands retain this hero by name until its interaction finishes.
+      if (game.runScripts && (soloHero.getEC('ECSleeping')?.sleeping || soloHero.getEC('ECLocomotion')?.active === false)) throw new Error('Finish waking your hero or the current interaction before hosting.');
       this.requireIdle(soloHero);
       this.weaponDefinition = soloHero.getEC('ECInventory').getWeaponDefinition;
       for (const record of this.registry.data.players) { this.checkWeapons(record); this.checkConstruction(record.construction); }

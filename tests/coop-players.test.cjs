@@ -4,6 +4,16 @@ const assert = require('node:assert/strict');
 const { CoopPlayers } = require('../desktop/coop-players.js');
 const { CoopData } = require('../desktop/coop-data.js');
 const { emptyState } = require('../desktop/saves.cjs');
+test('hosting preserves a live scripted hero until sleeping or movement-disabled interaction finishes', () => {
+  for (const [sleeping, active, runScripts, blocked] of [[true, true, true, true], [false, false, true, true], [false, true, true, false], [true, false, false, false]]) {
+    const state = emptyState(), before = JSON.stringify(state), capture = new Error('Hero capture reached');
+    const components = { ECSleeping: { sleeping }, ECLocomotion: { active }, ECPlayerBuilder: { isBuilding: () => false, isThrowing: () => false }, ECInventory: { getWeaponDefinition() {} } };
+    const hero = { getEC: name => components[name], getName: () => { throw capture; } };
+    const game = { getHero: () => hero, runScripts, globals: { gamePurchaseManager: {} } }, bridge = { state };
+    assert.throws(() => new CoopPlayers(game, bridge), blocked ? /Finish waking your hero or the current interaction before hosting/ : error => error === capture);
+    assert.equal(game.getHero(), hero); assert.equal(game.desktopPlayers, undefined); assert.equal(bridge.coopEconomy, undefined); assert.equal(JSON.stringify(state), before);
+  }
+});
 test('hero replacement removes only its owned in-flight projectiles before destroying owner components', () => {
   const calls = [], hero = { setToBeDestroyed: () => calls.push('hero') }, other = {};
   const projectile = owner => ({ getEC: () => ({ getOwner: () => owner }), setToBeDestroyed: () => calls.push('projectile') });
