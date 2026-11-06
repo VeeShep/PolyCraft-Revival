@@ -267,6 +267,8 @@ Beta 82's source run passes a ninth flow: actual banner selection, original camp
 
 The verified finished Beta 82 Apple Silicon app repeats all nine flows successfully. Its source/icon/architecture/signature checks and the complete eight-job worker results are recorded in the [finished-package checkpoint](RESTORATION_STATUS.md#finished-beta-82-packages-and-mac-campaign-acceptance--2026-11-06). Other native platforms and real-network gameplay still need testing.
 
+The extended campaign case also observes an enemy spawned and moved by the original wave/AI code, with movement replicated during both guest Pause and the host Multiplayer menu. The fixture enables attacks but never creates or steers that enemy. This covers one wave/enemy and those menus, not campaign victory or all AI behavior. [Native AI evidence](RESTORATION_STATUS.md#finished-beta-82-native-campaign-ai-during-menus--2026-11-06).
+
 ### Packaging
 
 CI verifies extracted Windows ZIPs and both Linux archive formats before collecting downloads. It checks every bundled PE/ELF binary against the target architecture, the original Windows icon resources, AppImage desktop association/icons, and all desktop source files/core package metadata/game/window-icon bytes. Mac ZIPs additionally validate the bundle-selected ICNS, packaged window/Dock PNG, the same full-source/metadata guards, every Mach-O architecture and the deep signature. These checks do not open the game or prove native desktop appearance/gameplay. `.gitattributes` keeps packaged source LF on Windows too, while original reference/game-asset bytes are excluded from conversion.

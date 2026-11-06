@@ -1,7 +1,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 
-module.exports = async function campaignAcceptance({ host, guest, hero, join, end, nativeButton, selectTarget }) {
+module.exports = async function campaignAcceptance({ host, guest, hero, join, end, nativeButton, selectTarget, click }) {
   await join();
   const campaign = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
     const world = window.polycraft.controls.onlineWorld, game = world.game, owner = game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0], war = owner.getEC('ECWarManager');
@@ -9,6 +9,7 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
     const source = record.campaignStarterEntity;
     window.SetGameplayFeatureFlag({ globals: game.globals, script: { add: command => command.update() } }, 'campaignsEnabled', true);
     game.enableCampaignRegion(region);
+    game.enableAttacks();
     if (!game.getGameEntitiesByFamilyName('outpost').some(entity => !entity.shouldBeDestroyed())) {
       const location = Array.from(source.getv3Location()); location[0] += 6;
       const outpost = game.getEntityFactory().createInactiveEntityInstance('TemporaryCampaignOutpost', 'a_b_outpost', game.placeOnGround(location, 0.5), 0);
@@ -53,8 +54,34 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   assert.equal(await guest.evaluate(() => window.polycraft.controls.guestWorld.pauseMenu), true);
   assert.deepEqual(await host.evaluate(() => window.campaignAcceptanceEvents), { started: 1, closed: 2, invaded: 1 });
   await guest.screenshot({ path: 'test-results/session-ui-campaign-pause.png' });
+  await host.waitForFunction(region => {
+    const game = window.polycraft.controls.onlineWorld.game, war = game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0].getEC('ECWarManager');
+    return war.campaignRegionMap[region].currentAttackWaveManager?.getEC('ECAttackWavesManager').spawnedEntityList.some(entity => !entity.shouldBeDestroyed());
+  }, campaign.region, { timeout: 15000 });
+  async function observeMovement() {
+    const before = await host.evaluate(region => window.polycraft.controls.onlineWorld.atBoundary(() => {
+      const game = window.polycraft.controls.onlineWorld.game, war = game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0].getEC('ECWarManager');
+      const entity = war.campaignRegionMap[region].currentAttackWaveManager.getEC('ECAttackWavesManager').spawnedEntityList.find(entity => !entity.shouldBeDestroyed());
+      return { id: entity.getName(), archetype: entity.getArchetypeName(), location: Array.from(entity.getv3Location()), tick: game.gameClock.getFrameIndex() };
+    }), campaign.region);
+    await host.waitForFunction(before => {
+      const game = window.polycraft.controls.onlineWorld.game, entity = game.getGameEntityByName(before.id);
+      return entity && !entity.shouldBeDestroyed() && Math.hypot(entity.getv3Location()[0] - before.location[0], entity.getv3Location()[2] - before.location[2]) > 0.2;
+    }, before, { timeout: 15000 });
+    await guest.waitForFunction(before => {
+      const scene = window.polycraft.controls.guestWorld.scene, record = scene.entities.get(before.id)?.record;
+      return record && scene.tick > before.tick && Math.hypot(record.location[0] - before.location[0], record.location[2] - before.location[2]) > 0.2;
+    }, before);
+    return before;
+  }
+  const guestPauseEnemy = await observeMovement();
+  assert.equal(await guest.evaluate(() => window.polycraft.controls.guestWorld.pauseMenu), true);
   await nativeButton('guest-resume', 'buttonStart');
-  console.log('Original guest campaign:', { ...campaign, events: await host.evaluate(() => window.campaignAcceptanceEvents) });
+  await click(0, '#multiplayer'); await host.locator('#multiplayer-dialog[open]').waitFor();
+  const hostMenuEnemy = await observeMovement();
+  assert.equal(await host.locator('#multiplayer-dialog').evaluate(node => node.open), true);
+  await click(0, '#close-multiplayer');
+  console.log('Original guest campaign:', { ...campaign, events: await host.evaluate(() => window.campaignAcceptanceEvents), guestPauseEnemy, hostMenuEnemy });
   await end();
-  console.log('PASS: original guest campaign preview/cancel/confirm controls and native preparation-to-battle transition; duplicate start refused, guest Pause menu stays open while host countdown advances and guest solo bytes remain unchanged.');
+  console.log('PASS: original guest campaign preview/cancel/confirm and preparation-to-battle transition; duplicate start refused; native wave enemies move and replicate during guest Pause and host Multiplayer menus; guest solo bytes unchanged.');
 };
