@@ -4,6 +4,28 @@ const assert = require('node:assert/strict');
 const { CoopPlayers } = require('../desktop/coop-players.js');
 const { CoopData } = require('../desktop/coop-data.js');
 const { emptyState } = require('../desktop/saves.cjs');
+test('co-op spawns keep the original tutorial gun collectible without replacing other weapons or completed progression', () => {
+  for (const [scripts, task, completed, saved, weapon, expected, solo = false] of [
+    [true, 'pickupWeapon', false, false, 'wp_h_shotgun_cone01', null],
+    [true, 'pickupWeapon', false, true, 'wp_h_shotgun_cone01', null],
+    [true, 'pickupWeapon', false, true, 'wp_h_pistol', 'wp_h_pistol'],
+    [true, 'pickupWeapon', true, true, 'wp_h_shotgun_cone01', 'wp_h_shotgun_cone01'],
+    [true, 'shootCrate', false, false, 'wp_h_shotgun_cone01', 'wp_h_shotgun_cone01'],
+    [false, 'pickupWeapon', false, false, 'wp_h_shotgun_cone01', 'wp_h_shotgun_cone01'],
+    [true, 'pickupWeapon', false, true, 'wp_h_shotgun_cone01', 'wp_h_shotgun_cone01', true]
+  ]) {
+    const inventory = { held: weapon, getHeldWeapon() { return this.held; }, unequipWeapon() { this.held = null; } };
+    const hero = { getEC: name => name === 'ECInventory' ? inventory : null };
+    const record = { ...(solo ? {} : { id: 'host' }), location: saved ? [1, 2, 3] : null }, model = {}, originalModel = {};
+    const game = { runScripts: scripts, playerData: originalModel, randomPlayerIndex: 7, createHero: () => hero, getHeroArchetype: () => 'hero',
+      getTaskManager: () => ({ criticalRenderInfoList: [{ taskArchetypeName: task }] }),
+      getPlayerData: () => ({ getTaskFlags: () => ({ pickupWeapon: completed }) }),
+      getEntityFactory: () => ({ getECArchetype: () => ({ item: 'wp_h_shotgun_cone01' }) }) };
+    const players = Object.assign(Object.create(CoopPlayers.prototype), { game, registry: { data: { players: [record] } }, checkWeapons() {}, checkConstruction() {}, restoreHero() {} });
+    assert.equal(players.spawn(record, model, 'hero'), hero);
+    assert.equal(inventory.held, expected); assert.equal(game.playerData, originalModel); assert.equal(game.randomPlayerIndex, 7);
+  }
+});
 test('hosting preserves a live scripted hero until sleeping or movement-disabled interaction finishes', () => {
   for (const [sleeping, active, runScripts, blocked] of [[true, true, true, true], [false, false, true, true], [false, true, true, false], [true, false, false, false]]) {
     const state = emptyState(), before = JSON.stringify(state), capture = new Error('Hero capture reached');

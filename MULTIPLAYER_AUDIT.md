@@ -2,7 +2,13 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current source checkpoint — Beta 83, 2026-11-06
+## Current source checkpoint — Beta 84, 2026-11-06
+
+New co-op heroes previously carried the original tutorial pickup weapon already, so native duplicate-item rejection stalled **Find a weapon**. The shared spawn path now removes that matching gun only while its original tutorial task is active/incomplete with scripts enabled. Saved co-op heroes are covered; other weapons, completed progression and restored solo inventory are preserved. All **524 checks** pass, and four visible source games pass early-host refusal, natural wake-up, a real guest reward click, normal keyboard approach, native gun collection/shared completion and exact inventory checkpoint, alongside sync/resync and guest-save isolation. No tutorial events, weapons or positions are staged in this mode. [Fix and scoped evidence](RESTORATION_STATUS.md#current-source-beta-84-natural-tutorial-weapon-acquisition--2026-11-06).
+
+Beta 83's seven other CI jobs passed; its Apple Silicon job terminated without acquiring a hosted runner. The independently built/verified local Mac package retains its earlier acceptance. Finished Beta 84, broader natural progression, other native OS gameplay, physical networks and endurance remain open.
+
+## Previous source checkpoint — Beta 83, 2026-11-06
 
 Hosting during the original sleeping-hero tutorial previously destroyed the hero still referenced by its wake-up script, reproducing a native `getEC` crash and save-boundary timeout in the finished Beta 82 app. The shared co-op player constructor now refuses hosting while an active script leaves that hero asleep or movement-disabled, before capture/replacement/economy persistence. Existing Multiplayer status explains how to continue; tutorial, spawn and wire/save formats stay unchanged.
 

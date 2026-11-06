@@ -161,6 +161,11 @@
         game.randomPlayerIndex = this.registry.data.players.findIndex(player => player.id === record.id) + 1 || index;
         hero = game.createHero(name, archetype || game.getHeroArchetype(model), record.location);
         this.restoreHero(hero, record);
+        // Native hero defaults must not make the tutorial's identical weapon impossible to collect.
+        if (record.id && game.runScripts && !game.getPlayerData().getTaskFlags().pickupWeapon && game.getTaskManager().criticalRenderInfoList?.some(row => row.taskArchetypeName === 'pickupWeapon')) {
+          const weapon = game.getEntityFactory().getECArchetype('e_s_floating_gun', 'ECPickup').item, inventory = hero.getEC('ECInventory');
+          if (inventory.getHeldWeapon() === weapon) inventory.unequipWeapon();
+        }
         return hero;
       } catch (error) { if (hero) this.destroy(hero); throw error; }
       finally { game.playerData = previous; game.randomPlayerIndex = index; }
