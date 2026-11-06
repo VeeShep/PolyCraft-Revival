@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
+  assert.ok(!process.argv.includes('--resources') || process.argv.includes('--rehost'), 'Natural resource progression requires the recovered party.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_HQ_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(path.dirname(fixture)).startsWith('polycraft-coop-identities-') && path.basename(fixture) === 'host', 'Only a disposable co-op identities host fixture is accepted.');
   const files = fs.readdirSync(path.join(fixture, 'saves')).filter(name => name.endsWith('.json'));
@@ -65,7 +66,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     assert.deepEqual(fs.readFileSync(file + '.bak'), backup, 'The real valid recovery checkpoint stays intact when repairing the primary.');
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     console.log('PASS: actual completed-HQ backup loaded through original launcher, same world/reward/party/history restored, valid primary saved, recovery bytes retained.');
-    if (process.argv.includes('--rehost')) await require('./coop-recovered-party.cjs')({ host: page, expected, fixture, directory, file, errors, requests });
+    if (process.argv.includes('--rehost')) await require('./coop-recovered-party.cjs')({ host: page, application: app, expected, fixture, directory, file, errors, requests });
   } finally {
     if (app) { const child = app.process(); await app.evaluate(({ app }) => app.exit()).catch(() => {}); if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); }
     assert.deepEqual(fs.readFileSync(source), primary); assert.deepEqual(fs.readFileSync(source + '.bak'), backup);
