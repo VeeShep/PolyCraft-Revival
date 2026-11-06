@@ -191,7 +191,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const game = { hasLoadedLevel: true, getLoading: () => false, getHero: () => ({ getv3Location: () => [0, 0, 0] }),
     getBlockFactory: () => blocks, getGameCamera: () => camera, getGameDayTime: () => 18, setGameDayTime() {}, applyDayNightTime() {},
     gameClock: {}, getGameController: () => ({ clearInputs() {}, unlockMouse() {} }),
-    guiManager: { clearDrawList() {} }, imgui: { clearDrawList() {}, clearValidation() {} }, gameLighting: { update() { this.updateHeroLightPosition(); }, updateHeroLightPosition() { throw new Error("Suspended solo torch must not be queried"); } },
+    guiManager: { clearDrawList() {}, updateGameMessages() {} }, imgui: { clearDrawList() {}, clearValidation() {} }, gameLighting: { update() { this.updateHeroLightPosition(); }, updateHeroLightPosition() { throw new Error("Suspended solo torch must not be queried"); } },
     draw() {}, draw2D() {}, saveLevel() { saves++; }
   };
   const preferences = { settings: { shadows: true, sounds: true, music: true }, getMusicEnabled() { return this.settings.music; }, saveSettings() { assert.fail('guest cannot save local preferences'); } };
@@ -210,7 +210,7 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   const requests = [];
   const connection = { role: 'guest', pvp: false, state: 'connected', send: async (kind, payload) => requests.push({ kind, payload }),
     onMessage() { forwarded++; }, close() { this.closed = true; this.onState?.('closed', {}); } };
-  const soloGui = { drawList: [{ id: 'solo' }], drawGuiMap: { solo: {} }, prevDrawGuiMap: { previous: {} } };
+  const soloGui = { drawList: [{ id: 'solo' }], drawGuiMap: { solo: {} }, prevDrawGuiMap: { previous: {} }, gameMessages: { solo: { text1: 'Solo island message' } } };
   Object.assign(game.guiManager, soloGui);
   const scheduler = {}; controls.effectMethods = { tweens: scheduler };
   game.updateInterfaceTweens = () => assert.fail('Guest must not advance the suspended solo interface scheduler');
@@ -219,6 +219,9 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   game.guiManager.completeDraw = () => scheduler.adddraw({ update: () => true });
   const world = new GuestWorld(controls, connection);
   assert.notEqual(game.guiManager.drawList, soloGui.drawList); assert.notEqual(game.guiManager.prevDrawGuiMap, soloGui.prevDrawGuiMap);
+  assert.notEqual(game.guiManager.gameMessages, soloGui.gameMessages); assert.deepEqual(game.guiManager.gameMessages, {});
+  game.guiManager.gameMessages.guest = { text1: 'Guest message' };
+  assert.deepEqual(Object.keys(soloGui.gameMessages), ['solo']);
   game.draw2D(); assert.equal(world.visuals.drawQueue.length, 1);
   const complete = game.guiManager.completeDraw, renderingFailure = new Error('Interface failed'); let reported;
   connection.fail = error => { reported = error; };

@@ -250,8 +250,9 @@
         onMessage: connection.onMessage, onState: connection.onState,
         roots: globals.scene.rootNodes.filter(node => node !== game.gameLighting.worldDirectionLightNode && node !== game.gameLighting.heroLightNode)
       };
-      this.original.gui = Object.fromEntries(['drawList', 'drawGuiMap', 'prevDrawGuiMap'].map(key => [key, game.guiManager[key]]));
+      this.original.gui = Object.fromEntries(['drawList', 'drawGuiMap', 'prevDrawGuiMap', 'gameMessages'].map(key => [key, game.guiManager[key]]));
       game.guiManager.drawList = []; game.guiManager.drawGuiMap = {}; game.guiManager.prevDrawGuiMap = {};
+      game.guiManager.gameMessages = {};
       const profile = game.getPlayerData();
       this.original.audio = { manager: game.gameSoundManager, music: game.musicString, listener: game.gameSoundManager.listenerv3WorldLocation && Array.from(game.gameSoundManager.listenerv3WorldLocation), matrix: game.gameSoundManager.listenerMatrix && Array.from(game.gameSoundManager.listenerMatrix) };
       this.lastAudioFrame = performance.now();
@@ -412,7 +413,7 @@
         if (value.type === 'life' && value.sequence === this.lifeRequest || value.type === 'revive' && value.sequence === this.reviveRequest) {
           if (life.phase !== 'normal' && this.lifeState?.phase !== life.phase && !this.pauseMenu) this.cancelLocalMenu();
           this.lifeState = { ...life }; this.lifeReceivedAt = performance.now();
-          if (life.phase === 'normal') this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive');
+          if (life.phase === 'normal') this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive-message');
         }
       }
       if (value.type === 'life' && value.sequence === this.lifeRequest) this.lifeRequest = null;
@@ -431,7 +432,7 @@
       if (this.craft?.menu) return false;
       if (!life || life.phase === 'normal') return false;
       const age = Math.max(0, (now - this.lifeReceivedAt) / 1000), remaining = Math.max(0, life.remaining - age);
-      this.game.getGuiManager().addGameMessage('guest-revive', 'You have been knocked out', life.phase === 'dying' ? 'Recovering...' : remaining > 0 ? 'Revive in: ' + Math.ceil(remaining) + ' s' : 'Waiting for the host...', 2);
+      this.game.getGuiManager().addGameMessage('guest-revive-message', 'You have been knocked out', life.phase === 'dying' ? 'Recovering...' : remaining > 0 ? 'Revive in: ' + Math.ceil(remaining) + ' s' : 'Waiting for the host...', 2);
       if (age <= 2 && remaining > 0.200001 && life.option && life.affordable && !this.reviveRequest) {
         const amber = life.option === 'amber';
         if (this.game.getIMGui().doButton({ id: 'guest-revive', text1: 'BUY INSTANT REVIVE', text2: amber ? '10' : '50', v2ScreenLocation: this.controls.app.globals.guiRenderer.getv2RenderLocation(0, -140, 'bottom'), buttonType: this.controls.guiTypes.BUTTON_NORMAL, guiArchetype: amber ? 'respawnButtonAmber' : 'respawnButtonLumber' })) {
@@ -703,6 +704,7 @@
       if (!this.controls.paused && this.movement.nativeFocused) this.drawPauseMenu();
       this.campaign.drawPreparation();
       if (!this.pauseMenu) this.updateMenu();
+      game.guiManager.updateGameMessages();
       this.drawMovementCursor(); this.updateAudio();
       try { this.visuals.update(state.time + Math.min(0.25, Math.max(0, (performance.now() - this.scene.receivedAt) / 1000))); }
       catch (error) { this.connection.fail(error); }
@@ -711,7 +713,7 @@
       if (this.closed) return;
       this.quests?.close(); this.campaign?.close(); this.visuals?.close();
       this.closed = true;
-      this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive');
+      this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive-message');
       clearTimeout(this.resyncTimer); this.resyncing = false;
       this.movement.close();
       this.cancelLocalMenu(); this.game.imgui.controller = this.original.guiController;

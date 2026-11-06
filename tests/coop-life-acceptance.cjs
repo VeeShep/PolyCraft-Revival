@@ -65,6 +65,7 @@ module.exports = async function lifeAcceptance({ host, guest, hero, port, saveFi
   const episode = await guest.evaluate(() => window.polycraft.controls.guestWorld.lifeState.episode);
   await focus(1);
   await guest.waitForFunction(() => { const world = window.polycraft.controls.guestWorld, row = world.game.getGuiManager().prevDrawGuiMap['guest-revive']; return world.movement.nativeFocused && row?.scale > 0.95 && row.archetypeName === 'respawnButtonAmber'; });
+  await guest.waitForFunction(() => { const row = window.polycraft.controls.guestWorld.game.getGuiManager().prevDrawGuiMap['guest-revive-message']; return row?.scale > 0.95 && row.archetypeName === 'gameMessage' && row.argumentObject.text1 === 'You have been knocked out' && /^Revive in: \d+ s$/.test(row.argumentObject.text2); });
   await guest.screenshot({ path: 'test-results/session-ui-waiting-revive.png' });
   const point = await guest.evaluate(() => {
     const world = window.polycraft.controls.guestWorld, args = world.game.getGuiManager().prevDrawGuiMap['guest-revive'].argumentObject, bounds = world.movement.canvas.getBoundingClientRect(), device = world.controls.app.globals.graphicsDevice;

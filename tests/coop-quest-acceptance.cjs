@@ -35,6 +35,8 @@ module.exports = function questAcceptance(host, guest, focusGuest, hero) {
   return {
     async prepare() {
       await guest.waitForFunction(() => window.polycraft.controls.guestWorld.quests.state?.tasks.some(row => row.id === 'taskIdcrit_0' && row.task === 'wakeUp'));
+      await guest.waitForFunction(() => { const row = window.polycraft.controls.guestWorld.game.getGuiManager().prevDrawGuiMap['guest-idTaskNewsFlashtaskIdcrit_0']; return row?.scale > 0.95 && row.archetypeName === 'taskNewsflash' && !!row.argumentObject.text1 && !!row.argumentObject.text2; });
+      await guest.screenshot({ path: 'test-results/session-ui-quest-newsflash.png' });
       await button('guest-idTaskHelpButton' + id);
       await guest.waitForFunction(() => window.polycraft.controls.guestWorld.quests.description?.taskId === 'taskIdcrit_0' && !window.polycraft.controls.guestWorld.quests.openRequest);
       await button('guest-idDescriptionCloseTaskButton' + id, 'taskDescriptionCloseButton');

@@ -1,9 +1,26 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const runtime = require('./runtime-ast.cjs');
 const { HostActions } = require('../desktop/coop-actions.js');
 const { GuestWorld } = require('../desktop/guest-world.js');
 const original = require('./runtime-ast.cjs').component('ECPlayerLife', { H: { LUMBER: 0 } });
+test('guest frame draws and expires messages through the original queue renderer', () => {
+  const noop = () => {}, rows = [];
+  const globals = { appCurrentTime: 10, simpleFontRenderer: { clearFontList: noop }, simpleSpriteRenderer: { clearSpriteList: noop }, debugDraw: { clearDebugLineList: noop },
+    guiRenderer: { clearShakeAmount: noop, getv2RenderLocation: () => [0, 100] }, mathDevice: { v3Copy: value => [...value] } };
+  const gui = Object.assign(Object.create(runtime.prototypeWith('updateGameMessages')), { globals, gameMessages: {}, clearDrawList() { rows.length = 0; }, addDrawGui(name, args, id) { rows.push({ name, args, id }); } });
+  const world = Object.assign(Object.create(GuestWorld.prototype), { controls: { paused: true, app: { globals } }, guiInput: {}, scene: { snapshot: { time: 1, dayTime: 18 }, render: noop, receivedAt: performance.now() },
+    game: { guiManager: gui, imgui: { clearDrawList: noop, clearValidation: noop }, applyDayNightTime: noop, gameLighting: { update: noop } },
+    viewCamera: { update: noop }, hud: { draw: noop }, campaign: { drawPreparation: noop }, visuals: { update: noop }, connection: { fail: assert.fail },
+    updateGroundDrag: noop, updateTorch: noop, drawHealth: noop, drawCombatTarget: noop, drawBattleNotices: noop, drawMovementCursor: noop, updateAudio: noop,
+    updateMenu() { gui.addGameMessage('guest-revive-message', 'You have been knocked out', 'Revive in: 20 s', 2); } });
+  world.update();
+  assert.equal(rows.length, 1); assert.equal(rows[0].id, 'guest-revive-message'); assert.equal(rows[0].name, 'gameMessage');
+  assert.equal(rows[0].args.text2, 'Revive in: 20 s');
+  world.updateMenu = noop; globals.appCurrentTime = 13; world.update();
+  assert.deepEqual(rows, []); assert.deepEqual(Object.keys(gui.gameMessages), []);
+});
 function host() {
   const funds = { amber: 30, lumber: 100 }, data = { getResource: () => funds.lumber, getResourceCap: () => 500, getXP: () => 0, getUpgradePoints: () => 0, getSoftCurrency: () => funds.amber,
     adjustResource: (_type, amount) => { funds.lumber += amount; }, adjustSoftCurrency: amount => { funds.amber += amount; } };
@@ -51,7 +68,7 @@ test('guest countdown and original revive artwork send one pending choice with t
   f.click(true); f.world.targetSequence = 1; f.world.updateLife(); f.world.updateLife();
   assert.equal(f.sent.filter(value => value.type === 'revive').length, 1); assert.equal(f.sent.at(-1).episode, 99); assert.equal(f.sent.at(-1).amber, true);
   f.world.receiveLife({ type: 'revive', sequence: f.world.reviveRequest, life: { phase: 'normal', remaining: 0, episode: null, option: null, affordable: false } });
-  assert.equal(f.world.reviveRequest, null); assert.deepEqual(f.removed, ['guest-revive']);
+  assert.equal(f.world.reviveRequest, null); assert.deepEqual(f.removed, ['guest-revive-message']);
   const before = f.sent.length; f.world.receiveLife({ type: 'life', sequence: 999, life: { phase: 'waiting', remaining: 10, episode: 99, option: 'lumber', affordable: true } }); assert.equal(f.world.lifeState.phase, 'normal'); assert.equal(f.sent.length, before);
   f.world.lifeRequest = 777; f.world.receiveLife({ type: 'revive', sequence: 777, life: { phase: 'waiting', remaining: 10, episode: 99, option: 'lumber', affordable: true } }); assert.equal(f.world.lifeState.phase, 'normal'); f.world.lifeRequest = null;
   for (const invalid of [{ phase: 'normal', remaining: 0, episode: null, option: 'amber', affordable: true }, { phase: 'waiting', remaining: NaN, episode: 99, option: null, affordable: false }, { phase: 'waiting', remaining: 20, episode: 99, option: 'amber', affordable: true, price: 0 }]) assert.throws(() => f.world.receiveLife({ type: 'life', sequence: 1, life: invalid }), /Invalid hero/);
