@@ -347,5 +347,5 @@ module.exports = async function restorationAcceptance({ host, guest, hero, port,
   console.log('Restored native inventory:', { temporary: restoredInventory.inventory, equipped: restoredInventory.equipped, fallback: restoredFallback });
   await end();
   console.log('PASS: staged native pistol/bomb weapon, partial clip, temporary ammo, equipped fallback and carried resources survive actual host reload/rejoin; guest renders its restored bomb model, native return to pistol persists through a second reload and guest solo bytes stay unchanged.');
-  await require('./coop-campaign-acceptance.cjs')({ host, guest, hero, join, end, nativeButton, selectTarget, click });
+  await require('./coop-campaign-acceptance.cjs')({ host, guest, hero, join, end, nativeButton, selectTarget, click, saved, reloadHost });
 };

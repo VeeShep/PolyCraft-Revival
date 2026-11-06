@@ -1,7 +1,7 @@
 'use strict';
 const assert = require('node:assert/strict');
 
-module.exports = async function campaignAcceptance({ host, guest, hero, join, end, nativeButton, selectTarget, click }) {
+module.exports = async function campaignAcceptance({ host, guest, hero, join, end, nativeButton, selectTarget, click, saved, reloadHost }) {
   await join();
   const campaign = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
     const world = window.polycraft.controls.onlineWorld, game = world.game, owner = game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0], war = owner.getEC('ECWarManager');
@@ -77,6 +77,7 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   const guestPauseEnemy = await observeMovement();
   assert.equal(await guest.evaluate(() => window.polycraft.controls.guestWorld.pauseMenu), true);
   await nativeButton('guest-resume', 'buttonStart');
+  await guest.waitForFunction(() => !window.polycraft.controls.guestWorld.pauseMenu);
   await click(0, '#multiplayer'); await host.locator('#multiplayer-dialog[open]').waitFor();
   const hostMenuEnemy = await observeMovement();
   assert.equal(await host.locator('#multiplayer-dialog').evaluate(node => node.open), true);
@@ -102,7 +103,8 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
     };
     window.restoreCampaignCombatObserver = () => { factory.createProjectile = create; };
     game.eventManager.subscribe('EnemyKilled', event => window.campaignCombatAcceptance.kills.push({ victim: event.victim.getName(), aggressor: event.aggressor?.getName(), critical: event.isCritical }));
-    return { id, actor: actor.getName(), health: victim.getEC('ECHealth').getHealth(), tick: game.gameClock.getFrameIndex() };
+    window.campaignCombatPickupNames = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup')).map(entity => entity.getName());
+    return { id, actor: actor.getName(), health: victim.getEC('ECHealth').getHealth(), tick: game.gameClock.getFrameIndex(), xp: actor.getEC('ECPlayerData').getXP(), hostXP: game.getHero().getEC('ECPlayerData').getXP(), killXP: victim.getEC('ECAgent').getXP() };
   }), { id: hostMenuEnemy.id, hero });
   await selectTarget(combat.id);
   await host.waitForFunction(({ id, actor }) => window.campaignCombatAcceptance.kills.some(event => event.victim === id && event.aggressor === actor && event.critical), combat, { timeout: 15000 });
@@ -112,7 +114,31 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   assert.equal(trace.kills.filter(event => event.victim === combat.id && event.aggressor === combat.actor).length, 1);
   console.log('Original wave combat:', { before: combat, trace });
   await guest.screenshot({ path: 'test-results/session-ui-campaign-combat.png' });
+  assert.equal(combat.killXP, 5, 'This original level-one thief drops five XP.');
+  const drops = await host.evaluate(() => window.polycraft.controls.onlineWorld.game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup')).filter(entity => !window.campaignCombatPickupNames.includes(entity.getName()) && entity.getEC('ECPickup').archetype.xp > 0).map(entity => entity.getName()));
+  for (const name of drops) {
+    await host.waitForFunction(name => { const entity = window.polycraft.controls.onlineWorld.game.getGameEntityByName(name); return !entity || entity.shouldBeDestroyed() || entity.getEC('ECPickup').animatedIn; }, name);
+    await host.evaluate(({ hero, name }) => window.polycraft.controls.onlineWorld.atBoundary(() => {
+      const world = window.polycraft.controls.onlineWorld, drop = world.game.getGameEntityByName(name);
+      if (!drop || drop.shouldBeDestroyed() || drop.getEC('ECPickup').hasBeenPickedUp()) return;
+      const entity = world.players.active.get(hero).hero;
+      entity.getEC('ECLocomotion').clearDestination(); entity.teleport(Array.from(drop.getv3Location()));
+    }), { hero, name });
+    await host.waitForFunction(name => { const entity = window.polycraft.controls.onlineWorld.game.getGameEntityByName(name); return !entity || entity.shouldBeDestroyed() || entity.getEC('ECPickup').hasBeenPickedUp(); }, name);
+  }
+  await host.waitForFunction(({ hero, xp, hostXP, killXP }) => { const world = window.polycraft.controls.onlineWorld; return world.players.active.get(hero).hero.getEC('ECPlayerData').getXP() === xp + killXP && world.game.getHero().getEC('ECPlayerData').getXP() === hostXP; }, { ...combat, hero });
+  await guest.waitForFunction(xp => { const hud = window.polycraft.controls.guestWorld.hud; return hud.state?.xp === xp && Math.abs(hud.data.getVisibleXP() - xp) < 0.01; }, combat.xp + combat.killXP);
+  await host.evaluate(() => window.polycraft.checkpoint(true));
+  assert.equal(saved().players.find(player => player.id === hero).progress.xp, combat.xp + combat.killXP);
+  assert.equal(saved().players.find(player => player.id === saved().host).progress.xp, combat.hostXP);
+  await guest.screenshot({ path: 'test-results/session-ui-kill-xp.png' });
   console.log('Original guest campaign:', { ...campaign, events: await host.evaluate(() => window.campaignAcceptanceEvents), guestPauseEnemy, hostMenuEnemy });
   await end();
-  console.log('PASS: original guest campaign preview/cancel/confirm and preparation-to-battle transition; duplicate start refused; native wave AI continues through guest/host menus; actual guest click creates a pistol projectile, impacts/kills the wave enemy once with assigned-hero attribution and replicates the health change/removal; guest solo bytes unchanged.');
+  await reloadHost(); await click(0, '#multiplayer'); await join();
+  const reloadedXP = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => { const world = window.polycraft.controls.onlineWorld; return { guest: world.players.active.get(hero).hero.getEC('ECPlayerData').getXP(), host: world.game.getHero().getEC('ECPlayerData').getXP() }; }), hero);
+  assert.deepEqual(reloadedXP, { guest: combat.xp + combat.killXP, host: combat.hostXP });
+  await guest.waitForFunction(xp => window.polycraft.controls.guestWorld.hud.state?.xp === xp, reloadedXP.guest);
+  console.log('Native kill XP collection/reload:', { before: { guest: combat.xp, host: combat.hostXP }, killXP: combat.killXP, after: reloadedXP, drops });
+  await end();
+  console.log('PASS: original guest campaign controls/countdown, native wave AI through online menus, real guest projectile impact/kill and state replication; native kill XP pickups credit only the collecting guest and survive disk checkpoint/host reload/rejoin with host XP and guest solo bytes unchanged.');
 };

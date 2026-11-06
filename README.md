@@ -269,7 +269,9 @@ The verified finished Beta 82 Apple Silicon app repeats all nine flows successfu
 
 The extended campaign case also observes an enemy spawned and moved by the original wave/AI code, with movement replicated during both guest Pause and the host Multiplayer menu. The fixture enables attacks but never creates or steers that enemy. This covers one wave/enemy and those menus, not campaign victory or all AI behavior. [Native AI evidence](RESTORATION_STATUS.md#finished-beta-82-native-campaign-ai-during-menus--2026-11-06).
 
-It now also verifies an actual guest click produces a native pistol projectile that hits and kills the wave enemy, attributes the kill to the assigned hero once, and propagates the lower-health/removal state to the guest. Hero positioning is staged; kill XP/drops, campaign victory and broader combat remain unverified. [Wave combat evidence](RESTORATION_STATUS.md#finished-beta-82-guest-projectile-against-a-native-wave-enemy--2026-11-06).
+It now also verifies an actual guest click produces a native pistol projectile that hits and kills the wave enemy, attributes the kill to the assigned hero once, and propagates the lower-health/removal state to the guest. Hero positioning is staged; campaign victory and broader combat remain unverified. [Wave combat evidence](RESTORATION_STATUS.md#finished-beta-82-guest-projectile-against-a-native-wave-enemy--2026-11-06).
+
+The native XP-drop extension also passes: the collecting guest gains five XP, the host's XP stays unchanged, and disk checkpoint/reload/rejoin retain the separate totals and guest HUD. Collection positioning is staged; this does not establish all loot/contention cases or campaign-completion rewards. [Kill XP ownership evidence](RESTORATION_STATUS.md#finished-beta-82-native-kill-xp-and-saved-ownership--2026-11-06).
 
 ### Packaging
 
