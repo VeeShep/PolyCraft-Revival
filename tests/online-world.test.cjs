@@ -252,7 +252,7 @@ test('brief peer disconnection suspends world captures, preserves its stream and
   const sent = [], failures = []; let captures = 0, stoppedInput = 0;
   const connection = { peer: 'recovering', state: 'connected', closed: false, send: async (kind, state) => sent.push({ kind, state }), fail: error => failures.push(error) };
   const binding = { id: 'guest', ready: true, joined: true, connection, input: { apply() {}, stop() { stoppedInput++; } }, actions: { apply() {}, stop() {} } };
-  world.players = { active: new Map([['guest', { hero: {} }]]), flushRefreshes() {} };
+  world.players = { active: new Map([['guest', { hero: {} }]]), flushRefreshes() {}, syncTutorialWeapons() {} };
   world.peerPlayers.set(connection.peer, binding); transport.peers.set(connection.peer, connection);
   world.snapshot = async link => { world.playerFor(link); return worldSnapshot(++captures); };
   world.streamTo(connection); await new Promise(resolve => setImmediate(resolve)); const stream = world.streams.get(connection);

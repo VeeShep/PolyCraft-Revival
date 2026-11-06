@@ -72,6 +72,7 @@
       }
       this.players?.flushRefreshes();
       if (this.game.desktopQuestRewards && this.game.getActiveGameState().name !== 'GamestatePlaying') this.game.updateOnlineTasks();
+      this.players?.syncTutorialWeapons();
       this.results.update();
       const captures = this.captures.splice(0);
       for (const capture of captures) {

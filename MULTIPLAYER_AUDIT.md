@@ -2,7 +2,13 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current source checkpoint — Beta 85, 2026-11-06
+## Current source checkpoint — Beta 86, 2026-11-06
+
+The shared starter pickup left other party members and the returning solo hero unarmed, even though normal native solo reload restored the same hero's default gun. A guarded native inventory reconciliation now ends only the intro's temporary suppression of a hero's own cached starter after shared unlock. Other held/custom equipment and progression are preserved; unsafe lifecycle/construction actors defer, and armed actors are not re-equipped. **529 full / 37 focused checks pass**, and four visible source games verify all-party restoration, normal solo exit/reload consistency, clean history and exact guest solo files. Read-only review found no must-fix. [Fix and scoped evidence](RESTORATION_STATUS.md#current-source-beta-86-restore-unlocked-native-starter-weapons--2026-11-06).
+
+Finished Beta 86, village/HQ/advanced party combat, broader solo restoration, other native OS gameplay, physical networks and endurance remain open. Beta 85 remains the latest complete CI set.
+
+## Previous source checkpoint — Beta 85, 2026-11-06
 
 The original bridge wait checked only the host hero, so an alive guest inside its radius could not start the shared tutorial encounter. A one-line native command delegation now uses registered living co-op heroes with the original strict 3-D distance/nearest-family semantics; solo behavior is unchanged and dead/respawning actors are excluded. The actual-command regression fails before the fix, then **527 full / 16 focused checks** pass. Four visible natural-start source games pass guest-only bridge activation and all five original bandit spawns while the host stays behind, alongside the earlier native tutorial/sync/save checks. [Fix and scoped evidence](RESTORATION_STATUS.md#current-source-beta-85-shared-scripted-proximity--2026-11-06).
 

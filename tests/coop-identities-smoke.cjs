@@ -13,11 +13,13 @@ const assert = require('node:assert/strict');
   const naturalCrate = process.argv.includes('--natural-crate');
   const naturalBridge = process.argv.includes('--natural-bridge');
   const naturalBandits = process.argv.includes('--natural-bandits');
+  const naturalGear = process.argv.includes('--natural-gear');
   assert.ok(!early || natural, 'Early hosting requires the natural-spawn flow.');
   assert.ok(!naturalWeapon || natural, 'Natural weapon testing requires the natural-spawn flow.');
   assert.ok(!naturalCrate || naturalWeapon, 'Natural shooting requires natural weapon acquisition.');
   assert.ok(!naturalBridge || naturalCrate, 'Natural bridge progression requires the original shooting task.');
   assert.ok(!naturalBandits || naturalBridge, 'Natural bandit combat requires original bridge activation.');
+  assert.ok(!naturalGear || naturalWeapon, 'Natural gear checks require original weapon acquisition.');
   assert.ok(!natural || process.argv.includes('--movement-only'), 'Natural spawn testing is limited to the movement-only acceptance flow.');
   assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
@@ -332,6 +334,8 @@ const assert = require('node:assert/strict');
       if (naturalBandits) await require('./coop-natural-bandits.cjs')(controls);
     }
     if (process.argv.includes('--movement-only')) {
+      const gear = naturalGear ? require('./coop-natural-gear.cjs')({ host, focus: () => focus(0) }) : null;
+      if (gear) await gear.before();
       await host.evaluate(() => window.hostWorld.close());
       for (let index = 1; index <= 3; index++) {
         await pages[index].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
@@ -339,6 +343,7 @@ const assert = require('node:assert/strict');
         assert.deepEqual(fs.readFileSync(originals[index].file), originals[index].bytes);
       }
       assert.deepEqual(await host.evaluate(() => window.hostErrors), []);
+      if (gear) await gear.after();
       assert.deepEqual(errors, []);
       assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
       console.log('PASS: four visible games; keyboard movement; every guest retains exact same-tick host records and renders all four moving heroes smoothly between updates; menu/focus stops; guest saves unchanged on host exit. Same-Mac acceptance only.');

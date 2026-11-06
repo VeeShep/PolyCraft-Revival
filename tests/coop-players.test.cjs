@@ -4,6 +4,42 @@ const assert = require('node:assert/strict');
 const { CoopPlayers } = require('../desktop/coop-players.js');
 const { CoopData } = require('../desktop/coop-data.js');
 const { emptyState } = require('../desktop/saves.cjs');
+test('restoring an intro-unarmed co-op or solo hero after shared weapon unlock matches native reload defaults', () => {
+  for (const id of ['host', undefined]) {
+    const starter = 'wp_h_shotgun_cone01', flags = { pickupWeapon: true };
+    const inventory = { held: null, getHeldWeapon() { return this.held; }, equipWeapon(name) { this.held = name; } };
+    const components = { ECInventory: inventory, ECFirearm: { mainWeaponName: starter }, ECHealth: { getHealth: () => 50 },
+      ECPlayerLife: { state: 0, states: { NORMAL: 0 } }, ECPlayerBuilder: { isBuilding: () => false, isThrowing: () => false },
+      ECSleeping: { sleeping: false }, ECLocomotion: { active: true } };
+    const hero = { getEC: name => components[name], shouldBeDestroyed: () => false };
+    const record = { id, location: [0, 0, 0] }, original = {};
+    const game = { playerData: original, randomPlayerIndex: 4, runScripts: true, createHero: () => hero, getHeroArchetype: () => 'hero',
+      getPlayerData: () => ({ getTaskFlags: () => flags }), getEntityFactory: () => ({ getECArchetype: () => ({ item: starter }) }) };
+    const players = Object.assign(Object.create(CoopPlayers.prototype), { game, registry: { data: { players: [record] } }, checkWeapons() {}, checkConstruction() {}, restoreHero() {} });
+    assert.equal(players.spawn(record, {}, 'hero'), hero);
+    assert.equal(inventory.held, starter); assert.equal(game.playerData, original); assert.equal(game.randomPlayerIndex, 4);
+    assert.deepEqual(flags, { pickupWeapon: true });
+  }
+});
+test('starter reconciliation preserves other equipment and defers unsafe actors without refilling armed heroes', () => {
+  for (const change of [{}, { unlocked: false }, { scripts: false }, { held: 'wp_h_bomb' }, { primary: 'wp_h_pistol' }, { primary: null },
+    { health: 0 }, { destroyed: true }, { phase: 1 }, { phase: 2 }, { waiting: true }, { building: true }, { throwing: true }, { sleeping: true }, { movement: false }]) {
+    const state = { unlocked: true, scripts: true, held: null, primary: 'wp_h_shotgun_cone01', health: 50, phase: 0, movement: true, ...change }, calls = [];
+    const components = { ECInventory: { getHeldWeapon: () => state.held, equipWeapon: name => { calls.push(name); state.held = name; } },
+      ECFirearm: { mainWeaponName: state.primary, ammo: 1 }, ECHealth: { getHealth: () => state.health },
+      ECPlayerLife: { state: state.phase, states: { NORMAL: 0 }, respawnTime: state.waiting ? 10 : undefined },
+      ECPlayerBuilder: { isBuilding: () => state.building, isThrowing: () => state.throwing },
+      ECSleeping: { sleeping: state.sleeping }, ECLocomotion: { active: state.movement } };
+    const hero = { getEC: name => components[name], shouldBeDestroyed: () => state.destroyed };
+    const players = Object.assign(Object.create(CoopPlayers.prototype), { active: new Map([['guest', { hero }]]),
+      game: { runScripts: state.scripts, getPlayerData: () => ({ getTaskFlags: () => ({ pickupWeapon: state.unlocked }) }),
+        getEntityFactory: () => ({ getECArchetype: () => ({ item: 'wp_h_shotgun_cone01' }) }) } });
+    players.syncTutorialWeapons(); players.syncTutorialWeapons();
+    assert.deepEqual(calls, Object.keys(change).length ? [] : ['wp_h_shotgun_cone01']);
+    assert.equal(components.ECFirearm.ammo, 1);
+    if (state.building) { state.building = false; players.syncTutorialWeapons(); assert.deepEqual(calls, ['wp_h_shotgun_cone01']); }
+  }
+});
 test('co-op spawns keep the original tutorial gun collectible without replacing other weapons or completed progression', () => {
   for (const [scripts, task, completed, saved, weapon, expected, solo = false] of [
     [true, 'pickupWeapon', false, false, 'wp_h_shotgun_cone01', null],
@@ -15,7 +51,7 @@ test('co-op spawns keep the original tutorial gun collectible without replacing 
     [true, 'pickupWeapon', false, true, 'wp_h_shotgun_cone01', 'wp_h_shotgun_cone01', true]
   ]) {
     const inventory = { held: weapon, getHeldWeapon() { return this.held; }, unequipWeapon() { this.held = null; } };
-    const hero = { getEC: name => name === 'ECInventory' ? inventory : null };
+    const hero = { getEC: name => name === 'ECInventory' ? inventory : null, shouldBeDestroyed: () => false };
     const record = { ...(solo ? {} : { id: 'host' }), location: saved ? [1, 2, 3] : null }, model = {}, originalModel = {};
     const game = { runScripts: scripts, playerData: originalModel, randomPlayerIndex: 7, createHero: () => hero, getHeroArchetype: () => 'hero',
       getTaskManager: () => ({ criticalRenderInfoList: [{ taskArchetypeName: task }] }),

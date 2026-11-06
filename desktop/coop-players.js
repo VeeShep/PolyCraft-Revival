@@ -162,6 +162,20 @@
       }
       this.restoreLife(hero, record.life ?? null, record.health);
     }
+    restoreStarterWeapon(hero) {
+      const game = this.game;
+      if (!game.runScripts || !game.getPlayerData().getTaskFlags().pickupWeapon || hero.shouldBeDestroyed()) return;
+      const inventory = hero.getEC('ECInventory'), firearm = hero.getEC('ECFirearm');
+      if (inventory.getHeldWeapon() !== null || firearm.mainWeaponName !== game.getEntityFactory().getECArchetype('e_s_floating_gun', 'ECPickup').item) return;
+      const life = hero.getEC('ECPlayerLife'), builder = hero.getEC('ECPlayerBuilder');
+      if (hero.getEC('ECHealth').getHealth() <= 0 || life && (life.respawnTime !== undefined || life.state !== life.states.NORMAL) ||
+          builder.isBuilding() || builder.isThrowing() || hero.getEC('ECSleeping')?.sleeping || hero.getEC('ECLocomotion')?.active === false) return;
+      // The intro suppresses an already-owned default firearm; native solo reload restores it once unlocked.
+      inventory.equipWeapon(firearm.mainWeaponName);
+    }
+    syncTutorialWeapons() {
+      for (const { hero } of this.active.values()) this.restoreStarterWeapon(hero);
+    }
     spawn(record, model, name, archetype) {
       this.checkWeapons(record); this.checkConstruction(record.construction);
       const game = this.game, previous = game.playerData, index = game.randomPlayerIndex;
@@ -176,6 +190,7 @@
           const weapon = game.getEntityFactory().getECArchetype('e_s_floating_gun', 'ECPickup').item, inventory = hero.getEC('ECInventory');
           if (inventory.getHeldWeapon() === weapon) inventory.unequipWeapon();
         }
+        this.restoreStarterWeapon(hero);
         return hero;
       } catch (error) { if (hero) this.destroy(hero); throw error; }
       finally { game.playerData = previous; game.randomPlayerIndex = index; }
