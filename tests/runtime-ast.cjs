@@ -31,6 +31,10 @@ function prototypeWith(name, context) {
 function component(name, context) {
   return evaluate(one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === name)), name), context);
 }
+function scriptCommand(name) {
+  const definition = one(objects.filter(o => o.properties.some(p => key(p) === 'name' && p.value.value === name) && o.properties.some(p => key(p) === 'updateFunction')), name + ' command');
+  return evaluate(definition.properties.find(p => key(p) === 'updateFunction').value);
+}
 function objectWith(name) {
   return evaluate(one(objects.filter(o => o.properties.some(p => key(p) === name)), `object containing ${name}`));
 }
@@ -193,4 +197,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

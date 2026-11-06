@@ -143263,6 +143263,7 @@
         d = c.gameManager,
         c = c.mathDevice,
         e = d.getHero();
+      if (d.desktopPlayers) return d.desktopPlayers.isNearFamily(a, this.state.distance);
       return e && (e = e.getv3Location(), a = d.getNearestGameEntityByFamilyName(a, e)) ? (a = a.getv3Location(), c.v3DistanceSq(e, a) < b) : !1;
     }
   })();

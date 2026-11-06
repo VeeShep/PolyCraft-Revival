@@ -11,9 +11,11 @@ const assert = require('node:assert/strict');
   const early = process.argv.includes('--early-host');
   const naturalWeapon = process.argv.includes('--natural-weapon');
   const naturalCrate = process.argv.includes('--natural-crate');
+  const naturalBridge = process.argv.includes('--natural-bridge');
   assert.ok(!early || natural, 'Early hosting requires the natural-spawn flow.');
   assert.ok(!naturalWeapon || natural, 'Natural weapon testing requires the natural-spawn flow.');
   assert.ok(!naturalCrate || naturalWeapon, 'Natural shooting requires natural weapon acquisition.');
+  assert.ok(!naturalBridge || naturalCrate, 'Natural bridge progression requires the original shooting task.');
   assert.ok(!natural || process.argv.includes('--movement-only'), 'Natural spawn testing is limited to the movement-only acceptance flow.');
   assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
@@ -324,6 +326,7 @@ const assert = require('node:assert/strict');
       const controls = { host, guest: pages[1], focus: () => focus(1), button: id => nativeButton(1, id), hero: ids[0], hostFile: originals[0].file };
       await require('./coop-natural-weapon.cjs')(controls);
       if (naturalCrate) await require('./coop-natural-crate.cjs')(controls);
+      if (naturalBridge) await require('./coop-natural-bridge.cjs')(controls);
     }
     if (process.argv.includes('--movement-only')) {
       await host.evaluate(() => window.hostWorld.close());

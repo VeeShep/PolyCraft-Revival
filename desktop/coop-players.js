@@ -81,6 +81,16 @@
     allowsHeroPvp(entity) {
       return this.game.globals.desktopWorld?.transport.pvp === true && [...this.active.values()].some(entry => entry.hero === entity);
     }
+    isNearFamily(name, distance) {
+      const game = this.game, limit = distance * distance;
+      for (const { hero } of this.active.values()) {
+        const life = hero.getEC('ECPlayerLife');
+        if (hero.shouldBeDestroyed() || hero.getEC('ECHealth').getHealth() <= 0 || life && (life.respawnTime !== undefined || life.state !== life.states.NORMAL)) continue;
+        const position = hero.getv3Location(), target = game.getNearestGameEntityByFamilyName(name, position);
+        if (target && game.globals.mathDevice.v3DistanceSq(position, target.getv3Location()) < limit) return true;
+      }
+      return false;
+    }
     canDamage(victim, aggressor) {
       if (!victim || victim.shouldBeDestroyed() || aggressor?.shouldBeDestroyed()) return false;
       if (!aggressor || victim === aggressor) return true;

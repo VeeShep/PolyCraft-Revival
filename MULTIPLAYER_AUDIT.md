@@ -2,7 +2,13 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current source checkpoint — Beta 84, 2026-11-06
+## Current source checkpoint — Beta 85, 2026-11-06
+
+The original bridge wait checked only the host hero, so an alive guest inside its radius could not start the shared tutorial encounter. A one-line native command delegation now uses registered living co-op heroes with the original strict 3-D distance/nearest-family semantics; solo behavior is unchanged and dead/respawning actors are excluded. The actual-command regression fails before the fix, then **527 full / 16 focused checks** pass. Four visible natural-start source games pass guest-only bridge activation and all five original bandit spawns while the host stays behind, alongside the earlier native tutorial/sync/save checks. [Fix and scoped evidence](RESTORATION_STATUS.md#current-source-beta-85-shared-scripted-proximity--2026-11-06).
+
+Finished Beta 85, bandit defeat/village/HQ/other triggers, native other-OS gameplay, physical networks and endurance remain open. Beta 84 CI finished with seven successful jobs and no Apple Silicon runner; its local finished Mac evidence remains separate from CI artifact acceptance.
+
+## Previous source checkpoint — Beta 84, 2026-11-06
 
 New co-op heroes previously carried the original tutorial pickup weapon already, so native duplicate-item rejection stalled **Find a weapon**. The shared spawn path now removes that matching gun only while its original tutorial task is active/incomplete with scripts enabled. Saved co-op heroes are covered; other weapons, completed progression and restored solo inventory are preserved. All **524 checks** pass, and four visible source games pass early-host refusal, natural wake-up, a real guest reward click, normal keyboard approach, native gun collection/shared completion and exact inventory checkpoint, alongside sync/resync and guest-save isolation. No tutorial events, weapons or positions are staged in this mode. [Fix and scoped evidence](RESTORATION_STATUS.md#current-source-beta-84-natural-tutorial-weapon-acquisition--2026-11-06).
 
