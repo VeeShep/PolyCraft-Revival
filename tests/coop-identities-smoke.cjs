@@ -14,7 +14,9 @@ const assert = require('node:assert/strict');
       const page = await application.firstWindow(); pages.push(page);
       assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()), true);
       await application.evaluate(({ BrowserWindow }, role) => {
-        const window = BrowserWindow.getAllWindows()[0]; window.setTitle('PolyCraft temporary ' + role + ' — co-op identities test');
+        const window = BrowserWindow.getAllWindows()[0];
+        window.on('page-title-updated', event => event.preventDefault());
+        window.setTitle('PolyCraft temporary ' + role + ' — co-op identities test');
         globalThis.testFocus = [];
         for (const event of ['focus', 'blur']) window.on(event, () => { globalThis.testFocus.push({ time: Date.now(), event }); if (globalThis.testFocus.length > 80) globalThis.testFocus.shift(); });
       }, role);
@@ -23,6 +25,7 @@ const assert = require('node:assert/strict');
       await page.locator('#new-name').fill('Temporary identity ' + role);
       await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#new-game button').click({ noWaitAfter: true })]);
       await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
+      assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle()), 'PolyCraft temporary ' + role + ' — co-op identities test');
       await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestateStartScreen');
       await focus(applications.length - 1);
       const canvas = page.locator('#turbulenz_game_engine_canvas'), bounds = await canvas.boundingBox();
