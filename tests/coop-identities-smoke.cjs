@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
   const applications = [], pages = [], errors = [], requests = [], originals = [];
   try {
     for (const role of ['host', 'guest-one', 'guest-two', 'guest-three']) {
-      const application = await electron.launch({ args: ['.'], env: { ...process.env, POLYCRAFT_TEST_DATA: path.join(directory, role) }, timeout: 90000 });
+      const application = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: path.join(directory, role) }, timeout: 90000 });
       applications.push(application);
       const page = await application.firstWindow(); pages.push(page);
       assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()), true);

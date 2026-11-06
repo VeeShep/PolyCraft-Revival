@@ -235,9 +235,19 @@ Additional acceptance scripts under `tests/` cover save migration/lifecycle, ach
 
 `npm run test:coop-sync` opens four visible disposable games. It joins three assigned heroes, moves all four through keyboard input, compares every guest's positions/rotations with the host at matching simulation ticks, checks rendered mesh poses and moving display frames between network updates, then exercises original guest totem point/75-Amber purchases and restored speed effects after reconnect, gathering, a real original wall build/cost/throw/scaffold/disk acknowledgement, original Shop/Craft Resource pointer clicks and close/Escape, paid crafting saved before acknowledgement, a three-guest shared-budget race in the four-player room, PvP-off protection, original-style guest demolition/cancel with capacity updates and overlapping-save ordering, a forged identity, reconnect and host exit. A second two-player session checks a real PvP pistol hit and replicated health. It also checks guest local-pause and native-window blur stops, plus movement while the host's local input is paused. Playwright emulates document focus, so the blur assertion uses Electron's native window signal. Fixtures place temporary heroes near targets, fund an original HQ/Wall-unlocked settlement, create eligible storage and equip the test pistol. Building uses actual original-style product-menu and placement-preview clicks, checks no spending before placement, and compares the saved scaffold with the confirmed footprint. Normal unlock/progression, weapon acquisition and click-to-approach remain separate checks. This tests same-machine networking, not internet latency or cross-platform acceptance.
 
+**Recorded local acceptance:** Beta 79’s finished Apple Silicon app passed the visible four-player co-op fixture (including its later two-player PvP phase), legacy-history UI, fullscreen/quest event, save-lifecycle and solo/autosave checks on one Mac. See [the scoped results and evidence](RESTORATION_STATUS.md#visible-packaged-acceptance-approved-beta-79-batch). This does not establish ordinary unlock progression, every quest/campaign/UI/audio flow, native Windows/Linux/Intel gameplay, physical internet/router behavior or endurance. File-picker choices in the lifecycle fixture are automated.
+
+The co-op harness also accepts a finished executable through `POLYCRAFT_EXECUTABLE`, matching the other game checks. For example, on macOS:
+
+```sh
+POLYCRAFT_EXECUTABLE="/path/to/PolyCraft Offline.app/Contents/MacOS/PolyCraft Offline" npm run test:coop-sync
+```
+
+This still opens four labelled visible windows and uses disposable profiles; announce the test and reserve desktop focus before running it.
+
 ### Packaging
 
-CI verifies extracted Windows ZIPs and both Linux archive formats before collecting downloads. It checks every bundled PE/ELF binary against the target architecture, the original Windows icon resources, AppImage desktop association/icons, and selected packaged source/version/window-icon bytes. Mac ZIPs additionally validate the bundle-selected ICNS, packaged window/Dock PNG, selected source/version bytes, every Mach-O architecture and the deep signature. These checks do not open the game or prove native desktop appearance/gameplay. `.gitattributes` keeps packaged source LF on Windows too, while original reference/game-asset bytes are excluded from conversion.
+CI verifies extracted Windows ZIPs and both Linux archive formats before collecting downloads. It checks every bundled PE/ELF binary against the target architecture, the original Windows icon resources, AppImage desktop association/icons, and all desktop source files/core package metadata/game/window-icon bytes. Mac ZIPs additionally validate the bundle-selected ICNS, packaged window/Dock PNG, the same full-source/metadata guards, every Mach-O architecture and the deep signature. These checks do not open the game or prove native desktop appearance/gameplay. `.gitattributes` keeps packaged source LF on Windows too, while original reference/game-asset bytes are excluded from conversion.
 
 ```sh
 npm run build:mac

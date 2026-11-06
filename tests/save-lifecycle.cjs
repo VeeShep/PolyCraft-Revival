@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
   let application;
   const launch = async () => {
     application = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: directory } });
+    await application.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Temporary test window must be visible'); window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — save lifecycle test'); });
     // Deterministic native dialog choices; all renderer, IPC and disk paths remain real.
     await application.evaluate(({ dialog }, backup) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: backup });

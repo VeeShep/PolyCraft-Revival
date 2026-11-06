@@ -19,6 +19,7 @@ const { Saves, emptyState } = require('../desktop/saves.cjs');
       env: { ...process.env, POLYCRAFT_TEST_DATA: directory }, timeout: 90000
     });
     const page = await application.firstWindow();
+    await application.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Temporary test window must be visible'); window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — history migration test'); });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.locator('.save').waitFor();
     assert.match(await page.locator('.save').textContent(), /Unknown history/);

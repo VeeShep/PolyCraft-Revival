@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
   try {
     application = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: directory } });
     const page = await application.firstWindow();
+    await application.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Temporary test window must be visible'); window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — fullscreen and quest test'); });
     page.on('pageerror', error => console.error('Game error:', error.message));
     page.on('console', message => { if (message.type() === 'error') console.error(message.text()); });
     await page.locator('#new-name').fill('Fullscreen check');
