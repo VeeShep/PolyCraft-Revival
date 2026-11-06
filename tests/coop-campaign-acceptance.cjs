@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 
 module.exports = async function campaignAcceptance({ host, guest, hero, join, end, nativeButton, selectTarget, click, saved, reloadHost }) {
   await join();
-  const campaign = await host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
+  async function stageCampaign() {
+    return host.evaluate(hero => window.polycraft.controls.onlineWorld.atBoundary(() => {
     const world = window.polycraft.controls.onlineWorld, game = world.game, owner = game.getHero().getGameSpace().getEntitiesWithEC('ECWarManager')[0], war = owner.getEC('ECWarManager');
     const [region, record] = Object.entries(war.campaignRegionMap).find(([, record]) => record.campaignStarterEntity && !record.campaignStarterEntity.shouldBeDestroyed());
     const source = record.campaignStarterEntity;
@@ -21,6 +22,8 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
     for (const [event, key] of [['CampaignStarted', 'started'], ['CampaignPrepareScreenExited', 'closed'], ['InvasionStarted', 'invaded']]) game.eventManager.subscribe(event, () => window.campaignAcceptanceEvents[key]++);
     return { source: source.getName(), region, campaign: war.getCampaignArchetypeName(region), before: window.polycraft.controls.amounts() };
   }), hero);
+  }
+  let campaign = await stageCampaign();
   async function open() {
     await selectTarget(campaign.source);
     await guest.waitForFunction(source => window.polycraft.controls.guestWorld.campaign.menu?.source === source, campaign.source);
@@ -141,4 +144,9 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   console.log('Native kill XP collection/reload:', { before: { guest: combat.xp, host: combat.hostXP }, killXP: combat.killXP, after: reloadedXP, drops });
   await end();
   console.log('PASS: original guest campaign controls/countdown, native wave AI through online menus, real guest projectile impact/kill and state replication; native kill XP pickups credit only the collecting guest and survive disk checkpoint/host reload/rejoin with host XP and guest solo bytes unchanged.');
+  await join(); campaign = await stageCampaign();
+  await open(); await panelButton('infoPanelUpgradeButton');
+  await require('./coop-campaign-victory.cjs')({ host, guest, hero, campaign, selectTarget, panelButton });
+  await end();
+  console.log('PASS: native tutorial campaign completes all authored waves via actual guest clicks and original projectiles; victory reaches the guest and guest dismissal cannot collect the host-owned completion reward; guest solo bytes unchanged.');
 };
