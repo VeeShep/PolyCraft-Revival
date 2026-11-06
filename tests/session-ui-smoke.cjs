@@ -5,7 +5,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 const net = require('node:net'), { once } = require('node:events');
 const { createRoomServer } = require('../server/rooms.cjs');
 const questAcceptance = require('./coop-quest-acceptance.cjs');
-const lifeAcceptance = require('./coop-life-acceptance.cjs');
+const restorationAcceptance = require('./coop-restoration-acceptance.cjs');
 (async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-session-ui-'));
   const applications = [], pages = [], errors = [], requests = [];
@@ -262,8 +262,8 @@ const lifeAcceptance = require('./coop-life-acceptance.cjs');
     assert.equal(directRegistry.players.find(player => player.id === hero).progress.xp, outageRegistry.players.find(player => player.id === hero).progress.xp);
     assert.deepEqual(errors, []); assert.deepEqual(requests.filter(url => /^https?:/i.test(url)), []);
     console.log('PASS: service-free manual direct invitation UI joins the saved hero without a reply or UPnP; live cancellation clears its invitation/peer while preserving the hero, progression and guest solo bytes.');
-    stage = 'saved waiting hero and original paid revive';
-    await lifeAcceptance({ host, guest, hero, port, saveFile: path.join(hostDirectory, files[0]), guestFile, click, focus, connection, reloadHost });
+    stage = 'saved waiting hero, paid revive and held construction';
+    await restorationAcceptance({ host, guest, hero, port, saveFile: path.join(hostDirectory, files[0]), guestFile, click, focus, connection, reloadHost });
     assert.deepEqual(errors, []); assert.deepEqual(requests.filter(url => /^https?:/i.test(url)), []);
   } catch (error) {
     console.error('Connection UI failure stage:', stage);
