@@ -4,7 +4,7 @@ The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sec
 
 ## Current checkpoint — Beta 82, 2026-11-06
 
-The host snapshot now marks original `ECCampaignStarter` banners interactive, fixing guest canvas selection without changing message/save formats or host campaign guards. All 522 checks pass; the visible two-game source run passes nine flows, including actual campaign preview/cancel/confirm and the native preparation-to-battle transition while the guest Pause menu stays open. Prerequisites are staged; victory/rewards, enemy AI, natural progression and packaged Beta 82 acceptance remain open. [Fix and evidence](RESTORATION_STATUS.md#current-source-beta-82-selectable-campaign-banners--2026-11-06).
+The host snapshot now marks original `ECCampaignStarter` banners interactive, fixing guest canvas selection without changing message/save formats or host campaign guards. All 522 checks pass; both source and verified finished Apple Silicon runs pass nine flows, including actual campaign preview/cancel/confirm and the native preparation-to-battle transition while the guest Pause menu stays open. All eight Beta 82 CI jobs/artifacts pass worker source/icon/architecture/native-network checks. Prerequisites are staged; victory/rewards, enemy AI, natural progression, other native-platform gameplay and physical-network acceptance remain open. [Fix and evidence](RESTORATION_STATUS.md#current-source-beta-82-selectable-campaign-banners--2026-11-06).
 
 ## Previous checkpoint — Beta 81, 2026-11-06
 
