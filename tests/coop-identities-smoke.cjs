@@ -102,6 +102,28 @@ const assert = require('node:assert/strict');
         } catch (error) { if (attempt) throw error; }
       }
     }
+    async function observeGuestClose(index) {
+      assert.deepEqual(fs.readFileSync(originals[index].file), originals[index].bytes);
+      await pages[index].evaluate(() => {
+        const world = window.guestWorld, close = world.close;
+        world.close = function () {
+          close.call(this);
+          window.restoredSoloState = JSON.stringify(window.polycraft.bridge.state);
+          this.close = close;
+        };
+      });
+    }
+    async function checkGuestRestored(index) {
+      await pages[index].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
+      assert.equal(await pages[index].evaluate(() => window.restoredSoloState), originals[index].state);
+      const current = fs.readFileSync(originals[index].file);
+      if (!current.equals(originals[index].bytes)) {
+        assert.deepEqual(fs.readFileSync(originals[index].file + '.bak'), originals[index].bytes, 'A resumed solo autosave must retain the untouched original as its backup.');
+        const state = JSON.parse(current).state, original = JSON.parse(originals[index].state);
+        for (const key of ['progress', 'resource', 'softCurrency', 'heroUpgrades', 'taskFlags', 'desktopCoop']) assert.equal(state.userData[key], original.userData[key]);
+        console.log('Guest ' + index + ': normal solo autosave advanced after exact state restoration; original backup and personal progression preserved.');
+      }
+    }
     if (early) {
       console.log('Before early hosting:', await host.evaluate(() => { const game = window.polycraft.controls.manager(), hero = window.earlySoloHero = game.getHero(); return { hero: hero.getName(), sleeping: hero.getEC('ECSleeping')?.sleeping, movement: hero.getEC('ECLocomotion').active, runScripts: game.runScripts }; }));
       await focus(0); await host.locator('#multiplayer').click(); await host.locator('#host-island').click();
@@ -340,19 +362,16 @@ const assert = require('node:assert/strict');
       if (naturalHq) await require('./coop-natural-hq.cjs')(controls);
     }
     if (process.argv.includes('--movement-only')) {
-      const gear = naturalGear ? require('./coop-natural-gear.cjs')({ host, focus: () => focus(0) }) : null;
+      const gear = naturalGear ? require('./coop-natural-gear.cjs')({ host, focus: () => focus(0), headquarters: naturalHq }) : null;
       if (gear) await gear.before();
+      for (let index = 1; index <= 3; index++) await observeGuestClose(index);
       await host.evaluate(() => window.hostWorld.close());
-      for (let index = 1; index <= 3; index++) {
-        await pages[index].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
-        assert.equal(await pages[index].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[index].state);
-        assert.deepEqual(fs.readFileSync(originals[index].file), originals[index].bytes);
-      }
+      for (let index = 1; index <= 3; index++) await checkGuestRestored(index);
       assert.deepEqual(await host.evaluate(() => window.hostErrors), []);
       if (gear) await gear.after();
       assert.deepEqual(errors, []);
       assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
-      console.log('PASS: four visible games; keyboard movement; every guest retains exact same-tick host records and renders all four moving heroes smoothly between updates; menu/focus stops; guest saves unchanged on host exit. Same-Mac acceptance only.');
+      console.log('PASS: four visible games; keyboard movement; every guest retains exact same-tick host records and renders all four moving heroes smoothly between updates; menu/focus stops; exact guest solo restoration at disconnect, with original files or backups retained. Same-Mac acceptance only.');
       return;
     }
     const totem = await host.evaluate(async id => window.hostWorld.atBoundary(() => {
@@ -665,10 +684,9 @@ const assert = require('node:assert/strict');
       const entry = window.hostWorld.players.active.get(id); entry.hero.getEC('ECPlayerData').adjustXP(33);
     }), ids[0]);
     const firstTick = await pages[2].evaluate(() => window.guestWorld.scene.tick);
+    await observeGuestClose(1);
     await pages[1].evaluate(other => window.connection.send('hello', { version: 1, playerId: other }), ids[1]);
-    await pages[1].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
-    assert.equal(await pages[1].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[1].state);
-    assert.deepEqual(fs.readFileSync(originals[1].file), originals[1].bytes);
+    await checkGuestRestored(1);
     await host.waitForFunction(id => !window.hostWorld.guestSlots.has(id) && !window.hostWorld.players.active.has(id), ids[0]);
     assert.equal(await host.evaluate(id => window.hostWorld.players.registry.player(id).progress.xp, ids[0]), reconnectXP);
     await pages[2].waitForFunction(tick => window.guestWorld.scene.tick > tick, firstTick);
@@ -681,12 +699,9 @@ const assert = require('node:assert/strict');
       return { speed: upgrades.getHeroUpgrade('movementSpeed'), factor: hero.getEC('ECLocomotion').fastSpeedFactor, expected: upgrades.archetype.movementSpeedFactors[2] };
     }, ids[0]);
     assert.equal(returnedTotem.speed, 2); assert.equal(returnedTotem.factor, returnedTotem.expected);
+    for (let index = 1; index <= 3; index++) await observeGuestClose(index);
     await host.evaluate(() => window.hostWorld.close());
-    for (let index = 1; index <= 3; index++) {
-      await pages[index].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
-      assert.equal(await pages[index].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[index].state);
-      assert.deepEqual(fs.readFileSync(originals[index].file), originals[index].bytes);
-    }
+    for (let index = 1; index <= 3; index++) await checkGuestRestored(index);
     await host.evaluate(async () => {
       window.hostSession = new window.PolycraftMultiplayer.HostSession({ pvp: true, onError: (peer, error) => window.hostErrors.push(error.message) });
       window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
@@ -727,10 +742,9 @@ const assert = require('node:assert/strict');
     await pages[1].waitForFunction(({ target, health }) => window.guestWorld.scene.entities.get(target).record.health.current < health, combat);
     console.log('PvP trace:', await host.evaluate(() => { window.restoreCombatTrace(); return window.combatTrace; }));
     console.log('PvP-on guest pistol hit damages the live host hero and replicates the reduced health.');
+    await observeGuestClose(1);
     await host.evaluate(() => window.hostWorld.close());
-    await pages[1].waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
-    assert.equal(await pages[1].evaluate(() => JSON.stringify(window.polycraft.bridge.state)), originals[1].state);
-    assert.deepEqual(fs.readFileSync(originals[1].file), originals[1].bytes);
+    await checkGuestRestored(1);
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     const rejected = await host.evaluate(() => window.hostErrors);
     assert.equal(rejected.length, 1); assert.match(rejected[0], /Guests cannot select heroes/);

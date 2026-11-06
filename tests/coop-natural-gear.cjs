@@ -1,12 +1,18 @@
 'use strict';
 const assert = require('node:assert/strict');
 
-module.exports = function naturalGear({ host, focus }) {
-  const solo = () => host.evaluate(() => {
+module.exports = function naturalGear({ host, focus, headquarters = false }) {
+  const solo = () => host.evaluate(headquarters => {
     const game = window.polycraft.controls.manager(), hero = game.getHero();
     return { held: hero.getEC('ECInventory').getHeldWeapon(), armed: hero.getEC('ECFirearm').hasWeapon(),
-      primary: hero.getEC('ECFirearm').mainWeaponName, pickupComplete: game.getPlayerData().getTaskFlags().pickupWeapon, scripts: game.runScripts };
-  });
+      primary: hero.getEC('ECFirearm').mainWeaponName, pickupComplete: game.getPlayerData().getTaskFlags().pickupWeapon, scripts: game.runScripts,
+      ...(headquarters ? { world: {
+        hq: game.getBuildingManager().getBuildingsAtMinLevel('HQ', 1, false).filter(entity => !entity.getEC('ECScaffold')).map(entity => ({ name: entity.getName(), archetype: entity.getArchetypeName(), location: Array.from(entity.getv3Location()) })),
+        flags: { goToVillage: game.getPlayerData().getTaskFlags().goToVillage, buildHq: game.getPlayerData().getTaskFlags().buildHq },
+        pending: JSON.parse(window.polycraft.bridge.state.userData.desktopQuests).pending,
+        coop: JSON.parse(window.polycraft.bridge.state.userData.desktopCoop), everEnabled: window.polycraft.bridge.state.cheats.everEnabled
+      } } : {}) };
+  }, headquarters);
   return {
     async before() {
       const party = await host.evaluate(() => {
@@ -38,6 +44,14 @@ module.exports = function naturalGear({ host, focus }) {
       assert.equal(returned.held, reloaded.held, 'Ending co-op should restore the same native starter-weapon availability as normal solo reload.');
       assert.equal(returned.armed, reloaded.armed);
       assert.equal(returned.held, returned.primary);
+      if (headquarters) {
+        assert.equal(returned.world.hq.length, 1); assert.equal(returned.world.hq[0].archetype, 'a_b_hq');
+        assert.deepEqual(returned.world.flags, { goToVillage: true, buildHq: true });
+        assert.ok(returned.world.pending.some(task => task.task === 'buildHq'));
+        assert.equal(returned.world.coop.players.length, 4); assert.equal(returned.world.everEnabled, false);
+        assert.deepEqual(reloaded.world, returned.world, 'The completed HQ, pending reward, shared flags and saved party must survive native solo reload.');
+        console.log('Completed HQ, pending shared reward, four saved party records and clean history survive native solo exit/reload.');
+      }
     }
   };
 };
