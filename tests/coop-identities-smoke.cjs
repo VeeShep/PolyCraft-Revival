@@ -7,6 +7,8 @@ const assert = require('node:assert/strict');
 (async () => {
   const relay = process.env.POLYCRAFT_TEST_TURN ? JSON.parse(process.env.POLYCRAFT_TEST_TURN) : null;
   const mixed = process.env.POLYCRAFT_TEST_MIXED === '1';
+  const natural = process.argv.includes('--natural-spawn');
+  assert.ok(!natural || process.argv.includes('--movement-only'), 'Natural spawn testing is limited to the movement-only acceptance flow.');
   assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-coop-identities-'));
@@ -39,11 +41,19 @@ const assert = require('node:assert/strict');
       await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.readyToPlay, null, { timeout: 5000 });
       await page.mouse.click(bounds.x + play[0], bounds.y + play[1], { delay: 100 });
       await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestatePlaying', null, { timeout: 10000 });
-      const state = await page.evaluate(async () => {
+      if (natural) {
+        await nativeButton(pages.length - 1, 'idTaskHelpButtontaskIdcrit_0');
+        await page.waitForFunction(() => window.polycraft.controls.manager().getHero().getEC('ECInteractable')?.getActive());
+        const point = await page.evaluate(() => { const controls = window.polycraft.controls, point = controls.app.globals.camera.worldToScreen(controls.manager().getHero().getCentreLocation()), canvas = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect(), device = controls.app.globals.graphicsDevice; return { x: canvas.left + point[0] * canvas.width / device.width, y: canvas.top + point[1] * canvas.height / device.height }; });
+        await page.mouse.move(point.x, point.y); await page.waitForTimeout(150); await page.mouse.click(point.x, point.y, { delay: 100 });
+        await page.waitForFunction(() => window.polycraft.controls.manager().getPlayerData().getTaskFlags().wakeUp === true, null, { timeout: 15000 });
+        console.log('Natural wake-up completed:', role, await page.evaluate(() => { const game = window.polycraft.controls.manager(); return { location: Array.from(game.getHero().getv3Location()), respawn: Array.from(game.getHeroRespawnPosition()), runScripts: game.runScripts, scriptLocked: game.isScriptLocked() }; }));
+      }
+      const state = await page.evaluate(async natural => {
         const game = window.polycraft.controls.manager();
-        game.runScripts = false; game.setScriptLocked(false); game.activeGameState.setPlayState('PlayStateNormal');
+        if (!natural) { game.runScripts = false; game.setScriptLocked(false); game.activeGameState.setPlayState('PlayStateNormal'); }
         await window.polycraft.checkpoint(); return JSON.stringify(window.polycraft.bridge.state);
-      });
+      }, natural);
       const saves = path.join(directory, role, 'saves'), file = path.join(saves, fs.readdirSync(saves).find(name => name.endsWith('.json')));
       originals.push({ state, file, bytes: fs.readFileSync(file) });
       if (relay) await page.evaluate(({ server, enabled }) => {
@@ -54,6 +64,12 @@ const assert = require('node:assert/strict');
       console.log('Visible temporary game ready:', role);
     }
     const host = pages[0];
+    async function nativeButton(index, id) {
+      await focus(index); const page = pages[index];
+      await page.waitForFunction(id => window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap[id]?.scale > 0.95, id);
+      const point = await page.evaluate(id => { const controls = window.polycraft.controls, args = controls.manager().getGuiManager().prevDrawGuiMap[id].argumentObject, point = args.v2ScreenLocation || [args.x, args.y], canvas = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect(), device = controls.app.globals.graphicsDevice; return { x: canvas.left + point[0] * canvas.width / device.width, y: canvas.top + point[1] * canvas.height / device.height }; }, id);
+      await page.mouse.move(point.x, point.y); await page.waitForFunction(id => window.polycraft.controls.manager().getIMGui().isHot(id), id); await page.mouse.click(point.x, point.y, { delay: 100 });
+    }
     async function focus(index) {
       const page = pages[index];
       for (let attempt = 0; attempt < 2; attempt++) {
