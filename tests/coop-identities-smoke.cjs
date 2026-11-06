@@ -6,6 +6,8 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 (async () => {
   const relay = process.env.POLYCRAFT_TEST_TURN ? JSON.parse(process.env.POLYCRAFT_TEST_TURN) : null;
+  const mixed = process.env.POLYCRAFT_TEST_MIXED === '1';
+  assert.ok(!mixed || relay, 'Mixed-route testing requires the owned loopback relay settings.');
   if (relay) assert.ok(/^turn:127\.0\.0\.1:\d+\?transport=udp$/.test(relay.urls) && typeof relay.username === 'string' && typeof relay.credential === 'string', 'Relay fixtures must use the owned loopback TURN server.');
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-coop-identities-'));
   const applications = [], pages = [], errors = [], requests = [], originals = [];
@@ -44,10 +46,11 @@ const assert = require('node:assert/strict');
       });
       const saves = path.join(directory, role, 'saves'), file = path.join(saves, fs.readdirSync(saves).find(name => name.endsWith('.json')));
       originals.push({ state, file, bytes: fs.readFileSync(file) });
-      if (relay) await page.evaluate(server => {
+      if (relay) await page.evaluate(({ server, enabled }) => {
         const PeerConnection = window.RTCPeerConnection;
-        window.RTCPeerConnection = class extends PeerConnection { constructor(configuration) { super({ ...configuration, iceServers: [server], iceTransportPolicy: 'relay' }); } };
-      }, relay);
+        window.testRelayActive = enabled;
+        window.RTCPeerConnection = class extends PeerConnection { constructor(configuration) { super({ ...configuration, ...(window.testRelayActive ? { iceServers: [server], iceTransportPolicy: 'relay' } : {}) }); } };
+      }, { server: relay, enabled: !mixed || role !== 'guest-two' });
       console.log('Visible temporary game ready:', role);
     }
     const host = pages[0];
@@ -73,6 +76,7 @@ const assert = require('node:assert/strict');
       return ['One', 'Two', 'Three'].map(name => players.registry.addPlayer(name).id);
     });
     async function join(index) {
+      if (relay) await host.evaluate(enabled => { window.testRelayActive = enabled; }, !mixed || index !== 2);
       const offer = await host.evaluate(id => window.hostWorld.createPlayerInvitation(id), ids[index - 1]);
       const joinedState = await pages[index].evaluate(async invitation => {
         const joined = await window.PolycraftMultiplayer.PeerLink.join(invitation);
@@ -92,8 +96,9 @@ const assert = require('node:assert/strict');
       if (relay) {
         const guestPath = await pages[index].evaluate(() => window.connection.connectionPath());
         const hostPath = await host.evaluate(peer => window.hostSession.peers.get(peer).connectionPath(), offer.peer);
-        assert.equal(guestPath, 'relayed'); assert.equal(hostPath, 'relayed');
-        console.log('Verified full-game relay path:', index, { host: hostPath, guest: guestPath });
+        const expected = mixed && index === 2 ? 'direct' : 'relayed';
+        assert.equal(guestPath, expected); assert.equal(hostPath, expected);
+        console.log('Verified full-game route:', index, { host: hostPath, guest: guestPath });
       }
       console.log('Assigned guest hero:', index, result.identity.playerId);
       return offer;
