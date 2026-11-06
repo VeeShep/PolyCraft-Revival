@@ -2,7 +2,13 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
-## Current checkpoint — Beta 76, 2026-11-05
+## Current checkpoint — Beta 81, 2026-11-06
+
+Use the [current requirement audit](RESTORATION_STATUS.md#current-requirement-audit-beta-81--2026-11-06) for completed work, current evidence and open gates. The full source suite freshly passes 521 checks. Beta 81 CI is complete/success with eight unexpired artifacts; the finished ARM64 Mac package again passes complete source/icon/architecture/signature verification. Beta 79's finished-Mac four-player WebRTC test and Beta 81's eight-flow connection/recovery/construction/inventory tests provide controlled full-game evidence on one Mac. The older deferred-test statements below are superseded within those scopes.
+
+Runtime coop-39, world/delta 15/2, room 4 and save formats through 8 remain unchanged. Native Windows/Linux/Intel gameplay/appearance, separate-machine LAN/WAN/router/NAT paths, full-game relay/mixed routes, natural campaign/AI progression and multi-hour sessions remain open. Linux native Electron/coturn worker checks use loopback services and stubbed world behavior; they do not close those gates. No public service deployment, automatic host migration or gameplay expansion is claimed.
+
+## Previous checkpoint — Beta 76, 2026-11-05
 
 Host drag steering now reapplies the latest validated intent every simulation tick, matching native held movement rather than packet arrival frequency. Native ECLocomotion.setDestination adds twice the simulation step to timeHeld; native update subtracts one step, while ECBumpAttack.findTargetEnemy requires at least 0.25 seconds held. Previously only incoming drag packets refreshed that clock, so held time and charging depended on the host/packet rate ratio instead of elapsed simulation time. Retaining the validated pending drag lets the existing native movement path run each tick. Its script/life/construction guards, 600 ms stale deadline, neutral/key takeover and forced-stop cleanup remain active. Drag still cannot issue native path searches or spend their quota. Click/release navigation retains its previous behavior; no client field, packet frequency, movement speed or attack balance value changes.
 

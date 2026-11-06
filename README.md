@@ -28,7 +28,7 @@ Native Linux/Electron/coturn checks have verified direct and relayed links, repe
 
 Local Mac Beta 78 tester ZIPs are available in this checkout’s ignored `dist/beta-78-local/` for Apple Silicon and Intel, with finished-archive source/icon/architecture/signature/checksum verification recorded in [RESTORATION_STATUS.md](RESTORATION_STATUS.md). They include the host drag and room retry fixes. Older local packages remain preserved. These local files are not GitHub uploads; cloning Git does not download any app package. Mac notarization and graphical/native-platform gameplay acceptance remain open.
 
-Start with [RESTORATION_STATUS.md](RESTORATION_STATUS.md) for the current roadmap, package provenance, remaining acceptance gates and continuation instructions. Its earlier checkpoints are historical, not the current release state.
+Start with the [current requirement audit](RESTORATION_STATUS.md#current-requirement-audit-beta-81--2026-11-06) for the roadmap's verified results, remaining acceptance gates and continuation priorities. The same file preserves package provenance and historical checkpoints; their earlier incomplete/deferred statements do not describe the current release state.
 
 ## Play
 
