@@ -245,6 +245,8 @@ POLYCRAFT_EXECUTABLE="/path/to/PolyCraft Offline.app/Contents/MacOS/PolyCraft Of
 
 This still opens four labelled visible windows and uses disposable profiles; announce the test and reserve desktop focus before running it.
 
+`node tests/session-ui-smoke.cjs` is the visible two-game connection-menu check, with the same optional `POLYCRAFT_EXECUTABLE`. It checks development-warning cancellation, manual invitation/reply fields, assigned heroes, non-pausing menus and session exit, then room-name/password joining against its temporary local service: wrong-case rejection, host approval, reuse of the saved hero and a direct TCP/TLS loopback route with UPnP disabled. It uses fresh disposable islands, closes its own windows/service, and masks invitation fields in screenshots. The Beta 79 packaged run passed both flows on Apple Silicon; this is not native clipboard, internet, physical router, cross-platform or endurance acceptance. [Results and evidence](RESTORATION_STATUS.md#visible-connection-menu-acceptance-beta-79).
+
 ### Packaging
 
 CI verifies extracted Windows ZIPs and both Linux archive formats before collecting downloads. It checks every bundled PE/ELF binary against the target architecture, the original Windows icon resources, AppImage desktop association/icons, and all desktop source files/core package metadata/game/window-icon bytes. Mac ZIPs additionally validate the bundle-selected ICNS, packaged window/Dock PNG, the same full-source/metadata guards, every Mach-O architecture and the deep signature. These checks do not open the game or prove native desktop appearance/gameplay. `.gitattributes` keeps packaged source LF on Windows too, while original reference/game-asset bytes are excluded from conversion.

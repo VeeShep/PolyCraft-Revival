@@ -1,0 +1,181 @@
+'use strict';
+const { _electron: electron } = require('playwright-core');
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+const net = require('node:net'), { once } = require('node:events');
+const { createRoomServer } = require('../server/rooms.cjs');
+(async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-session-ui-'));
+  const applications = [], pages = [], errors = [], requests = [];
+  let stage = 'launch';
+  let roomService;
+  async function focus(index) {
+    await applications[index].evaluate(({ app, BrowserWindow }) => {
+      app.focus({ steal: true });
+      const window = BrowserWindow.getAllWindows()[0]; window.moveTop(); window.focus();
+    });
+    await pages[index].bringToFront();
+    await pages[index].waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused(), null, { timeout: 5000 });
+  }
+  async function click(index, selector) { await focus(index); await pages[index].locator(selector).click(); }
+  async function connection(index, selector, accept) {
+    await click(index, selector);
+    await pages[index].locator('#multiplayer-warning[open]').waitFor();
+    await click(index, '#multiplayer-warning button[value="' + (accept ? 'continue' : 'cancel') + '"]');
+    await pages[index].locator('#multiplayer-warning').waitFor({ state: 'hidden' });
+  }
+  try {
+    for (const role of ['host', 'guest']) {
+      stage = 'prepare ' + role;
+      const application = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: path.join(directory, role) }, timeout: 90000 });
+      applications.push(application);
+      const page = await application.firstWindow(); pages.push(page);
+      await application.evaluate(({ BrowserWindow }, role) => {
+        const window = BrowserWindow.getAllWindows()[0];
+        if (!window.isVisible()) throw new Error('The temporary UI test must be visible.');
+        window.on('page-title-updated', event => event.preventDefault());
+        window.setTitle('PolyCraft temporary ' + role + ' — connection UI test');
+      }, role);
+      page.on('pageerror', error => errors.push(role + ': ' + error.message));
+      page.on('request', request => requests.push(request.url()));
+      await page.locator('#new-name').fill('Temporary UI ' + role);
+      await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#new-game button').click({ noWaitAfter: true })]);
+      await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
+      assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle()), 'PolyCraft temporary ' + role + ' — connection UI test');
+      await focus(pages.length - 1);
+      const canvas = page.locator('#turbulenz_game_engine_canvas'), bounds = await canvas.boundingBox();
+      const play = await page.evaluate(() => Array.from(window.polycraft.controls.app.globals.guiRenderer.getv2RenderLocation(-220, -70)));
+      await canvas.focus(); await page.mouse.move(10, 10); await page.mouse.move(bounds.x + play[0], bounds.y + play[1], { steps: 5 });
+      await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.readyToPlay, null, { timeout: 5000 });
+      await page.mouse.click(bounds.x + play[0], bounds.y + play[1], { delay: 100 });
+      await page.waitForFunction(() => window.polycraft.controls.manager().activeGameState.name === 'GamestatePlaying');
+      // Keep tutorial scripts from changing the disposable fixture during connection setup.
+      await page.evaluate(async () => { const game = window.polycraft.controls.manager(); game.runScripts = false; game.setScriptLocked(false); game.activeGameState.setPlayState('PlayStateNormal'); await window.polycraft.checkpoint(); });
+      console.log('Visible connection UI ready:', role);
+    }
+    const [host, guest] = pages, guestDirectory = path.join(directory, 'guest', 'saves');
+    const guestFile = path.join(guestDirectory, fs.readdirSync(guestDirectory).find(name => name.endsWith('.json')));
+    let guestBytes, solo;
+    stage = 'host warning cancellation';
+    await click(0, '#multiplayer');
+    assert.equal(await host.locator('#session-pvp').isChecked(), false);
+    await connection(0, '#host-island', false);
+    assert.equal(await host.evaluate(() => !!window.polycraft.controls.onlineWorld), false);
+    stage = 'host and assign hero';
+    await connection(0, '#host-island', true);
+    await host.waitForFunction(() => !!window.polycraft.controls.onlineWorld?.players);
+    assert.equal(await host.locator('#session-pvp').isEnabled(), false);
+    await host.locator('#guest-name').fill('UI friend'); await click(0, '#add-guest');
+    const hero = await host.locator('#guest-hero').inputValue(); assert.match(hero, /^[a-f0-9-]{36}$/);
+    await click(0, '#create-invitation');
+    await host.waitForFunction(() => document.getElementById('connection-outgoing').value.length > 100);
+    const invitation = await host.locator('#connection-outgoing').inputValue();
+    stage = 'guest warning cancellation';
+    await click(1, '#multiplayer'); await guest.locator('#join-invitation').fill(invitation);
+    await connection(1, '#join-island', false);
+    assert.equal(await guest.evaluate(() => !!window.polycraft.controls.guestWorld), false);
+    assert.ok(await guest.locator('#join-invitation').inputValue() === invitation, 'Cancelling a join must retain its invitation.');
+    await guest.evaluate(() => window.polycraft.checkpoint());
+    solo = await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)); guestBytes = fs.readFileSync(guestFile);
+    stage = 'guest reply';
+    await connection(1, '#join-island', true);
+    await guest.waitForFunction(() => document.getElementById('connection-outgoing').value.length > 100);
+    const reply = await guest.locator('#connection-outgoing').inputValue(); assert.ok(reply !== invitation, 'A guest reply must differ from its host invitation.');
+    stage = 'host accepts reply';
+    await focus(0); await host.locator('#guest-reply').fill(reply); await click(0, '#accept-reply');
+    await guest.waitForFunction(() => !!window.polycraft.controls.guestWorld?.identity && !!window.polycraft.controls.guestWorld.scene.snapshot, null, { timeout: 30000 });
+    const identity = await guest.evaluate(() => window.polycraft.controls.guestWorld.identity);
+    assert.equal(identity.playerId, hero); assert.equal(identity.name, 'UI friend'); assert.equal(identity.pvp, false);
+    assert.equal(await guest.locator('#save-now').isEnabled(), false); assert.equal(await guest.locator('#slots').isEnabled(), false);
+    assert.equal(await guest.locator('#cheats').isHidden(), true);
+    stage = 'world advances with Multiplayer open';
+    const tick = await guest.evaluate(() => window.polycraft.controls.guestWorld.scene.tick);
+    assert.equal(await host.evaluate(() => window.polycraft.controls.paused && document.getElementById('multiplayer-dialog').open), true);
+    await guest.waitForFunction(tick => window.polycraft.controls.guestWorld.scene.tick > tick + 3, tick);
+    fs.mkdirSync('test-results', { recursive: true }); await host.screenshot({ path: 'test-results/session-ui-connected.png', mask: [host.locator('#connection-outgoing'), host.locator('#guest-reply')] });
+    stage = 'return to game';
+    await click(0, '#close-multiplayer'); await click(1, '#close-multiplayer');
+    assert.equal(await host.evaluate(() => !!window.polycraft.controls.paused), false);
+    await guest.waitForFunction(() => !window.polycraft.controls.paused && window.polycraft.controls.guestWorld.movement.available());
+    await guest.screenshot({ path: 'test-results/session-ui-guest.png' });
+    stage = 'host ends through menu';
+    await click(0, '#multiplayer'); await click(0, '#end-session');
+    await host.waitForFunction(() => !window.polycraft.controls.onlineWorld);
+    await guest.waitForFunction(() => !window.polycraft.controls.guestWorld && window.polycraft.controls.ready());
+    assert.equal(await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)), solo);
+    assert.deepEqual(fs.readFileSync(guestFile), guestBytes);
+    const hostDirectory = path.join(directory, 'host', 'saves'), files = fs.readdirSync(hostDirectory).filter(name => name.endsWith('.json'));
+    assert.equal(files.length, 1);
+    const saved = JSON.parse(fs.readFileSync(path.join(hostDirectory, files[0]))), registry = JSON.parse(saved.state.userData.desktopCoop);
+    assert.equal(registry.players.length, 2); assert.ok(registry.players.some(player => player.id === hero && player.name === 'UI friend'));
+    assert.deepEqual(errors, []); assert.deepEqual(requests.filter(url => /^https?:/i.test(url)), []);
+    console.log('PASS: two visible games join through real Multiplayer warning/hero/invitation/reply controls; menu leaves host simulation running; return-to-game, host-only controls, saved hero and end-session preserve guest solo data.');
+    stage = 'local room setup';
+    roomService = createRoomServer(); roomService.server.listen(0, '127.0.0.1'); await once(roomService.server, 'listening');
+    const serverUrl = 'ws://127.0.0.1:' + roomService.server.address().port + '/signaling';
+    const probe = net.createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
+    const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
+    await focus(0);
+    await host.locator('#room-server').fill(serverUrl); await host.locator('#room-name').fill('poopedpants123'); await host.locator('#room-password').fill('giggle shits');
+    await click(0, '#direct-settings > summary');
+    await host.locator('#direct-address').fill('127.0.0.1'); await host.locator('#direct-port').fill(String(port));
+    assert.equal(await host.locator('#direct-upnp').isChecked(), false);
+    await connection(0, '#host-room', true);
+    await host.waitForFunction(() => document.getElementById('multiplayer-status').textContent.includes('is open'));
+    assert.equal(await host.locator('#room-password').inputValue(), '');
+    assert.equal(roomService.rooms.size, 1);
+    stage = 'wrong room password';
+    await click(1, '#multiplayer');
+    await guest.locator('#room-server').fill(serverUrl); await guest.locator('#room-name').fill('poopedpants123'); await guest.locator('#room-password').fill('Giggle shits'); await guest.locator('#room-guest-name').fill('Room UI friend');
+    await connection(1, '#join-room', true);
+    await guest.waitForFunction(() => document.getElementById('multiplayer-status').textContent.includes('incorrect'));
+    assert.equal(await guest.evaluate(() => !!window.polycraft.controls.guestWorld), false);
+    assert.equal(roomService.rooms.get('poopedpants123').guests.size, 0);
+    assert.equal(await guest.locator('#room-password').inputValue(), '');
+    stage = 'room request and host approval';
+    await guest.locator('#room-password').fill('giggle shits');
+    await guest.evaluate(() => window.polycraft.checkpoint());
+    solo = await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)); guestBytes = fs.readFileSync(guestFile);
+    await connection(1, '#join-room', true);
+    await host.waitForFunction(() => document.getElementById('room-request').options.length === 1);
+    assert.match(await host.locator('#room-request option').textContent(), /Room UI friend.*waiting/);
+    assert.equal(await guest.evaluate(() => !!window.polycraft.controls.guestWorld), false);
+    await focus(0); await host.locator('#room-hero').selectOption(hero); await click(0, '#approve-room-guest');
+    await guest.waitForFunction(() => !!window.polycraft.controls.guestWorld?.identity && !!window.polycraft.controls.guestWorld.scene.snapshot, null, { timeout: 30000 });
+    const roomIdentity = await guest.evaluate(() => window.polycraft.controls.guestWorld.identity);
+    assert.equal(roomIdentity.playerId, hero); assert.equal(roomIdentity.name, 'UI friend');
+    const route = await guest.evaluate(() => window.polycraft.controls.guestWorld.connection.diagnostics());
+    assert.equal(route.path, 'direct TCP/TLS');
+    assert.equal(await guest.evaluate(() => window.polycraft.controls.guestWorld.connection.kind), 'direct');
+    assert.equal(await host.locator('#manual-invite-tools').isHidden(), true);
+    assert.equal(await guest.locator('#manual-invite-tools').isHidden(), true);
+    assert.equal(await guest.locator('#room-password').inputValue(), '');
+    const roomTick = await guest.evaluate(() => window.polycraft.controls.guestWorld.scene.tick);
+    await guest.waitForFunction(tick => window.polycraft.controls.guestWorld.scene.tick > tick + 3, roomTick);
+    await host.screenshot({ path: 'test-results/session-ui-room-approved.png' });
+    await click(0, '#close-multiplayer'); await click(1, '#close-multiplayer');
+    await guest.waitForFunction(() => !window.polycraft.controls.paused && window.polycraft.controls.guestWorld.movement.available());
+    stage = 'room host exits';
+    await click(0, '#multiplayer'); await click(0, '#end-session');
+    await host.waitForFunction(() => !window.polycraft.controls.onlineWorld);
+    await guest.waitForFunction(() => !window.polycraft.controls.guestWorld && window.polycraft.controls.ready());
+    assert.equal(await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)), solo); assert.deepEqual(fs.readFileSync(guestFile), guestBytes);
+    assert.equal(roomService.rooms.size, 0);
+    const roomSave = JSON.parse(fs.readFileSync(path.join(hostDirectory, files[0]))), roomRegistry = JSON.parse(roomSave.state.userData.desktopCoop);
+    assert.equal(roomRegistry.players.length, 2); assert.equal(roomRegistry.players.filter(player => player.id === hero).length, 1);
+    assert.deepEqual(errors, []); assert.deepEqual(requests.filter(url => /^https?:/i.test(url)), []);
+    console.log('PASS: real room-name/password controls reject incorrect case, require host approval, reuse the saved hero, choose direct TCP/TLS without invitation copying, keep simulation running and cleanly end the room without changing guest solo saves.');
+  } catch (error) {
+    console.error('Connection UI failure stage:', stage);
+    fs.mkdirSync('test-results', { recursive: true });
+    for (let index = 0; index < pages.length; index++) try {
+      console.error('Connection UI state:', index, await pages[index].evaluate(() => ({ status: document.getElementById('multiplayer-status').textContent, menu: document.getElementById('multiplayer-dialog').open, warning: document.getElementById('multiplayer-warning').open, host: !!window.polycraft?.controls.onlineWorld, guest: !!window.polycraft?.controls.guestWorld, focused: document.hasFocus() })));
+      await pages[index].screenshot({ path: 'test-results/session-ui-failure-' + index + '.png', mask: [pages[index].locator('#connection-outgoing'), pages[index].locator('#guest-reply'), pages[index].locator('#join-invitation')] });
+    } catch {}
+    throw error;
+  } finally {
+    for (const application of applications) await application.evaluate(({ app }) => app.exit()).catch(() => {});
+    await roomService?.close();
+    console.log('Disposable connection UI profiles:', directory);
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });
