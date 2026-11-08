@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
+const fs = require('node:fs'), path = require('node:path');
 
 module.exports = async function naturalDeposit({ host, guest, guests, focusGuest, focus, hero, hostFile, resource = 0 }) {
   assert.ok(resource === 0 || resource === 1);
@@ -34,7 +34,7 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
       const next = await guest.evaluate(location => {
         const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, m = w.controls.app.globals.camera.matrix;
         const dx = location[0] - p[0], dz = location[2] - p[2], right = dx * m[0] + dz * m[2], forward = -dx * m[6] - dz * m[8], largest = Math.max(Math.abs(right), Math.abs(forward));
-        return { position: [...p], distance: Math.hypot(dx, dz), focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, tick: w.scene.tick,
+        return { position: [...p], waypointLocation: [...location], cameraAxes: [m[0], m[2], m[6], m[8]], distance: Math.hypot(dx, dz), focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, tick: w.scene.tick,
           keys: [...(Math.abs(right) > largest * 0.4 ? [right > 0 ? 'd' : 'a'] : []), ...(Math.abs(forward) > largest * 0.4 ? [forward > 0 ? 'w' : 's'] : [])] };
       }, destination.route[waypoint]);
       trace.push({ step, waypoint, ...next });
@@ -43,12 +43,17 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
       try { await guest.waitForTimeout(100); } finally { for (const key of next.keys) await guest.keyboard.up(key); }
       await guest.waitForTimeout(100);
     }
-    console.log('Native deposit walking trace:', JSON.stringify(trace.filter((_, index) => index < 4 || index >= trace.length - 12)));
-    if (!emptied) console.log('Native deposit failure state:', JSON.stringify(await host.evaluate(({ hero, resource }) => {
-      const w = window.hostWorld, actor = w.players.active.get(hero).hero, carrier = actor.getEC('ECResourceCarrier');
-      return { actor: Array.from(actor.getv3Location()), carried: carrier.getResource(resource), inbound: carrier.hasAnyInboundResource(), flying: carrier.hasAnyFlyingResource(), tick: w.game.gameClock.getFrameIndex(), events: window.naturalDepositEvents,
-        destinations: w.game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECResourceDestination')).map(entity => ({ id: entity.getName(), location: Array.from(entity.getv3Location()), distance: entity.getDistanceUsingSize(actor.getv3Location()), eligible: entity.getEC('ECResourceDestination').canDepositResource(resource) })) };
-    }, { hero, resource })));
+    console.log('Native deposit walking trace:', JSON.stringify(trace));
+    if (!emptied) {
+      try {
+        console.log('Native deposit failure state:', JSON.stringify(await host.evaluate(({ hero, resource }) => {
+          const w = window.hostWorld, actor = w.players.active.get(hero).hero, carrier = actor.getEC('ECResourceCarrier');
+          return { actor: Array.from(actor.getv3Location()), carried: carrier.getResource(resource), inbound: carrier.hasAnyInboundResource(), flying: carrier.hasAnyFlyingResource(), tick: w.game.gameClock.getFrameIndex(), events: window.naturalDepositEvents,
+            destinations: w.game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECResourceDestination')).map(entity => ({ id: entity.getName(), location: Array.from(entity.getv3Location()), distance: entity.getDistanceUsingSize(actor.getv3Location()), eligible: entity.getEC('ECResourceDestination').canDepositResource(resource) })) };
+        }, { hero, resource })));
+        await guest.screenshot({ path: path.join(path.dirname(hostFile), '..', 'resource-deposit-failure.png'), timeout: 5000 });
+      } catch (error) { console.log('Native deposit diagnostics unavailable:', String(error?.message ?? error)); }
+    }
     assert.equal(emptied, true, 'Original proximity depositing must empty the guest carrier.');
     await host.waitForFunction(hero => { const actor = window.hostWorld.players.active.get(hero).hero; return !actor.getEC('ECResourceCarrier').hasAnyFlyingResource() && window.naturalDepositEvents.some(event => event.actor === actor.getName()); }, hero, { timeout: 10000 });
     const result = await host.evaluate(async ({ hero, resource }) => {
