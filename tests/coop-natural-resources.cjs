@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
 
-module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false, combined = false, gatherOnly = false }) {
+module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false, combined = false, gatherOnly = false, checkHighlights = false }) {
   const resource = stone ? 1 : 0, task = combined ? 'mineStoneAndLumber' : stone ? 'mineAStone' : 'chopATree';
   if (!gatherOnly && !combined) await button('guest-idAcceptTaskRewardButtontaskIdcrit_' + (stone ? 7 : 5));
   if (!gatherOnly) await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
@@ -18,7 +18,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       const deplete = event => window.naturalResourceDepletions.push({ hero: event.hero.getName(), type: event.resourceType });
       game.eventManager.subscribe('InteractWithResourceDispenser', interact); game.eventManager.subscribe('ResourceDispsenserDepletedByHero', deplete);
       window.restoreNaturalResourceObservers = () => { game.eventManager.unsubscribe('InteractWithResourceDispenser', interact); game.eventManager.unsubscribe('ResourceDispsenserDepletedByHero', deplete); };
-      return { id: tree.getName(), actor: actor.getName(), location: Array.from(tree.getv3Location()), resource: tree.getEC('ECResourceDispenser').getResource(), route: path.getWaypointList().map(point => Array.from(point)),
+      return { mesh: tree.getEC('ECMesh').getMeshPath(), growingMesh: tree.getEC('ECResourceDispenser').archetype.growingMesh, id: tree.getName(), actor: actor.getName(), location: Array.from(tree.getv3Location()), resource: tree.getEC('ECResourceDispenser').getResource(), route: path.getWaypointList().map(point => Array.from(point)),
         minimumCarry: game.getEntityFactory().getECArchetype(resource === 0 ? 'a_b_lumbermill' : 'a_b_stonemill', 'ECBuilding')[resource === 0 ? 'resourceCost' : 'secondaryResourceCost'], approach: tree.getEC('ECInteractable').shouldApproachOnUp(actor), pickupRadius: game.getEntityFactory().getECArchetype(resource === 0 ? 'a_r_lumber' : 'a_r_stone', 'ECPickup').attractRadius,
         otherCarried: [...world.players.active].filter(([id]) => id !== hero).map(([id, entry]) => ({ id, carried: world.players.captureHero(entry.hero).inventory.carried })) };
     }
@@ -36,7 +36,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     let waypoint = Math.min(1, target.route.length - 1), ready = false;
     for (let step = 0; step < 300; step++) {
       // Non-approach resources still need framing clear of the HUD for an actual canvas click.
-      ready = await host.evaluate(({ hero, target }) => { const world = window.hostWorld, actor = world.players.active.get(hero).hero, tree = world.game.getGameEntityByName(target.id); return tree.getDistanceUsingSize(actor.getv3Location()) <= (target.approach ? actor.getRadius() + 0.45 : 8); }, { hero, target });
+      ready = await host.evaluate(({ hero, target, checkHighlights }) => { const world = window.hostWorld, actor = world.players.active.get(hero).hero, tree = world.game.getGameEntityByName(target.id); return tree.getDistanceUsingSize(actor.getv3Location()) <= (target.approach ? actor.getRadius() + 0.45 : checkHighlights ? 4 : 8); }, { hero, target, checkHighlights });
       if (ready && (await targetPoint()).clear) break;
       ready = false;
       const next = await guest.evaluate(location => {
@@ -65,6 +65,15 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     }
     assert.ok(ready, 'The guest must bring the resource into view, approaching only when required by its original interaction rule.');
     await guest.waitForTimeout(1000);
+    if (checkHighlights) {
+      assert.equal(target.mesh, target.growingMesh, 'The native fixture must exercise the original shared growing/mature rock model.');
+      await guest.waitForFunction(id => {
+        const w = window.guestWorld, view = w.resourceHighlights?.get(id);
+        return w.scene.entities.get(id).record.resourceReady && view?.smartValid && view.getSmartValidFactor() > 0.95;
+      }, target.id, { timeout: 10000 });
+      await guest.screenshot({ path: path.join(path.dirname(hostFile), '..', 'native-intact-rock-highlight.png'), timeout: 5000 });
+      console.log('Original intact rock selection ring active:', target.id, target.mesh);
+    }
     let clicks = 0;
     for (; clicks < 80; clicks++) {
       if (await host.evaluate(id => !(window.hostWorld.game.getGameEntityByName(id)?.getEC('ECResourceDispenser').getResource() > 0), target.id)) break;
@@ -91,6 +100,13 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
         throw error;
       }
       assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Resources gathered.');
+    }
+    if (checkHighlights) {
+      await guest.waitForFunction(id => {
+        const w = window.guestWorld;
+        return !w.scene.entities.get(id)?.record.resourceReady && !w.resourceHighlights?.has(id);
+      }, target.id, { timeout: 10000 });
+      console.log('Original depleted rock removes its guest selection ring:', target.id);
     }
     await guest.waitForTimeout(500);
     const pickupTrace = [];

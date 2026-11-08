@@ -23,9 +23,9 @@ test('guest original-style demolition menus use presentation input only, support
 });
 const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
-  const entity = id => ({ id, archetype: null, interactive: true, attackCursor: false, workerCue: null, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
+  const entity = id => ({ id, archetype: null, interactive: true, resourceReady: false, attackCursor: false, workerCue: null, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
-  return { version: 17, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
+  return { version: 18, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -812,7 +812,7 @@ function resourceHighlight() {
   const definition = { smart: true, radiusFactor: 1, smartRadiusFactor: 1 };
   w.game.getEntityFactory = () => ({ getECArchetype: (name, type) => name === 'hero' ? type === 'ECSmartSelectableTrigger' ? { worldRadius: 5.5 } : undefined : name === 'tree' ?
     type === 'ECSelectable' ? definition : type === 'ECResourceDispenser' ? { growingMesh: 'growing.dae' } : undefined : undefined });
-  const entry = { record: { id: 'tree', archetype: 'tree', interactive: true, location: [5, 4, 5], mesh: { visible: true, path: 'tree.dae' } } };
+  const entry = { record: { id: 'tree', archetype: 'tree', interactive: true, resourceReady: true, location: [5, 4, 5], mesh: { visible: true, path: 'tree.dae' } } };
   w.scene.entities.set('tree', entry);
   const draw = time => { globals.gameCurrentTime = time; f.sprites.length = 0; w.drawResourceHighlights(); };
   return { ...f, entry, definition, globals, controller, draw };
@@ -842,10 +842,24 @@ test('guest resource highlight uses local hover and original GUI/radius scaling,
   f.definition.radiusFactor = 2; f.globals.guiRenderer.getScaleFactor = () => 2;
   f.draw(0); f.draw(0.1); assert.equal(f.sprites[0].size, 18);
   f.capture(true); f.draw(0.2); f.draw(0.4); assert.equal(f.sprites[0].size, 14, 'Captured GUI must not retain the extra hover radius.');
-  f.entry.record.mesh.path = 'growing.dae'; f.draw(0.5); assert.equal(f.sprites.length, 0); assert.equal(f.world.resourceHighlights.size, 0);
-  f.entry.record.mesh.path = 'tree.dae'; f.entry.record.mesh.visible = false; f.draw(0.6); assert.equal(f.sprites.length, 0);
+  f.entry.record.mesh.path = 'growing.dae'; f.entry.record.resourceReady = false; f.draw(0.5); assert.equal(f.sprites.length, 0); assert.equal(f.world.resourceHighlights.size, 0);
+  f.entry.record.mesh.path = 'tree.dae'; f.entry.record.resourceReady = true; f.entry.record.mesh.visible = false; f.draw(0.6); assert.equal(f.sprites.length, 0);
   f.entry.record.mesh.visible = true; f.entry.record.interactive = false; f.draw(0.7); assert.equal(f.sprites.length, 0);
   f.entry.record.interactive = true; f.entry.record.archetype = 'unknown'; f.draw(0.8); assert.equal(f.sprites.length, 0);
+});
+test('intact original rocks and Stone Seed keep native rings when growing and mature mesh paths are identical', () => {
+  const ast = require('./runtime-ast.cjs');
+  for (const name of ['a_r_rock01', 'a_r_rock02', 'a_r_rock03', 'a_r_rock04', 'a_v_seed_rock']) {
+    const f = resourceHighlight(), mesh = ast.archetypeComponent(name, 'ECMesh'), growingMesh = ast.archetypeComponent(name, 'ECResourceDispenser', 'growingMesh');
+    assert.equal(mesh.path, growingMesh, name);
+    f.world.game.getEntityFactory = () => ({ getECArchetype: (archetype, type) => archetype === 'hero' ? type === 'ECSmartSelectableTrigger' ? { worldRadius: 5.5 } : undefined : archetype === name ?
+      type === 'ECSelectable' ? { ...f.definition, ...ast.archetypeComponent(name, 'ECSelectable') } : type === 'ECResourceDispenser' ? { growingMesh } : undefined : undefined });
+    f.entry.record.archetype = name; f.entry.record.mesh.path = mesh.path; f.entry.record.resourceReady = true;
+    f.draw(0); f.draw(0.1); assert.equal(f.sprites.length, 1, name + ' must retain its original mature selection ring');
+    assert.equal(f.sprites[0].texture, 'textures/bigcirclebutton.dds');
+    f.entry.record.resourceReady = false; f.draw(0.2); assert.equal(f.sprites.length, 0); assert.equal(f.world.resourceHighlights.size, 0);
+    f.entry.record.resourceReady = true; f.draw(0.3); f.draw(0.4); assert.equal(f.sprites.length, 1, 'Native regrowth must restore the same original ring');
+  }
 });
 test('guest resource highlights respect input/placement gates and prune removed entities', () => {
   const f = resourceHighlight(); f.draw(0); f.draw(0.1);

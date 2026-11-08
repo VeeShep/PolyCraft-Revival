@@ -660,7 +660,7 @@
         const record = entry.record, resource = factory.getECArchetype(record.archetype, 'ECResourceDispenser');
         const worker = factory.getECArchetype(record.archetype, 'ECWildlingAgent');
         const definition = (resource || worker) && factory.getECArchetype(record.archetype, 'ECSelectable');
-        if (!definition?.smart || !record.interactive || !record.mesh?.visible || resource && record.mesh.path === resource.growingMesh) continue;
+        if (!definition?.smart || !record.interactive || !record.mesh?.visible || resource && !record.resourceReady) continue;
         seen.add(id);
         let view = this.resourceHighlights.get(id);
         const location = entry.displayLocation || record.location, radius = trigger.worldRadius * definition.smartRadiusFactor + (view?.smartValid ? 1 : 0);

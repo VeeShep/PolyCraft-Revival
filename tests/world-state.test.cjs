@@ -74,6 +74,38 @@ test('campaign starters remain selectable without borrowing combat, building or 
   const snapshot = captureSnapshot(game);
   assert.equal(snapshot.spaces[0].entities.find(entity => entity.id === 'pickup').interactive, true);
 });
+test('resource readiness follows native growth and remaining resource independently of host menu selection', () => {
+  const f = fixture(), ast = require('./runtime-ast.cjs'), native = ast.component('ECResourceDispenser'), entity = f.entities[1], get = entity.getEC;
+  const selectable = { archetype: {}, permanentValid: true, valid: false, setValid: ast.component('ECSelectable').setValid,
+    getValid: () => assert.fail('Host-local validity must not control guest readiness'), isSelectable: () => assert.fail('Host smart selection must not control guest readiness') };
+  const mesh = { archetype: { path: 'same-rock.dae' }, setScale() {}, setScaleY() {}, loadMesh() {} };
+  const resource = Object.assign(Object.create(native), { archetype: { ...native.parameters, maxResource: 25, randMaxResource: 0 }, growFactor: 0.9, growDuration: 1, ignoringCollision: false, resource: 0, randomMaxFactor: 0,
+    getEntityEC: name => name === 'ECMesh' ? mesh : name === 'ECSelectable' ? selectable : null, setToUpdate() {}, beginAppearAnim() {} });
+  entity.getEC = name => name === 'ECResourceDispenser' ? resource : name === 'ECSelectable' ? selectable : get(name);
+  let tick = 17; f.game.gameClock.getFrameIndex = () => tick++;
+  const growing = captureSnapshot(f.game); assert.equal(growing.spaces[0].entities[1].resourceReady, false);
+  resource.updateGrowth(0.2); assert.equal(resource.getResource(), 25); assert.equal(selectable.valid, true);
+  selectable.valid = false;
+  const mature = captureSnapshot(f.game); assert.equal(mature.spaces[0].entities[1].resourceReady, true);
+  assert.deepEqual(applyDelta(growing, createDelta(growing, mature)), mature);
+  resource.resource = 5; assert.equal(captureSnapshot(f.game).spaces[0].entities[1].resourceReady, true);
+  resource.resource = 0; const empty = captureSnapshot(f.game); assert.equal(empty.spaces[0].entities[1].resourceReady, false);
+  assert.deepEqual(applyDelta(mature, createDelta(mature, empty)), empty);
+  assert.equal(empty.spaces[0].entities[0].resourceReady, false);
+  assert.equal(empty.spaces[0].entities[1].interactive, mature.spaces[0].entities[1].interactive, 'Resource readiness must not change general menu/picking eligibility.');
+});
+test('full and delta resource readiness require a boolean, including when the earlier packet lacks the field', () => {
+  const base = captureSnapshot(fixture().game);
+  for (const invalid of [undefined, null, 0, 1, 'ready', {}, []]) {
+    const bad = structuredClone(base); bad.spaces[0].entities[0].resourceReady = invalid;
+    assert.throws(() => validateSnapshot(bad), /Invalid world snapshot/);
+    const next = structuredClone(base); next.tick++;
+    const patch = createDelta(base, next); patch.spaces = [{ index: 0, remove: [], entities: [{ id: base.hero, resourceReady: invalid }] }];
+    assert.throws(() => validateDelta(patch), /Invalid world snapshot/);
+  }
+  const absent = structuredClone(base); delete absent.spaces[0].entities[0].resourceReady; assert.throws(() => validateSnapshot(absent));
+  const legacy = structuredClone(base); legacy.version = 17; assert.throws(() => validateSnapshot(legacy), /incompatible version/);
+});
 test('globally disabled workshop cannot steal a coincident guest click; host-local selection flags do not block guests', () => {
   const f = fixture(), get = f.entities[1].getEC, disabled = { permanentValid: false }, enabled = { permanentValid: true };
   const make = (name, selectable) => ({ ...f.entities[1], name, getEC: component => component === 'ECSelectable' ? selectable : component === 'ECDispenser' ? {} : get(component) });
@@ -274,7 +306,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 17); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 18); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');

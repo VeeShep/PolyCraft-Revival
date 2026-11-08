@@ -2,6 +2,7 @@
 const { _electron: electron } = require('playwright-core');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
+const clickGround = require('./coop-ground-click.cjs');
 
 module.exports = async function workerAcknowledgement({ host, fixture, directory, file, huts, errors, requests, closeHost, openHost, focusHost }) {
   const originals = new Map(), guests = [], applications = [];
@@ -89,20 +90,21 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       return path && path.getWaypointList().map(point => Array.from(point));
     }, { hero: party.players[1].id, worker: worker.id });
     assert.ok(route?.length, 'Native navigation must provide a route to the waiting worker.');
-    let waypoint = Math.min(1, route.length - 1), nearby = false;
+    console.log('Original worker approach route:', JSON.stringify({ worker: worker.id, route }));
+    let waypoint = Math.min(1, route.length - 1), nearby = false, commandedLocation = null;
     for (let step = 0; step < 300; step++) {
       const next = await guest.evaluate(({ id, destination }) => {
-        const w = window.guestWorld, actor = w.scene.entities.get(w.identity.entity), p = actor.record.location, target = w.scene.entities.get(id).record.location, matrix = w.controls.app.globals.camera.matrix;
-        const dx = destination[0] - p[0], dz = destination[2] - p[2], right = dx * matrix[0] + dz * matrix[2], forward = -dx * matrix[6] - dz * matrix[8], largest = Math.max(Math.abs(right), Math.abs(forward));
-        return { ready: Math.hypot(target[0] - p[0], target[2] - p[2]) < 6.3 && p[1] - .5 <= target[1], distance: Math.hypot(dx, dz), position: Array.from(p), available: w.movement.available(), keys: [...(Math.abs(right) > largest * .4 ? [right > 0 ? 'd' : 'a'] : []), ...(Math.abs(forward) > largest * .4 ? [forward > 0 ? 'w' : 's'] : [])] };
+        const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, target = w.scene.entities.get(id).record.location;
+        return { ready: Math.hypot(target[0] - p[0], target[2] - p[2]) < 6.3 && p[1] - .5 <= target[1], distance: Math.hypot(destination[0] - p[0], destination[2] - p[2]), position: Array.from(p), available: w.movement.available(), navigation: w.scene.snapshot.camera };
       }, { id: worker.id, destination: route[waypoint] });
       if (next.ready) { nearby = true; break; }
       assert.equal(next.available, true, 'Guest movement must retain native focus and ordinary input.');
-      if (next.distance < .65 && waypoint < route.length - 1) { waypoint++; continue; }
+      if (next.distance < .65 && waypoint < route.length - 1) { waypoint++; commandedLocation = null; continue; }
+      if (!commandedLocation || Math.hypot(next.position[0] - commandedLocation[0], next.position[2] - commandedLocation[2]) < .65) {
+        const click = await clickGround(guest, route[waypoint]); commandedLocation = click.location;
+      }
       if (step % 25 === 0) console.log('Guest native worker approach:', JSON.stringify({ step, waypoint, ...next }));
-      for (const key of next.keys) await guest.keyboard.down(key);
-      try { await guest.waitForTimeout(100); } finally { for (const key of next.keys) await guest.keyboard.up(key); }
-      await guest.waitForTimeout(100);
+      await guest.waitForTimeout(200);
     }
     assert.ok(nearby, 'The guest must reach original worker smart-selection range by ordinary movement.');
     const cueId = 'idECWildlingAgentWaitingForClick' + worker.id;
@@ -189,6 +191,11 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
         priorCarrier = carrier;
       }
       console.log('PASS: a normal completed deposit followed by ' + (process.argv.includes('--disconnect-in-flight') ? 'disconnect/reconnect' : 'Save Now') + ' during a later native deposit is accounted once and saved.');
+    }
+    if (process.argv.includes('--resource-highlights')) {
+      const context = { host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file };
+      await require('./coop-natural-resources.cjs')({ ...context, stone: true, gatherOnly: true, checkHighlights: true });
+      await require('./coop-natural-deposit.cjs')({ ...context, resource: 1 });
     }
     await acknowledge(huts[0], 'lumber');
     await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4); await acknowledge(huts[1], 'stone');

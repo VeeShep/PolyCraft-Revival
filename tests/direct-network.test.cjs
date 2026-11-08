@@ -182,7 +182,7 @@ test('real loopback room signaling selects native TLS and delivers game data onl
   const settings = { url: 'ws://127.0.0.1:' + s.server.address().port + '/signaling', room: 'native-route', password: 'loopback test', name: 'Guest' };
   await host.open('host', settings); await guest.open('guest', settings); await until(() => host.requests.size === 1);
   const entry = [...host.requests.values()][0]; await host.approve(entry.id, 'saved-hero'); await entry.running;
-  assert.equal(entry.route.admitted, true, hostSession.message); assert.equal(entry.route.stage, 'forward');
+  assert.equal(entry.route.admitted, true, JSON.stringify({ message: hostSession.message, host: host.diagnostics(), guest: guest.diagnostics() })); assert.equal(entry.route.stage, 'forward');
   await until(() => received.length === 1); assert.deepEqual(order, ['attached', 'admitted']); assert.equal(received[0].kind, 'welcome');
   guest.close(); await until(() => entry.signalingEnded); assert.equal(guestSession.connection.closed, false);
   await host.reject(entry.id); await until(() => guestSession.connection.closed);

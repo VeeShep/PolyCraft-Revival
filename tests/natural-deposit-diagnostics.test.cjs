@@ -68,3 +68,26 @@ test('resource approach and pickup restore real window focus before any further 
     assert.deepEqual(events, [], 'Failed focus restoration must not send keyboard input.');
   }
 });
+
+test('worker approach delegates ordinary route clicks, retains native range/focus guards and propagates input failures', async () => {
+  const ast = parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8'));
+  let body;
+  traverse(ast, { VariableDeclarator(p) { if (p.node.id.name === 'acknowledge') body = p.node.init.body.body; } });
+  const first = body.findIndex(node => node.type === 'VariableDeclaration' && node.declarations.some(declaration => declaration.id.name === 'waypoint'));
+  assert.ok(first >= 0);
+  const nodes = body.slice(first, first + 3);
+  assert.equal(nodes[1].type, 'ForStatement');
+  assert.equal(nodes[2].expression.callee.property.name, 'ok'); assert.equal(nodes[2].expression.arguments[0].name, 'nearby');
+  const code = '(async () => {' + nodes.map(node => generate(node).code).join(';') + '})()';
+  for (const failure of [null, 'focus', 'click']) {
+    let reads = 0; const events = [], route = [[0, 0, 0], [8, 0, 4]];
+    const clickError = new Error('Visible ground ray rejected');
+    const context = { assert, Math, JSON, route, worker: { id: 'worker' }, console: { log() {} },
+      guest: { async evaluate(callback, args) { assert.equal(typeof callback, 'function'); assert.equal(args.id, 'worker'); assert.equal(args.destination, route[1]); return { ready: reads++ > 0, available: failure !== 'focus', distance: 9, position: [0, 0, 0] }; }, async waitForTimeout(delay) { assert.equal(delay, 200); events.push('wait'); } },
+      async clickGround(page, location) { assert.equal(page, context.guest); assert.equal(location, route[1]); events.push('click'); if (failure === 'click') throw clickError; return { location }; } };
+    if (failure) {
+      await assert.rejects(vm.runInNewContext(code, context), error => failure === 'click' ? error === clickError : error.code === 'ERR_ASSERTION' && /native focus/.test(error.message));
+      assert.deepEqual(events, failure === 'click' ? ['click'] : []);
+    } else { await vm.runInNewContext(code, context); assert.deepEqual(events, ['click', 'wait']); assert.equal(reads, 2); }
+  }
+});

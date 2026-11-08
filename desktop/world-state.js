@@ -2,7 +2,7 @@
 (function (root) {
   const { emptyAudio, validateAudio, LIMITS: AUDIO_LIMITS } = typeof module !== 'undefined' ? require('./world-audio.js') : root.PolycraftWorldAudio;
   const { emptyEffects, validateEffects, LIMITS: EFFECT_LIMITS } = typeof module !== 'undefined' ? require('./world-effects.js') : root.PolycraftWorldEffects;
-  const VERSION = 17;
+  const VERSION = 18;
   const WORKER_CUES = Object.freeze({ lumber: 'welcomeLumber', stone: 'welcomeStone', building: 'welcomeBuilding', defences: 'welcomeDefences' });
   const MUSIC = new Set(['aud_music_theme', 'aud_music_day', 'aud_music_night', 'aud_music_battle', 'aud_music_battle_boss']);
   const BATTLE_NOTICES = Object.freeze({ idPlayStateBattleStarted: 'newsflashBattleStarted', idPlayStateBattleEnded: 'newsflashBattleEnded', idPlayStateBattleBegun: 'newsflashBattleCountdown' });
@@ -14,7 +14,7 @@
     });
   }
   const LIMITS = Object.freeze({ spaces: 128, blocks: 20000, entities: 10000 });
-  const entityFields = ['archetype', 'interactive', 'attackCursor', 'workerCue', 'location', 'scale', 'rotation', 'mesh', 'health'];
+  const entityFields = ['archetype', 'interactive', 'resourceReady', 'attackCursor', 'workerCue', 'location', 'scale', 'rotation', 'mesh', 'health'];
   const meshFields = ['path', 'transform', 'visible', 'skin'];
   const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
   const number = value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= 1e9;
@@ -53,6 +53,7 @@
     const has = key => !partial || Object.hasOwn(entity, key);
     if (has('archetype')) requireValue(entity.archetype === null || name(entity.archetype), 'invalid entity archetype.');
     if (has('interactive')) requireValue(typeof entity.interactive === 'boolean', 'invalid interaction flag.');
+    if (has('resourceReady')) requireValue(typeof entity.resourceReady === 'boolean', 'invalid resource readiness.');
     if (has('attackCursor')) requireValue(typeof entity.attackCursor === 'boolean', 'invalid target cursor.');
     if (has('workerCue')) requireValue(entity.workerCue === null || entity.workerCue === 'sleeping' || typeof entity.workerCue === 'string' && Object.hasOwn(WORKER_CUES, entity.workerCue), 'invalid worker cue.');
     for (const key of ['location', 'scale']) if (has(key)) requireValue(vector(entity[key], 3), 'invalid entity vector.');
@@ -120,13 +121,14 @@
         })),
         // Save files omit heroes and other transient entities; replication must include them.
         entities: space.getEntityList().filter(entity => !entity.shouldBeDestroyed()).map(entity => {
-          const mesh = entity.getEC('ECMesh'), health = entity.getEC('ECHealth'), selectable = entity.getEC('ECSelectable'), target = entity.getEC('ECTarget'), worker = entity.getEC('ECWildlingAgent');
+          const mesh = entity.getEC('ECMesh'), health = entity.getEC('ECHealth'), selectable = entity.getEC('ECSelectable'), target = entity.getEC('ECTarget'), worker = entity.getEC('ECWildlingAgent'), resource = entity.getEC('ECResourceDispenser');
           // Native getValid/isSelectable also include host-local UI and proximity, which must not gate guests.
           const skin = mesh?.node?.skinController;
           skin?.update();
           return {
             id: entity.name, archetype: entity.archetypeName || null,
-            interactive: selectable?.permanentValid !== false && !!(entity.getEC('ECResourceDispenser') || target || entity.getEC('ECBuilding') || entity.getEC('ECDispenser') || entity.getEC('ECHeroShrine') || entity.getEC('ECCampaignStarter') || worker && hero.isFriendlyWith(entity)),
+            interactive: selectable?.permanentValid !== false && !!(resource || target || entity.getEC('ECBuilding') || entity.getEC('ECDispenser') || entity.getEC('ECHeroShrine') || entity.getEC('ECCampaignStarter') || worker && hero.isFriendlyWith(entity)),
+            resourceReady: !!resource && resource.getResource() > 0,
             attackCursor: !!target && !hero.isFriendlyWith(entity),
             workerCue: worker?.isWaitingForClick() && worker.waitingForClickGUIArchetype && worker.canBeClicked() && Object.entries(WORKER_CUES).find(([, style]) => style === worker.waitingForClickGUIArchetype)?.[0] || (worker?.isSleeping() ? 'sleeping' : null),
             location: Array.from(entity.getv3Location()), scale: Array.from(entity.getV3Scale()), rotation: entity.getRotationY(),
