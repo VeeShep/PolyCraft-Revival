@@ -29,10 +29,10 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     application = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: directory }, timeout: 90000 });
     const page = await application.firstWindow();
     page.on('pageerror', error => errors.push(error.message)); page.on('request', request => requests.push(request.url()));
-    await application.evaluate(({ BrowserWindow }) => {
+    await application.evaluate(({ BrowserWindow }, coop) => {
       const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Worker restart test must be visible.');
-      window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — solo worker restart');
-    });
+      window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — ' + (coop ? 'co-op worker save test' : 'solo worker restart'));
+    }, process.argv.includes('--coop'));
     await focus();
     await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
     await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
@@ -67,6 +67,10 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     const time = await page.evaluate(() => window.polycraft.controls.app.globals.gameCurrentTime);
     await page.waitForFunction(time => window.polycraft.controls.app.globals.gameCurrentTime > time, time, { timeout: 5000 });
     console.log('Original pending worker reward collected through its native button; solo game time advances.');
+    if (process.argv.includes('--coop')) {
+      await require('./coop-worker-acknowledgement.cjs')({ host: page, fixture, directory, file, huts, errors, requests, closeHost: close, openHost: open, focusHost: focus });
+      return;
+    }
     for (const hut of huts) {
       const worker = await page.evaluate(id => {
         const game = window.polycraft.controls.manager(), entity = game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling(), agent = entity.getEC('ECWildlingAgent');
