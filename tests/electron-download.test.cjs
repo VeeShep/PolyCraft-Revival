@@ -1,49 +1,54 @@
 'use strict';
 const { test } = require('node:test'), assert = require('node:assert/strict');
-const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), vm = require('node:vm'), crypto = require('node:crypto');
-const config = require('../scripts/ci-builder-config.cjs'), project = require('../package.json'), checksums = require('electron/checksums.json');
-const get = require('@electron/get');
-function folder(t) { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-electron-download-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true })); return dir; }
-
-test('CI retains existing package options and refuses an installed Electron version different from the exact project pin', () => {
-  const { electronDownload, ...rest } = config; assert.deepEqual(rest, project.build);
-  assert.equal(electronDownload.checksums, checksums); assert.equal(electronDownload.force, false);
-  const source = fs.readFileSync(path.join(__dirname, '../scripts/ci-builder-config.cjs'), 'utf8');
-  const context = { module: { exports: {} }, require(name) { return name === 'electron/package.json' ? { version: '0.0.0' } : require(name === '../package.json' ? '../package.json' : name); } };
-  assert.throws(() => vm.runInNewContext(source, context), /Build with the locked Electron version/);
-});
-test('actual pinned builder forwards the official table for all six targets; checksum-only legacy options lose it', async t => {
-  const dir = folder(t), zip = path.join(dir, 'download.zip'); fs.writeFileSync(zip, 'controlled downloader fixture');
-  const seen = [];
-  const download = async options => {
-    if (!options.checksums) throw new Error('Remote checksum lookup is unavailable.');
-    assert.equal(options.checksums, checksums); assert.notEqual(options.unsafelyDisableChecksums, true); seen.push(options); return zip;
-  };
-  const file = require.resolve('app-builder-lib/out/util/electronGet.js'), localRequire = require('node:module').createRequire(file), loaded = { exports: {} };
-  vm.runInNewContext(fs.readFileSync(file, 'utf8'), { module: loaded, exports: loaded.exports, process, console, Buffer, setTimeout, clearTimeout, require: name => name === '@electron/get' ? { ...get, downloadArtifact: download } : localRequire(name) }, { filename: file });
-  const { downloadElectronArtifactZip } = loaded.exports;
-  const outerSource = fs.readFileSync(require.resolve('app-builder-lib/out/electron/ElectronFramework.js'), 'utf8');
-  const parsed = require('@babel/parser').parse(outerSource), adapter = parsed.program.body.find(node => node.type === 'FunctionDeclaration' && node.id.name === 'createDownloadOpts');
-  assert.ok(adapter, 'The pinned outer framework download adapter must be inspected.');
-  const adapt = vm.runInNewContext('(' + outerSource.slice(adapter.start, adapter.end) + ')');
-  const base = { version: project.devDependencies.electron, artifactName: 'electron', cacheDir: path.join(dir, 'cache') };
-  await assert.rejects(downloadElectronArtifactZip({ ...base, platformName: 'darwin', arch: 'arm64', electronDownload: { checksums } }), /Remote checksum lookup is unavailable/);
-  await assert.rejects(downloadElectronArtifactZip({ ...base, platformName: 'darwin', arch: 'arm64', electronDownload: adapt({ electronDownload: { mirrorOptions: {}, checksums } }, 'darwin', 'arm64', base.version) }), /Remote checksum lookup is unavailable/);
-  for (const platformName of ['darwin', 'win32', 'linux']) for (const arch of ['arm64', 'x64']) {
-    const file = `electron-v${base.version}-${platformName}-${arch}.zip`; assert.match(checksums[file], /^[a-f0-9]{64}$/);
-    assert.equal(await downloadElectronArtifactZip({ ...base, platformName, arch, electronDownload: adapt(config, platformName, arch, base.version) }), zip);
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), vm = require('node:vm');
+const project = require('../package.json');
+const filename = path.join(__dirname, '../scripts/ci-builder-config.cjs'), source = fs.readFileSync(filename, 'utf8');
+function load({ platform = 'darwin', arch = 'arm64', version = project.devDependencies.electron, runtimeVersion = version, fileSystem = fs, runtimeError } = {}) {
+  const root = path.join(os.tmpdir(), 'controlled-electron-module'), metadata = path.join(root, 'package.json');
+  const scopedRequire = name => name === '../package.json' ? project : name === 'electron/package.json' ? { version } : name === 'node:fs' ? { ...fileSystem, readFileSync(file, ...args) { if (file === path.join(root, 'dist', 'version')) { if (runtimeError) throw runtimeError; return runtimeVersion; } return fileSystem.readFileSync(file, ...args); } } : require(name);
+  scopedRequire.resolve = name => { assert.equal(name, 'electron/package.json'); return metadata; };
+  const module = { exports: {} };
+  vm.runInNewContext(source, { module, require: scopedRequire, __dirname: path.dirname(filename), process: { platform, arch } }, { filename });
+  return { config: module.exports, dist: path.join(root, 'dist') };
+}
+test('CI preserves existing package options and selects the installed matching runtime for all six native targets', () => {
+  for (const platform of ['darwin', 'linux', 'win32']) for (const arch of ['arm64', 'x64']) {
+    const { config, dist } = load({ platform, arch }), { electronDist, afterExtract, ...rest } = config;
+    assert.deepEqual(rest, project.build); assert.equal(typeof afterExtract, 'function');
+    assert.equal(electronDist({ platformName: platform, arch }), dist);
+    assert.equal(config.electronDownload, undefined, 'No second Electron archive download or checksum bypass is configured.');
   }
-  assert.equal(seen.length, 6);
 });
-test('real Electron downloader avoids remote checksum fetch with a supplied table and still rejects corrupted bytes', async t => {
-  const dir = folder(t), payload = Buffer.from('controlled Electron archive bytes'), calls = [];
-  const file = `electron-v${project.devDependencies.electron}-linux-x64.zip`;
-  const downloader = { async download(url, destination) { calls.push(url); if (url.endsWith('SHASUMS256.txt')) throw new Error('Remote checksums unavailable'); await fs.promises.writeFile(destination, payload); } };
-  const options = { version: project.devDependencies.electron, artifactName: 'electron', platform: 'linux', arch: 'x64', force: true, downloader, cacheRoot: path.join(dir, 'cache') };
-  await assert.rejects(get.downloadArtifact(options), /Remote checksums unavailable/);
-  calls.length = 0;
-  const supplied = { [file]: crypto.createHash('sha256').update(payload).digest('hex') };
-  const archive = await get.downloadArtifact({ ...options, checksums: supplied });
-  assert.deepEqual(fs.readFileSync(archive), payload); assert.equal(calls.length, 1); assert.ok(calls[0].endsWith(file));
-  await assert.rejects(get.downloadArtifact({ ...options, checksums: { [file]: '0'.repeat(64) } }), /checksum|sha256/i);
+test('CI refuses a mismatched package/runtime version, missing runtime or cross-platform/architecture target', () => {
+  assert.throws(() => load({ version: '0.0.0' }), /locked Electron version/);
+  const missing = Object.assign(new Error('missing runtime'), { code: 'ENOENT' });
+  assert.throws(() => load({ runtimeError: missing }).config.electronDist({ platformName: 'darwin', arch: 'arm64' }), error => error === missing);
+  const { config } = load();
+  assert.throws(() => config.electronDist({ platformName: 'win32', arch: 'arm64' }), /native platform/);
+  assert.throws(() => config.electronDist({ platformName: 'darwin', arch: 'x64' }), /native architecture/);
+  assert.throws(() => load({ runtimeVersion: '0.0.0' }).config.electronDist({ platformName: 'darwin', arch: 'arm64' }), /runtime must match/);
+  assert.equal(load({ runtimeVersion: 'v' + project.devDependencies.electron + '\n' }).config.electronDist({ platformName: 'darwin', arch: 'arm64' }).endsWith('dist'), true);
+});
+test('CI custom-runtime cleanup removes only default startup files, retains game/source files before packaging integrity metadata', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-runtime-cleanup-')); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const platform of ['darwin', 'linux', 'win32']) {
+    const output = path.join(root, platform), resources = platform === 'darwin' ? path.join(output, 'Electron.app/Contents/Resources') : path.join(output, 'resources'); fs.mkdirSync(resources, { recursive: true });
+    for (const name of ['default_app.asar', 'app.asar', 'hero.png']) fs.writeFileSync(path.join(resources, name), name);
+    fs.writeFileSync(path.join(output, 'version'), project.devDependencies.electron);
+    const context = { electronPlatformName: platform, appOutDir: output, packager: { info: { framework: { distMacOsAppName: 'Electron.app' } } } };
+    const { config } = load(); config.afterExtract(context);
+    assert.equal(config.afterPack, project.build.afterPack);
+    assert.equal(fs.existsSync(path.join(resources, 'default_app.asar')), false);
+    assert.equal(fs.existsSync(path.join(output, 'version')), false);
+    assert.equal(fs.readFileSync(path.join(resources, 'app.asar'), 'utf8'), 'app.asar'); assert.equal(fs.readFileSync(path.join(resources, 'hero.png'), 'utf8'), 'hero.png');
+    config.afterExtract(context);
+  }
+});
+test('CI cleanup refuses directories instead of recursively deleting unexpected content', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-runtime-failure-')); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const blocked = path.join(root, 'resources/default_app.asar'); fs.mkdirSync(blocked, { recursive: true });
+  fs.writeFileSync(path.join(root, 'version'), 'must remain after failed cleanup');
+  const context = { electronPlatformName: 'linux', appOutDir: root }, { config } = load();
+  assert.throws(() => config.afterExtract(context)); assert.equal(fs.statSync(blocked).isDirectory(), true);
+  assert.equal(fs.readFileSync(path.join(root, 'version'), 'utf8'), 'must remain after failed cleanup');
 });
