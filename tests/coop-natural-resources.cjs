@@ -31,6 +31,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     return { x: b.left + x, y: b.top + y, clear: x > 100 && x < b.width - 300 && y > 100 && y < b.height - 100, sequence: w.lastTargetResult?.sequence || 0 };
   }, target.id);
   try {
+    await guest.evaluate(require('./coop-input-trace.cjs'));
     await focus();
     let waypoint = Math.min(1, target.route.length - 1), ready = false;
     for (let step = 0; step < 300; step++) {
@@ -61,16 +62,18 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       try {
         await guest.waitForFunction(sequence => window.guestWorld.lastTargetResult?.sequence > sequence, point.sequence, { timeout: 5000 });
       } catch (error) {
-        console.log('Resource click failure:', JSON.stringify({ clicks, target: target.id, point, guest: await guest.evaluate(() => {
-          const w = window.guestWorld;
-          return { focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, resyncing: w.resyncing, closed: w.connection.closed,
-            tick: w.scene.tick, targetSequence: w.targetSequence, result: w.lastTargetResult, selectionRequest: w.selectionRequest, captured: w.game.getIMGui().hasCapturedInput(), guiInput: { down: w.guiInput.down, pendingDown: w.guiInput.pendingDown, position: w.guiInput.position },
-            description: w.quests.description?.taskId, questPending: w.quests.pending, questOpenRequest: w.quests.openRequest, menu: !!w.construction.menu, placement: !!w.construction.placement };
-        }), host: await host.evaluate(({ hero, target }) => {
-          const w = window.hostWorld, actor = w.players.active.get(hero).hero, entity = w.game.getGameEntityByName(target);
-          return { actor: Array.from(actor.getv3Location()), remaining: entity?.getEC('ECResourceDispenser').getResource(), scripts: w.game.runScripts, tick: w.game.gameClock.getFrameIndex() };
-        }, { hero, target: target.id }) }));
-        await guest.screenshot({ path: path.join(path.dirname(hostFile), '..', 'resource-click-failure.png') });
+        try {
+          console.log('Resource click failure:', JSON.stringify({ clicks, target: target.id, point, guest: await guest.evaluate(() => {
+            const w = window.guestWorld;
+            return { focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, resyncing: w.resyncing, closed: w.connection.closed,
+              tick: w.scene.tick, targetSequence: w.targetSequence, result: w.lastTargetResult, selectionRequest: w.selectionRequest, captured: w.game.getIMGui().hasCapturedInput(), guiInput: { down: w.guiInput.down, pendingDown: w.guiInput.pendingDown, position: w.guiInput.position },
+              description: w.quests.description?.taskId, questPending: w.quests.pending, questOpenRequest: w.quests.openRequest, menu: !!w.construction.menu, placement: !!w.construction.placement, inputTrace: w.resourceInputTrace?.events };
+          }), host: await host.evaluate(({ hero, target }) => {
+            const w = window.hostWorld, actor = w.players.active.get(hero).hero, entity = w.game.getGameEntityByName(target);
+            return { actor: Array.from(actor.getv3Location()), remaining: entity?.getEC('ECResourceDispenser').getResource(), scripts: w.game.runScripts, tick: w.game.gameClock.getFrameIndex() };
+          }, { hero, target: target.id }) }));
+          await guest.screenshot({ path: path.join(path.dirname(hostFile), '..', 'resource-click-failure.png') });
+        } catch (diagnosticError) { console.log('Resource click diagnostics unavailable:', diagnosticError.message); }
         throw error;
       }
       assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Resources gathered.');
@@ -129,5 +132,8 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     assert.deepEqual(coop.players.find(player => player.id === hero).inventory, result.inventory);
     assert.equal(JSON.parse(state.userData.desktopQuests).pending.some(row => row.task === task), !combined || stone);
     console.log('Native guest ' + task + ' depletion, carried resources, shared pending reward and clean history saved.');
-  } finally { await host.evaluate(() => window.restoreNaturalResourceObservers()).catch(() => {}); }
+  } finally {
+    await guest.evaluate(() => window.guestWorld?.resourceInputTrace?.restore()).catch(() => {});
+    await host.evaluate(() => window.restoreNaturalResourceObservers()).catch(() => {});
+  }
 };
