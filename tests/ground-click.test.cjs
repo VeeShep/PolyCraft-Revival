@@ -23,7 +23,7 @@ test('ground-click helper projects the assigned display height, respects canvas 
   const f = fixture(t), location = [30, .5, 40], before = JSON.stringify(location);
   const result = await clickGround(f.guest, location);
   assert.deepEqual(f.projected, [[30, 7, 40]]); assert.equal(JSON.stringify(location), before);
-  assert.deepEqual(f.events, [['move', 410, 270], ['wait', 150], ['click', 410, 270, { delay: 100 }], ['sent']]);
+  assert.deepEqual(f.events, [['wait', 150], ['move', 410, 270], ['click', 410, 270, { delay: 100 }], ['sent']]);
   assert.equal(result.sequenceBefore, 12); assert.equal(f.world.movement.sequence, 13);
 });
 test('ground-click helper rejects HUD, invalid projection, blocked input, entities and a mismatched ray before clicking', async t => {
@@ -55,5 +55,59 @@ test('ground-click helper preserves a failed input delivery instead of retrying 
   const f = fixture(t), failure = new Error('walking intent not observed');
   f.guest.waitForFunction = async () => { throw failure; };
   await assert.rejects(clickGround(f.guest, [30, .5, 40]), error => error === failure);
+  assert.equal(f.events.filter(event => event[0] === 'click').length, 1);
+});
+
+function nativeProjection(f, { width = 1200, height = 720, scale = 1, hero = [-100, .9, -90], eye = [16, 22, 18] } = {}) {
+  const native = require('./runtime-ast.cjs'), { GuestConstruction } = require('../desktop/guest-construction.js'), math = {};
+  for (const name of ['v3Sub', 'v3Normalize', 'v3Cross', 'm43Build', 'm44Build', 'm43InverseOrthonormal', 'm43MulM44', 'v4Build', 'm44Transform', 'v2Build', 'm44Inverse', 'm43Pos', 'v3Build', 'v3BuildYAxis', 'v3Copy', 'v3Dot', 'v3ScalarMul', 'getRayPlaneIntersection']) math[name] = native.method(name, { F: Float32Array, A: math });
+  math.vec2Build = math.v2Build;
+  const globals = f.world.controls.app.globals, type = { prototype: { scratchpad: {} } };
+  const camera = { md: math, globals, nearPlane: 1, farPlane: 1000, parallel: false, infinite: false,
+    viewOffsetX: 0, viewOffsetY: 0, recipViewWindowX: 1, recipViewWindowY: 1, aspectRatio: width / height };
+  Object.assign(camera, native.projectionCameraMethods(type));
+  globals.mathDevice = math; globals.camera = camera; globals.graphicsDevice = { width: width * scale, height: height * scale };
+  camera.lookAt([...hero], [0, 1, 0], hero.map((value, i) => value + eye[i])); camera.updateProjectionMatrix(); camera.updateViewMatrix(); camera.updateViewProjectionMatrix();
+  f.world.scene.entities.get('assigned').displayLocation = [...hero];
+  f.world.movement.canvas.getBoundingClientRect = () => ({ left: 23, top: 74, width, height });
+  f.world.guiInput = { position: [0, 0] }; f.world.construction = new GuestConstruction(f.world);
+  const move = f.guest.mouse.move;
+  f.guest.mouse.move = async (x, y) => {
+    await move(x, y); f.world.pointerEvent = { clientX: x, clientY: y };
+    f.world.guiInput.position = [(x - 23) * scale, (y - 74) * scale];
+  };
+  return { camera, hero };
+}
+for (const row of [
+  { width: 1200, height: 720, scale: 1, eye: [16, 22, 18] },
+  { width: 1024, height: 640, scale: 2, eye: [-18, 20, 16] },
+  { width: 1440, height: 900, scale: 3, hero: [-96.9, .8955, -96.8732], eye: [14, 18, -20] }
+]) test(`ground clicks round-trip through native perspective camera/math and guest unprojection at ${row.width}x${row.height}, scale ${row.scale}`, async t => {
+  const f = fixture(t), { hero } = nativeProjection(f, row), target = [hero[0] + 2, -50, hero[2] - 3];
+  const before = JSON.stringify(f.world.scene.entities.get('assigned'));
+  const result = await clickGround(f.guest, target), cursor = f.world.construction.cursor();
+  assert.equal(result.point.fraction, 1);
+  assert.ok(Math.hypot(cursor[0] - target[0], cursor[2] - target[2]) < .001);
+  assert.ok(Math.abs(cursor[1] - hero[1]) < .0001);
+  assert.equal(f.events.filter(event => event[0] === 'click').length, 1);
+  assert.equal(JSON.stringify(f.world.scene.entities.get('assigned')), before);
+});
+test('actual native perspective projection rejects all behind-camera legs without sending a click', async t => {
+  const f = fixture(t), { camera } = nativeProjection(f);
+  camera.lookAt([0, 0, 0], [0, 1, 0], [0, 10, 10]); camera.updateViewMatrix(); camera.updateViewProjectionMatrix();
+  f.world.scene.entities.get('assigned').displayLocation = [-100, 1, 100];
+  await assert.rejects(clickGround(f.guest, [-95, 1, 105]), /walking waypoint must be visible/);
+  assert.ok(!f.events.some(event => event[0] === 'click'));
+  assert.equal(f.world.movement.sequence, 12);
+});
+test('ground click projects after camera settling so a moving view cannot invalidate the intended ray before input', async t => {
+  const f = fixture(t), { camera, hero } = nativeProjection(f), wait = f.guest.waitForTimeout;
+  f.guest.waitForTimeout = async ms => {
+    await wait(ms); camera.matrix[9] += .4; camera.updateViewMatrix(); camera.updateViewProjectionMatrix();
+  };
+  const target = [hero[0] + 2, hero[1], hero[2] - 3];
+  await clickGround(f.guest, target);
+  const cursor = f.world.construction.cursor();
+  assert.ok(Math.hypot(cursor[0] - target[0], cursor[2] - target[2]) < .001);
   assert.equal(f.events.filter(event => event[0] === 'click').length, 1);
 });

@@ -2,6 +2,8 @@
 const assert = require('node:assert/strict');
 
 module.exports = async function clickGround(guest, location) {
+  // Aim after the existing camera/UI settling delay.
+  await guest.waitForTimeout(150);
   const projection = await guest.evaluate(location => {
     const w = window.guestWorld, g = w.controls.app.globals, hero = w.scene.entities.get(w.identity.entity);
     const position = hero.displayLocation || hero.record.location;
@@ -19,13 +21,14 @@ module.exports = async function clickGround(guest, location) {
   const point = projection.point;
   assert.ok(point, 'The walking waypoint must be visible and clear of the original HUD: ' + JSON.stringify(projection));
   await guest.mouse.move(point.x, point.y);
-  await guest.waitForTimeout(150);
   const before = await guest.evaluate(location => {
     const w = window.guestWorld, cursor = w.construction.cursor(), gui = w.game.getIMGui();
-    return { sequence: w.movement.sequence, ready: w.movement.available() && !gui.hasCapturedInput() && !['guest-shop', 'guest-pause', 'guest-fullscreen', 'guest-skip-prepare'].some(id => gui.isHot(id)) &&
-      !window.PolycraftCoopActions.pickTarget(w, w.pointerEvent) && cursor && Math.hypot(cursor[0] - location[0], cursor[2] - location[2]) < 0.1 };
+    const available = w.movement.available(), captured = gui.hasCapturedInput(), hot = ['guest-shop', 'guest-pause', 'guest-fullscreen', 'guest-skip-prepare'].filter(id => gui.isHot(id));
+    const target = window.PolycraftCoopActions.pickTarget(w, w.pointerEvent), distance = cursor && Math.hypot(cursor[0] - location[0], cursor[2] - location[2]);
+    return { sequence: w.movement.sequence, available, captured, hot, target, cursor, distance, tick: w.scene.tick,
+      ready: available && !captured && !hot.length && !target && cursor && distance < 0.1 };
   }, point.location);
-  assert.ok(before.ready, 'The walking click must hit empty ground at the waypoint with normal input available.');
+  assert.ok(before.ready, 'The walking click must hit empty ground at the waypoint with normal input available: ' + JSON.stringify({ projection, before }));
   await guest.mouse.click(point.x, point.y, { delay: 100 });
   await guest.waitForFunction(sequence => window.guestWorld.movement.sequence > sequence && window.guestWorld.movement.walkRequested, before.sequence, { timeout: 5000 });
   return { point, location: point.location, sequenceBefore: before.sequence };

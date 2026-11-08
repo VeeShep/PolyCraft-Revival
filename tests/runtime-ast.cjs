@@ -194,6 +194,14 @@ function selectableDrawing() {
     [drawingDependency(draw, 'bigCircleButton')]: { bigCircleButton: 'textures/bigcirclebutton.dds' }
   });
 }
+function projectionCameraMethods(camera) {
+  const screen = one(assignments.filter(a => a.left.property?.name === 'worldToScreen' && a.left.object.property?.name === 'prototype' && a.right.type === 'FunctionExpression'), 'native projection camera');
+  const owner = screen.left.object.object.name;
+  return Object.fromEntries(['lookAt', 'updateProjectionMatrix', 'updateViewMatrix', 'updateViewProjectionMatrix', 'worldToScreen', 'normalisedToScreen'].map(name => {
+    const method = one(assignments.filter(a => a.left.property?.name === name && a.left.object.property?.name === 'prototype' && a.left.object.object?.name === owner && a.right.type === 'FunctionExpression'), 'native projection camera ' + name);
+    return [name, evaluate(method.right, { [owner]: camera })];
+  }));
+}
 function cameraMethods(zoomer) {
   const prototype = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'buildSphereCentreAndExtents')), 'camera prototype').right;
   const start = prototype.properties.find(p => key(p) === 'startZoomer').value;
@@ -206,4 +214,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, selectableDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, selectableDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, projectionCameraMethods, taskGroupMethods };
