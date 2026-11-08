@@ -161,7 +161,7 @@
   function BlockFactory() {}
   function EffectFactory() {}
   function K() {}
-  function lc(a, b) {
+  function WorldCube(a, b) {
     var c = this.globals.mathDevice;
     this.stationary = void 0 !== b.stationary ? b.stationary : !0;
     this.bounce = void 0 !== b.bounce ? b.bounce : 0.5;
@@ -40895,7 +40895,7 @@
       var q = m.v3Copy(c);
       b.v3PhysicsScale || !l ? (i = b.v3PhysicsScale || m.v3BuildOne(), i = m.v3Mul(d, i), f && m.m43TransformVector(j, i, i)) : (k = l.calculateHierarchyWorldExtents(), j = m.v3BuildZero(), i = m.v3BuildZero(), m.aabbGetCenterAndHalf(k, j, i), m.v3ScalarMul(i, 2, i), i[0] = 0.5 * Math.round(2 * i[0]), i[1] = 0.5 * Math.round(2 * i[1]), i[2] = 0.5 * Math.round(2 * i[2]), q = m.v3Copy(c), q[1] += 0.5 * i[1]);
       b.v3PhysicsOffset && m.v3Add(q, m.v3Mul(b.v3PhysicsOffset, d), q);
-      i = lc.create(q, g, g.gameManager, {
+      i = WorldCube.create(q, g, g.gameManager, {
         isBuildZone: b.isBuildZone ? !0 : !1,
         terrainType: b.terrainType,
         stationary: !0,
@@ -52937,7 +52937,7 @@
           terrainType: f.terrainType,
           v3Scale: d.v3Copy(e)
         };
-      this.worldCube = lc.create(h, a, c, d);
+      this.worldCube = WorldCube.create(h, a, c, d);
       this.worldCube.entity = this.entity;
       this.randomSeed = Math.random();
       b && this.shouldScaleMesh() && b.setm33TransformMatrix(this.worldCube.buildTransformMatrix(this.randomSeed, this.entity.getGameSpace().getM43FullTransform()));
@@ -61107,7 +61107,7 @@
     j.initialise(b);
     return j;
   };
-  lc.prototype = {
+  WorldCube.prototype = {
     globals: void 0,
     fakeSphere: void 0,
     gameManager: void 0,
@@ -61256,10 +61256,10 @@
       this.extents = this.v3Scale = null;
     }
   };
-  lc.create = function (a, b, c, d) {
-    void 0 === lc.prototype.globals && (lc.prototype.globals = b);
-    void 0 === lc.prototype.gameManager && (lc.prototype.gameManager = c);
-    return new lc(a, d);
+  WorldCube.create = function (a, b, c, d) {
+    void 0 === WorldCube.prototype.globals && (WorldCube.prototype.globals = b);
+    void 0 === WorldCube.prototype.gameManager && (WorldCube.prototype.gameManager = c);
+    return new WorldCube(a, d);
   };
   var k = {
     normal: [0, 162 / 255, 167 / 255, 1],

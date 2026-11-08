@@ -6,7 +6,15 @@ The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`
 
 `scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
 
-## Current native lighting/audio/effects role names — Beta 91
+## Current native world collision-box role name — Beta 94
+
+The private `lc` constructor and its **nine bound references** are now `WorldCube`. This is a verified descriptive role name, not a recovered original spelling. `ECPhysicsCube.activate()` assigns the result of its bound `.create()` factory to `this.worldCube`; the original class owns `collisionCheck`, `collisionResolve`, `stepifyFakeSphere`, `updateExtents` and `getExtents`. The same binding also creates block collisions. None of those method implementations, public fields, archetype/save/asset keys, projection/physics values or execution order change.
+
+`scripts/name-world-cube.cjs` reuses the shared scoped rename/inverse helper. Selection requires one component definition, one own activation method and direct `this.worldCube` assignment, one private constructor/prototype/factory, the five original methods and one construction resolving to the same binding. Wrong owners, nested assignments, ambiguous roles, missing methods, wrong/shadowed construction, reassignment, capture, dynamic scope and unsupported shorthand are refused. The CLI checks immutable Beta 1 bytes, preserves all prior naming records and refuses repeat application.
+
+The canonical inverse proof passes. An independent token audit reverses exactly **ten identifier edits** to **every byte** of the previous engine, including comments and formatting. Input SHA-256: `501ad882b2ec43a239ead4c910a53691134436dbaf3f808307c39319c6edbf01`; output: `fd43180b09e3f399e1e2719eeb9b68704387b523f14bd60ee9192b8d40eb064b`. Eight focused naming/factory checks pass. Actual native-method checks pass before and after naming for sphere overlap, collision ignoring and low/high step behavior. These isolated cases do not establish graphical, complete-simulation or native-platform acceptance. Full-suite/build evidence is recorded in RESTORATION_STATUS.md. Many aliases and local names remain unresolved; no engine rewrite or upstream replacement was introduced.
+
+## Historical native lighting/audio/effects role names — Beta 91
 
 Three more private constructors have descriptive names verified from fields on the actual newly created GameManager:
 

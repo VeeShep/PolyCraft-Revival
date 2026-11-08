@@ -974,6 +974,24 @@
       "outputSHA256": "501ad882b2ec43a239ead4c910a53691134436dbaf3f808307c39319c6edbf01",
       "inputCanonicalSHA256": "cc1b0299ecd3f22fdd53c7017864ac3e37099167526cfd0de4ea02364088c8da",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "world-cube-role-name",
+      "names": [
+        {
+          "original": "lc",
+          "name": "WorldCube",
+          "role": "worldCube",
+          "descriptive": true,
+          "evidence": "ECPhysicsCube.activate assigns this.worldCube from this bound factory; original collision, step and extents methods and native construction verified",
+          "offset": 5150,
+          "references": 9
+        }
+      ],
+      "inputSHA256": "501ad882b2ec43a239ead4c910a53691134436dbaf3f808307c39319c6edbf01",
+      "outputSHA256": "fd43180b09e3f399e1e2719eeb9b68704387b523f14bd60ee9192b8d40eb064b",
+      "inputCanonicalSHA256": "3812805bff64152b403eca96080e6ec8c1a018c4d5016ee53cacf0e6673391d7",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }
