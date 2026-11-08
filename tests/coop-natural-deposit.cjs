@@ -2,9 +2,11 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-module.exports = async function naturalDeposit({ host, guest, guests, focusGuest, focus, hero, hostFile }) {
+module.exports = async function naturalDeposit({ host, guest, guests, focusGuest, focus, hero, hostFile, resource = 0 }) {
+  assert.ok(resource === 0 || resource === 1);
+  const label = resource === 0 ? 'wood' : 'stone';
   await host.waitForFunction(hero => !window.hostWorld.players.active.get(hero).hero.getEC('ECResourceCarrier').hasAnyInboundResource(), hero);
-  const destination = await host.evaluate(hero => {
+  const destination = await host.evaluate(({ hero, resource }) => {
     const w = window.hostWorld, game = w.game, actor = w.players.active.get(hero).hero;
     const hq = game.getBuildingManager().getBuildingsAtMinLevel('HQ', 1, false).find(entity => !entity.getEC('ECScaffold'));
     const path = game.getNavManager().getEntityToEntityPath(actor, hq, actor.getEC('ECFaction').getFactionName(), actor.getEC('ECNav').getMaxNavigableHeight(), true);
@@ -13,20 +15,20 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
     const carrier = actor.getEC('ECResourceCarrier'), adjust = carrier.adjustResource;
     carrier.adjustResource = function (type, amount) {
       const before = this.getResource(type), result = adjust.call(this, type, amount), delta = this.getResource(type) - before;
-      if (type === 0 && delta > 0) window.naturalDepositPickups.push(delta);
+      if (type === resource && delta > 0) window.naturalDepositPickups.push(delta);
       return result;
     };
-    const observe = event => { if (event.type === 0) window.naturalDepositEvents.push({ actor: event.entity.getName(), amount: event.amount }); };
+    const observe = event => { if (event.type === resource) window.naturalDepositEvents.push({ actor: event.entity.getName(), amount: event.amount }); };
     game.eventManager.subscribe('ResourceDeposited', observe);
     window.restoreNaturalDepositObserver = () => { game.eventManager.unsubscribe('ResourceDeposited', observe); carrier.adjustResource = adjust; };
-    return { actor: actor.getName(), carried: actor.getEC('ECResourceCarrier').getResource(0), wood: actor.getEC('ECPlayerData').getResource(0), route: path.getWaypointList().map(point => Array.from(point)) };
-  }, hero);
+    return { actor: actor.getName(), carried: actor.getEC('ECResourceCarrier').getResource(resource), bank: actor.getEC('ECPlayerData').getResource(resource), route: path.getWaypointList().map(point => Array.from(point)) };
+  }, { hero, resource });
   assert.ok(destination.carried >= 10);
-  console.log('Natural return toward HQ with gathered wood:', destination);
+  console.log('Natural return toward HQ with gathered ' + label + ':', destination);
   try {
     await focus(); let waypoint = Math.min(1, destination.route.length - 1), emptied = false;
     for (let step = 0; step < 350; step++) {
-      emptied = await host.evaluate(hero => window.hostWorld.players.active.get(hero).hero.getEC('ECResourceCarrier').getResource(0) === 0, hero);
+      emptied = await host.evaluate(({ hero, resource }) => window.hostWorld.players.active.get(hero).hero.getEC('ECResourceCarrier').getResource(resource) === 0, { hero, resource });
       if (emptied) break;
       const next = await guest.evaluate(location => {
         const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, m = w.controls.app.globals.camera.matrix;
@@ -40,22 +42,22 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
     }
     assert.equal(emptied, true, 'Original proximity depositing must empty the guest carrier.');
     await host.waitForFunction(hero => { const actor = window.hostWorld.players.active.get(hero).hero; return !actor.getEC('ECResourceCarrier').hasAnyFlyingResource() && window.naturalDepositEvents.some(event => event.actor === actor.getName()); }, hero, { timeout: 10000 });
-    const result = await host.evaluate(async hero => {
+    const result = await host.evaluate(async ({ hero, resource }) => {
       const w = window.hostWorld, actor = w.players.active.get(hero).hero;
       await window.polycraft.checkpoint(true);
-      return { events: window.naturalDepositEvents, pickups: window.naturalDepositPickups, wood: actor.getEC('ECPlayerData').getResource(0), carried: w.players.captureHero(actor).inventory.carried, scripts: w.game.runScripts };
-    }, hero);
+      return { events: window.naturalDepositEvents, pickups: window.naturalDepositPickups, bank: actor.getEC('ECPlayerData').getResource(resource), carried: w.players.captureHero(actor).inventory.carried, scripts: w.game.runScripts };
+    }, { hero, resource });
     console.log('Original shared-bank deposit:', JSON.stringify(result));
-    assert.equal(result.scripts, true); assert.equal(result.carried[0], 0);
+    assert.equal(result.scripts, true); assert.equal(result.carried[resource], 0);
     assert.equal(result.events.filter(event => event.actor === destination.actor).reduce((sum, event) => sum + event.amount, 0), destination.carried + result.pickups.reduce((sum, amount) => sum + amount, 0));
-    assert.equal(result.wood, destination.wood + result.events.reduce((sum, event) => sum + event.amount, 0));
+    assert.equal(result.bank, destination.bank + result.events.reduce((sum, event) => sum + event.amount, 0));
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state, coop = JSON.parse(state.userData.desktopCoop);
-    assert.equal(coop.economy.resource[0], result.wood); assert.equal(coop.players.find(player => player.id === hero).inventory.carried[0], 0); assert.equal(state.cheats.everEnabled, false);
+    assert.equal(coop.economy.resource[resource], result.bank); assert.equal(coop.players.find(player => player.id === hero).inventory.carried[resource], 0); assert.equal(state.cheats.everEnabled, false);
     for (let index = 0; index < guests.length; index++) {
       await focusGuest(index);
-      await guests[index].waitForFunction(wood => window.guestWorld.hud.state?.resources[0] === wood, result.wood);
+      await guests[index].waitForFunction(({ resource, bank }) => window.guestWorld.hud.state?.resources[resource] === bank, { resource, bank: result.bank });
     }
     await focus();
-    console.log('Native carried wood deposited once, saved in the shared pool and shown by all three guest HUDs.');
+    console.log('Native carried ' + label + ' deposited once, saved in the shared pool and shown by all three guest HUDs.');
   } finally { await host.evaluate(() => window.restoreNaturalDepositObserver()).catch(() => {}); }
 };

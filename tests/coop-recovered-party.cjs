@@ -113,7 +113,15 @@ module.exports = async function recoveredParty({ host, application, expected, fi
       };
       const stone = expected.lumbermills.length > 0;
       await require('./coop-natural-resources.cjs')({ host, guest, focus, button, hero: expected.coop.players[1].id, hostFile: file, stone });
-      gear = require('./coop-natural-gear.cjs')({ host, headquarters: true, pendingTask: stone ? 'mineAStone' : 'chopATree', focus: async () => {
+      if (process.argv.includes('--stonemill')) {
+        assert.equal(stone, true);
+        const controls = { host, guest, guests: guests.map(entry => entry.page), focusGuest: index => focusGuest(applications[index], guests[index].page), focus, button, hero: expected.coop.players[1].id, hostFile: file };
+        await require('./coop-natural-deposit.cjs')({ ...controls, resource: 1 });
+        await button('guest-idAcceptTaskRewardButtontaskIdcrit_8');
+        await guest.waitForFunction(() => window.guestWorld.quests.state?.tasks.some(task => task.task === 'buildStonemill'));
+        await require('./coop-natural-building.cjs')({ ...controls, stonemill: true });
+      }
+      gear = require('./coop-natural-gear.cjs')({ host, headquarters: true, pendingTask: process.argv.includes('--stonemill') ? 'buildStonemill' : stone ? 'mineAStone' : 'chopATree', focus: async () => {
         await application.evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
         await host.bringToFront(); await host.locator('#turbulenz_game_engine_canvas').focus();
       } });

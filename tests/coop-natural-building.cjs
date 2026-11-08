@@ -2,8 +2,9 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, lumbermill = false }) {
-  const definition = lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
+module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, lumbermill = false, stonemill = false }) {
+  assert.ok(!(lumbermill && stonemill));
+  const definition = stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
     { family: 'hqworkshop', type: 'HQ', archetype: 'a_b_hq', task: 'buildHq', costs: [0, 0, 0] };
   await host.waitForFunction(family => window.hostWorld.game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(family)).some(entity => entity.getEC('ECSelectable')?.permanentValid === true), definition.family, { timeout: 10000 });
   const source = await host.evaluate(({ hero, definition }) => {
@@ -51,16 +52,16 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
   await guest.waitForFunction(id => window.guestWorld.construction.menu?.source === id, source.id, { timeout: 10000 });
   await button('guest-build-' + source.id + '-' + product.index);
   await guest.waitForFunction(() => window.guestWorld.construction.placement);
-  const locations = await host.evaluate(({ hero, source, index, lumbermill }) => {
+  const locations = await host.evaluate(({ hero, source, index, paid }) => {
     const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero, entity = game.getGameEntityByName(source);
-    const suggestion = game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(lumbermill ? 'hq' : 'suggestHq'))[0];
+    const suggestion = game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(paid ? 'hq' : 'suggestHq'))[0];
     const center = suggestion ? suggestion.getv3Location() : entity.getv3Location(), locations = [];
     for (let x = -10; x <= 10; x += 2) for (let z = -10; z <= 10; z += 2) {
       const location = [center[0] + x, actor.getv3Location()[1], center[2] + z];
       if (world.construction.preview(actor, entity, index, location).preview?.valid) locations.push(location);
     }
     return locations;
-  }, { hero, source: source.id, index: product.index, lumbermill });
+  }, { hero, source: source.id, index: product.index, paid: lumbermill || stonemill });
   const placement = await guest.evaluate(locations => {
     const world = window.guestWorld, globals = world.controls.app.globals, b = world.movement.canvas.getBoundingClientRect();
     return locations.map(location => {
@@ -103,10 +104,10 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
   const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state;
   assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(state.userData.taskFlags)[definition.task], true);
   assert.ok(JSON.parse(state.userData.desktopQuests).pending.some(task => task.task === definition.task));
-  if (lumbermill) {
+  if (lumbermill || stonemill) {
     for (let index = 0; index < guests.length; index++) {
       await focusGuest(index);
-      await guests[index].waitForFunction(wood => window.guestWorld.hud.state?.resources[0] === wood, result.amounts.wood);
+      await guests[index].waitForFunction(amounts => window.guestWorld.hud.state?.resources[0] === amounts.wood && window.guestWorld.hud.state?.resources[1] === amounts.stone, result.amounts);
     }
     await focus();
   }

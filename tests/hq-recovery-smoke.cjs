@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
+  assert.ok(!process.argv.includes('--stonemill') || ['--lumbermill', '--rehost', '--resources'].every(flag => process.argv.includes(flag)), 'Stonemill progression requires the recovered Lumbermill party and stone gathering.');
   assert.ok(!process.argv.includes('--resources') || process.argv.includes('--rehost'), 'Natural resource progression requires the recovered party.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_HQ_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(path.dirname(fixture)).startsWith('polycraft-coop-identities-') && path.basename(fixture) === 'host', 'Only a disposable co-op identities host fixture is accepted.');

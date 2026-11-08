@@ -9,7 +9,8 @@ module.exports = function naturalGear({ host, focus, headquarters = false, pendi
       ...(headquarters ? { world: {
         hq: game.getBuildingManager().getBuildingsAtMinLevel('HQ', 1, false).filter(entity => !entity.getEC('ECScaffold')).map(entity => ({ name: entity.getName(), archetype: entity.getArchetypeName(), location: Array.from(entity.getv3Location()) })),
         lumbermills: game.getBuildingManager().getBuildingsAtMinLevel('Lumbermill', 1, false).filter(entity => !entity.getEC('ECScaffold')).map(entity => ({ name: entity.getName(), archetype: entity.getArchetypeName(), location: Array.from(entity.getv3Location()) })),
-        flags: { goToVillage: game.getPlayerData().getTaskFlags().goToVillage, buildHq: game.getPlayerData().getTaskFlags().buildHq, buildLumbermill: game.getPlayerData().getTaskFlags().buildLumbermill === true },
+        stonemills: game.getBuildingManager().getBuildingsAtMinLevel('Stonemill', 1, false).filter(entity => !entity.getEC('ECScaffold')).map(entity => ({ name: entity.getName(), archetype: entity.getArchetypeName(), location: Array.from(entity.getv3Location()) })),
+        flags: { goToVillage: game.getPlayerData().getTaskFlags().goToVillage, buildHq: game.getPlayerData().getTaskFlags().buildHq, buildLumbermill: game.getPlayerData().getTaskFlags().buildLumbermill === true, buildStonemill: game.getPlayerData().getTaskFlags().buildStonemill === true },
         taskFlags: { ...game.getPlayerData().getTaskFlags() },
         pending: JSON.parse(window.polycraft.bridge.state.userData.desktopQuests).pending,
         coop: JSON.parse(window.polycraft.bridge.state.userData.desktopCoop), everEnabled: window.polycraft.bridge.state.cheats.everEnabled
@@ -49,10 +50,11 @@ module.exports = function naturalGear({ host, focus, headquarters = false, pendi
       assert.equal(returned.held, returned.primary);
       if (headquarters) {
         assert.equal(returned.world.hq.length, 1); assert.equal(returned.world.hq[0].archetype, 'a_b_hq');
-        assert.deepEqual(returned.world.flags, { goToVillage: true, buildHq: true, buildLumbermill: ['buildLumbermill', 'mineAStone'].includes(pendingTask) });
+        assert.deepEqual(returned.world.flags, { goToVillage: true, buildHq: true, buildLumbermill: ['buildLumbermill', 'mineAStone', 'buildStonemill'].includes(pendingTask), buildStonemill: pendingTask === 'buildStonemill' });
         assert.ok(returned.world.pending.some(task => task.task === pendingTask));
-        if (['buildLumbermill', 'mineAStone'].includes(pendingTask)) assert.equal(returned.world.lumbermills.length, 1);
-        if (pendingTask === 'mineAStone') assert.equal(returned.world.taskFlags.mineAStone, true);
+        if (['buildLumbermill', 'mineAStone', 'buildStonemill'].includes(pendingTask)) assert.equal(returned.world.lumbermills.length, 1);
+        if (pendingTask === 'buildStonemill') assert.equal(returned.world.stonemills.length, 1);
+        if (['mineAStone', 'buildStonemill'].includes(pendingTask)) assert.equal(returned.world.taskFlags.mineAStone, true);
         assert.equal(returned.world.coop.players.length, 4); assert.equal(returned.world.everEnabled, false);
         assert.deepEqual(reloaded.world, returned.world, 'The completed HQ, pending reward, shared flags and saved party must survive native solo reload.');
         console.log('Completed HQ, pending shared reward, four saved party records and clean history survive native solo exit/reload.');
