@@ -366,9 +366,9 @@ const assert = require('node:assert/strict');
       if (naturalHq) await require('./coop-natural-building.cjs')(controls);
       if (naturalResources) await require('./coop-natural-resources.cjs')(controls);
       if (naturalLumbermill) {
-        await require('./coop-natural-deposit.cjs')(controls);
         await controls.button('guest-idAcceptTaskRewardButtontaskIdcrit_6');
         await controls.guest.waitForFunction(() => window.guestWorld.quests.state?.tasks.some(task => task.task === 'buildLumbermill'));
+        await require('./coop-natural-deposit.cjs')(controls);
         await require('./coop-natural-building.cjs')({ ...controls, lumbermill: true });
       }
     }

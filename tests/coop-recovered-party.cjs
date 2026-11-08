@@ -116,17 +116,17 @@ module.exports = async function recoveredParty({ host, application, expected, fi
       if (process.argv.includes('--stonemill')) {
         assert.equal(stone, true);
         const controls = { host, guest, guests: guests.map(entry => entry.page), focusGuest: index => focusGuest(applications[index], guests[index].page), focus, button, hero: expected.coop.players[1].id, hostFile: file };
-        await require('./coop-natural-deposit.cjs')({ ...controls, resource: 1 });
         await button('guest-idAcceptTaskRewardButtontaskIdcrit_8');
         await guest.waitForFunction(() => window.guestWorld.quests.state?.tasks.some(task => task.task === 'buildStonemill'));
+        await require('./coop-natural-deposit.cjs')({ ...controls, resource: 1 });
         await require('./coop-natural-building.cjs')({ ...controls, stonemill: true });
         if (process.argv.includes('--workers')) {
           await button('guest-idAcceptTaskRewardButtontaskIdcrit_9');
           for (const resource of [0, 1]) {
             await require('./coop-natural-resources.cjs')({ ...controls, stone: resource === 1, combined: true });
+            if (resource === 1) await button('guest-idAcceptTaskRewardButtontaskIdcrit_10');
             await require('./coop-natural-deposit.cjs')({ ...controls, resource });
           }
-          await button('guest-idAcceptTaskRewardButtontaskIdcrit_10');
           await guest.waitForFunction(() => window.guestWorld.quests.state?.tasks.some(task => task.task === 'buildLumberlingHut'));
           await require('./coop-natural-building.cjs')({ ...controls, worker: 'lumber' });
           await button('guest-idAcceptTaskRewardButtontaskIdcrit_11');
