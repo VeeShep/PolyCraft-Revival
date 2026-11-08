@@ -1,10 +1,14 @@
 # Runtime readability checkpoint
 
-The complete running `game.canvas.js` is formatted. No engine replacement, gameplay rewrite or execution-order change was introduced.
+The complete running `game.canvas.js` is formatted. Readability passes preserve behavior and execution order; later functional fixes are documented separately below. No engine replacement or gameplay rewrite was introduced.
 
 The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`. The baseline was extracted from the verified shipped Apple Silicon app and matched the working source byte for byte before transformation. The original Beta 1 save reader is preserved alongside it to test that old apps reject migrated saves. These files are read-only references, excluded by the packaging whitelist.
 
 `scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
+
+## Current resource-flight cleanup fix — Beta 97
+
+A native behavior fix, separate from name recovery: resource transfer callbacks now remove their own tween object, because the original scheduler binds callback `this` to animation state. This prevents old completed deliveries being replayed by a later co-op capture or native carrier cleanup. Three localized edits reverse to every Beta96 engine byte. Input SHA256 `997b64ef6f05132a20a72921a38fccc346f976c089288c7514c2423297c6abe4`; output `9e7b9f491214038bbd3941013a1959f436073c98131adee6a3ce106d5a67d983`. Native-method regressions reproduce excess10wood and7stone payments before the fix. Global tween semantics, resource amounts and earlier naming records remain unchanged. Full-game transfer interruption acceptance remains separate in STATUS.
 
 ## Current adapter exposure — Beta 96
 

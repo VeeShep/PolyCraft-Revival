@@ -68,6 +68,16 @@ function drawingDependency(node, property) {
   traverse(ast, { MemberExpression(p) { if (p.node.start >= node.start && p.node.end <= node.end && p.node.property.name === property) { let base = p.node.object; while (base.type === 'MemberExpression') base = base.object; names.add(base.name); } } });
   return one([...names], 'public renderer dependency ' + property);
 }
+function resourceCarrierMethods(tweens) {
+  const carrier = one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === 'ECResourceCarrier')), 'resource carrier');
+  const flight = carrier.properties.find(p => key(p) === 'flyToResourceDepot').value;
+  return evaluate(carrier, {
+    [drawingDependency(flight, 'Easing')]: tweens,
+    [drawingDependency(flight, 'NUM_RESOURCES')]: objectWith('NUM_RESOURCES'),
+    [drawingDependency(flight, 'useSimulatedResourceGathering')]: { useSimulatedResourceGathering: false },
+    [drawingDependency(flight, 'depositStartSound')]: [{}, {}]
+  });
+}
 function healthDrawing() {
   const health = one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === 'ECHealth')), 'health component');
   const drawHealth = health.properties.find(p => key(p) === 'drawHealthBar').value;
@@ -214,4 +224,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, selectableDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, projectionCameraMethods, taskGroupMethods };
+module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, selectableDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, projectionCameraMethods, taskGroupMethods, resourceCarrierMethods };

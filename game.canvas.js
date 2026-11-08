@@ -57006,7 +57006,7 @@
                 t = 0.1 * Math.random() - 0.2,
                 A = 0.1 * Math.random() - 0.2;
               j.numFlyingResourceBlocks += 1;
-              j.flyingTweens.push(L.Create({
+              var resourceTween = L.Create({
                 lerp: 0
               }).to({
                 lerp: 1
@@ -57027,9 +57027,10 @@
                 a.setToBeDestroyed();
                 b.playSound(Za[d].depositEndSound);
                 j.numFlyingResourceBlocks -= 1;
-                var e = j.flyingTweens.indexOf(this);
+                var e = j.flyingTweens.indexOf(resourceTween);
                 0 <= e && j.flyingTweens.splice(e, 1);
-              }).delay(i).start());
+              }).delay(i).start();
+              j.flyingTweens.push(resourceTween);
             },
             h = 0,
             i,
