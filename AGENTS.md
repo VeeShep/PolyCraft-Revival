@@ -14,6 +14,8 @@ This authorization applies during active project work; it does not create an una
 
 Announce each game test before launching it. Game tests must use visible, clearly labelled temporary-island windows and disposable `POLYCRAFT_TEST_DATA`, never personal islands. Do not hide game tests in the background.
 
+Keep `TESTING.md` current when adding or changing checks; record dated results, failed attempts, evidence and unperformed acceptance in `RESTORATION_STATUS.md`.
+
 Read the current sections of `RESTORATION_STATUS.md` before continuing restoration work. Preserve `dist/beta-1` and its checksums unchanged; future releases use new versions and folders. Keep multiplayer and native-platform acceptance gates open until actually verified.
 
 ## Subagent budget

@@ -38,6 +38,26 @@ function link(t, role = 'host', options = {}) {
   t.after(() => connection.close());
   return connection;
 }
+test('closed-channel SCTP user abort is a remote disconnect; all other native errors remain failures', t => {
+  mock(t);
+  for (const [readyState, error, normal] of [
+    ['closed', { errorDetail: 'sctp-failure', sctpCauseCode: 12 }, true],
+    ['open', { errorDetail: 'sctp-failure', sctpCauseCode: 12 }, false],
+    ['closing', { errorDetail: 'sctp-failure', sctpCauseCode: 12 }, false],
+    ['closed', { errorDetail: 'sctp-failure', sctpCauseCode: 13 }, false],
+    ['closed', { errorDetail: 'dtls-failure', sctpCauseCode: 12 }, false],
+    ['closed', { errorDetail: 'sctp-failure', sctpCauseCode: '12' }, false],
+    ['closed', undefined, false]
+  ]) {
+    const errors = [], states = [], connection = link(t, 'host', { onError: error => errors.push(error.message), onState: (state, details) => states.push({ state, ...details }) });
+    connection.channel.readyState = readyState;
+    connection.channel.onerror({ error });
+    assert.equal(connection.closed, true);
+    assert.deepEqual(errors, normal ? [] : ['The game connection encountered an error.']);
+    assert.deepEqual(states, [{ state: 'closed', reason: normal ? 'The other player disconnected.' : 'The game connection encountered an error.' }]);
+    connection.channel.onerror({ error }); assert.equal(states.length, 1, 'Late error events cannot repeat removal or diagnostics.');
+  }
+});
 test('transient ICE loss retains the data channel and frame counters within grace, then closes a sustained outage', async t => {
   mock(t); t.mock.timers.enable({ apis: ['setTimeout'] });
   const states = [], connection = link(t, 'host', { onState: state => states.push(state) }), channel = connection.channel;

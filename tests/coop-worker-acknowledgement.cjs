@@ -17,6 +17,40 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     const entity = window.hostWorld.game.getGameEntityByName(hut).getEC('ECWildlingHouse').getWildling(), agent = entity.getEC('ECWildlingAgent');
     return { id: entity.getName(), waiting: agent.isWaitingForClick(), sleeping: agent.isSleeping(), location: Array.from(entity.getv3Location()) };
   }, hut);
+  const connect = async index => {
+    const { page } = guests[index];
+    const offer = await host.evaluate(id => window.hostWorld.createPlayerInvitation(id), party.players[index + 1].id);
+    const reply = await page.evaluate(async invitation => {
+      const joined = await window.PolycraftMultiplayer.PeerLink.join(invitation); window.connection = joined.connection;
+      window.guestWorld = new window.PolycraftGuestWorld.GuestWorld(window.polycraft.controls, joined.connection);
+      return joined.reply;
+    }, offer.invitation);
+    await host.evaluate(reply => window.hostSession.acceptReply(reply), reply);
+    await page.waitForFunction(() => window.guestWorld.scene.snapshot || window.connection.closed, null, { timeout: 45000 });
+    assert.equal(await page.evaluate(() => window.connection.closed), false);
+    await focus(index);
+    try {
+      await page.waitForFunction(() => window.guestWorld.hud.state && window.guestWorld.movement.available(), null, { timeout: 10000 });
+    } catch (error) {
+      console.log('Worker guest readiness diagnostics:', JSON.stringify(await page.evaluate(async () => {
+        const w = window.guestWorld;
+        return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, activeElement: document.activeElement?.id,
+          paused: w.controls.paused, localMenu: w.localMenu(), resyncing: w.resyncing, connection: { state: w.connection.state, closed: w.connection.closed }, tick: w.scene.tick,
+          life: w.lifeState, hud: w.hud.state, lifeRequest: w.lifeRequest, queryAge: performance.now() - w.lastLifeQuery, targetSequence: w.targetSequence, identity: w.identity };
+      })));
+      console.log('Worker host readiness diagnostics:', JSON.stringify(await host.evaluate(() => {
+        const w = window.hostWorld;
+        return { tick: w.game.gameClock.getFrameIndex(), paused: w.controls.paused, state: w.game.activeGameState.name, slots: [...w.peerPlayers.values()].map(b => ({ id: b.id, ready: b.ready, releasing: b.releasing, actionSequence: b.actions.sequence, queue: b.actions.queue.length })), errors: window.workerConnectionErrors };
+      })));
+      console.log('Worker test page errors:', JSON.stringify(errors));
+      throw error;
+    }
+    assert.equal(await page.evaluate(() => window.guestWorld.identity.playerId), party.players[index + 1].id);
+    await page.evaluate(() => {
+      const world = window.guestWorld, close = world.close;
+      world.close = function () { close.call(this); window.restoredWorkerSoloState = JSON.stringify(window.polycraft.bridge.state); this.close = close; };
+    });
+  };
   const join = async index => {
     const source = path.join(fixture, 'rejoin-' + index, 'saves');
     for (const name of fs.readdirSync(source)) originals.set(path.join(source, name), fs.readFileSync(path.join(source, name)));
@@ -41,37 +75,8 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     await page.evaluate(() => window.polycraft.checkpoint(true));
     const ownFile = path.join(profile, 'saves', fs.readdirSync(path.join(profile, 'saves')).find(name => name.endsWith('.json'))), ownBytes = fs.readFileSync(ownFile);
     const ownState = await page.evaluate(() => JSON.stringify(window.polycraft.bridge.state));
-    const offer = await host.evaluate(id => window.hostWorld.createPlayerInvitation(id), party.players[index + 1].id);
-    const reply = await page.evaluate(async invitation => {
-      const joined = await window.PolycraftMultiplayer.PeerLink.join(invitation); window.connection = joined.connection;
-      window.guestWorld = new window.PolycraftGuestWorld.GuestWorld(window.polycraft.controls, joined.connection);
-      return joined.reply;
-    }, offer.invitation);
-    await host.evaluate(reply => window.hostSession.acceptReply(reply), reply);
-    await page.waitForFunction(() => window.guestWorld.scene.snapshot || window.connection.closed, null, { timeout: 45000 });
-    assert.equal(await page.evaluate(() => window.connection.closed), false);
-    guests.push({ page, app, ownFile, ownBytes, ownState }); await focus(index);
-    try {
-      await page.waitForFunction(() => window.guestWorld.hud.state && window.guestWorld.movement.available(), null, { timeout: 10000 });
-    } catch (error) {
-      console.log('Worker guest readiness diagnostics:', JSON.stringify(await page.evaluate(async () => {
-        const w = window.guestWorld;
-        return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, activeElement: document.activeElement?.id,
-          paused: w.controls.paused, localMenu: w.localMenu(), resyncing: w.resyncing, connection: { state: w.connection.state, closed: w.connection.closed }, tick: w.scene.tick,
-          life: w.lifeState, hud: w.hud.state, lifeRequest: w.lifeRequest, queryAge: performance.now() - w.lastLifeQuery, targetSequence: w.targetSequence, identity: w.identity };
-      })));
-      console.log('Worker host readiness diagnostics:', JSON.stringify(await host.evaluate(() => {
-        const w = window.hostWorld;
-        return { tick: w.game.gameClock.getFrameIndex(), paused: w.controls.paused, state: w.game.activeGameState.name, slots: [...w.peerPlayers.values()].map(b => ({ id: b.id, ready: b.ready, releasing: b.releasing, actionSequence: b.actions.sequence, queue: b.actions.queue.length })), errors: window.workerConnectionErrors };
-      })));
-      console.log('Worker test page errors:', JSON.stringify(errors));
-      throw error;
-    }
-    assert.equal(await page.evaluate(() => window.guestWorld.identity.playerId), party.players[index + 1].id);
-    await page.evaluate(() => {
-      const world = window.guestWorld, close = world.close;
-      world.close = function () { close.call(this); window.restoredWorkerSoloState = JSON.stringify(window.polycraft.bridge.state); this.close = close; };
-    });
+    guests.push({ page, app, ownFile, ownBytes, ownState });
+    await connect(index);
   };
   const acknowledge = async (hut, cue) => {
     const worker = await workerState(hut), guest = guests[0].page;
@@ -148,7 +153,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await window.hostWorld.enablePlayers(window.polycraft.bridge);
     });
     await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
-    if (process.argv.includes('--save-in-flight')) {
+    if (process.argv.includes('--save-in-flight') || process.argv.includes('--disconnect-in-flight')) {
       const guest = guests[0].page;
       const button = async id => {
         await focus(0);
@@ -166,6 +171,13 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
         if (reward) { await button('guest-idAcceptTaskRewardButton' + reward); await guest.waitForFunction(id => window.guestWorld.quests.state?.completed?.id !== id, reward); }
       };
       const context = { host, guest, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), button, hero: party.players[1].id, hostFile: file };
+      const reconnect = async () => {
+        const row = guests[0];
+        assert.equal(await guest.evaluate(() => window.restoredWorkerSoloState), row.ownState, 'Disconnect must restore the guest solo state before reconnect.');
+        await guest.evaluate(() => window.polycraft.checkpoint(true));
+        row.ownState = await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)); row.ownBytes = fs.readFileSync(row.ownFile);
+        await connect(0);
+      };
       let priorCarrier;
       for (let cycle = 0; cycle < 2; cycle++) {
         await collectReward();
@@ -173,10 +185,10 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
         await collectReward();
         const carrier = await host.evaluate(id => window.hostWorld.players.active.get(id).hero.getName(), party.players[1].id);
         if (cycle === 1) assert.equal(carrier, priorCarrier, 'The later save must use the carrier that made the previous delivery.');
-        await require('./coop-natural-deposit.cjs')({ ...context, saveDuringFlight: cycle === 1 });
+        await require('./coop-natural-deposit.cjs')({ ...context, saveDuringFlight: cycle === 1 && process.argv.includes('--save-in-flight'), disconnectDuringFlight: cycle === 1 && process.argv.includes('--disconnect-in-flight') ? reconnect : undefined });
         priorCarrier = carrier;
       }
-      console.log('PASS: a normal completed deposit followed by Save Now during a later native deposit is accounted once and saved.');
+      console.log('PASS: a normal completed deposit followed by ' + (process.argv.includes('--disconnect-in-flight') ? 'disconnect/reconnect' : 'Save Now') + ' during a later native deposit is accounted once and saved.');
     }
     await acknowledge(huts[0], 'lumber');
     await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4); await acknowledge(huts[1], 'stone');

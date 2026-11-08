@@ -128,7 +128,11 @@
       channel.bufferedAmountLowThreshold = 128 * 1024;
       channel.onopen = () => this.connected();
       channel.onclose = () => this.close('The other player disconnected.');
-      channel.onerror = () => this.fail(new Error('The game connection encountered an error.'));
+      channel.onerror = event => {
+        // Chromium can report a remote close as SCTP User-Initiated Abort.
+        if (channel.readyState === 'closed' && event?.error?.errorDetail === 'sctp-failure' && event.error.sctpCauseCode === 12) this.close('The other player disconnected.');
+        else this.fail(new Error('The game connection encountered an error.'));
+      };
       channel.onmessage = event => {
         try { this.receive(event.data); }
         catch (error) { this.fail(error); }
