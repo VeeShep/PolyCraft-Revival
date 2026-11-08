@@ -42,12 +42,26 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       const next = await guest.evaluate(location => {
         const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, m = w.controls.app.globals.camera.matrix;
         const dx = location[0] - p[0], dz = location[2] - p[2], right = dx * m[0] + dz * m[2], forward = -dx * m[6] - dz * m[8], largest = Math.max(Math.abs(right), Math.abs(forward));
-        return { distance: Math.hypot(dx, dz), keys: [...(Math.abs(right) > largest * 0.4 ? [right > 0 ? 'd' : 'a'] : []), ...(Math.abs(forward) > largest * 0.4 ? [forward > 0 ? 'w' : 's'] : [])] };
+        return { position: [...p], focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), tick: w.scene.tick, distance: Math.hypot(dx, dz), keys: [...(Math.abs(right) > largest * 0.4 ? [right > 0 ? 'd' : 'a'] : []), ...(Math.abs(forward) > largest * 0.4 ? [forward > 0 ? 'w' : 's'] : [])] };
       }, target.route[waypoint]);
+      if (step % 25 === 0) console.log('Native resource approach:', JSON.stringify({ step, waypoint, ...next, point: await targetPoint() }));
+      if (!next.focused || !next.nativeFocused) { await focus(); continue; }
       if (next.distance < 0.65 && waypoint < target.route.length - 1) { waypoint++; continue; }
       for (const key of next.keys) await guest.keyboard.down(key);
       try { await guest.waitForTimeout(100); } finally { for (const key of next.keys) await guest.keyboard.up(key); }
       await guest.waitForTimeout(100);
+    }
+    if (!ready) {
+      try {
+        console.log('Native resource approach failure:', JSON.stringify({ target, point: await targetPoint(), guest: await guest.evaluate(() => {
+          const w = window.guestWorld;
+          return { tick: w.scene.tick, hero: w.scene.entities.get(w.identity.entity).record.location, focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, resyncing: w.resyncing, closed: w.connection.closed, navigation: w.scene.snapshot.camera, inputTrace: w.resourceInputTrace?.events };
+        }), host: await host.evaluate(({ hero, id }) => {
+          const w = window.hostWorld, actor = w.players.active.get(hero).hero, tree = w.game.getGameEntityByName(id);
+          return { tick: w.game.gameClock.getFrameIndex(), hero: Array.from(actor.getv3Location()), target: Array.from(tree.getv3Location()), distance: tree.getDistanceUsingSize(actor.getv3Location()), resource: tree.getEC('ECResourceDispenser').getResource() };
+        }, { hero, id: target.id }) }));
+        await guest.screenshot({ path: path.join(path.dirname(hostFile), '..', 'resource-approach-failure.png'), timeout: 5000 });
+      } catch (error) { console.log('Resource approach diagnostics unavailable:', String(error?.message ?? error)); }
     }
     assert.ok(ready, 'The guest must bring the resource into view, approaching only when required by its original interaction rule.');
     await guest.waitForTimeout(1000);
@@ -96,6 +110,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
         return { key: Math.abs(right) > Math.abs(forward) ? right > 0 ? 'd' : 'a' : forward > 0 ? 'w' : 's', available: w.movement.available(), focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, paused: w.controls.paused, tick: w.scene.tick };
       }, pickup.location);
       pickupTrace.push({ step, ...pickup, ...view });
+      if (!view.focused || !view.nativeFocused) { await focus(); continue; }
       await guest.keyboard.down(view.key);
       try { await guest.waitForTimeout(100); } finally { await guest.keyboard.up(view.key); }
       await guest.waitForTimeout(100);
