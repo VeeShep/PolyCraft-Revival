@@ -11,7 +11,7 @@ function fixture(t, mode = 'normal') {
     getGameEntityByName: id => workers.find(worker => worker.getName() === id),
     getGuiManager: () => ({ prevDrawGuiMap: game.activeGameState.name === 'GamestatePaused' ? { 'Paused Resume': { scale: 1 } } : {} }) };
   const guestWorld = { pauseMenu: false, movement: { available: () => !guestWorld.pauseMenu } };
-  const guestGame = { getGuiManager: () => ({ prevDrawGuiMap: guestWorld.pauseMenu ? { 'guest-resume': { scale: 1 } } : {} }) };
+  const guestGame = { getGuiManager: () => ({ prevDrawGuiMap: guestWorld.pauseMenu ? { 'guest-resume': { scale: 1 }, ...(mode === 'visible-hud' ? { idRanking: { scale: 1 } } : {}) } : {} }) };
   const windows = { host: { hostWorld: { game }, polycraft: { controls: { manager: () => game } } }, guest: { guestWorld, polycraft: { controls: { manager: () => guestGame } } } };
   const page = role => {
     let presses = 0;
@@ -35,4 +35,10 @@ for (const [mode, message] of [['frozen-clock', /simulation clock running/], ['f
 test('native pause test preserves the original render failure even if its cleanup key also fails', async t => {
   const f = fixture(t, 'wait-error'); await assert.rejects(nativePause(f.args), error => error === f.failure);
   assert.equal(f.events.filter(event => event === 'guest:key').length, 2);
+});
+
+test('native pause test rejects gameplay HUD sprites visible over the pause screen', async t => {
+  const f = fixture(t, 'visible-hud');
+  await assert.rejects(nativePause(f.args), /pause menu must hide gameplay HUD sprites/);
+  assert.equal(f.guestWorld.pauseMenu, false); assert.ok(f.events.includes('guest:screenshot'));
 });

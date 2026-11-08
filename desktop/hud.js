@@ -70,7 +70,7 @@
       this.receivedAt = performance.now();
     }
     draw() {
-      if (!this.state || this.world.resyncing) return;
+      if (!this.state || this.world.resyncing || this.world.pauseMenu) return;
       const scores = this.world.game.getGuiScores(), hero = { getEC: () => this.data }, flags = this.state.flags, crafting = this.world.craft?.menu;
       if (flags.resources || crafting) { scores.drawResourceBar(hero, 0); scores.drawResourceBar(hero, 1); }
       if (flags.amber || crafting) scores.drawSoftCurrency(hero);

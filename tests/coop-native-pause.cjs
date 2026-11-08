@@ -35,6 +35,9 @@ module.exports = async function nativePause({ host, guest, focus, focusHost, hos
       }
       assert.equal(await page.evaluate(role => role === 'guest' ? window.guestWorld.pauseMenu : window.polycraft.controls.manager().activeGameState.name === 'GamestatePaused', role), true);
       await page.screenshot({ path: path.join(path.dirname(hostFile), '..', 'native-' + role + '-pause.png'), timeout: 5000 });
+      const visibleHud = await page.evaluate(() => Object.entries(window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap)
+        .filter(([id, entry]) => (id.startsWith('idResourcebar') || ['idResourceAmber', 'idRanking', 'idRankingUpgrade', 'idHQHealth'].includes(id)) && entry.scale > .01).map(([id]) => id));
+      assert.deepEqual(visibleHud, [], role + ' pause menu must hide gameplay HUD sprites.');
       console.log('Native visible pause leaves simulation and worker AI running:', JSON.stringify({ role, before, after }));
     } finally {
       const open = await page.evaluate(role => role === 'guest' ? window.guestWorld?.pauseMenu : window.polycraft.controls.manager().activeGameState.name === 'GamestatePaused', role).catch(() => false);

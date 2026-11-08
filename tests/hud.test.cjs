@@ -141,3 +141,20 @@ test('HUD preparation views accept only bounded phase identifiers and only the e
   const value = { ...profile(), preparation: { episode: 7 } }; f.receive(value); value.preparation.episode = 99; assert.equal(f.hud.state.preparation.episode, 7);
   f.receive(); assert.equal(f.hud.state.preparation, null);
 });
+
+test('guest pause hides original gameplay HUD without losing incoming host values and restores it on Resume', () => {
+  const f = guest(); f.receive(); f.world.pauseMenu = true;
+  for (const crafting of [false, true]) {
+    f.world.craft = { menu: crafting ? {} : null };
+    f.hud.draw(); assert.deepEqual(f.drawn, [], 'No resource, currency, rank or island HUD may draw behind pause.');
+  }
+  const next = profile(); next.resources = [123, 67]; next.amber = 42; next.xp = 600;
+  f.receive(next); assert.deepEqual(f.hud.state.resources, [123, 67]);
+  f.hud.draw(); assert.deepEqual(f.drawn, []);
+  f.world.pauseMenu = false; f.world.craft.menu = null; f.globals.appCurrentTime += 5; f.hud.draw();
+  assert.equal(f.drawn.find(draw => draw.name === 'lumber').value.text1, '123');
+  assert.equal(f.drawn.find(draw => draw.name === 'stone').value.text1, '67');
+  assert.equal(f.drawn.find(draw => draw.name === 'resourceAmberTotal').value.text, '42');
+  assert.equal(f.drawn.find(draw => draw.id === 'idRanking').value.text1, '1');
+  assert.deepEqual(next.resources, [123, 67]); assert.equal(f.world.controls.paused, undefined);
+});
