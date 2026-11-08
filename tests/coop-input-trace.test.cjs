@@ -52,3 +52,25 @@ test('resource input trace can be serialized into a renderer realm without Node 
   assert.doesNotThrow(() => JSON.stringify(f.world.resourceInputTrace.events));
   f.world.resourceInputTrace.restore(); assert.equal(f.world.resourceInputTrace, undefined);
 });
+test('resource input trace passively captures canvas cursor setting and bounded highlight flags without retaining live views', () => {
+  const f = fixture();
+  f.world.scene = { tick: 100 };
+  f.world.movement.canvas = { style: { cursor: 'url(original-interact.png), auto' } };
+  f.world.resourceHighlights = new Map(Array.from({ length: 12 }, (_, index) => ['tree-' + index, { smartValid: true, hot: index === 0 }]));
+  trace(f.world); assert.equal(f.world.pointer('pointerdown', f.event), f.token);
+  const first = f.world.resourceInputTrace.events[0];
+  assert.equal(first.before.tick, 100); assert.equal(first.before.cursor, 'url(original-interact.png), auto');
+  assert.equal(first.before.highlightCount, 12); assert.equal(first.before.highlights.length, 8);
+  assert.deepEqual(first.before.highlights[0], { id: 'tree-0', near: true, hot: true });
+  assert.equal(first.before.highlights.at(-1).id, 'tree-7');
+  f.world.scene.tick++; f.world.movement.canvas.style.cursor = 'url(original-move.png), auto';
+  f.world.resourceHighlights.get('tree-0').hot = false;
+  f.world.pointer('pointerup', f.event);
+  assert.equal(f.calls.length, 2); assert.equal(first.after.tick, 100);
+  assert.equal(first.after.cursor, 'url(original-interact.png), auto'); assert.equal(first.after.highlights[0].hot, true);
+  const second = f.world.resourceInputTrace.events[1];
+  assert.equal(second.before.tick, 101); assert.equal(second.before.highlights[0].hot, false);
+  assert.equal(second.before.cursor, 'url(original-move.png), auto');
+  assert.doesNotThrow(() => JSON.stringify(f.world.resourceInputTrace.events));
+  f.world.resourceInputTrace.restore();
+});

@@ -6,7 +6,14 @@ module.exports = function traceResourceInput(world = globalThis.guestWorld) {
   const capture = () => {
     try {
       const gui = world.game.getIMGui();
+      const highlights = [];
+      for (const [id, view] of world.resourceHighlights ?? []) {
+        highlights.push({ id, near: view.smartValid, hot: view.hot });
+        if (highlights.length === 8) break;
+      }
       return { time: performance.now(), focused: globalThis.document?.hasFocus() ?? null,
+        tick: world.scene?.tick ?? null, cursor: world.movement.canvas?.style?.cursor ?? null,
+        highlightCount: world.resourceHighlights?.size ?? 0, highlights,
         available: world.movement.available(), nativeFocused: world.movement.nativeFocused, paused: world.controls.paused,
         resyncing: world.resyncing, closed: world.connection.closed, captured: gui.hasCapturedInput(),
         hot: ['guest-shop', 'guest-pause', 'guest-fullscreen', 'guest-skip-prepare'].filter(id => gui.isHot(id)),
