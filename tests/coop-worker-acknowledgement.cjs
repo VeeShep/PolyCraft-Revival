@@ -147,7 +147,38 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
       await window.hostWorld.enablePlayers(window.polycraft.bridge);
     });
-    await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2); await acknowledge(huts[0], 'lumber');
+    await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
+    if (process.argv.includes('--save-in-flight')) {
+      const guest = guests[0].page;
+      const button = async id => {
+        await focus(0);
+        await guest.waitForFunction(id => window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap[id]?.scale > .95, id);
+        const point = await guest.evaluate(id => {
+          const c = window.polycraft.controls, args = c.manager().getGuiManager().prevDrawGuiMap[id].argumentObject, p = args.v2ScreenLocation || [args.x, args.y];
+          const b = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect(), d = c.app.globals.graphicsDevice;
+          return { x: b.left + p[0] * b.width / d.width, y: b.top + p[1] * b.height / d.height };
+        }, id);
+        await guest.mouse.move(point.x, point.y); await guest.waitForFunction(id => window.polycraft.controls.manager().getIMGui().isHot(id), id);
+        await guest.mouse.click(point.x, point.y, { delay: 100 });
+      };
+      const collectReward = async () => {
+        const reward = await guest.evaluate(() => window.guestWorld.quests.state?.completed?.id);
+        if (reward) { await button('guest-idAcceptTaskRewardButton' + reward); await guest.waitForFunction(id => window.guestWorld.quests.state?.completed?.id !== id, reward); }
+      };
+      const context = { host, guest, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), button, hero: party.players[1].id, hostFile: file };
+      let priorCarrier;
+      for (let cycle = 0; cycle < 2; cycle++) {
+        await collectReward();
+        await require('./coop-natural-resources.cjs')({ ...context, gatherOnly: true });
+        await collectReward();
+        const carrier = await host.evaluate(id => window.hostWorld.players.active.get(id).hero.getName(), party.players[1].id);
+        if (cycle === 1) assert.equal(carrier, priorCarrier, 'The later save must use the carrier that made the previous delivery.');
+        await require('./coop-natural-deposit.cjs')({ ...context, saveDuringFlight: cycle === 1 });
+        priorCarrier = carrier;
+      }
+      console.log('PASS: a normal completed deposit followed by Save Now during a later native deposit is accounted once and saved.');
+    }
+    await acknowledge(huts[0], 'lumber');
     await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4); await acknowledge(huts[1], 'stone');
     await host.waitForFunction(ids => ids.every(id => !window.hostWorld.game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECResourceCarrier').hasAnyFlyingResource()), huts, { timeout: 15000 });
     await require('./coop-native-pause.cjs')({ host, guest: guests[0].page, focus: () => focus(0), focusHost, hostFile: file });

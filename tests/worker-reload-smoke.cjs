@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
+  assert.ok(!process.argv.includes('--save-in-flight') || process.argv.includes('--coop'), 'Mid-flight save testing requires the visible co-op case.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(fixture).startsWith('polycraft-hq-recovery-'), 'Use only an existing disposable recovery-test checkpoint.');
   const source = path.join(fixture, 'saves'), names = fs.readdirSync(source), originals = new Map(names.map(name => [name, fs.readFileSync(path.join(source, name))]));

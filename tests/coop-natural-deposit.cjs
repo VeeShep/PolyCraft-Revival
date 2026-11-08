@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
 const clickGround = require('./coop-ground-click.cjs');
 
-module.exports = async function naturalDeposit({ host, guest, guests, focusGuest, focus, hero, hostFile, resource = 0 }) {
+module.exports = async function naturalDeposit({ host, guest, guests, focusGuest, focus, hero, hostFile, resource = 0, saveDuringFlight = false }) {
   assert.ok(resource === 0 || resource === 1);
   const label = resource === 0 ? 'wood' : 'stone';
   await host.waitForFunction(hero => !window.hostWorld.players.active.get(hero).hero.getEC('ECResourceCarrier').hasAnyInboundResource(), hero);
@@ -26,6 +26,7 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
   }, { hero, resource });
   assert.ok(destination.carried >= 10);
   console.log('Natural return toward HQ with gathered ' + label + ':', destination);
+  const flightSave = saveDuringFlight ? require('./coop-save-in-flight.cjs')({ host, hero }).then(value => ({ value }), error => ({ error })) : null;
   try {
     const trace = [];
     await focus(); let waypoint = Math.min(1, destination.route.length - 1), commandedLocation = null, emptied = false, walkingError;
@@ -59,6 +60,7 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
     }
     if (walkingError) throw walkingError;
     assert.equal(emptied, true, 'Original proximity depositing must empty the guest carrier.');
+    if (flightSave) { const result = await flightSave; if (result.error) throw result.error; }
     await host.waitForFunction(hero => { const actor = window.hostWorld.players.active.get(hero).hero; return !actor.getEC('ECResourceCarrier').hasAnyFlyingResource() && window.naturalDepositEvents.some(event => event.actor === actor.getName()); }, hero, { timeout: 10000 });
     const result = await host.evaluate(async ({ hero, resource }) => {
       const w = window.hostWorld, actor = w.players.active.get(hero).hero;
@@ -76,6 +78,9 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
       await guests[index].waitForFunction(({ resource, bank }) => window.guestWorld.hud.state?.resources[resource] === bank, { resource, bank: result.bank });
     }
     await focus();
-    console.log('Native carried ' + label + ' deposited once, saved in the shared pool and shown by all three guest HUDs.');
-  } finally { await host.evaluate(() => window.restoreNaturalDepositObserver()).catch(() => {}); }
+    console.log('Native carried ' + label + ' deposited once, saved in the shared pool and shown by all ' + guests.length + ' guest HUDs.');
+  } finally {
+    if (flightSave) { await host.evaluate(() => window.cancelNativeFlightSave?.()).catch(() => {}); await flightSave; }
+    await host.evaluate(() => window.restoreNaturalDepositObserver()).catch(() => {});
+  }
 };

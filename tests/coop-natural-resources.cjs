@@ -2,10 +2,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
 
-module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false, combined = false }) {
+module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false, combined = false, gatherOnly = false }) {
   const resource = stone ? 1 : 0, task = combined ? 'mineStoneAndLumber' : stone ? 'mineAStone' : 'chopATree';
-  if (!combined) await button('guest-idAcceptTaskRewardButtontaskIdcrit_' + (stone ? 7 : 5));
-  await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
+  if (!gatherOnly && !combined) await button('guest-idAcceptTaskRewardButtontaskIdcrit_' + (stone ? 7 : 5));
+  if (!gatherOnly) await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
   const target = await host.evaluate(({ hero, resource }) => {
     const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero;
     const trees = game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(resource === 0 ? 'tree' : 'rock')).filter(entity => entity.getEC('ECResourceDispenser')?.getResource() > 0 && entity.getEC('ECInteractable')?.getActive());
@@ -121,17 +121,19 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
             collector: pickup.getCollectorName() || null, animatedIn: !!pickup.animatedIn, managed: pickup.isManagedByThisMachine(), flying: !!pickup.flyingTween, route, routeError };
         }) };
     }, { hero, resource })));
-    assert.equal(result.complete === true, !combined || stone); assert.equal(result.scripts, true); assert.equal(result.remaining, 0);
+    if (!gatherOnly) assert.equal(result.complete === true, !combined || stone);
+    assert.equal(result.scripts, true); assert.equal(result.remaining, 0);
     assert.ok(result.events.some(event => event.interactor === target.actor && event.amount > 0));
     assert.ok(result.depletions.some(event => event.hero === target.actor && event.type === resource));
     assert.ok(result.inventory.carried[resource] >= target.minimumCarry, 'The guest must collect native dropped resources into its own inventory.');
     assert.deepEqual(result.otherCarried, target.otherCarried);
-    if (!combined || stone) await guest.waitForFunction(task => window.guestWorld.quests.state?.completed?.task === task, task);
+    if (!gatherOnly && (!combined || stone)) await guest.waitForFunction(task => window.guestWorld.quests.state?.completed?.task === task, task);
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state, coop = JSON.parse(state.userData.desktopCoop);
-    assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(state.userData.taskFlags)[task] === true, !combined || stone);
+    assert.equal(state.cheats.everEnabled, false);
+    if (!gatherOnly) assert.equal(JSON.parse(state.userData.taskFlags)[task] === true, !combined || stone);
     assert.deepEqual(coop.players.find(player => player.id === hero).inventory, result.inventory);
-    assert.equal(JSON.parse(state.userData.desktopQuests).pending.some(row => row.task === task), !combined || stone);
-    console.log('Native guest ' + task + ' depletion, carried resources, shared pending reward and clean history saved.');
+    if (!gatherOnly) assert.equal(JSON.parse(state.userData.desktopQuests).pending.some(row => row.task === task), !combined || stone);
+    console.log('Native guest ' + (gatherOnly ? 'independent resource' : task) + ' depletion, carried resources and clean history saved.');
   } finally {
     await guest.evaluate(() => window.guestWorld?.resourceInputTrace?.restore()).catch(() => {});
     await host.evaluate(() => window.restoreNaturalResourceObservers()).catch(() => {});
