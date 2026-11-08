@@ -134,6 +134,7 @@ module.exports = async function recoveredParty({ host, application, expected, fi
           await require('./coop-natural-building.cjs')({ ...controls, worker: 'stone' });
           await host.waitForFunction(() => ['Lumberling Hut', 'Stoneling Hut'].every(type => window.hostWorld.game.getBuildingManager().getBuildingsAtMinLevel(type, 1, false).some(entity => { const worker = entity.getEC('ECWildlingHouse')?.getWildling(); return worker && !worker.shouldBeDestroyed(); })), null, { timeout: 15000 });
           console.log('Both original completed worker huts spawned their native workers.');
+          await require('./coop-natural-workers.cjs')(controls);
         }
       }
       gear = require('./coop-natural-gear.cjs')({ host, headquarters: true, pendingTask: process.argv.includes('--workers') ? 'buildStonelingHut' : process.argv.includes('--stonemill') ? 'buildStonemill' : stone ? 'mineAStone' : 'chopATree', focus: async () => {

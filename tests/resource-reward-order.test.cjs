@@ -14,6 +14,7 @@ function fixture() {
   return { events, guest, button, require: name => async args => {
     if (name.endsWith('coop-natural-deposit.cjs')) events.push('deposit:' + (args.resource ?? 0));
     else if (name.endsWith('coop-natural-resources.cjs')) events.push('gather:' + Number(args.stone));
+    else if (name.endsWith('coop-natural-workers.cjs')) events.push('worker-productivity');
     else if (name.endsWith('coop-natural-building.cjs')) events.push('build:' + (args.worker || (args.stonemill ? 'stonemill' : 'lumbermill')));
     else assert.fail('Unexpected gameplay helper: ' + name);
   } };
@@ -34,5 +35,5 @@ test('recovered stone and combined worker progression clear each completed rewar
   assert.ok(f.events.indexOf(combined) < f.events.lastIndexOf('deposit:1'), JSON.stringify(f.events));
   assert.equal(f.events.filter(event => event === stone).length, 1); assert.equal(f.events.filter(event => event === combined).length, 1);
   assert.ok(f.events.indexOf('deposit:0') < f.events.indexOf(combined), 'The incomplete combined wood phase has no reward to collect.');
-  assert.deepEqual(f.events.slice(-6), ['next-task', 'build:lumber', 'collect:guest-idAcceptTaskRewardButtontaskIdcrit_11', 'next-task', 'build:stone', 'workers-spawned']);
+  assert.deepEqual(f.events.slice(-7), ['next-task', 'build:lumber', 'collect:guest-idAcceptTaskRewardButtontaskIdcrit_11', 'next-task', 'build:stone', 'workers-spawned', 'worker-productivity']);
 });
