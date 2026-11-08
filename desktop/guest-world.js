@@ -683,12 +683,17 @@
       for (const id of this.resourceHighlights.keys()) if (!seen.has(id)) this.resourceHighlights.delete(id);
     }
     drawMovementCursor() {
-      if (!this.movement.available() || this.construction.placement || !this.pointerEvent || this.groundDrag?.targeted) return;
+      if (!this.movement.available() || this.construction.placement || !this.pointerEvent) return;
       const gui = this.game.getIMGui();
-      if (gui.hasCapturedInput() || gui.isHot('guest-shop') || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare') || !this.groundDrag && pickTarget(this, this.pointerEvent)) return;
+      if (gui.hasCapturedInput() || gui.isHot('guest-shop') || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare')) return;
+      const controller = this.game.getGameController(), target = (!this.groundDrag || this.groundDrag.targeted) && pickTarget(this, this.pointerEvent);
+      if (target) {
+        controller.setCursorTexture(this.scene.entities.get(target).record.attackCursor ? 'textures/cursors/attack.png' : 'textures/cursors/interact.png');
+        return;
+      }
       const cursor = this.construction.cursor();
       if (!cursor) return;
-      const globals = this.controls.app.globals, controller = this.game.getGameController();
+      const globals = this.controls.app.globals;
       controller.setCursorTexture(this.groundDrag ? 'textures/cursors/move.png' : 'textures/cursors/default.png');
       if (this.groundDrag) return;
       const hero = this.viewCamera.actor(this.scene.snapshot.hero), nav = hero.getEC('ECNav');

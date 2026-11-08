@@ -7,7 +7,7 @@ function fixture() {
   const transform = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3, 4]);
   const mesh = { node: { disabled: false }, getMeshPath: () => 'models/hero.dae', getm43Transform: () => transform };
   const entity = (id, destroyed = false) => ({ name: id, shouldLevelSave: false, shouldPlayerSave: false,
-    shouldBeDestroyed: () => destroyed, getEC: name => name === 'ECMesh' ? mesh : name === 'ECHealth' ? { getHealth: () => 31, getMaxHealth: () => 50, shouldDrawBar: () => false, archetype: { drawOffScreenIconIfDamagedRecently: false } } : name === 'ECTarget' && id === 'hero' ? {} : null,
+    shouldBeDestroyed: () => destroyed, isFriendlyWith: other => other.name === id, getEC: name => name === 'ECMesh' ? mesh : name === 'ECHealth' ? { getHealth: () => 31, getMaxHealth: () => 50, shouldDrawBar: () => false, archetype: { drawOffScreenIconIfDamagedRecently: false } } : name === 'ECTarget' && id === 'hero' ? {} : null,
     getGameSpace: () => space, getv3Location: () => location, getV3Scale: () => scale, getRotationY: () => 0
   });
   const entities = [entity('hero'), entity('pickup'), entity('removed', true)];
@@ -29,6 +29,44 @@ test('replication captures unsaved heroes and transient objects, excludes destro
   location.fill(100); scale.fill(100); transform.fill(100);
   assert.equal(JSON.stringify(snapshot), before, 'Later simulation cannot mutate queued network state');
   assert.deepEqual(JSON.parse(before), snapshot, 'Transfer is plain JSON without typed-array objects');
+});
+test('target cursor state follows the assigned hero native friendship and current target component without granting actions', () => {
+  const f = fixture(), host = f.entities[0], guest = f.entities[1], reads = [];
+  let allied = false;
+  const nativeFriendship = require('./runtime-ast.cjs').prototypeWith('createSmartPointer').isFriendlyWith;
+  host.gameManager = guest.gameManager = f.game;
+  host.isFriendlyWith = guest.isFriendlyWith = nativeFriendship;
+  f.game.getFactionManager = () => ({ applyToEnemies() {}, areFriendly(left, right) { reads.push([left.name, right.name]); return left === right || allied; } });
+  assert.equal(captureSnapshot(f.game, host).spaces[0].entities[0].attackCursor, false);
+  reads.length = 0;
+  const fromGuest = captureSnapshot(f.game, guest);
+  assert.equal(fromGuest.spaces[0].entities[0].attackCursor, true);
+  assert.equal(fromGuest.spaces[0].entities[1].attackCursor, false);
+  assert.deepEqual(reads, [['pickup', 'hero']], 'The original method must use the assigned hero and skip non-target faction lookups.');
+  allied = true;
+  const friendly = captureSnapshot(f.game, guest); friendly.tick++;
+  const delta = createDelta(fromGuest, friendly);
+  assert.deepEqual(delta.spaces, [{ index: 0, remove: [], entities: [{ id: 'hero', attackCursor: false }] }]);
+  assert.deepEqual(applyDelta(fromGuest, delta), friendly);
+  assert.equal(friendly.spaces[0].entities[0].attackCursor, false);
+  assert.equal(fromGuest.spaces[0].entities[0].attackCursor, true, 'Earlier snapshots remain owned.');
+  const get = host.getEC; host.getEC = name => name === 'ECTarget' ? null : get(name);
+  guest.isFriendlyWith = () => assert.fail('A removed native target component cannot request an attack pointer.');
+  assert.equal(captureSnapshot(f.game, guest).spaces[0].entities[0].attackCursor, false);
+});
+test('target cursor full and partial parsing accepts only a boolean and rejects legacy or arbitrary cursor data', () => {
+  const base = captureSnapshot(fixture().game);
+  for (const invalid of [undefined, null, 1, 'attack', 'textures/foreign.png', {}, []]) {
+    const next = structuredClone(base); next.spaces[0].entities[0].attackCursor = invalid;
+    assert.throws(() => validateSnapshot(next), /Invalid world snapshot/);
+    assert.throws(() => createDelta(base, next), /Invalid world snapshot/);
+    const later = structuredClone(base); later.tick++;
+    const delta = createDelta(base, later);
+    delta.spaces = [{ index: 0, remove: [], entities: [{ id: base.hero, attackCursor: invalid }] }];
+    assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
+  }
+  const legacy = structuredClone(base); legacy.version = 15;
+  assert.throws(() => validateSnapshot(legacy), /incompatible version/);
 });
 test('campaign starters remain selectable without borrowing combat, building or resource components', () => {
   const { game, entities } = fixture(), banner = entities[1], get = banner.getEC;
@@ -236,7 +274,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 15); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 16); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');

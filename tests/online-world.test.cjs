@@ -311,9 +311,9 @@ test('authenticated in-flight actions survive a disconnected peer without applyi
 });
 
 function worldSnapshot(tick) {
-  return { version: 15, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },
+  return { version: 16, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] },
     spaces: [{ extents: [-10, -10, -10, 10, 10, 10], transform: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], blocks: [],
-      entities: [{ id: 'hero', archetype: null, interactive: true, location: [tick, 0, 0], scale: [1, 1, 1], rotation: 0, mesh: null, health: null }] }] };
+      entities: [{ id: 'hero', archetype: null, interactive: true, attackCursor: false, location: [tick, 0, 0], scale: [1, 1, 1], rotation: 0, mesh: null, health: null }] }] };
 }
 test('host full resyncs are periodic, rate-limited, connection-bound and wait for any in-flight transfer', async t => {
   const { controls, transport } = setup(t), world = await startHostingWorld(controls, transport);
