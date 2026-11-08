@@ -94,6 +94,8 @@ Personal saves live in Electron's user-data directory, outside the checkout/appl
 
 The wood HUD wait now passes with explicit native focus checks, but the original timeout's cause is unproven. One later test completed tree depletion yet collected zero dropped wood. Two Beta 88 source runs and the GitHub Apple Silicon artifact subsequently passed without changing pickup rules. The earlier intermittent pickup failure remains unexplained; traces now capture movement/focus, and failure diagnostics include live pickup eligibility, animation and native paths. Do not describe it as fixed or infer cross-platform reliability from the passing repeats.
 
+Later worker-progression tests reached the original combined wood/stone quest but timed out waiting for the first tree-click result; the cause remains unknown and later worker construction/production/reload checks are unverified. Test-only income accounting, screen framing and live failure diagnostics are recorded in the [current worker investigation](RESTORATION_STATUS.md#beta-88-worker-progression-investigation--incomplete-2026-11-07). The pinned application source remains unchanged.
+
 The original cause of an earlier unexpected game closure is also not established. Latest Beta 88 source/package native logs are clean for the recorded cases; the previously observed destroyed-window focus callback has a reproduced regression and source fix. Keep these claims separate.
 
 ## Running checks and preserving evidence

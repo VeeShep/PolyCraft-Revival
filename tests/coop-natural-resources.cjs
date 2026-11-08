@@ -1,10 +1,10 @@
 'use strict';
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
+const fs = require('node:fs'), path = require('node:path');
 
-module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false }) {
-  const resource = stone ? 1 : 0, task = stone ? 'mineAStone' : 'chopATree';
-  await button('guest-idAcceptTaskRewardButtontaskIdcrit_' + (stone ? 7 : 5));
+module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false, combined = false }) {
+  const resource = stone ? 1 : 0, task = combined ? 'mineStoneAndLumber' : stone ? 'mineAStone' : 'chopATree';
+  if (!combined) await button('guest-idAcceptTaskRewardButtontaskIdcrit_' + (stone ? 7 : 5));
   await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
   const target = await host.evaluate(({ hero, resource }) => {
     const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero;
@@ -25,13 +25,19 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     throw new Error('No reachable original resource is available.');
   }, { hero, resource });
   console.log('Natural guest ' + task + ' target:', target);
+  const targetPoint = () => guest.evaluate(id => {
+    const w = window.guestWorld, entry = w.scene.entities.get(id), g = w.controls.app.globals, p = g.camera.worldToScreen(entry.displayLocation || entry.record.location), b = w.movement.canvas.getBoundingClientRect();
+    const x = p[0] * b.width / g.graphicsDevice.width, y = p[1] * b.height / g.graphicsDevice.height;
+    return { x: b.left + x, y: b.top + y, clear: x > 100 && x < b.width - 300 && y > 100 && y < b.height - 100, sequence: w.lastTargetResult?.sequence || 0 };
+  }, target.id);
   try {
     await focus();
     let waypoint = Math.min(1, target.route.length - 1), ready = false;
     for (let step = 0; step < 300; step++) {
       // Non-approach resources still need framing clear of the HUD for an actual canvas click.
       ready = await host.evaluate(({ hero, target }) => { const world = window.hostWorld, actor = world.players.active.get(hero).hero, tree = world.game.getGameEntityByName(target.id); return tree.getDistanceUsingSize(actor.getv3Location()) <= (target.approach ? actor.getRadius() + 0.45 : 8); }, { hero, target });
-      if (ready) break;
+      if (ready && (await targetPoint()).clear) break;
+      ready = false;
       const next = await guest.evaluate(location => {
         const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, m = w.controls.app.globals.camera.matrix;
         const dx = location[0] - p[0], dz = location[2] - p[2], right = dx * m[0] + dz * m[2], forward = -dx * m[6] - dz * m[8], largest = Math.max(Math.abs(right), Math.abs(forward));
@@ -46,17 +52,27 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     await guest.waitForTimeout(1000);
     let clicks = 0;
     for (; clicks < 80; clicks++) {
-      if (await host.evaluate(task => window.hostWorld.game.getPlayerData().getTaskFlags()[task] === true, task)) break;
-      const point = await guest.evaluate(id => {
-        const w = window.guestWorld, entry = w.scene.entities.get(id), g = w.controls.app.globals, p = g.camera.worldToScreen(entry.displayLocation || entry.record.location), b = w.movement.canvas.getBoundingClientRect();
-        const x = p[0] * b.width / g.graphicsDevice.width, y = p[1] * b.height / g.graphicsDevice.height;
-        return { x: b.left + x, y: b.top + y, clear: x > 100 && x < b.width - 300 && y > 100 && y < b.height - 100, sequence: w.lastTargetResult?.sequence || 0 };
-      }, target.id);
+      if (await host.evaluate(id => !(window.hostWorld.game.getGameEntityByName(id)?.getEC('ECResourceDispenser').getResource() > 0), target.id)) break;
+      const point = await targetPoint();
       assert.ok(point.clear, 'The resource click must be visibly inside the canvas and clear of the resource HUD.');
       await guest.mouse.move(point.x, point.y); await guest.waitForTimeout(150);
       assert.equal(await guest.evaluate(point => window.PolycraftCoopActions.pickTarget(window.guestWorld, { clientX: point.x, clientY: point.y }), point), target.id);
       await guest.mouse.click(point.x, point.y, { delay: 100 });
-      await guest.waitForFunction(sequence => window.guestWorld.lastTargetResult?.sequence > sequence, point.sequence, { timeout: 5000 });
+      try {
+        await guest.waitForFunction(sequence => window.guestWorld.lastTargetResult?.sequence > sequence, point.sequence, { timeout: 5000 });
+      } catch (error) {
+        console.log('Resource click failure:', JSON.stringify({ clicks, target: target.id, point, guest: await guest.evaluate(() => {
+          const w = window.guestWorld;
+          return { focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, resyncing: w.resyncing, closed: w.connection.closed,
+            tick: w.scene.tick, targetSequence: w.targetSequence, result: w.lastTargetResult, selectionRequest: w.selectionRequest, captured: w.game.getIMGui().hasCapturedInput(), guiInput: { down: w.guiInput.down, pendingDown: w.guiInput.pendingDown, position: w.guiInput.position },
+            description: w.quests.description?.taskId, questPending: w.quests.pending, questOpenRequest: w.quests.openRequest, menu: !!w.construction.menu, placement: !!w.construction.placement };
+        }), host: await host.evaluate(({ hero, target }) => {
+          const w = window.hostWorld, actor = w.players.active.get(hero).hero, entity = w.game.getGameEntityByName(target);
+          return { actor: Array.from(actor.getv3Location()), remaining: entity?.getEC('ECResourceDispenser').getResource(), scripts: w.game.runScripts, tick: w.game.gameClock.getFrameIndex() };
+        }, { hero, target: target.id }) }));
+        await guest.screenshot({ path: path.join(path.dirname(hostFile), '..', 'resource-click-failure.png') });
+        throw error;
+      }
       assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Resources gathered.');
     }
     await guest.waitForTimeout(500);
@@ -102,16 +118,16 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
             collector: pickup.getCollectorName() || null, animatedIn: !!pickup.animatedIn, managed: pickup.isManagedByThisMachine(), flying: !!pickup.flyingTween, route, routeError };
         }) };
     }, { hero, resource })));
-    assert.equal(result.complete, true); assert.equal(result.scripts, true); assert.equal(result.remaining, 0);
+    assert.equal(result.complete === true, !combined || stone); assert.equal(result.scripts, true); assert.equal(result.remaining, 0);
     assert.ok(result.events.some(event => event.interactor === target.actor && event.amount > 0));
     assert.ok(result.depletions.some(event => event.hero === target.actor && event.type === resource));
     assert.ok(result.inventory.carried[resource] >= target.minimumCarry, 'The guest must collect native dropped resources into its own inventory.');
     assert.deepEqual(result.otherCarried, target.otherCarried);
-    await guest.waitForFunction(task => window.guestWorld.quests.state?.completed?.task === task, task);
+    if (!combined || stone) await guest.waitForFunction(task => window.guestWorld.quests.state?.completed?.task === task, task);
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state, coop = JSON.parse(state.userData.desktopCoop);
-    assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(state.userData.taskFlags)[task], true);
+    assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(state.userData.taskFlags)[task] === true, !combined || stone);
     assert.deepEqual(coop.players.find(player => player.id === hero).inventory, result.inventory);
-    assert.ok(JSON.parse(state.userData.desktopQuests).pending.some(row => row.task === task));
+    assert.equal(JSON.parse(state.userData.desktopQuests).pending.some(row => row.task === task), !combined || stone);
     console.log('Native guest ' + task + ' depletion, carried resources, shared pending reward and clean history saved.');
   } finally { await host.evaluate(() => window.restoreNaturalResourceObservers()).catch(() => {}); }
 };

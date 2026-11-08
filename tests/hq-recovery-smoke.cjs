@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
+  assert.ok(!process.argv.includes('--workers') || process.argv.includes('--stonemill'), 'Worker progression requires Stonemill progression.');
   assert.ok(!process.argv.includes('--stonemill') || ['--lumbermill', '--rehost', '--resources'].every(flag => process.argv.includes(flag)), 'Stonemill progression requires the recovered Lumbermill party and stone gathering.');
   assert.ok(!process.argv.includes('--resources') || process.argv.includes('--rehost'), 'Natural resource progression requires the recovered party.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_HQ_FIXTURE || '');
