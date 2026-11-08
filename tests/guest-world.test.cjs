@@ -567,6 +567,47 @@ function targetedWorld() {
   f.world.sendTarget = (type, target, _archetype, phase = 'release') => { sent.push({ type, target, phase }); return sent.length; };
   return { ...f, sent };
 }
+test('actual guest pointer listeners release a quick target click once and respect focus, quest and GUI blocking', t => {
+  const names = ['document', 'addEventListener', 'removeEventListener', 'desktop', 'PointerEvent'];
+  const previous = Object.fromEntries(names.map(name => [name, global[name]]));
+  const listeners = new Map(), messages = [], f = targetedWorld(), world = f.world, canvas = world.movement.canvas;
+  let focused = true, captured = false, hot = false;
+  global.document = { activeElement: canvas, hasFocus: () => focused, querySelector: () => null,
+    getElementById: id => id === 'launcher' ? { hidden: true } : canvas };
+  canvas.focus = () => { global.document.activeElement = canvas; };
+  global.addEventListener = (name, handler) => listeners.set(name, handler);
+  global.removeEventListener = name => listeners.delete(name);
+  global.desktop = undefined; global.PointerEvent = function () {};
+  t.after(() => {
+    world.movement.close();
+    for (const name of names) if (previous[name] === undefined) delete global[name]; else global[name] = previous[name];
+  });
+  f.globals.camera.matrix = identity();
+  world.scene.snapshot = {}; world.targetSequence = 0;
+  world.game = { getIMGui: () => ({ hasCapturedInput: () => captured, isHot: () => hot }) };
+  world.connection = { state: 'connected', closed: false, send: async (kind, action) => { messages.push({ kind, ...action }); }, fail: error => { throw error; } };
+  delete world.sendTarget;
+  world.movement = new (require('../desktop/coop-input.js').GuestMovement)(world);
+  const dispatch = name => listeners.get(name)({ target: canvas, button: 0, pointerId: 7, clientX: 0, clientY: 0, preventDefault() {}, stopImmediatePropagation() {} });
+  dispatch('pointerdown'); dispatch('mousedown'); dispatch('pointerup'); dispatch('mouseup'); dispatch('lostpointercapture');
+  assert.deepEqual(messages.map(({ kind, type, target, phase, sequence }) => ({ kind, type, target, phase, sequence })), [
+    { kind: 'action', type: 'target', target: 'tree', phase: 'press', sequence: 1 },
+    { kind: 'action', type: 'target', target: 'tree', phase: 'release', sequence: 2 }
+  ]);
+  assert.equal(world.selectionRequest, 2); assert.equal(world.groundDrag, null); assert.equal(world.guiInput.pendingDown, false);
+  for (const gate of ['focus', 'native', 'quest', 'captured', 'hot', 'pause']) {
+    focused = gate !== 'focus'; captured = gate === 'captured'; hot = gate === 'hot';
+    world.movement.nativeFocused = gate !== 'native';
+    world.quests = { description: gate === 'quest' ? { taskId: 'taskIdcrit_10' } : null };
+    world.controls.paused = gate === 'pause';
+    dispatch('pointerdown'); dispatch('pointerup');
+    assert.equal(messages.length, 2, gate + ' must block the click without sending a target request.');
+  }
+  focused = true; captured = hot = world.controls.paused = false; world.quests.description = null;
+  dispatch('pointerdown'); focused = false; listeners.get('blur')(); dispatch('pointerup');
+  assert.deepEqual(messages.slice(2).map(action => action.phase), ['press', 'clear']);
+  assert.equal(world.groundDrag, null);
+});
 test('targeted guest gestures defer selection until release and retain a target through a swipe, then switch a hold into native movement', () => {
   const f = targetedWorld(); f.world.clickTarget({ clientX: 0, clientY: 0, pointerId: 3 });
   assert.equal(f.captured(), 3); assert.deepEqual(f.sent, [{ type: 'target', target: 'tree', phase: 'press' }]); assert.equal(f.world.selectionRequest, null);
