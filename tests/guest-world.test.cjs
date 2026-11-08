@@ -704,6 +704,63 @@ test('movement feedback disappears for blocked input, local UI, targeted holds, 
   f.world.construction.placement = {}; f.world.drawMovementCursor(); f.world.construction.placement = null;
   f.invalidCursor(); f.world.drawMovementCursor(); assert.equal(f.sprites.length, 0);
 });
+function resourceHighlight() {
+  const ast = require('./runtime-ast.cjs'), f = movementCursor(), w = f.world, globals = w.controls.app.globals;
+  globals.gameCurrentTime = 0; globals.guiRenderer = { getScaleFactor: () => 1 };
+  w.scene.snapshot.camera.mode = 'explore'; w.hud = { state: { preparation: null, island: { prepare: null } } };
+  globals.mathDevice.saturate = value => Math.max(0, Math.min(1, value));
+  globals.camera.screenRadiusToWorldRadius = (_location, radius) => radius / 10;
+  w.controls.movementMethods.selectable = ast.selectableDrawing(); w.controls.movementMethods.centre = ast.method('getCentreLocation');
+  const controller = w.game.getGameController(); controller.selectionRadius = 35; controller.addedSelectionRadius = 10;
+  w.game.getGameController = () => controller;
+  w.scene.entities.get('guest').record.archetype = 'hero';
+  const definition = { smart: true, radiusFactor: 1, smartRadiusFactor: 1 };
+  w.game.getEntityFactory = () => ({ getECArchetype: (name, type) => name === 'hero' ? type === 'ECSmartSelectableTrigger' ? { worldRadius: 5.5 } : undefined : name === 'tree' ?
+    type === 'ECSelectable' ? definition : type === 'ECResourceDispenser' ? { growingMesh: 'growing.dae' } : undefined : undefined });
+  const entry = { record: { id: 'tree', archetype: 'tree', interactive: true, location: [5, 4, 5], mesh: { visible: true, path: 'tree.dae' } } };
+  w.scene.entities.set('tree', entry);
+  const draw = time => { globals.gameCurrentTime = time; f.sprites.length = 0; w.drawResourceHighlights(); };
+  return { ...f, entry, definition, globals, controller, draw };
+}
+test('guest resource highlight reuses the original renderer, fade, asset and current interpolated center without editing snapshots', () => {
+  const f = resourceHighlight(), original = JSON.stringify(f.entry.record);
+  f.draw(0); assert.equal(f.sprites.length, 0);
+  f.draw(0.1); assert.equal(f.sprites.length, 1);
+  assert.equal(f.sprites[0].texture, 'textures/bigcirclebutton.dds'); assert.equal(f.sprites[0].size, 3.5);
+  assert.equal(f.sprites[0].blendStyle, 'no-depth'); assert.equal(f.sprites[0].v4color[3], 0.3);
+  assert.deepEqual(f.sprites[0].v3Location, [5, 4.25, 5]); assert.equal(JSON.stringify(f.entry.record), original);
+  f.world.scene.entities.set('tree', { ...f.entry, displayLocation: [6, 4.5, 5] }); f.draw(0.2);
+  assert.deepEqual(f.sprites[0].v3Location, [6, 4.75, 5], 'A new snapshot entry must not leave the cue bound to the old entity object.');
+});
+test('guest resource highlight uses native proximity hysteresis and height limits around the assigned guest', () => {
+  const f = resourceHighlight(), hero = f.world.scene.entities.get('guest'); hero.displayLocation = [0, 0, 0];
+  f.entry.record.location = [5.5, 0, 0]; f.draw(0); assert.equal(f.sprites.length, 0);
+  f.entry.record.location[0] = 5.4; f.draw(0.1); f.draw(0.2); assert.equal(f.sprites.length, 1);
+  f.entry.record.location[0] = 6.4; f.draw(0.3); assert.equal(f.world.resourceHighlights.get('tree').smartValid, true);
+  f.entry.record.location[0] = 6.5; f.draw(0.4); assert.equal(f.world.resourceHighlights.get('tree').smartValid, false);
+  f.draw(0.6); assert.equal(f.sprites.length, 0); assert.equal(f.world.resourceHighlights.size, 0);
+  f.entry.record.location = [1, -0.6, 0]; f.draw(0.7); assert.equal(f.world.resourceHighlights.size, 0);
+  f.entry.record.location[1] = -0.5; f.draw(0.8); f.draw(0.9); assert.equal(f.sprites.length, 1);
+});
+test('guest resource highlight uses local hover and original GUI/radius scaling, with no cue for growing or unavailable entities', () => {
+  const f = resourceHighlight(); f.world.pointerEvent = { clientX: 5, clientY: 4 };
+  f.definition.radiusFactor = 2; f.globals.guiRenderer.getScaleFactor = () => 2;
+  f.draw(0); f.draw(0.1); assert.equal(f.sprites[0].size, 18);
+  f.capture(true); f.draw(0.2); f.draw(0.4); assert.equal(f.sprites[0].size, 14, 'Captured GUI must not retain the extra hover radius.');
+  f.entry.record.mesh.path = 'growing.dae'; f.draw(0.5); assert.equal(f.sprites.length, 0); assert.equal(f.world.resourceHighlights.size, 0);
+  f.entry.record.mesh.path = 'tree.dae'; f.entry.record.mesh.visible = false; f.draw(0.6); assert.equal(f.sprites.length, 0);
+  f.entry.record.mesh.visible = true; f.entry.record.interactive = false; f.draw(0.7); assert.equal(f.sprites.length, 0);
+  f.entry.record.interactive = true; f.entry.record.archetype = 'unknown'; f.draw(0.8); assert.equal(f.sprites.length, 0);
+});
+test('guest resource highlights respect input/placement gates and prune removed entities', () => {
+  const f = resourceHighlight(); f.draw(0); f.draw(0.1);
+  f.unavailable(true); f.draw(0.2); assert.equal(f.sprites.length, 0); f.unavailable(false);
+  f.world.construction.placement = {}; f.draw(0.3); assert.equal(f.sprites.length, 0); f.world.construction.placement = null;
+  f.world.scene.snapshot.camera.mode = 'war'; f.draw(0.4); assert.equal(f.sprites.length, 0); f.world.scene.snapshot.camera.mode = 'explore';
+  f.world.hud.state.preparation = { episode: 1 }; f.draw(0.5); assert.equal(f.sprites.length, 0); f.world.hud.state.preparation = null;
+  f.world.hud.state.island.prepare = 0; f.draw(0.6); assert.equal(f.sprites.length, 0); f.world.hud.state.island.prepare = null;
+  f.world.scene.entities.delete('tree'); f.draw(0.7); assert.equal(f.world.resourceHighlights.size, 0);
+});
 
 function guestAudio() {
   const ast = require('./runtime-ast.cjs'), world = Object.create(GuestWorld.prototype), played = [], sources = [];

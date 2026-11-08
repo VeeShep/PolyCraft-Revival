@@ -185,6 +185,15 @@ function movementDrawing(name = 'drawMove') {
   return evaluate(draw, { [drawingDependency(draw, 'outline')]: objectWith('healthFull'),
     [drawingDependency(draw, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth', NORMAL: 'normal' } } } });
 }
+function selectableDrawing() {
+  const definition = one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === 'ECSelectable')), 'selectable component');
+  const draw = definition.properties.find(p => key(p) === 'draw').value;
+  return evaluate(definition, {
+    [drawingDependency(draw, 'outlineSoft')]: objectWith('healthFull'),
+    [drawingDependency(draw, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth' } } },
+    [drawingDependency(draw, 'bigCircleButton')]: { bigCircleButton: 'textures/bigcirclebutton.dds' }
+  });
+}
 function cameraMethods(zoomer) {
   const prototype = one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'buildSphereCentreAndExtents')), 'camera prototype').right;
   const start = prototype.properties.find(p => key(p) === 'startZoomer').value;
@@ -197,4 +206,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };
+module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, selectableDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, taskGroupMethods };

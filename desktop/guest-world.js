@@ -644,6 +644,44 @@
       sounds.listenerMatrix = original.matrix && new Float32Array(original.matrix);
       sounds.updateListener();
     }
+    drawResourceHighlights() {
+      const methods = this.controls.movementMethods;
+      if (!methods?.selectable || !this.movement.available() || this.construction.placement) return;
+      // Native normal-selection cues are disabled during preparation and war.
+      if (!this.hud?.state || this.scene.snapshot.camera.mode !== 'explore' || this.hud.state.preparation || this.hud.state.island.prepare !== null) return;
+      const factory = this.game.getEntityFactory(), hero = this.scene.entities.get(this.identity.entity);
+      const trigger = hero && factory.getECArchetype(hero.record.archetype, 'ECSmartSelectableTrigger');
+      if (!trigger) return;
+      const position = hero.displayLocation || hero.record.location, globals = this.controls.app.globals, time = globals.gameCurrentTime;
+      const gui = this.game.getIMGui(), blocked = gui.hasCapturedInput() || ['guest-shop', 'guest-pause', 'guest-fullscreen', 'guest-skip-prepare'].some(id => gui.isHot(id));
+      const hovered = !blocked && this.pointerEvent && pickTarget(this, this.pointerEvent), seen = new Set();
+      this.resourceHighlights ||= new Map();
+      for (const [id, entry] of this.scene.entities) {
+        const record = entry.record, resource = factory.getECArchetype(record.archetype, 'ECResourceDispenser');
+        const definition = resource && factory.getECArchetype(record.archetype, 'ECSelectable');
+        if (!definition?.smart || !record.interactive || !record.mesh?.visible || record.mesh.path === resource.growingMesh) continue;
+        seen.add(id);
+        let view = this.resourceHighlights.get(id);
+        const location = entry.displayLocation || record.location, radius = trigger.worldRadius * definition.smartRadiusFactor + (view?.smartValid ? 1 : 0);
+        const near = Math.hypot(location[0] - position[0], location[2] - position[2]) < radius && position[1] - 0.5 <= location[1];
+        if (!view && !near) continue;
+        if (!view) {
+          const entity = { globals, scratchpad: {}, getCentreLocation: methods.centre, getv3Location: () => {
+            const current = this.scene.entities.get(id); return current.displayLocation || current.record.location;
+          } };
+          view = Object.assign(Object.create(methods.selectable), { globals, gameManager: this.game, entity, archetype: definition,
+            radiusFactor: definition.radiusFactor, randomRotation: Math.random() * Math.PI * 2,
+            smartValid: false, smartValidTime: 0, unSmartValidTime: -100, hot: false, hotTime: 0, unHotTime: -100, hotByFullyChargedShot: false });
+          this.resourceHighlights.set(id, view);
+        }
+        if (near !== view.smartValid) { view.smartValid = near; view[near ? 'smartValidTime' : 'unSmartValidTime'] = time; }
+        const hot = near && hovered === id;
+        if (hot !== view.hot) { view.hot = hot; view[hot ? 'hotTime' : 'unHotTime'] = time; }
+        view.draw();
+        if (!near && !hot && view.getSmartValidFactor() === 0 && view.getHotFactor() === 0) this.resourceHighlights.delete(id);
+      }
+      for (const id of this.resourceHighlights.keys()) if (!seen.has(id)) this.resourceHighlights.delete(id);
+    }
     drawMovementCursor() {
       if (!this.movement.available() || this.construction.placement || !this.pointerEvent || this.groundDrag?.targeted) return;
       const gui = this.game.getIMGui();
@@ -698,7 +736,7 @@
       globals.gameCurrentTime = state.time;
       game.gameDayTime = state.dayTime;
       game.applyDayNightTime();
-      this.viewCamera.update(); this.updateGroundDrag(); game.gameLighting.update();
+      this.viewCamera.update(); this.updateGroundDrag(); game.gameLighting.update(); this.drawResourceHighlights();
       this.updateTorch();
       this.hasFrame = true;
       if (!this.craft?.menu) { this.drawHealth(); this.drawCombatTarget(); this.drawBattleNotices(); }
@@ -718,6 +756,7 @@
       this.game.getGuiManager?.()?.removeGameMessage?.('guest-revive-message');
       clearTimeout(this.resyncTimer); this.resyncing = false;
       this.movement.close();
+      this.resourceHighlights?.clear();
       this.cancelLocalMenu(); this.game.imgui.controller = this.original.guiController;
       const game = this.game, app = this.controls.app, original = this.original;
       game.gameLighting.setShadowsEnabled(original.settings.shadows);
