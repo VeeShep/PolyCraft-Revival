@@ -11,6 +11,10 @@ module.exports = async function recoveredParty({ host, application, expected, fi
     await page.bringToFront(); await page.locator('#turbulenz_game_engine_canvas').focus();
     await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && window.guestWorld.movement.nativeFocused, null, { timeout: 5000 });
   };
+  const focusHost = async () => {
+    await application.evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
+    await host.bringToFront(); await host.locator('#turbulenz_game_engine_canvas').focus();
+  };
   try {
     await host.evaluate(async () => {
       window.recoveryErrors = [];
@@ -112,10 +116,10 @@ module.exports = async function recoveredParty({ host, application, expected, fi
         await guest.mouse.click(point.x, point.y, { delay: 100 });
       };
       const stone = expected.lumbermills.length > 0;
-      await require('./coop-natural-resources.cjs')({ host, guest, focus, button, hero: expected.coop.players[1].id, hostFile: file, stone });
+      await require('./coop-natural-resources.cjs')({ host, guest, focus, focusHost, button, hero: expected.coop.players[1].id, hostFile: file, stone });
       if (process.argv.includes('--stonemill')) {
         assert.equal(stone, true);
-        const controls = { host, guest, guests: guests.map(entry => entry.page), focusGuest: index => focusGuest(applications[index], guests[index].page), focus, button, hero: expected.coop.players[1].id, hostFile: file };
+        const controls = { host, guest, guests: guests.map(entry => entry.page), focusGuest: index => focusGuest(applications[index], guests[index].page), focus, focusHost, button, hero: expected.coop.players[1].id, hostFile: file };
         await button('guest-idAcceptTaskRewardButtontaskIdcrit_8');
         await guest.waitForFunction(() => window.guestWorld.quests.state?.tasks.some(task => task.task === 'buildStonemill'));
         await require('./coop-natural-deposit.cjs')({ ...controls, resource: 1 });
@@ -135,12 +139,10 @@ module.exports = async function recoveredParty({ host, application, expected, fi
           await host.waitForFunction(() => ['Lumberling Hut', 'Stoneling Hut'].every(type => window.hostWorld.game.getBuildingManager().getBuildingsAtMinLevel(type, 1, false).some(entity => { const worker = entity.getEC('ECWildlingHouse')?.getWildling(); return worker && !worker.shouldBeDestroyed(); })), null, { timeout: 15000 });
           console.log('Both original completed worker huts spawned their native workers.');
           await require('./coop-natural-workers.cjs')(controls);
+          await require('./coop-native-pause.cjs')(controls);
         }
       }
-      gear = require('./coop-natural-gear.cjs')({ host, headquarters: true, pendingTask: process.argv.includes('--workers') ? 'buildStonelingHut' : process.argv.includes('--stonemill') ? 'buildStonemill' : stone ? 'mineAStone' : 'chopATree', focus: async () => {
-        await application.evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
-        await host.bringToFront(); await host.locator('#turbulenz_game_engine_canvas').focus();
-      } });
+      gear = require('./coop-natural-gear.cjs')({ host, headquarters: true, pendingTask: process.argv.includes('--workers') ? 'buildStonelingHut' : process.argv.includes('--stonemill') ? 'buildStonemill' : stone ? 'mineAStone' : 'chopATree', focus: focusHost });
       await gear.before();
     }
     await host.evaluate(() => window.hostWorld.close());
