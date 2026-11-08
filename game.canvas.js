@@ -159,7 +159,7 @@
   function be() {}
   function sd() {}
   function BlockFactory() {}
-  function X() {}
+  function EffectFactory() {}
   function K() {}
   function lc(a, b) {
     var c = this.globals.mathDevice;
@@ -183,11 +183,11 @@
   function GameCamera() {}
   function Ef() {}
   function GameSpace() {}
-  function Hb() {}
+  function GameLighting() {}
   function B() {}
   function Ff() {}
   function Gf() {}
-  function O() {}
+  function GameSoundManager() {}
   function Hf() {}
   function Ta() {}
   function If() {}
@@ -60906,12 +60906,12 @@
     c.archetypeList = c.createAlphabeticalArchetypeList(BlockFactory.archetypes);
     return c;
   };
-  X.prototype = {
+  EffectFactory.prototype = {
     createVisualEffectInstance: function (a) {
       return K.create(this.globals, K.archetypes[a.archetype], a.v3Location, a.v3Direction);
     },
     createEffectInstance: function (a) {
-      var b = X.archetypes[a.archetype],
+      var b = EffectFactory.archetypes[a.archetype],
         c = this.globals.mathDevice,
         d;
       b.visualEffectArchetype && (d = K.archetypes[b.visualEffectArchetype], K.create(this.globals, d, a.v3Location, a.v3Direction, a.gameEntity));
@@ -60935,7 +60935,7 @@
       }).setAppTimeBased().start();
     },
     endEffectInstance: function (a) {
-      var b = X.archetypes[a.archetype],
+      var b = EffectFactory.archetypes[a.archetype],
         c;
       b.soundEffectArchetype && (c = this.gameManager.gameSoundManager, c.stopInternal(b.soundEffectArchetype, a.gameEntity, void 0 !== a.fadeDuration ? a.fadeDuration : 0.5));
     },
@@ -60981,9 +60981,9 @@
       for (c in b) b.hasOwnProperty(c) && (d = b[c], a.load(d.texturePath));
     }
   };
-  X.archetypes = {};
-  X.create = function (a, b) {
-    var c = new X();
+  EffectFactory.archetypes = {};
+  EffectFactory.create = function (a, b) {
+    var c = new EffectFactory();
     c.globals = a;
     c.gameManager = b;
     return c;
@@ -65101,7 +65101,7 @@
     f.scratchpad = {};
     return f;
   };
-  Hb.prototype = {
+  GameLighting.prototype = {
     blendRate: 0.05,
     init: function (a, b) {
       this.globals = a;
@@ -65156,15 +65156,15 @@
           b.watchVariable("Disabled", this.heroLightNode, "disabled", "checkbox", a);
           var d,
             f,
-            e = Hb.keyframes;
+            e = GameLighting.keyframes;
           for (f in e) e.hasOwnProperty(f) && (a = e[f], d = b.addGroup(f, c), this.addAmbientLightSliders(a, d), this.addDirectionLightSliders(a, "worldLight1", d), this.addDirectionLightSliders(a, "worldLight2", d), this.addPointLightSliders(a, "heroLight", d));
         }
       }
     },
     setKeyFrames: function (a, b, c) {
       this.blendFactor = a;
-      this.lowerKeyframe = Hb.keyframes[b.keyframe];
-      this.upperKeyframe = Hb.keyframes[c.keyframe];
+      this.lowerKeyframe = GameLighting.keyframes[b.keyframe];
+      this.upperKeyframe = GameLighting.keyframes[c.keyframe];
     },
     snap: function () {
       this.shouldSnap = !0;
@@ -65425,7 +65425,7 @@
       this.heroLightInstance.techniqueParameters.shadowSize_depthTweak_blurSize_fadeScale = b.v4Build(0, 0.025, 1.5, 0.5);
       this.heroLightNode.addLightInstance(this.heroLightInstance);
       this.globals.scene.addRootNode(this.heroLightNode);
-      this.upperKeyframe = this.lowerKeyframe = Hb.keyframes.midday;
+      this.upperKeyframe = this.lowerKeyframe = GameLighting.keyframes.midday;
     },
     applyToGlobalLights: function () {
       var a = this.globals,
@@ -65540,8 +65540,8 @@
       }
     }
   };
-  Hb.create = function (a, b) {
-    var c = new Hb();
+  GameLighting.create = function (a, b) {
+    var c = new GameLighting();
     c.init(a, b);
     return c;
   };
@@ -65987,7 +65987,7 @@
     b.owned = {};
     return b;
   };
-  O.prototype = {
+  GameSoundManager.prototype = {
     depotSize: 50,
     globalDepotSize: 20,
     update: function () {
@@ -66023,7 +66023,7 @@
         });
         for (d = 0; d < this.globalDepotSize; d += 1) c[d] = a.createGlobalSource({}), c[d].globalSource = !0;
         a.isSupported("FILEFORMAT_OGG") ? this.soundExtension = ".ogg" : a.isSupported("FILEFORMAT_MP3") && (this.soundExtension = ".mp3");
-        var a = O.archetypes,
+        var a = GameSoundManager.archetypes,
           f;
         for (f in a) if (a.hasOwnProperty(f)) if (b = a[f], b.sounds) {
           var b = b.sounds,
@@ -66047,7 +66047,7 @@
       this.loadArchetypes(!0);
     },
     loadArchetypes: function (a) {
-      var b = O.archetypes,
+      var b = GameSoundManager.archetypes,
         c;
       if (this.globals.soundDevice) for (c in b) b.hasOwnProperty(c) && this.loadArchetype(b[c], a);
     },
@@ -66060,7 +66060,7 @@
       } else b === (a.delayedLoad ? a.delayedLoad : !1) && c.load(a.path);
     },
     extractParametersToPlay: function (a) {
-      a = O.archetypes[a];
+      a = GameSoundManager.archetypes[a];
       if (a.random) {
         var b = Math.random() * (a.sounds.length - 0.1),
           b = Math.floor(b);
@@ -66115,7 +66115,7 @@
         d,
         f,
         e = this.activeSoundSourceList,
-        stopFamily = O.archetypes[a] && O.archetypes[a].preview;
+        stopFamily = GameSoundManager.archetypes[a] && GameSoundManager.archetypes[a].preview;
       for (f = 0; f < e.length; f += 1) if (d = e[f], (d.soundName === a || d.parentSoundName === a) && d.gameEntityName === b) {
         0 < c ? (d.fadeTime = c, d.startFadeTime = c) : (d.soundSource.stop(), this.removeActiveSoundByIndex(f), f -= 1);
         if (!stopFamily) break;
@@ -66199,9 +66199,9 @@
       this.soundSourceDepot.length = 0;
     }
   };
-  O.archetypes = {};
-  O.create = function (a, b) {
-    var c = new O();
+  GameSoundManager.archetypes = {};
+  GameSoundManager.create = function (a, b) {
+    var c = new GameSoundManager();
     c.globals = a;
     c.gameManager = b;
     c.soundManager = a.soundManager;
@@ -68470,7 +68470,7 @@
     c.gameScoresUI = GameScoresUI.create(b, c.imgui);
     c.gameClock = GameClock.create(b);
     c.scoreInfo = CampaignScoreInfo.create(b);
-    c.gameLighting = Hb.create(b, c);
+    c.gameLighting = GameLighting.create(b, c);
     c.ecDebugDrawFlags = {};
     c.activeECMasks = {};
     c.drawGameTime = ba.drawPlayDuration;
@@ -68486,10 +68486,10 @@
     c.factionManager = null;
     c.resourceDispenserMaanger = null;
     c.gameSpaceMigrationRequests = [];
-    c.gameSoundManager = O.create(b, c);
+    c.gameSoundManager = GameSoundManager.create(b, c);
     c.entityFactory = EntityFactory.create(b, c);
     c.blockFactory = BlockFactory.create(b, c);
-    c.effectFactory = X.create(b, c);
+    c.effectFactory = EffectFactory.create(b, c);
     c.useSplashScreens = a.useSplashScreens;
     c.gamestateSplashScreens = GamestateSplashScreens.create(c, b);
     c.useWarScoreGUI = !0;
@@ -68533,7 +68533,7 @@
     c.numberOfLeaderboardRequests = 0;
     c.variableStep = ba.variableStep;
     c.gameDayTime = 7;
-    c.dayNightKeyframes = Hb.dayNightKeyframes;
+    c.dayNightKeyframes = GameLighting.dayNightKeyframes;
     c.minutesPerDayCycle = ba.minutesPerDayCycle;
     c.dayNightEnabled = ba.dayNightEnabled;
     c.clockBasedDayTime = ba.clockBasedDayTime;
@@ -121689,7 +121689,7 @@
       }]
     }
   };
-  Hb.keyframes = {
+  GameLighting.keyframes = {
     dawn: {
       ambient: {
         r: 118,
@@ -121815,7 +121815,7 @@
       }
     }
   };
-  Hb.dayNightKeyframes = [{
+  GameLighting.dayNightKeyframes = [{
     hour: 0,
     keyframe: "midnight"
   }, {
@@ -121872,7 +121872,7 @@
     }
   };
   EntityFactory.archetypes.l_roomHuge = {};
-  O.archetypes.footStep = {
+  GameSoundManager.archetypes.footStep = {
     random: !0,
     sounds: [{
       path: "sounds/Footsteps/grass_step_1.ogg",
@@ -121896,104 +121896,104 @@
       volume: 0.08
     }]
   };
-  O.archetypes.uiDown = {
+  GameSoundManager.archetypes.uiDown = {
     path: "sounds/NFF-switch-on.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.uiUp = {
+  GameSoundManager.archetypes.uiUp = {
     path: "sounds/NFF-switch-off.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.uiSelect = {
+  GameSoundManager.archetypes.uiSelect = {
     path: "sounds/NFF-menu-08-a.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.uiDeselect = {
+  GameSoundManager.archetypes.uiDeselect = {
     path: "sounds/NFF-menu-08-b.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.imguiDown = {
+  GameSoundManager.archetypes.imguiDown = {
     path: "sounds/gui_click.ogg",
     loop: !1,
     volume: 0.8,
     camera: !0
   };
-  O.archetypes.imguiUp = {
+  GameSoundManager.archetypes.imguiUp = {
     path: "sounds/gui_click.ogg",
     loop: !1,
     volume: 0,
     camera: !0
   };
-  O.archetypes.imguiSelect = {
+  GameSoundManager.archetypes.imguiSelect = {
     path: "sounds/gui_over.ogg",
     loop: !1,
     volume: 0.4
   };
-  O.archetypes.imguiDeselect = {
+  GameSoundManager.archetypes.imguiDeselect = {
     path: "sounds/gui_click.ogg",
     loop: !1,
     volume: 0
   };
-  O.archetypes.healStart = {
+  GameSoundManager.archetypes.healStart = {
     path: "sounds/spawn.ogg",
     loop: !1,
     volume: 0
   };
-  O.archetypes.healEnd = {
+  GameSoundManager.archetypes.healEnd = {
     path: "sounds/gui_click.ogg",
     loop: !1,
     volume: 0
   };
-  O.archetypes.speechExclaim = {
+  GameSoundManager.archetypes.speechExclaim = {
     path: "sounds/wildling-squeak.ogg",
     loop: !1,
     volume: 1
   };
-  O.archetypes.speechWelcomeBack = {
+  GameSoundManager.archetypes.speechWelcomeBack = {
     path: "sounds/wildling-squeak.ogg",
     loop: !1,
     volume: 1
   };
-  O.archetypes.buildingPickup = {
+  GameSoundManager.archetypes.buildingPickup = {
     path: "sounds/building-pickup.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.buildingReady = {
+  GameSoundManager.archetypes.buildingReady = {
     path: "sounds/place-building.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.buildingPlace = {
+  GameSoundManager.archetypes.buildingPlace = {
     path: "sounds/heavy_building.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.buildingCancel = {
+  GameSoundManager.archetypes.buildingCancel = {
     path: "sounds/bubble_negative.ogg",
     loop: !1,
     volume: 0.4
   };
-  O.archetypes.pickupWood = {
+  GameSoundManager.archetypes.pickupWood = {
     path: "sounds/pop.ogg",
     loop: !1,
     volume: 0.7
   };
-  O.archetypes.pickupStone = {
+  GameSoundManager.archetypes.pickupStone = {
     path: "sounds/pop.ogg",
     loop: !1,
     volume: 0.7
   };
-  O.archetypes.pickupSoftCurrency = {
+  GameSoundManager.archetypes.pickupSoftCurrency = {
     path: "sounds/amber-pickup.ogg",
     loop: !1,
     volume: 0.9
   };
-  O.archetypes.depositWoodStart = {
+  GameSoundManager.archetypes.depositWoodStart = {
     random: !0,
     sounds: [{
       path: "sounds/bubble_negative.ogg",
@@ -122007,7 +122007,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.depositStoneStart = {
+  GameSoundManager.archetypes.depositStoneStart = {
     random: !0,
     sounds: [{
       path: "sounds/bubble_negative.ogg",
@@ -122021,7 +122021,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.depositWoodEnd = {
+  GameSoundManager.archetypes.depositWoodEnd = {
     random: !0,
     sounds: [{
       path: "sounds/chop_1.ogg",
@@ -122050,7 +122050,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.depositStoneEnd = {
+  GameSoundManager.archetypes.depositStoneEnd = {
     random: !0,
     sounds: [{
       path: "sounds/chip_1.ogg",
@@ -122069,13 +122069,13 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.scorePulse = {
+  GameSoundManager.archetypes.scorePulse = {
     path: "sounds/wave-approaching.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.bubbleNegative = {
+  GameSoundManager.archetypes.bubbleNegative = {
     random: !0,
     sounds: [{
       path: "sounds/pop.ogg",
@@ -122083,12 +122083,12 @@
       volume: 0.5
     }]
   };
-  O.archetypes.bubblePositive = {
+  GameSoundManager.archetypes.bubblePositive = {
     path: "sounds/pop.ogg",
     loop: !1,
     volume: 0.5
   };
-  O.archetypes.chop = {
+  GameSoundManager.archetypes.chop = {
     random: !0,
     sounds: [{
       path: "sounds/chop_1.ogg",
@@ -122122,7 +122122,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.mine = {
+  GameSoundManager.archetypes.mine = {
     random: !0,
     sounds: [{
       path: "sounds/chip_1.ogg",
@@ -122141,31 +122141,31 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.combatWaveApproaching = {
+  GameSoundManager.archetypes.combatWaveApproaching = {
     path: "sounds/wave-approaching.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.pistolcock = {
+  GameSoundManager.archetypes.pistolcock = {
     path: "sounds/arrowcock.ogg",
     loop: !1,
     volume: 0.75,
     delayedLoad: !0
   };
-  O.archetypes.pistolreload = {
+  GameSoundManager.archetypes.pistolreload = {
     path: "sounds/arrowreload.ogg",
     loop: !1,
     volume: 0,
     delayedLoad: !0
   };
-  O.archetypes.pistoldryfire = {
+  GameSoundManager.archetypes.pistoldryfire = {
     path: "sounds/arrowdryfire.ogg",
     loop: !1,
     volume: 0.01,
     delayedLoad: !0
   };
-  O.archetypes.pistolshot = {
+  GameSoundManager.archetypes.pistolshot = {
     random: !0,
     sounds: [{
       path: "sounds/pistolshot1.ogg",
@@ -122189,7 +122189,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.arrowshot = {
+  GameSoundManager.archetypes.arrowshot = {
     random: !0,
     sounds: [{
       path: "sounds/arrowshot1.ogg",
@@ -122209,7 +122209,7 @@
       volume: 0.75
     }]
   };
-  O.archetypes.punch = {
+  GameSoundManager.archetypes.punch = {
     random: !0,
     sounds: [{
       path: "sounds/Punch_01.ogg",
@@ -122268,49 +122268,49 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.stomp = {
+  GameSoundManager.archetypes.stomp = {
     path: "sounds/SpecialMoveForcePush_01.ogg",
     loop: !1,
     volume: 0.75,
     delayedLoad: !0
   };
-  O.archetypes.chargeImpact = {
+  GameSoundManager.archetypes.chargeImpact = {
     path: "sounds/LargeHit-01.ogg",
     loop: !1,
     volume: 0.55,
     delayedLoad: !0
   };
-  O.archetypes.explosion = {
+  GameSoundManager.archetypes.explosion = {
     path: "sounds/explosion.ogg",
     loop: !1,
     volume: 0.85,
     delayedLoad: !0
   };
-  O.archetypes.explosionBig = {
+  GameSoundManager.archetypes.explosionBig = {
     path: "sounds/explosion_big.ogg",
     loop: !1,
     volume: 0.7,
     delayedLoad: !0
   };
-  O.archetypes.explosionBarrel = {
+  GameSoundManager.archetypes.explosionBarrel = {
     path: "sounds/explosion_barrel.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.explosionMine = {
+  GameSoundManager.archetypes.explosionMine = {
     path: "sounds/explosion_mine.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.horn = {
+  GameSoundManager.archetypes.horn = {
     path: "sounds/horn.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.mortar = {
+  GameSoundManager.archetypes.mortar = {
     random: !0,
     sounds: [{
       path: "sounds/mortar_1.ogg",
@@ -122324,12 +122324,12 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.thud = {
+  GameSoundManager.archetypes.thud = {
     path: "sounds/thud.ogg",
     loop: !1,
     volume: 0.125
   };
-  O.archetypes.ouch = {
+  GameSoundManager.archetypes.ouch = {
     random: !0,
     sounds: [{
       path: "sounds/hurt_01.ogg",
@@ -122353,7 +122353,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.battleEffort = {
+  GameSoundManager.archetypes.battleEffort = {
     random: !0,
     sounds: [{
       path: "sounds/effort_1.ogg",
@@ -122372,7 +122372,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.roar = {
+  GameSoundManager.archetypes.roar = {
     random: !0,
     sounds: [{
       path: "sounds/roar_wildling_1.ogg",
@@ -122401,19 +122401,19 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.mini_wildling_roar = {
+  GameSoundManager.archetypes.mini_wildling_roar = {
     path: "sounds/mini_wildling_roar.ogg",
     loop: !1,
     volume: 0.5,
     delayedLoad: !0
   };
-  O.archetypes.dartFly = {
+  GameSoundManager.archetypes.dartFly = {
     path: "sounds/dart_fly.ogg",
     loop: !1,
     volume: 0.5,
     delayedLoad: !0
   };
-  O.archetypes.dartHit = {
+  GameSoundManager.archetypes.dartHit = {
     random: !0,
     sounds: [{
       path: "sounds/grassimpact1.ogg",
@@ -122432,13 +122432,13 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.spit = {
+  GameSoundManager.archetypes.spit = {
     path: "sounds/spit.ogg",
     loop: !1,
     volume: 0.7,
     delayedLoad: !0
   };
-  O.archetypes.dartHitFlesh = {
+  GameSoundManager.archetypes.dartHitFlesh = {
     random: !0,
     sounds: [{
       path: "sounds/body_impact_1.ogg",
@@ -122457,13 +122457,13 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.dartHitFleshCharged = {
+  GameSoundManager.archetypes.dartHitFleshCharged = {
     path: "sounds/dart_hit_flesh_charged.ogg",
     loop: !1,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.collectBig = {
+  GameSoundManager.archetypes.collectBig = {
     random: !0,
     sounds: [{
       path: "sounds/pipe_1.ogg",
@@ -122487,31 +122487,31 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.spawnHero = {
+  GameSoundManager.archetypes.spawnHero = {
     path: "sounds/spawn.ogg",
     loop: !1,
     volume: 1.3,
     delayedLoad: !0
   };
-  O.archetypes.appear = {
+  GameSoundManager.archetypes.appear = {
     path: "sounds/appear.ogg",
     loop: !1,
     volume: 0.5,
     delayedLoad: !0
   };
-  O.archetypes.wilhelm = {
+  GameSoundManager.archetypes.wilhelm = {
     path: "sounds/wilhelm_scream.ogg",
     loop: !1,
     volume: 0.75,
     delayedLoad: !0
   };
-  O.archetypes.openDoor = {
+  GameSoundManager.archetypes.openDoor = {
     path: "sounds/door_open.ogg",
     loop: !1,
     volume: 0.125,
     delayedLoad: !0
   };
-  O.archetypes.barrel = {
+  GameSoundManager.archetypes.barrel = {
     random: !0,
     sounds: [{
       path: "sounds/col_impactwoodbarrel2.ogg",
@@ -122530,13 +122530,13 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes["switch"] = {
+  GameSoundManager.archetypes["switch"] = {
     path: "sounds/switch.ogg",
     loop: !1,
     volume: 0.75,
     delayedLoad: !0
   };
-  O.archetypes.stoneDoor = {
+  GameSoundManager.archetypes.stoneDoor = {
     path: "sounds/stone_door.ogg",
     loop: !1,
     volume: 0.75,
@@ -122660,31 +122660,31 @@
       duration: 0.125
     }
   };
-  X.archetypes.explosion = {
+  EffectFactory.archetypes.explosion = {
     visualEffectArchetype: "explosion",
     soundEffectArchetype: "explosion",
     screenShakeArchetype: "explosion"
   };
-  X.archetypes.placeBuilding = {
+  EffectFactory.archetypes.placeBuilding = {
     visualEffectArchetype: "scaffold",
     soundEffectArchetype: "buildingPlace",
     screenShakeArchetype: "placeBuilding"
   };
-  X.archetypes.taskLocation = {
+  EffectFactory.archetypes.taskLocation = {
     visualEffectArchetype: "arrowPulse"
   };
-  X.archetypes.criticalTaskLocation = {
+  EffectFactory.archetypes.criticalTaskLocation = {
     visualEffectArchetype: "criticalArrowPulse"
   };
-  X.archetypes.placeSmallBuilding = {
+  EffectFactory.archetypes.placeSmallBuilding = {
     visualEffectArchetype: "smallScaffold",
     soundEffectArchetype: "buildingPlace",
     screenShakeArchetype: "placeBuilding"
   };
-  X.archetypes.shot = {
+  EffectFactory.archetypes.shot = {
     visualEffectArchetype: "shot"
   };
-  X.archetypes.hitScaffold = {
+  EffectFactory.archetypes.hitScaffold = {
     visualEffectArchetype: "hitScaffold"
   };
   i.borderWidth = 6;
@@ -139327,416 +139327,416 @@
       svgPath: "gui/task_icon_upgrade.svg"
     }]
   };
-  X.archetypes.dfx_dth_e_generic = {
+  EffectFactory.archetypes.dfx_dth_e_generic = {
     visualEffectArchetypeList: ["vfx_dth_e_generic1v", "vfx_dth_e_generic2h", "vfx_dth_e_generic2v", "vfx_dth_e_generic3v"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_inc_death = {
+  EffectFactory.archetypes.sfx_inc_death = {
     visualEffectArchetypeList: ["vfx_inc_death"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_mushroom1_puff = {
+  EffectFactory.archetypes.sfx_mushroom1_puff = {
     visualEffectArchetypeList: ["vfx_mushroom_puff_1_1v", "vfx_mushroom_puff_1_2h", "vfx_mushroom_puff_1_2v", "vfx_mushroom_puff_1_3v"],
     soundEffectArchetype: "aud_scenery_mushroom",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_mushroom2_puff = {
+  EffectFactory.archetypes.sfx_mushroom2_puff = {
     visualEffectArchetypeList: ["vfx_mushroom_puff_2_1v", "vfx_mushroom_puff_2_2h", "vfx_mushroom_puff_2_2v", "vfx_mushroom_puff_2_3v"],
     soundEffectArchetype: "aud_scenery_mushroom",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_mushroom3_puff = {
+  EffectFactory.archetypes.sfx_mushroom3_puff = {
     visualEffectArchetypeList: ["vfx_mushroom_puff_3_1v", "vfx_mushroom_puff_3_2h", "vfx_mushroom_puff_3_2v", "vfx_mushroom_puff_3_3v"],
     soundEffectArchetype: "aud_scenery_mushroom",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_mushroom_hit = {
+  EffectFactory.archetypes.sfx_mushroom_hit = {
     visualEffectArchetypeList: ["vfx_mushroom_hit1", "vfx_mushroom_hit2", "vfx_mushroom_hit3"],
     soundEffectArchetype: "aud_hit_mushroom",
     screenShakeArchetype: void 0
   };
-  X.archetypes.heroMeleeHit = {
+  EffectFactory.archetypes.heroMeleeHit = {
     visualEffectArchetypeList: ["vfx_hero_melee_thump1h", "vfx_hero_melee_thump1v"],
     soundEffectArchetype: "punch",
     screenShakeArchetype: "explosion"
   };
-  X.archetypes.sfx_hero_level_up = {
+  EffectFactory.archetypes.sfx_hero_level_up = {
     visualEffectArchetypeList: ["vfx_hero_rankup1", "vfx_hero_rankup2", "vfx_hero_rankup3", "vfx_hero_rankup4"],
     soundEffectArchetype: "aud_celebrate",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_healing = {
+  EffectFactory.archetypes.sfx_healing = {
     visualEffectArchetypeList: ["vfx_healing1", "vfx_healing2", "vfx_healing3", "vfx_healing4"],
     soundEffectArchetype: "aud_healing",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_hit_e_berserker = {
+  EffectFactory.archetypes.sfx_hit_e_berserker = {
     visualEffectArchetypeList: ["vfx_hit_e_generic1", "vfx_hit_e_generic2", "vfx_hit_bullet"],
     soundEffectArchetype: "aud_hit_e_berserker",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_e_berserker = {
+  EffectFactory.archetypes.sfx_amb_e_berserker = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_e_berserker",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_hit_e_basicmelee = {
+  EffectFactory.archetypes.sfx_hit_e_basicmelee = {
     visualEffectArchetypeList: ["vfx_hit_e_generic1", "vfx_hit_e_generic2", "vfx_hit_bullet"],
     soundEffectArchetype: "aud_hit_generic",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_hit_e_ranged = {
+  EffectFactory.archetypes.sfx_hit_e_ranged = {
     visualEffectArchetypeList: ["vfx_hit_e_generic1", "vfx_hit_e_generic2", "vfx_hit_bullet"],
     soundEffectArchetype: "aud_hit_generic",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_hit_e_commando = {
+  EffectFactory.archetypes.sfx_hit_e_commando = {
     visualEffectArchetypeList: ["vfx_hit_e_generic1", "vfx_hit_e_generic2", "vfx_hit_bullet"],
     soundEffectArchetype: "aud_hit_generic",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_hit_e_charger = {
+  EffectFactory.archetypes.sfx_hit_e_charger = {
     visualEffectArchetypeList: ["vfx_hit_e_generic1", "vfx_hit_e_generic2", "vfx_hit_bullet"],
     soundEffectArchetype: "aud_hit_generic",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_hit_e_bombthrower = {
+  EffectFactory.archetypes.sfx_hit_e_bombthrower = {
     visualEffectArchetypeList: ["vfx_hit_e_generic1", "vfx_hit_e_generic2", "vfx_hit_bullet"],
     soundEffectArchetype: "aud_hit_generic",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_e_death = {
+  EffectFactory.archetypes.sfx_amb_e_death = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_e_death",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_dth_e_death = {
+  EffectFactory.archetypes.sfx_dth_e_death = {
     visualEffectArchetypeList: ["vfx_dth_death1", "vfx_dth_death2", "vfx_dth_death3", "vfx_dth_death4", "vfx_dth_death5"],
     soundEffectArchetype: "aud_dth_e_death",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_hit_e_treasure = {
+  EffectFactory.archetypes.sfx_hit_e_treasure = {
     visualEffectArchetype: "vfx_hit_e_treasure",
     soundEffectArchetype: "aud_hit_e_treasure",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_crt_e_bannerling = {
+  EffectFactory.archetypes.sfx_crt_e_bannerling = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_crt_e_bannerling",
     screenShakeArchetype: "shk_horn"
   };
-  X.archetypes.sfx_amb_dynamite = {
+  EffectFactory.archetypes.sfx_amb_dynamite = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_dynamite",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_crt_mortar = {
+  EffectFactory.archetypes.sfx_crt_mortar = {
     visualEffectArchetype: "vfx_crt_mortar",
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_crt_bullet = {
+  EffectFactory.archetypes.sfx_crt_bullet = {
     visualEffectArchetype: "vfx_crt_bullet",
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_bullet = {
+  EffectFactory.archetypes.sfx_amb_bullet = {
     visualEffectArchetype: ["vfx_amb_bullet"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_spit = {
+  EffectFactory.archetypes.sfx_amb_spit = {
     visualEffectArchetype: ["vfx_amb_spit"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_fire_shotgun = {
+  EffectFactory.archetypes.sfx_fire_shotgun = {
     visualEffectArchetype: ["vfx_fire_shotgunH1", "vfx_fire_shotgunV1"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_construction = {
+  EffectFactory.archetypes.sfx_construction = {
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_dst_fire = {
+  EffectFactory.archetypes.sfx_dst_fire = {
     visualEffectArchetypeList: "vfx_dst_fire1 vfx_dst_fire2 vfx_dst_fire3 vfx_dst_fire4 vfx_dst_fire5 vfx_dst_fire6".split(" "),
     soundEffectArchetype: "aud_dst_fire",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_dst_fire_small = {
+  EffectFactory.archetypes.sfx_dst_fire_small = {
     visualEffectArchetypeList: "vfx_dst_fire_small1 vfx_dst_fire_small2 vfx_dst_fire_small3 vfx_dst_fire_small4 vfx_dst_fire_small5 vfx_dst_fire_small6".split(" "),
     soundEffectArchetype: "aud_dst_fire",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_dth_building = {
+  EffectFactory.archetypes.sfx_dth_building = {
     visualEffectArchetypeList: ["vfx_dth_building1", "vfx_dth_building2", "vfx_dth_building3", "vfx_dth_building4"],
     soundEffectArchetype: "aud_dth_building",
     screenShakeArchetype: "shk_dth_building"
   };
-  X.archetypes.sfx_dth_small_building = {
+  EffectFactory.archetypes.sfx_dth_small_building = {
     visualEffectArchetypeList: ["vfx_dth_small_building1", "vfx_dth_small_building2", "vfx_dth_small_building3", "vfx_dth_small_building4"],
     soundEffectArchetype: "aud_dth_building",
     screenShakeArchetype: "shk_dth_building"
   };
-  X.archetypes.sfx_crt_building = {
+  EffectFactory.archetypes.sfx_crt_building = {
     visualEffectArchetypeList: ["vfx_crt_building1", "vfx_crt_building2"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_buildoption = {
+  EffectFactory.archetypes.sfx_buildoption = {
     visualEffectArchetypeList: ["vfx_buildoption_1v", "vfx_buildoption_2h", "vfx_buildoption_2v", "vfx_buildoption_3v"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_amber = {
+  EffectFactory.archetypes.sfx_amb_amber = {
     soundEffectArchetype: "aud_amb_amber"
   };
-  X.archetypes.sfx_dst_r_amber = {
+  EffectFactory.archetypes.sfx_dst_r_amber = {
     visualEffectArchetypeList: ["vfx_dst_r_amber"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_dst_r_lumber = {
+  EffectFactory.archetypes.sfx_dst_r_lumber = {
     visualEffectArchetypeList: ["vfx_dst_r_lumber"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_dst_r_stone = {
+  EffectFactory.archetypes.sfx_dst_r_stone = {
     visualEffectArchetypeList: ["vfx_dst_r_generic", "vfx_dst_r_stone"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_xp = {
+  EffectFactory.archetypes.sfx_amb_xp = {
     soundEffectArchetype: "aud_amb_xp"
   };
-  X.archetypes.sfx_dst_r_xp = {
+  EffectFactory.archetypes.sfx_dst_r_xp = {
     visualEffectArchetypeList: ["vfx_dst_r_xp"],
     soundEffectArchetype: "aud_dst_xp",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_scenery_waterfall = {
+  EffectFactory.archetypes.sfx_amb_scenery_waterfall = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_scenery_waterfall",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_fire = {
+  EffectFactory.archetypes.sfx_amb_fire = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_fire",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_explosion = {
+  EffectFactory.archetypes.sfx_explosion = {
     visualEffectArchetypeList: "vfx_exp_0h vfx_exp_1h vfx_exp_1v vfx_exp_2h vfx_exp_2v vfx_exp_3h vfx_exp_3v".split(" "),
     soundEffectArchetype: "aud_explosion",
     screenShakeArchetype: "shk_explosion"
   };
-  X.archetypes.sfx_explosion_dc = {
+  EffectFactory.archetypes.sfx_explosion_dc = {
     visualEffectArchetypeList: "vfx_exp_0h vfx_exp_1h vfx_exp_1v vfx_exp_2h vfx_exp_2v vfx_exp_3h vfx_exp_3v vfx_exp_decal".split(" "),
     soundEffectArchetype: "aud_explosion",
     screenShakeArchetype: "shk_explosion"
   };
-  X.archetypes.sfx_explosionBerserker = {
+  EffectFactory.archetypes.sfx_explosionBerserker = {
     visualEffectArchetypeList: "vfx_expBig_0h vfx_expBig_1h vfx_expBig_1v vfx_expBig_2h vfx_expBig_2v vfx_expBig_3h vfx_expBig_3v vfx_exp_decalBig".split(" "),
     soundEffectArchetype: "aud_explosionBerserker",
     screenShakeArchetype: "shk_explosionBig"
   };
-  X.archetypes.sfx_explosionBarrel = {
+  EffectFactory.archetypes.sfx_explosionBarrel = {
     visualEffectArchetypeList: "vfx_expBig_0h vfx_expBig_1h vfx_expBig_1v vfx_expBig_2h vfx_expBig_2v vfx_expBig_3h vfx_expBig_3v vfx_exp_decalBig".split(" "),
     soundEffectArchetype: "aud_explosionBarrel",
     screenShakeArchetype: "shk_explosionBig"
   };
-  X.archetypes.sfx_explosionMine = {
+  EffectFactory.archetypes.sfx_explosionMine = {
     visualEffectArchetypeList: "vfx_exp_0h vfx_exp_1h vfx_exp_1v vfx_exp_2h vfx_exp_2v vfx_exp_3h vfx_exp_3v vfx_exp_decal".split(" "),
     soundEffectArchetype: "aud_explosionMine",
     screenShakeArchetype: "shk_explosion"
   };
-  X.archetypes.sfx_bannerling_alert_mob = {
+  EffectFactory.archetypes.sfx_bannerling_alert_mob = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_mob"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_bombthrower = {
+  EffectFactory.archetypes.sfx_bannerling_alert_bombthrower = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_bombthrower"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_boss = {
+  EffectFactory.archetypes.sfx_bannerling_alert_boss = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_boss"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_charger = {
+  EffectFactory.archetypes.sfx_bannerling_alert_charger = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_charger"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_commando = {
+  EffectFactory.archetypes.sfx_bannerling_alert_commando = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_commando"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_death = {
+  EffectFactory.archetypes.sfx_bannerling_alert_death = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_death"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_ranged = {
+  EffectFactory.archetypes.sfx_bannerling_alert_ranged = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_ranged"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_thief = {
+  EffectFactory.archetypes.sfx_bannerling_alert_thief = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_thief"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_bannerling_alert_treasuredropper = {
+  EffectFactory.archetypes.sfx_bannerling_alert_treasuredropper = {
     visualEffectArchetypeList: ["vfx_bannerling_alert_treasuredropper"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_dth_crate = {
+  EffectFactory.archetypes.sfx_dth_crate = {
     visualEffectArchetypeList: ["vfx_dth_crate1", "vfx_dth_crate2", "vfx_dth_crate3"]
   };
-  X.archetypes.sfx_dth_e_arrow = {
+  EffectFactory.archetypes.sfx_dth_e_arrow = {
     visualEffectArchetypeList: ["vfx_dth_e_arrow1v", "vfx_dth_e_arrow2h", "vfx_dth_e_arrow2v", "vfx_dth_e_arrow3v"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_upgrade_batch = {
+  EffectFactory.archetypes.sfx_upgrade_batch = {
     visualEffectArchetypeList: "vfx_upgrade_batch1 vfx_upgrade_batch2v vfx_upgrade_batch3h vfx_upgrade_batch3v vfx_upgrade_batch4v vfx_upgrade_batch5".split(" "),
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_s_cave = {
+  EffectFactory.archetypes.sfx_amb_s_cave = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_s_cave",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_s_runningwater = {
+  EffectFactory.archetypes.sfx_amb_s_runningwater = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_s_runningwater",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_s_waves = {
+  EffectFactory.archetypes.sfx_amb_s_waves = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_s_waves",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_amb_s_firefly = {
+  EffectFactory.archetypes.sfx_amb_s_firefly = {
     visualEffectArchetype: void 0,
     soundEffectArchetype: "aud_amb_s_firefly",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_build = {
+  EffectFactory.archetypes.sfx_gui_build = {
     visualEffectArchetypeList: ["vfx_gui_build"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_upgrade = {
+  EffectFactory.archetypes.sfx_gui_upgrade = {
     visualEffectArchetypeList: ["vfx_gui_upgrade"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_research = {
+  EffectFactory.archetypes.sfx_gui_research = {
     visualEffectArchetypeList: ["vfx_gui_research"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_rankup = {
+  EffectFactory.archetypes.sfx_gui_rankup = {
     visualEffectArchetypeList: ["vfx_gui_rankup4"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_lumberfull = {
+  EffectFactory.archetypes.sfx_gui_lumberfull = {
     visualEffectArchetypeList: ["vfx_gui_lumberfull1", "vfx_gui_lumberfull2", "vfx_gui_lumberfull3"],
     soundEffectArchetype: "aud_res_full",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_stonefull = {
+  EffectFactory.archetypes.sfx_gui_stonefull = {
     visualEffectArchetypeList: ["vfx_gui_stonefull1", "vfx_gui_stonefull2", "vfx_gui_stonefull3"],
     soundEffectArchetype: "aud_res_full",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_buildingcomplete = {
+  EffectFactory.archetypes.sfx_gui_buildingcomplete = {
     visualEffectArchetypeList: ["vfx_gui_buildingcomplete4"],
     soundEffectArchetype: "aud_celebrate_build",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_newquest = {
+  EffectFactory.archetypes.sfx_gui_newquest = {
     visualEffectArchetypeList: ["vfx_gui_newquest"],
     soundEffectArchetype: "aud_newquest",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_newfillerquest = {
+  EffectFactory.archetypes.sfx_gui_newfillerquest = {
     visualEffectArchetypeList: ["vfx_gui_buildingcomplete4"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_newquestarrow = {
+  EffectFactory.archetypes.sfx_gui_newquestarrow = {
     visualEffectArchetypeList: ["vfx_gui_newquestarrow"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_newfillerquestarrow = {
+  EffectFactory.archetypes.sfx_gui_newfillerquestarrow = {
     visualEffectArchetypeList: ["vfx_gui_newfillerquestarrow"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_researchcomplete = {
+  EffectFactory.archetypes.sfx_gui_researchcomplete = {
     visualEffectArchetypeList: ["vfx_gui_researchcomplete4"],
     soundEffectArchetype: "aud_celebrate_build",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_wavestarted = {
+  EffectFactory.archetypes.sfx_gui_wavestarted = {
     visualEffectArchetypeList: ["vfx_gui_wavestarted"],
     soundEffectArchetype: "aud_res_full",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_badgeachieved = {
+  EffectFactory.archetypes.sfx_gui_badgeachieved = {
     visualEffectArchetypeList: ["vfx_gui_badgeachieved1", "vfx_gui_badgeachieved2"],
     soundEffectArchetype: "aud_badge_complete",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_taskstarted = {
+  EffectFactory.archetypes.sfx_gui_taskstarted = {
     visualEffectArchetypeList: ["vfx_gui_taskstarted"],
     soundEffectArchetype: "aud_alert",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_taskcomplete = {
+  EffectFactory.archetypes.sfx_gui_taskcomplete = {
     visualEffectArchetypeList: ["vfx_gui_taskcomplete"],
     soundEffectArchetype: "aud_task_complete",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_badgestarted = {
+  EffectFactory.archetypes.sfx_gui_badgestarted = {
     visualEffectArchetypeList: ["vfx_gui_badgestarted"],
     soundEffectArchetype: "aud_alert",
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_badgecomplete = {
+  EffectFactory.archetypes.sfx_gui_badgecomplete = {
     visualEffectArchetypeList: ["vfx_gui_badgecomplete"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_radial_open = {
+  EffectFactory.archetypes.sfx_gui_radial_open = {
     visualEffectArchetypeList: ["vfx_gui_radial_open"],
     soundEffectArchetype: void 0,
     screenShakeArchetype: void 0
   };
-  X.archetypes.sfx_gui_task_panel_complete = {
+  EffectFactory.archetypes.sfx_gui_task_panel_complete = {
     visualEffectArchetypeList: ["vfx_gui_task_panel_complete"],
     soundEffectArchetype: "aud_task_complete",
     screenShakeArchetype: void 0
   };
-  O.archetypes.aud_test = {
+  GameSoundManager.archetypes.aud_test = {
     path: "sounds/zombie_walk.ogg",
     loop: !1,
     volume: 1,
     delayedLoad: !0
   };
-  O.archetypes.aud_music_theme = {
+  GameSoundManager.archetypes.aud_music_theme = {
     path: "sounds/music_main_theme.ogg",
     loop: !0,
     camera: !0,
@@ -139744,14 +139744,14 @@
     delayedLoad: !0,
     preview: "aud_music_theme_preview"
   };
-  O.archetypes.aud_music_theme_preview = {
+  GameSoundManager.archetypes.aud_music_theme_preview = {
     path: "sounds/music_main_theme_preview.ogg",
     loop: !0,
     camera: !0,
     volume: 0.85,
     delayedLoad: !1
   };
-  O.archetypes.aud_music_day = {
+  GameSoundManager.archetypes.aud_music_day = {
     path: "sounds/music_day_theme.ogg",
     loop: !0,
     camera: !0,
@@ -139759,14 +139759,14 @@
     delayedLoad: !0,
     preview: "aud_music_day_preview"
   };
-  O.archetypes.aud_music_day_preview = {
+  GameSoundManager.archetypes.aud_music_day_preview = {
     path: "sounds/music_day_theme_preview.ogg",
     loop: !0,
     camera: !0,
     volume: 0.9,
     delayedLoad: !1
   };
-  O.archetypes.aud_music_night = {
+  GameSoundManager.archetypes.aud_music_night = {
     path: "sounds/music_night_theme.ogg",
     loop: !0,
     camera: !0,
@@ -139774,14 +139774,14 @@
     delayedLoad: !0,
     preview: "aud_music_night_preview"
   };
-  O.archetypes.aud_music_night_preview = {
+  GameSoundManager.archetypes.aud_music_night_preview = {
     path: "sounds/music_night_theme_preview.ogg",
     loop: !0,
     camera: !0,
     volume: 0.9,
     delayedLoad: !1
   };
-  O.archetypes.aud_music_battle = {
+  GameSoundManager.archetypes.aud_music_battle = {
     path: "sounds/music_battle_theme_normal.ogg",
     loop: !0,
     camera: !0,
@@ -139789,14 +139789,14 @@
     delayedLoad: !0,
     preview: "aud_music_battle_preview"
   };
-  O.archetypes.aud_music_battle_preview = {
+  GameSoundManager.archetypes.aud_music_battle_preview = {
     path: "sounds/music_battle_theme_normal_preview.ogg",
     loop: !0,
     camera: !0,
     volume: 0.9,
     delayedLoad: !1
   };
-  O.archetypes.aud_music_battle_boss = {
+  GameSoundManager.archetypes.aud_music_battle_boss = {
     path: "sounds/music_battle_theme_boss.ogg",
     loop: !0,
     camera: !0,
@@ -139804,118 +139804,118 @@
     delayedLoad: !0,
     preview: "aud_music_battle_boss_preview"
   };
-  O.archetypes.aud_music_battle_boss_preview = {
+  GameSoundManager.archetypes.aud_music_battle_boss_preview = {
     path: "sounds/music_battle_theme_boss_preview.ogg",
     loop: !0,
     camera: !0,
     volume: 0.9,
     delayedLoad: !1
   };
-  O.archetypes.aud_amber_spend = {
+  GameSoundManager.archetypes.aud_amber_spend = {
     path: "sounds/amber-pickup.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_prepare_battle = {
+  GameSoundManager.archetypes.aud_sting_prepare_battle = {
     path: "sounds/fail_2.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_success_battle = {
+  GameSoundManager.archetypes.aud_sting_success_battle = {
     path: "sounds/success_battle.ogg",
     loop: !1,
     camera: !0,
     volume: 1.1,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_success_1 = {
+  GameSoundManager.archetypes.aud_sting_success_1 = {
     path: "sounds/success_1.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_success_2 = {
+  GameSoundManager.archetypes.aud_sting_success_2 = {
     path: "sounds/success_2.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_success_3 = {
+  GameSoundManager.archetypes.aud_sting_success_3 = {
     path: "sounds/success_3.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_success_4 = {
+  GameSoundManager.archetypes.aud_sting_success_4 = {
     path: "sounds/success_4.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_success_5 = {
+  GameSoundManager.archetypes.aud_sting_success_5 = {
     path: "sounds/success_5.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_fail_battle = {
+  GameSoundManager.archetypes.aud_sting_fail_battle = {
     path: "sounds/fail_battle.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_fail_1 = {
+  GameSoundManager.archetypes.aud_sting_fail_1 = {
     path: "sounds/fail_1.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_fail_2 = {
+  GameSoundManager.archetypes.aud_sting_fail_2 = {
     path: "sounds/fail_2.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_fail_3 = {
+  GameSoundManager.archetypes.aud_sting_fail_3 = {
     path: "sounds/fail_3.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_fail_4 = {
+  GameSoundManager.archetypes.aud_sting_fail_4 = {
     path: "sounds/fail_4.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_sting_fail_5 = {
+  GameSoundManager.archetypes.aud_sting_fail_5 = {
     path: "sounds/fail_5.ogg",
     loop: !1,
     camera: !0,
     volume: 0.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_hero_rankup = {
+  GameSoundManager.archetypes.aud_hero_rankup = {
     path: "sounds/rank_up_alt.ogg",
     loop: !1,
     volume: 1.9,
     delayedLoad: !0
   };
-  O.archetypes.aud_healing = {
+  GameSoundManager.archetypes.aud_healing = {
     random: !0,
     sounds: [{
       path: "sounds/healing_1.ogg",
@@ -139939,19 +139939,19 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.aud_crt_e_bannerling = {
+  GameSoundManager.archetypes.aud_crt_e_bannerling = {
     path: "sounds/bannerling_horn.ogg",
     loop: !1,
     volume: 1,
     delayedLoad: !0
   };
-  O.archetypes.aud_attack_death = {
+  GameSoundManager.archetypes.aud_attack_death = {
     path: "sounds/death_slice.ogg",
     loop: !1,
     volume: 1,
     delayedLoad: !0
   };
-  O.archetypes.aud_hit_generic = {
+  GameSoundManager.archetypes.aud_hit_generic = {
     random: !0,
     sounds: [{
       path: "sounds/body_impact_1.ogg",
@@ -139970,7 +139970,7 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.aud_hit_e_berserker = {
+  GameSoundManager.archetypes.aud_hit_e_berserker = {
     random: !0,
     sounds: [{
       path: "sounds/hit_metal_1.ogg",
@@ -139989,25 +139989,25 @@
       delayedLoad: !0
     }]
   };
-  O.archetypes.aud_amb_e_berserker = {
+  GameSoundManager.archetypes.aud_amb_e_berserker = {
     path: "sounds/fuse_loop.ogg",
     loop: !0,
     volume: 1.5,
     delayedLoad: !0
   };
-  O.archetypes.aud_amb_e_death = {
+  GameSoundManager.archetypes.aud_amb_e_death = {
     path: "sounds/death_ambient.ogg",
     loop: !0,
     volume: 0.7,
     delayedLoad: !0
   };
-  O.archetypes.aud_dth_e_death = {
+  GameSoundManager.archetypes.aud_dth_e_death = {
     path: "sounds/death_scream.ogg",
     loop: !1,
     volume: 0.6,
     delayedLoad: !0
   };
-  O.archetypes.aud_hit_e_treasure = {
+  GameSoundManager.archetypes.aud_hit_e_treasure = {
     random: !0,
     sounds: [{
       path: "sounds/treasure_chimes_1.ogg",
@@ -140027,7 +140027,7 @@
       volume: 0.8
     }]
   };
-  O.archetypes.aud_amb_amber = {
+  GameSoundManager.archetypes.aud_amb_amber = {
     random: !0,
     sounds: [{
       path: "sounds/treasure_chimes_1.ogg",
@@ -140047,7 +140047,7 @@
       volume: 0.1
     }]
   };
-  O.archetypes.aud_amb_xp = {
+  GameSoundManager.archetypes.aud_amb_xp = {
     random: !0,
     sounds: [{
       path: "sounds/xp_chime_1.ogg",
@@ -140071,7 +140071,7 @@
       volume: 0.2
     }]
   };
-  O.archetypes.aud_dst_xp = {
+  GameSoundManager.archetypes.aud_dst_xp = {
     random: !0,
     sounds: [{
       path: "sounds/xp_collect_1.ogg",
@@ -140091,84 +140091,84 @@
       volume: 0.6
     }]
   };
-  O.archetypes.aud_dynamite = {
+  GameSoundManager.archetypes.aud_dynamite = {
     path: "sounds/fuse_short.ogg",
     loop: !1,
     volume: 1,
     delayedLoad: !0
   };
-  O.archetypes.aud_dth_building = {
+  GameSoundManager.archetypes.aud_dth_building = {
     path: "sounds/explosion_building.ogg",
     loop: !1,
     volume: 1.3,
     delayedLoad: !0
   };
-  O.archetypes.aud_dth_building = {
+  GameSoundManager.archetypes.aud_dth_building = {
     path: "sounds/explosion_building.ogg",
     loop: !1,
     volume: 1.3,
     delayedLoad: !0
   };
-  O.archetypes.aud_scenery_mushroom = {
+  GameSoundManager.archetypes.aud_scenery_mushroom = {
     path: "sounds/mushroom.ogg",
     loop: !1,
     volume: 0.9
   };
-  O.archetypes.aud_hit_mushroom = {
+  GameSoundManager.archetypes.aud_hit_mushroom = {
     path: "sounds/mushroom_impact.ogg",
     loop: !1,
     volume: 1.1
   };
-  O.archetypes.aud_amb_fire = {
+  GameSoundManager.archetypes.aud_amb_fire = {
     path: "sounds/fire_loop.ogg",
     loop: !0,
     volume: 1.3
   };
-  O.archetypes.aud_dst_fire = {
+  GameSoundManager.archetypes.aud_dst_fire = {
     path: "sounds/fire_out.ogg",
     loop: !1,
     volume: 0.7
   };
-  O.archetypes.aud_explosion = {
+  GameSoundManager.archetypes.aud_explosion = {
     path: "sounds/explosion.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.aud_explosionBerserker = {
+  GameSoundManager.archetypes.aud_explosionBerserker = {
     path: "sounds/explosion_big.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.aud_explosionBarrel = {
+  GameSoundManager.archetypes.aud_explosionBarrel = {
     path: "sounds/explosion_barrel.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.aud_explosionMine = {
+  GameSoundManager.archetypes.aud_explosionMine = {
     path: "sounds/explosion_mine.ogg",
     loop: !1,
     volume: 0.8,
     delayedLoad: !0
   };
-  O.archetypes.aud_shotguncock = {
+  GameSoundManager.archetypes.aud_shotguncock = {
     path: "sounds/shotgun_cock.ogg",
     loop: !1,
     volume: 0.3
   };
-  O.archetypes.aud_shotgunreload = {
+  GameSoundManager.archetypes.aud_shotgunreload = {
     path: "sounds/shotgun_reload.ogg",
     loop: !1,
     volume: 0
   };
-  O.archetypes.aud_shotgundryfire = {
+  GameSoundManager.archetypes.aud_shotgundryfire = {
     path: "sounds/shotgun_dryfire.ogg",
     loop: !1,
     volume: 0.01
   };
-  O.archetypes.aud_shotgunshot = {
+  GameSoundManager.archetypes.aud_shotgunshot = {
     random: !0,
     sounds: [{
       path: "sounds/shotgun_fire_1.ogg",
@@ -140184,47 +140184,47 @@
       volume: 0.5
     }]
   };
-  O.archetypes.aud_celebrate = {
+  GameSoundManager.archetypes.aud_celebrate = {
     path: "sounds/celebrate.ogg",
     loop: !1,
     volume: 0.9,
     camera: !0
   };
-  O.archetypes.aud_celebrate_build = {
+  GameSoundManager.archetypes.aud_celebrate_build = {
     path: "sounds/celebrate_build.ogg",
     loop: !1,
     volume: 0.9,
     camera: !0
   };
-  O.archetypes.aud_crate_destroy = {
+  GameSoundManager.archetypes.aud_crate_destroy = {
     path: "sounds/crate_destroy.ogg",
     loop: !1,
     volume: 0.7,
     camera: !0,
     delayedLoad: !1
   };
-  O.archetypes.aud_amb_s_cave = {
+  GameSoundManager.archetypes.aud_amb_s_cave = {
     path: "sounds/cave_loop.ogg",
     loop: !0,
     volume: 0.2,
     camera: !1,
     delayedLoad: !0
   };
-  O.archetypes.aud_amb_s_runningwater = {
+  GameSoundManager.archetypes.aud_amb_s_runningwater = {
     path: "sounds/runningwater_loop.ogg",
     loop: !0,
     volume: 0.8,
     camera: !1,
     delayedLoad: !0
   };
-  O.archetypes.aud_amb_s_waves = {
+  GameSoundManager.archetypes.aud_amb_s_waves = {
     path: "sounds/waves_loop.ogg",
     loop: !0,
     volume: 0.7,
     camera: !1,
     delayedLoad: !0
   };
-  O.archetypes.aud_amb_s_firefly = {
+  GameSoundManager.archetypes.aud_amb_s_firefly = {
     random: !0,
     delayedLoad: !0,
     sounds: [{
@@ -140237,32 +140237,32 @@
       volume: 1.2
     }]
   };
-  O.archetypes.aud_res_full = {
+  GameSoundManager.archetypes.aud_res_full = {
     path: "sounds/resource_full.ogg",
     loop: !1,
     volume: 0.9,
     camera: !0,
     delayedLoad: !0
   };
-  O.archetypes.aud_alert = {
+  GameSoundManager.archetypes.aud_alert = {
     path: "sounds/alert.ogg",
     loop: !1,
     volume: 0.9,
     camera: !0
   };
-  O.archetypes.aud_task_complete = {
+  GameSoundManager.archetypes.aud_task_complete = {
     path: "sounds/task_complete.ogg",
     loop: !1,
     volume: 0.8,
     camera: !0
   };
-  O.archetypes.aud_newquest = {
+  GameSoundManager.archetypes.aud_newquest = {
     path: "sounds/newquest.ogg",
     loop: !1,
     volume: 1,
     camera: !0
   };
-  O.archetypes.aud_badge_complete = {
+  GameSoundManager.archetypes.aud_badge_complete = {
     path: "sounds/badge_achieved_2.ogg",
     loop: !1,
     volume: 1,

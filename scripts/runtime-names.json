@@ -938,6 +938,42 @@
       "outputSHA256": "45636eaea7962504dcf4d0750d4085b8ec2aa11810f4753c910046ce91f5a9e1",
       "inputCanonicalSHA256": "2324551a191676bf90215fa83650f5a7802cc2b4579e67f3d42827acf410311b",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "presentation-model-role-names",
+      "names": [
+        {
+          "original": "Hb",
+          "name": "GameLighting",
+          "role": "gameLighting",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.gameLighting, bound native construction and methods: setTargetSetting, applyToGlobalLights, setShadowsEnabled, drawShadowMap",
+          "offset": 5847,
+          "references": 11
+        },
+        {
+          "original": "O",
+          "name": "GameSoundManager",
+          "role": "gameSoundManager",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.gameSoundManager, bound native construction and methods: setListenerWorldLocation, playSoundOnSource, attachSource, destroy",
+          "offset": 5922,
+          "references": 137
+        },
+        {
+          "original": "X",
+          "name": "EffectFactory",
+          "role": "effectFactory",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.effectFactory, bound native construction and methods: createVisualEffectInstance, createEffectInstance, playPersistentEffect, stopPersistentEffect",
+          "offset": 5102,
+          "references": 96
+        }
+      ],
+      "inputSHA256": "40198828a8f4cad63ed3125e9e7fd947ddcfe4491c5199f05c8fbcab81f25795",
+      "outputSHA256": "501ad882b2ec43a239ead4c910a53691134436dbaf3f808307c39319c6edbf01",
+      "inputCanonicalSHA256": "cc1b0299ecd3f22fdd53c7017864ac3e37099167526cfd0de4ea02364088c8da",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }

@@ -6,7 +6,23 @@ The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`
 
 `scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
 
-## Current native camera/event/UI role names — Beta 75
+## Current native lighting/audio/effects role names — Beta 91
+
+Three more private constructors have descriptive names verified from fields on the actual newly created GameManager:
+
+| Previous binding | Role name | Manager field | Bound references |
+| --- | --- | --- | --- |
+| `Hb` | `GameLighting` | `gameLighting` | 11 |
+| `O` | `GameSoundManager` | `gameSoundManager` | 137 |
+| `X` | `EffectFactory` | `effectFactory` | 96 |
+
+These are verified descriptive role names, not recovered original spellings. No lighting, shadow, audio or effect implementation changes. Public manager fields, sound/effect archetypes, asset paths, save/network keys and execution order remain unchanged.
+
+`scripts/name-presentation-models.cjs` reuses the existing UI pass's guarded manager-field selector. That selector now accepts the two passes' explicit role lists; the earlier UI pass retains its original roles and evidence. Each field must belong to the actual manager being constructed and call one private factory whose construction resolves to the same binding. Required native methods distinguish lighting, sound and effects. The existing shared rename helper rejects dynamic scope, reassignment, ambiguity, name capture and unsupported shorthand. The CLI appends input/output hashes and evidence while retaining earlier manifest records and checking the immutable Beta 1 bundle.
+
+The canonical inverse proof passes. An independent token comparison reverses exactly **247 identifier edits** back to the previous source bytes, including comments and formatting. Focused checks retain fixture behavior, public keys/asset strings, shadowed locals, rejection cases, CLI provenance/repeat protection and the prior UI pass. The full suite and package results belong in RESTORATION_STATUS.md. No game window was opened; native gameplay and broader original feedback acceptance remain open. Many other aliases and local names are still unresolved.
+
+## Historical native camera/event/UI role names — Beta 75
 
 Four more private constructors have descriptive names verified from fields on the actual newly created GameManager:
 
