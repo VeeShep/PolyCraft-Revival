@@ -54,13 +54,18 @@ test('CI cleanup refuses directories instead of recursively deleting unexpected 
   assert.equal(fs.readFileSync(path.join(root, 'version'), 'utf8'), 'must remain after failed cleanup');
 });
 
-test('CI explicitly installs Electron before native testing and packaging, while unit checks stay download-free', () => {
+test('CI installs and caches verified Electron before native consumers, while unit checks stay download-free', () => {
   const workflow = require('js-yaml').load(fs.readFileSync(path.join(__dirname, '../.github/workflows/build.yml'), 'utf8'));
   for (const job of ['native-network', 'package']) {
+    assert.ok(Object.values(workflow.jobs[job].env || {}).every(value => !/\$\{\{\s*runner\./.test(value)), job + ': runner context belongs in step-scoped cache paths, not job env');
     const steps = workflow.jobs[job].steps, install = steps.findIndex(step => step.run === 'node node_modules/electron/install.js');
     const dependencies = steps.findIndex(step => step.run === 'npm ci');
     const consumer = steps.findIndex(step => /electron-builder|webrtc-renewal-smoke/.test(step.run || ''));
     assert.ok(dependencies >= 0 && install > dependencies && install < consumer, job + ': install the verified runtime before first use');
+    const restore = steps.findIndex(step => step.uses?.startsWith('actions/cache/restore@'));
+    const save = steps.findIndex(step => step.uses?.startsWith('actions/cache/save@'));
+    assert.ok(restore > dependencies && restore < install, job + ': restore archives after dependency metadata is installed');
+    assert.ok(save > install && save < consumer, job + ': preserve the verified archive even if later packaging or tests fail');
   }
   assert.equal(workflow.jobs.checks.steps.some(step => step.run === 'node node_modules/electron/install.js'), false);
   assert.equal(workflow.jobs.checks.steps.find(step => step.run === 'npm ci').env.ELECTRON_SKIP_BINARY_DOWNLOAD, '1');

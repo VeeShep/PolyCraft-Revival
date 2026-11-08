@@ -61,8 +61,22 @@ jobs:
           cache: npm
       - run: sudo apt-get update && sudo apt-get install -y coturn xvfb
       - run: npm ci
+      - name: Restore Electron archive cache
+        id: electron-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/polycraft-electron-cache
+          key: electron-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('node_modules/electron/package.json') }}
       - name: Install verified native Electron runtime
         run: node node_modules/electron/install.js
+        env:
+          electron_config_cache: ${{ runner.temp }}/polycraft-electron-cache
+      - name: Save verified Electron archive cache
+        if: steps.electron-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/polycraft-electron-cache
+          key: ${{ steps.electron-cache.outputs.cache-primary-key }}
       - name: Test disposable two/four-participant direct and forced-relay links
         run: xvfb-run -a node tests/webrtc-renewal-smoke.cjs
 
@@ -125,10 +139,31 @@ jobs:
           BUILD_ARCH: ${{ matrix.runnerArch || matrix.arch }}
         run: node -e "const assert = require('node:assert/strict'); assert.equal(process.platform, process.env.BUILD_PLATFORM); assert.equal(process.arch, process.env.BUILD_ARCH);"
       - run: npm ci
+      - name: Restore Electron archive cache
+        id: electron-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/polycraft-electron-cache
+          key: electron-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('node_modules/electron/package.json') }}
+      - name: Cache packaging tools
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/polycraft-builder-cache
+          key: builder-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('node_modules/app-builder-lib/package.json', 'node_modules/builder-util/package.json') }}
       - name: Install verified native Electron runtime
         run: node node_modules/electron/install.js
+        env:
+          electron_config_cache: ${{ runner.temp }}/polycraft-electron-cache
+      - name: Save verified Electron archive cache
+        if: steps.electron-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/polycraft-electron-cache
+          key: ${{ steps.electron-cache.outputs.cache-primary-key }}
       - name: Build packages without publishing
         run: npx --no-install electron-builder ${{ matrix.arguments }} --config scripts/ci-builder-config.cjs --publish never --config.directories.output=dist/ci
+        env:
+          ELECTRON_BUILDER_CACHE: ${{ runner.temp }}/polycraft-builder-cache
       - name: Verify finished Mac ZIP architecture and signature
         if: runner.os == 'macOS'
         run: |

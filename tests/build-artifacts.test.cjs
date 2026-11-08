@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const asar = require('@electron/asar');
+const { finished } = require('node:stream/promises');
 const { collectBuild } = require('../scripts/collect-build.cjs');
 const { verifyMacApp } = require('../scripts/verify-mac.cjs');
 const metadata = require('../package.json'), { version } = metadata;
@@ -77,7 +78,7 @@ async function macFixture(t) {
   }
   fs.cpSync(path.join(__dirname, '..', 'desktop'), path.join(source, 'desktop'), { recursive: true });
   fs.writeFileSync(path.join(source, 'package.json'), JSON.stringify({ version, name: metadata.name, productName: metadata.productName, main: metadata.main, type: metadata.type }));
-  const archive = path.join(resources, 'app.asar'); await asar.createPackage(source, archive);
+  const archive = path.join(resources, 'app.asar'); await finished(await asar.createPackage(source, archive));
   return { app, files, source, archive, resources };
 }
 const macRun = arch => command => command === 'lipo' ? arch : command === 'plutil' ? 'icon.icns\n' : '';
@@ -105,14 +106,14 @@ test('Mac verification refuses incorrect or unsafe icon metadata, missing/defaul
   fs.writeFileSync(icon, 'default Electron icon'); assert.throws(() => verifyMacApp(f.app, 'arm64', run), /icon differs/); assert.equal(signed, false);
   fs.unlinkSync(icon); assert.throws(() => verifyMacApp(f.app, 'arm64', run), /ENOENT/); fs.writeFileSync(icon, original);
   for (const name of ['../icon.icns\n', 'icon.icns \n', '']) assert.throws(() => verifyMacApp(f.app, 'arm64', command => command === 'plutil' ? name : macRun('arm64')(command)), /icon filename/);
-  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version: 'old-version' })); await asar.createPackage(f.source, f.archive);
+  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version: 'old-version' })); await finished(await asar.createPackage(f.source, f.archive));
   assert.throws(() => verifyMacApp(f.app, 'arm64', run), /version differs/);
-  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version, name: metadata.name, productName: metadata.productName, main: metadata.main, type: metadata.type })); fs.writeFileSync(path.join(f.source, 'assets/offline-ui/icons/png/512x512.png'), 'wrong window icon'); await asar.createPackage(f.source, f.archive);
+  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version, name: metadata.name, productName: metadata.productName, main: metadata.main, type: metadata.type })); fs.writeFileSync(path.join(f.source, 'assets/offline-ui/icons/png/512x512.png'), 'wrong window icon'); await finished(await asar.createPackage(f.source, f.archive));
   assert.throws(() => verifyMacApp(f.app, 'arm64', run), /source\/icon differs/); assert.equal(signed, false);
 });
 test('Mac source verification refuses stale drag input before checking the signature', async t => {
   const f = await macFixture(t); let signed = false;
-  fs.writeFileSync(path.join(f.source, 'desktop/coop-input.js'), 'old drag implementation'); await asar.createPackage(f.source, f.archive);
+  fs.writeFileSync(path.join(f.source, 'desktop/coop-input.js'), 'old drag implementation'); await finished(await asar.createPackage(f.source, f.archive));
   assert.throws(() => verifyMacApp(f.app, 'arm64', command => { if (command === 'codesign') signed = true; return macRun('arm64')(command); }), /Packaged source\/icon differs: desktop/);
   assert.equal(signed, false);
 });

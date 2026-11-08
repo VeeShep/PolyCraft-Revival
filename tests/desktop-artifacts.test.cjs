@@ -2,6 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), os = require('node:os');
 const asar = require('@electron/asar'), resedit = require('resedit');
+const { finished } = require('node:stream/promises');
 const { verifyWindows, verifyLinux } = require('../scripts/verify-desktop.cjs');
 const metadata = require('../package.json'), root = path.resolve(__dirname, '..');
 function pe(arch, icon = 'original') {
@@ -25,7 +26,7 @@ async function fixture(t, platform, arch) {
   }
   fs.cpSync(path.join(root, 'desktop'), path.join(source, 'desktop'), { recursive: true });
   fs.writeFileSync(path.join(source, 'package.json'), JSON.stringify({ version: metadata.version, name: metadata.name, productName: metadata.productName, main: metadata.main, type: metadata.type }));
-  const archive = path.join(directory, 'resources/app.asar'); await asar.createPackage(source, archive);
+  const archive = path.join(directory, 'resources/app.asar'); await finished(await asar.createPackage(source, archive));
   const binary = platform === 'win32' ? pe(arch) : elf(arch), executable = path.join(directory, platform === 'win32' ? metadata.productName + '.exe' : metadata.name);
   fs.writeFileSync(executable, binary); fs.mkdirSync(path.join(directory, 'helpers')); const helper = path.join(directory, 'helpers', platform === 'win32' ? 'helper.dll' : 'helper.so'); fs.writeFileSync(helper, binary);
   const desktop = path.join(directory, metadata.desktopName), text = `[Desktop Entry]\nName=${metadata.productName}\nType=Application\nExec=AppRun --no-sandbox %U\nIcon=${metadata.name}\nStartupWMClass=polycraft-offline\n`;
@@ -63,11 +64,11 @@ test('Linux checks reject mixed/truncated binaries, missing executable, mismatch
 });
 test('package checks refuse stale metadata or game/icon bytes in the finished app.asar', async t => {
   const f = await fixture(t, 'linux', 'x64');
-  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version: '1.0.0-beta.1' })); await asar.createPackage(f.source, f.archive);
+  fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version: '1.0.0-beta.1' })); await finished(await asar.createPackage(f.source, f.archive));
   assert.throws(() => verifyLinux(f.directory, 'x64'), /version differs/);
   fs.writeFileSync(path.join(f.source, 'package.json'), JSON.stringify({ version: metadata.version, name: metadata.name, productName: metadata.productName, main: metadata.main, type: metadata.type }));
   for (const name of ['game.canvas.js', 'assets/offline-ui/icons/png/512x512.png']) {
-    const file = path.join(f.source, name), original = fs.readFileSync(file); fs.writeFileSync(file, 'stale packaged bytes'); await asar.createPackage(f.source, f.archive);
+    const file = path.join(f.source, name), original = fs.readFileSync(file); fs.writeFileSync(file, 'stale packaged bytes'); await finished(await asar.createPackage(f.source, f.archive));
     assert.throws(() => verifyLinux(f.directory, 'x64'), /source\/icon differs/); fs.writeFileSync(file, original);
   }
 });
@@ -75,11 +76,11 @@ test('package source verification rejects stale desktop modules, launcher markup
   const f = await fixture(t, 'linux', 'x64');
   for (const name of ['coop-input.js', 'saves.cjs', 'controls.js', 'guest-world.js', 'index.html', 'style.css']) {
     const file = path.join(f.source, 'desktop', name), original = fs.readFileSync(file);
-    fs.writeFileSync(file, 'stale desktop module'); await asar.createPackage(f.source, f.archive);
+    fs.writeFileSync(file, 'stale desktop module'); await finished(await asar.createPackage(f.source, f.archive));
     assert.throws(() => verifyLinux(f.directory, 'x64'), /Packaged source\/icon differs: desktop/, name);
     fs.writeFileSync(file, original);
   }
-  fs.unlinkSync(path.join(f.source, 'desktop/saves.cjs')); await asar.createPackage(f.source, f.archive);
+  fs.unlinkSync(path.join(f.source, 'desktop/saves.cjs')); await finished(await asar.createPackage(f.source, f.archive));
   assert.throws(() => verifyLinux(f.directory, 'x64'), /saves\.cjs|not found/);
 });
 test('source verification refuses unsupported desktop source entries instead of silently skipping them', async t => {
@@ -92,17 +93,17 @@ test('source verification refuses unsupported desktop source entries instead of 
 });
 test('desktop source verification refuses unexpected archive files and source links', async t => {
   const f = await fixture(t, 'linux', 'x64'), extra = path.join(f.source, 'desktop/obsolete.js');
-  fs.writeFileSync(extra, 'obsolete packaged module'); await asar.createPackage(f.source, f.archive);
+  fs.writeFileSync(extra, 'obsolete packaged module'); await finished(await asar.createPackage(f.source, f.archive));
   assert.throws(() => verifyLinux(f.directory, 'x64'), /Packaged desktop entries differ/);
   fs.unlinkSync(extra);
   const input = path.join(f.source, 'desktop/coop-input.js'); fs.unlinkSync(input); fs.symlinkSync('../game.canvas.js', input);
-  await asar.createPackage(f.source, f.archive);
+  await finished(await asar.createPackage(f.source, f.archive));
   assert.throws(() => verifyLinux(f.directory, 'x64'), /Packaged source link/);
 });
 test('source verification rejects changed application identity, entry point or JavaScript module type', async t => {
   const f = await fixture(t, 'linux', 'x64'), file = path.join(f.source, 'package.json'), original = JSON.parse(fs.readFileSync(file));
   for (const [key, value] of [['name', 'other-game'], ['productName', 'Electron'], ['main', 'desktop/bridge.js'], ['type', 'module']]) {
-    fs.writeFileSync(file, JSON.stringify({ ...original, [key]: value })); await asar.createPackage(f.source, f.archive);
+    fs.writeFileSync(file, JSON.stringify({ ...original, [key]: value })); await finished(await asar.createPackage(f.source, f.archive));
     assert.throws(() => verifyLinux(f.directory, 'x64'), /Packaged (name|productName|main|type) differs/, key);
   }
 });
