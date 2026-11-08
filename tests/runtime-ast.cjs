@@ -180,8 +180,8 @@ function audioSourceMethods() {
   const owner = create.left.object.object.name;
   return Object.fromEntries(['pause', 'resume', 'destroy'].map(name => [name, evaluate(one(assignments.filter(a => a.left.type === 'MemberExpression' && a.left.property.name === name && a.left.object.property?.name === 'prototype' && a.left.object.object.name === owner), 'audio source ' + name).right)]));
 }
-function movementDrawing() {
-  const draw = one(properties.filter(p => key(p) === 'drawMove'), 'movement drawing').value;
+function movementDrawing(name = 'drawMove') {
+  const draw = one(properties.filter(p => key(p) === name), 'movement drawing ' + name).value;
   return evaluate(draw, { [drawingDependency(draw, 'outlineSoft')]: objectWith('healthFull'),
     [drawingDependency(draw, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth', NORMAL: 'normal' } } } });
 }

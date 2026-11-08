@@ -669,6 +669,27 @@ test('guest movement cursor uses actual original circles/arrows and final host p
   f.world.groundDrag = { downTime: 0.4, downv2ScreenCoord: [50, 50], targeted: false }; f.sprites.length = 0; f.world.drawMovementCursor();
   assert.equal(f.sprites.length, 4); assert.equal(f.sprites[0].texture, 'textures/bigarrow.dds'); assert.equal(f.sprites[0].v4color[3], 0.5);
 });
+test('original command and movement drawing use different cursor and destination feedback', () => {
+  const ast = require('./runtime-ast.cjs'), f = movementCursor(), globals = f.world.controls.app.globals, cursors = [];
+  Object.assign(globals.mathDevice, { v3Build: (...values) => values, v3ScalarMul: (a, scale, out = []) => { a.forEach((value, index) => { out[index] = value * scale; }); return out; } });
+  globals.camera.getv3Location = () => [0, 0, 0];
+  const actor = f.world.viewCamera.actor('guest');
+  const view = Object.assign(Object.create(f.world.controls.movementMethods.gesture), {
+    globals, prevDown: false, downTime: globals.appCurrentTime, getv3WorldCursorLocation: () => [12, 4, 14],
+    getHeroEntity: () => ({ v3Location: actor.v3Location, getEC: name => name === 'ECPlayerBuilder' ? { isBuilding: () => false } : actor.getEC(name) }),
+    getTargetEntity: () => null, drawChargeableShotUI() {}, getTextureAndRGBForChargeType: () => null,
+    crashMobController: { ...f.world.game.getGameController(), setCursorTexture: path => cursors.push(path) }
+  });
+  const command = ast.movementDrawing('drawIssueCommand'), movement = ast.movementDrawing();
+  command.call(view);
+  assert.deepEqual(cursors, ['textures/cursors/default.png']);
+  assert.deepEqual(f.sprites.map(sprite => sprite.texture), ['textures/bigcircle.dds', 'textures/bigcircle.dds']);
+  assert.deepEqual(f.sprites.map(sprite => sprite.v3Location), [[40, 3.9, 50], [40, 3.9, 50]]);
+  f.sprites.length = 0; cursors.length = 0; movement.call(view);
+  assert.deepEqual(cursors, []);
+  assert.deepEqual(f.sprites.map(sprite => sprite.texture), ['textures/bigcircle.dds', 'textures/bigcircle.dds', 'textures/bigarrow.dds']);
+  assert.deepEqual(f.sprites[0].v3Location, [12, 3.9, 14]); assert.deepEqual(f.sprites[2].v3Location, [40, 3.9, 50]);
+});
 test('movement feedback disappears for blocked input, local UI, targeted holds, placement and invalid projection', () => {
   const f = movementCursor();
   f.unavailable(true); f.world.drawMovementCursor(); f.unavailable(false);
