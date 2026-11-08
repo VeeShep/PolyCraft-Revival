@@ -293,3 +293,32 @@ test('standalone, expired and cancelled target updates cannot resume held facing
   const failure = new Error('native classification failure'); f.controls.movementMethods.targetType = () => { throw failure; };
   assert.throws(() => f.send('enemy', 'release'), error => error === failure); assert.equal(f.aim.look, null); assert.equal(f.aim.facing, null); assert.equal(f.actions.targetStarted, undefined);
 });
+
+test('guest worker acknowledgements use assigned-hero smart range and native callbacks, never host-local selection or duplicate offline credit', () => {
+  const f = setup(), ast = require('./runtime-ast.cjs'), native = ast.component('ECWildlingAgent', { Sb: { wildlingHeroFollowingEnabled: false } });
+  const s = { position: [6.5, 0, 0], friendly: true, valid: true, active: true, credit: 0, calls: 0, sleeping: false };
+  const selectable = { permanentValid: true, triggererList: [], archetype: { smart: true, smartRadiusFactor: 1.2, selectType: 'selectTypeNormal' }, smartValid: false, getValid: () => false };
+  const worker = Object.assign(Object.create(native), { waitingForClick: true, isSleeping: () => s.sleeping,
+    canBeClicked: () => true, getEntityEC: () => null, doOfflineClickAction() { s.credit++; }, getv3Location: () => s.position,
+    wakeUp() { s.sleeping = false; }, gameManager: { getGameSoundManager: () => null, getEventManager: () => ({ notify() {} }), guiManager: { addSpeechBubble() {} } } });
+  const interaction = { getActive: () => s.active, executeCallbacks: ast.component('ECInteractable').executeCallbacks, onInteractCallbacks: [actor => { s.calls++; assert.equal(actor, f.hero); native.onInteract.call(worker, actor); }] };
+  const target = { shouldBeDestroyed: () => false, isDead: () => false, getv3Location: () => s.position,
+    getEC: key => ({ ECWildlingAgent: worker, ECSelectable: selectable, ECInteractable: interaction })[key] };
+  const heroGet = f.hero.getEC; f.hero.getEC = key => key === 'ECSmartSelectableTrigger' ? { archetype: { worldRadius: 5.5 } } : heroGet(key);
+  f.hero.isFriendlyWith = other => { assert.equal(other, target); return s.friendly; };
+  f.game.getGameEntityByName = () => target; f.game.getPlayFlags = () => ({ validSelectTypes: { selectTypeNormal: s.valid } });
+  const actions = new HostActions(), run = () => actions.execute(f.game, f.hero, f.players, 'worker');
+  assert.match(run().message, /Worker/); assert.equal(s.credit, 1);
+  run(); assert.equal(s.credit, 1, 'Native waiting state prevents a second award.');
+  worker.waitingForClick = true; s.position = [6.6, 0, 0]; assert.match(run(), /closer/); assert.equal(s.credit, 1);
+  selectable.triggererList = [{}]; s.position = [7, 0, 0]; assert.match(run(), /closer/, 'Another hero does not grant hysteresis.');
+  selectable.triggererList = [f.hero]; assert.match(run().message || '', /Worker/); assert.equal(s.credit, 2);
+  s.position = [7.6, 0, 0]; assert.match(run(), /closer/);
+  s.position = [1, 0, 0];
+  for (const [key, value] of [['position', [1, -0.51, 0]], ['friendly', false], ['valid', false], ['active', false]]) {
+    const before = s[key]; s[key] = value; assert.equal(typeof run(), 'string'); assert.equal(s.credit, 2); assert.equal(s.calls, 3); s[key] = before;
+  }
+  s.position = [1, 0, 0]; selectable.permanentValid = false; assert.equal(typeof run(), 'string'); assert.equal(s.credit, 2);
+  selectable.permanentValid = true; f.state.building = true; assert.match(run(), /Finish/); assert.equal(s.calls, 3);
+  f.state.building = false; s.sleeping = true; run(); assert.equal(s.sleeping, false); assert.equal(s.credit, 2); assert.equal(s.calls, 4);
+});

@@ -65,7 +65,7 @@ test('target cursor full and partial parsing accepts only a boolean and rejects 
     delta.spaces = [{ index: 0, remove: [], entities: [{ id: base.hero, attackCursor: invalid }] }];
     assert.throws(() => validateDelta(delta), /Invalid world snapshot/);
   }
-  const legacy = structuredClone(base); legacy.version = 15;
+  const legacy = structuredClone(base); legacy.version = 16;
   assert.throws(() => validateSnapshot(legacy), /incompatible version/);
 });
 test('campaign starters remain selectable without borrowing combat, building or resource components', () => {
@@ -274,7 +274,7 @@ test('combat capture selects only the assigned hero native target and owns bound
   actor.getEC = name => name === 'ECAutoFire' ? { getTargetEntity: () => selected, isWithinDamageRange(location) { reads++; assert.equal(location, f.location); return inRange; } } : original(name);
   f.game.getHero = () => assert.fail('explicit guest capture must not choose the host hero');
   const state = captureSnapshot(f.game, actor);
-  assert.equal(state.version, 16); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
+  assert.equal(state.version, 17); assert.deepEqual(state.combat, { target: 'hero', inDamageRange: false }); assert.equal(reads, 1);
   inRange = true; assert.equal(captureSnapshot(f.game, actor).combat.inDamageRange, true); assert.equal(state.combat.inDamageRange, false);
   for (selected of [actor, f.entities[2], { name: 'missing', shouldBeDestroyed: () => false }, null]) assert.equal(captureSnapshot(f.game, actor).combat, null);
   assert.equal(reads, 2, 'unavailable targets must not query native damage-range methods');
@@ -466,5 +466,34 @@ test('battle notices reject arbitrary artwork, text/clock authority, duplicate o
     assert.throws(() => validateSnapshot(next), /battle notice/);
     const delta = createDelta(base, { ...next, notices: [] }); delta.notices = notices;
     assert.throws(() => applyDelta(base, delta), /battle notice/); assert.deepEqual(base.notices, []);
+  }
+});
+
+test('worker cues capture native waiting precedence and sleeping fallback independently of host pause, and clear through deltas', () => {
+  const f = fixture(), entity = f.entities[1], original = entity.getEC;
+  let waiting = true, sleeping = true, clickable = true;
+  const worker = { isWaitingForClick: () => waiting, isSleeping: () => sleeping, canBeClicked: () => clickable, waitingForClickGUIArchetype: 'welcomeLumber' };
+  entity.getEC = key => key === 'ECWildlingAgent' ? worker : original(key);
+  f.game.isPaused = () => true;
+  f.entities[0].isFriendlyWith = () => true;
+  assert.equal(captureSnapshot(f.game).spaces[0].entities[1].interactive, true);
+  for (const [style, cue] of [['welcomeLumber', 'lumber'], ['welcomeStone', 'stone'], ['welcomeBuilding', 'building'], ['welcomeDefences', 'defences']]) {
+    worker.waitingForClickGUIArchetype = style;
+    assert.equal(captureSnapshot(f.game).spaces[0].entities[1].workerCue, cue);
+  }
+  const previous = captureSnapshot(f.game);
+  clickable = false; assert.equal(captureSnapshot(f.game).spaces[0].entities[1].workerCue, 'sleeping');
+  sleeping = false; assert.equal(captureSnapshot(f.game).spaces[0].entities[1].workerCue, null);
+  clickable = true; worker.waitingForClickGUIArchetype = 'untrustedStyle';
+  assert.equal(captureSnapshot(f.game).spaces[0].entities[1].workerCue, null);
+  waiting = false;
+  const next = captureSnapshot(f.game); next.tick++;
+  assert.deepEqual(applyDelta(previous, createDelta(previous, next)), next);
+  assert.equal(next.spaces[0].entities[1].workerCue, null);
+  for (const invalid of [undefined, true, {}, [], 'welcomeLumber', 'other']) {
+    const bad = structuredClone(next); bad.spaces[0].entities[1].workerCue = invalid;
+    assert.throws(() => validateSnapshot(bad), /Invalid world snapshot/);
+    const patch = createDelta(previous, next); patch.spaces = [{ index: 0, remove: [], entities: [{ id: 'pickup', workerCue: invalid }] }];
+    assert.throws(() => validateDelta(patch), /Invalid world snapshot/);
   }
 });

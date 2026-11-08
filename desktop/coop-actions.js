@@ -224,6 +224,17 @@
         interaction.executeCallbacks(hero);
         return 'Resources gathered.';
       }
+      const worker = !rangedTarget && type === 'target' && target.getEC('ECWildlingAgent');
+      if (worker) {
+        const selectable = target.getEC('ECSelectable'), interaction = target.getEC('ECInteractable'), trigger = hero.getEC('ECSmartSelectableTrigger');
+        // Host-local smartValid/getValid cannot authorize a different hero's click.
+        if (!hero.isFriendlyWith(target) || target.isDead() || !selectable || selectable.permanentValid === false || !game.getPlayFlags().validSelectTypes[selectable.archetype.selectType] || !interaction?.getActive() || !trigger) return 'Worker interaction is unavailable.';
+        const origin = hero.getv3Location(), location = target.getv3Location();
+        const radius = trigger.archetype.worldRadius * selectable.archetype.smartRadiusFactor + (selectable.triggererList?.includes(hero) ? 1 : 0);
+        if (Math.hypot(location[0] - origin[0], location[2] - origin[2]) >= radius || origin[1] - 0.5 > location[1]) return 'Move closer to the worker.';
+        interaction.executeCallbacks(hero);
+        return { message: 'Worker acknowledged and saved.', save: true };
+      }
       if (target === hero || !target.getEC('ECTarget')?.isValidTarget(hero) || !target.getEC('ECHealth') || target.getEC('ECHealth').getHealth() <= 0) return 'That target cannot be attacked.';
       if (!players.canDamage(target, hero)) return 'Friendly targets are protected.';
       const firearm = hero.getEC('ECFirearm'), automatic = hero.getEC('ECAutoFire');
@@ -244,6 +255,15 @@
     let nearest = 32 * 32, selected = null;
     for (const { record, displayLocation } of world.scene.entities.values()) {
       if (!record.interactive || !record.mesh?.visible || record.id === world.identity.entity) continue;
+      const factory = world.game?.getEntityFactory?.();
+      if (factory?.getECArchetype(record.archetype, 'ECWildlingAgent')) {
+        const actor = world.scene.entities.get(world.identity.entity), definition = factory.getECArchetype(record.archetype, 'ECSelectable');
+        const trigger = actor && factory.getECArchetype(actor.record.archetype, 'ECSmartSelectableTrigger');
+        if (!trigger || !definition?.smart || world.scene.snapshot.camera.mode !== 'explore' || world.hud?.state?.preparation || world.hud?.state?.island.prepare !== null) continue;
+        const origin = actor.displayLocation || actor.record.location, location = displayLocation || record.location;
+        const radius = trigger.worldRadius * definition.smartRadiusFactor + (world.resourceHighlights?.get(record.id)?.smartValid ? 1 : 0);
+        if (Math.hypot(location[0] - origin[0], location[2] - origin[2]) >= radius || origin[1] - 0.5 > location[1]) continue;
+      }
       const point = globals.camera.worldToScreen(displayLocation || record.location);
       if (!point) continue;
       const distance = (point[0] - x) ** 2 + (point[1] - y) ** 2;

@@ -2,7 +2,7 @@
 (function (root) {
   const { GuestTotem } = typeof module !== 'undefined' ? require('./totems.js') : root.PolycraftTotems;
   const { GuestCraft } = typeof module !== 'undefined' ? require('./crafting.js') : root.PolycraftCrafting;
-  const { validateSnapshot, validateDelta, applyDelta, BATTLE_NOTICES } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
+  const { validateSnapshot, validateDelta, applyDelta, BATTLE_NOTICES, WORKER_CUES } = typeof module !== 'undefined' ? require('./world-state.js') : root.PolycraftWorldState;
   const { GuestMovement } = typeof module !== 'undefined' ? require('./coop-input.js') : root.PolycraftCoopInput;
   const { pickTarget } = typeof module !== 'undefined' ? require('./coop-actions.js') : root.PolycraftCoopActions;
   const { GuestConstruction } = typeof module !== 'undefined' ? require('./guest-construction.js') : root.PolycraftGuestConstruction;
@@ -658,8 +658,9 @@
       this.resourceHighlights ||= new Map();
       for (const [id, entry] of this.scene.entities) {
         const record = entry.record, resource = factory.getECArchetype(record.archetype, 'ECResourceDispenser');
-        const definition = resource && factory.getECArchetype(record.archetype, 'ECSelectable');
-        if (!definition?.smart || !record.interactive || !record.mesh?.visible || record.mesh.path === resource.growingMesh) continue;
+        const worker = factory.getECArchetype(record.archetype, 'ECWildlingAgent');
+        const definition = (resource || worker) && factory.getECArchetype(record.archetype, 'ECSelectable');
+        if (!definition?.smart || !record.interactive || !record.mesh?.visible || resource && record.mesh.path === resource.growingMesh) continue;
         seen.add(id);
         let view = this.resourceHighlights.get(id);
         const location = entry.displayLocation || record.location, radius = trigger.worldRadius * definition.smartRadiusFactor + (view?.smartValid ? 1 : 0);
@@ -681,6 +682,17 @@
         if (!near && !hot && view.getSmartValidFactor() === 0 && view.getHotFactor() === 0) this.resourceHighlights.delete(id);
       }
       for (const id of this.resourceHighlights.keys()) if (!seen.has(id)) this.resourceHighlights.delete(id);
+    }
+    drawWorkerCues() {
+      if (this.closed || this.resyncing || this.controls.paused || this.localMenu()) return;
+      const factory = this.game.getEntityFactory(), globals = this.controls.app.globals;
+      for (const [id, entry] of this.scene.entities) {
+        const { record } = entry;
+        if (!record.workerCue || !record.mesh?.visible || !factory.getECArchetype(record.archetype, 'ECWildlingAgent')) continue;
+        const location = entry.displayLocation || record.location;
+        if (record.workerCue === 'sleeping') this.controls.movementMethods.worldText.call({ globals, getv3Location: () => location }, 'Zzz...', 0);
+        else if (Object.hasOwn(WORKER_CUES, record.workerCue)) this.game.getGuiManager().addDrawGui(WORKER_CUES[record.workerCue], { v3WorldLocation: location, layer: -2 }, 'idECWildlingAgentWaitingForClick' + id);
+      }
     }
     drawMovementCursor() {
       if (!this.movement.available() || this.construction.placement || !this.pointerEvent) return;
@@ -740,7 +752,7 @@
       globals.gameCurrentTime = state.time;
       game.gameDayTime = state.dayTime;
       game.applyDayNightTime();
-      this.viewCamera.update(); this.updateGroundDrag(); game.gameLighting.update(); this.drawResourceHighlights();
+      this.viewCamera.update(); this.updateGroundDrag(); game.gameLighting.update(); this.drawResourceHighlights(); this.drawWorkerCues();
       this.updateTorch();
       this.hasFrame = true;
       if (!this.craft?.menu) { this.drawHealth(); this.drawCombatTarget(); this.drawBattleNotices(); }

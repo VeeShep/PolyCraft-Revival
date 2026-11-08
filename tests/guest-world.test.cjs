@@ -23,9 +23,9 @@ test('guest original-style demolition menus use presentation input only, support
 });
 const identity = () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 function snapshot(tick = 1) {
-  const entity = id => ({ id, archetype: null, interactive: true, attackCursor: false, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
+  const entity = id => ({ id, archetype: null, interactive: true, attackCursor: false, workerCue: null, location: [2, 0, 3], scale: [1, 1, 1], rotation: 0,
     mesh: { path: 'hero.dae', transform: identity(), visible: true, skin: null }, health: { current: 40, maximum: 50, bar: null, damage: null } });
-  return { version: 16, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
+  return { version: 17, notices: [], effects: { sequence: 0, events: [], active: [] }, audio: { sequence: 0, events: [], loops: [] }, music: null, combat: null, tick, time: tick / 30, dayTime: 12, hero: 'hero', torch: null, camera: { mode: 'explore', dead: false, buildingAge: 1000, destination: null, pathDestination: null, lookAhead: null, timeHeld: 0, heroes: ['hero'], enemies: [], center: [0, 0, 0] }, spaces: [{
     extents: [-10, -10, -10, 10, 10, 10], transform: identity(),
     blocks: [{ archetype: 'grass', location: [1, 0, 2], scale: [2, 1, 2], rotation: 0 }],
     entities: [entity('hero'), entity('pickup')]
@@ -968,4 +968,51 @@ test('guest battle notices use original styles and stacking, expire locally and 
   world.resyncing = true; drawn.length = 0; world.drawBattleNotices(); assert.equal(drawn.length, 0);
   world.resyncing = false; now = 4000; world.drawBattleNotices(); assert.equal(drawn.length, 0);
   assert.equal(JSON.stringify(notices), before);
+});
+
+test('guest worker waiting and sleeping cues emit the complete original draw output, with local menus and visibility respected', () => {
+  const ast = require('./runtime-ast.cjs'), f = resourceHighlight(), w = f.world, gui = [], fonts = [];
+  const factory = w.game.getEntityFactory(), entry = f.entry;
+  entry.record.archetype = 'worker'; entry.record.workerCue = 'lumber';
+  entry.displayLocation = [3, 4, 5];
+  w.game.getEntityFactory = () => ({ getECArchetype: (name, type) => name === 'worker' ? type === 'ECWildlingAgent' ? {} : undefined : factory.getECArchetype(name, type) });
+  w.game.getGuiManager = () => ({ addDrawGui: (...args) => gui.push(structuredClone(args)) });
+  w.game.isPaused = () => false;
+  w.controls.movementMethods.worldText = ast.prototypeWith('createSmartPointer').drawWorldText;
+  f.globals.mathDevice.v3Build = (...v) => v;
+  f.globals.mathDevice.v3Add = (a, b) => a.map((x, i) => x + b[i]);
+  f.globals.simpleFontRenderer = { drawFontDouble: (...args) => fonts.push(structuredClone(args)) };
+  const native = ast.component('ECWildlingAgent'), entity = { globals: f.globals, getName: () => 'tree', getv3Location: () => entry.displayLocation, drawWorldText: w.controls.movementMethods.worldText };
+  for (const [cue, style] of [['lumber', 'welcomeLumber'], ['stone', 'welcomeStone'], ['building', 'welcomeBuilding'], ['defences', 'welcomeDefences'], ['sleeping', null]]) {
+    entry.record.workerCue = cue; gui.length = fonts.length = 0;
+    native.draw.call({ gameManager: w.game, entity, getv3Location: entity.getv3Location, isWaitingForClick: () => !!style, waitingForClickGUIArchetype: style, canBeClicked: () => true, isSleeping: () => !style });
+    const expected = structuredClone({ gui, fonts }); gui.length = fonts.length = 0;
+    const before = JSON.stringify(entry.record); w.drawWorkerCues();
+    assert.deepEqual({ gui, fonts }, expected, cue); assert.equal(JSON.stringify(entry.record), before);
+  }
+  const empty = () => { gui.length = fonts.length = 0; w.drawWorkerCues(); assert.deepEqual({ gui, fonts }, { gui: [], fonts: [] }); };
+  w.pauseMenu = true; empty(); w.pauseMenu = false;
+  w.resyncing = true; empty(); w.resyncing = false;
+  w.craft = { menu: {} }; empty(); w.craft = null;
+  w.controls.paused = true; empty(); w.controls.paused = false;
+  entry.record.mesh.visible = false; empty(); entry.record.mesh.visible = true;
+  entry.record.archetype = 'tree'; empty(); entry.record.archetype = 'worker';
+  entry.record.workerCue = 'untrusted'; empty();
+  w.scene.entities.delete('tree'); empty();
+});
+test('guest workers use original smart selection drawing and reject screen-near clicks outside assigned-hero range', () => {
+  const { pickTarget } = require('../desktop/coop-actions.js'), f = resourceHighlight(), w = f.world, factory = w.game.getEntityFactory();
+  const hero = w.scene.entities.get('guest'); hero.displayLocation = [0, 0, 0];
+  f.entry.record.archetype = 'worker'; f.entry.record.location = [6.5, 0, 0]; f.entry.record.workerCue = null;
+  f.definition.smartRadiusFactor = 1.2;
+  w.game.getEntityFactory = () => ({ getECArchetype: (name, type) => name === 'worker' ? type === 'ECWildlingAgent' ? {} : type === 'ECSelectable' ? f.definition : undefined : factory.getECArchetype(name, type) });
+  f.globals.camera.worldToScreen = () => [10, 10];
+  const event = { clientX: 10, clientY: 10 };
+  assert.equal(pickTarget(w, event), 'tree'); f.draw(0); f.draw(0.1);
+  assert.equal(f.sprites.length, 1); assert.equal(f.sprites[0].texture, 'textures/bigcirclebutton.dds');
+  f.entry.record.location[0] = 7.5; assert.equal(pickTarget(w, event), 'tree');
+  f.entry.record.location[0] = 7.6; assert.equal(pickTarget(w, event), null);
+  w.resourceHighlights.clear(); f.entry.record.location[0] = 6.6; assert.equal(pickTarget(w, event), null);
+  f.entry.record.location = [1, -0.51, 0]; assert.equal(pickTarget(w, event), null);
+  f.entry.record.location[1] = 0; w.scene.snapshot.camera.mode = 'war'; assert.equal(pickTarget(w, event), null);
 });

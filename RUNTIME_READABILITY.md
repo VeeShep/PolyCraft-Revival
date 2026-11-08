@@ -6,6 +6,10 @@ The immutable original Beta 1 bundle and hash manifest are in `reference/beta-1`
 
 `scripts/make-runtime-readable.cjs` performed the one-time transformation with Babel parser, traversal and generator. It renamed 88 component bindings using their literal `entityComponentName` and 19 state constructors using their literal prototype `name`. Scope-aware renaming preserves shadowed locals and property names. `scripts/runtime-names.json` records each original binding, byte offset, verified name, evidence and hashes. The script refuses to overwrite subsequent runtime changes. Its syntax-tree round-trip check passed. Existing tests now locate definitions structurally and exercise behavior instead of matching minified text slices.
 
+## Current adapter exposure — Beta 96
+
+The established movement adapter additionally exposes the original `GameEntity.prototype.drawWorldText` for guest worker sleeping text. No native method implementation or recovered binding changes. Removing exactly ` worldText: GameEntity.prototype.drawWorldText,` from the new engine restores every Beta95 byte, including formatting. Input SHA256 `fd43180b09e3f399e1e2719eeb9b68704387b523f14bd60ee9192b8d40eb064b`; output `997b64ef6f05132a20a72921a38fccc346f976c089288c7514c2423297c6abe4`. Prior naming records and their original proofs remain historical and unchanged. Native draw-output comparisons and broader acceptance scopes are recorded in STATUS; this is adapter exposure, not another recovered name.
+
 ## Current native world collision-box role name — Beta 94
 
 The private `lc` constructor and its **nine bound references** are now `WorldCube`. This is a verified descriptive role name, not a recovered original spelling. `ECPhysicsCube.activate()` assigns the result of its bound `.create()` factory to `this.worldCube`; the original class owns `collisionCheck`, `collisionResolve`, `stepifyFakeSphere`, `updateExtents` and `getExtents`. The same binding also creates block collisions. None of those method implementations, public fields, archetype/save/asset keys, projection/physics values or execution order change.
