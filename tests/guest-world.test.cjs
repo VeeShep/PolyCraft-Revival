@@ -622,6 +622,39 @@ test('targeted guest gestures defer selection until release and retain a target 
   held.globals.appCurrentTime = 0.501; held.world.updateGroundDrag(); held.world.finishGroundDrag();
   assert.deepEqual(held.requested.map(value => value.mode), ['click', 'drag', 'release']); assert.deepEqual(held.sent.map(value => value.phase), ['press', 'clear']); assert.equal(held.world.selectionRequest, null);
 });
+test('guest target-to-movement transitions match the native controller at hold and swipe boundaries', () => {
+  const ast = require('./runtime-ast.cjs'), types = ast.assignedObject('interactTypes');
+  const native = ast.prototypeWith('updateTargeted', { GameInputController: { interactTypes: types } });
+  for (const row of [
+    { time: 0.5, swipe: 0, target: true }, { time: 0.501, swipe: 0, target: true },
+    { time: 0.1, swipe: 10, target: false }, { time: 0.1, swipe: 10.01, target: false },
+    { time: 0.1, swipe: 20, target: true }, { time: 0.501, swipe: 20, target: false }
+  ]) {
+    const f = targetedWorld(), moves = [];
+    f.world.clickTarget({ clientX: 0, clientY: 0 });
+    let selected = {};
+    const original = Object.assign(Object.create(native), {
+      globals: f.globals, prevDown: true, downTime: 0, downv2ScreenCoord: [0, 0],
+      drawFunction: native.drawIssueCommand, getHeroEntity: () => ({ getEC: () => null }),
+      crashMobController: { controlNavigate: true, getv2ScreenCoord: () => f.world.guiInput.position },
+      calculateNearestTarget() {}, getTargetEntity: () => selected,
+      clearTargetEntity: () => { selected = null; },
+      getSelectedType: target => target ? types.INTERACTABLE : types.NONE,
+      setControllableDestination: (...args) => moves.push(args)
+    });
+    original.beginTargeted(); original.updateFunction();
+    f.globals.appCurrentTime = row.time; f.world.guiInput.position = [row.swipe, 0];
+    if (!row.target) { selected = null; f.world.scene.entities.get('tree').record.location = [999, 999, 0]; }
+    original.updateFunction(); original.downFunction(); f.world.updateGroundDrag();
+    const nativeMoving = original.updateFunction === native.updateMove;
+    assert.equal(!f.world.groundDrag.targeted, nativeMoving, JSON.stringify(row));
+    assert.deepEqual(f.requested.map(value => value.mode), nativeMoving ? ['click', 'drag'] : [], JSON.stringify(row));
+    assert.equal(f.sent.some(value => value.phase === 'clear'), nativeMoving || original.interactType === types.NONE, JSON.stringify(row));
+    assert.deepEqual(moves.map(args => [...args]), nativeMoving ? [[true, false, true], [false, true, false]] : [], JSON.stringify(row));
+    assert.equal(original.drawFunction, native.drawIssueCommand, 'beginMove retains command drawing; changing it to drawMove would introduce an original-style mismatch');
+    assert.equal(f.world.selectionRequest, null, 'holding never activates the resource or opens its menu');
+  }
+});
 test('target gestures resample targets, stop on cancellation and handle release before the next frame', t => {
   let now = 0; t.mock.method(performance, 'now', () => now);
   const f = targetedWorld(); f.world.clickTarget({ clientX: 0, clientY: 0 });
