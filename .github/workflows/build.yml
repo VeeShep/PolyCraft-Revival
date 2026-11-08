@@ -14,6 +14,7 @@ on:
       - 'assets/**'
       - 'img/**'
       - '*.json'
+      - 'scripts/ci-builder-config.cjs'
       - 'scripts/collect-build.cjs'
       - 'scripts/verify-mac.cjs'
       - 'scripts/verify-desktop.cjs'
@@ -123,7 +124,7 @@ jobs:
         run: node -e "const assert = require('node:assert/strict'); assert.equal(process.platform, process.env.BUILD_PLATFORM); assert.equal(process.arch, process.env.BUILD_ARCH);"
       - run: npm ci
       - name: Build packages without publishing
-        run: npx --no-install electron-builder ${{ matrix.arguments }} --publish never --config.directories.output=dist/ci
+        run: npx --no-install electron-builder ${{ matrix.arguments }} --config scripts/ci-builder-config.cjs --publish never --config.directories.output=dist/ci
       - name: Verify finished Mac ZIP architecture and signature
         if: runner.os == 'macOS'
         run: |
