@@ -12,7 +12,7 @@ function fixture(t) {
       canvas: { getBoundingClientRect: () => ({ left: 10, top: 20, width: 1000, height: 500 }) },
       requestWalk: () => assert.fail('The helper must use a real mouse click, not inject an intent.') },
     construction: { cursor: () => state.cursor }, game: { getIMGui: () => ({ hasCapturedInput: () => state.captured, isHot: () => state.hot }) }, pointerEvent: { clientX: 410, clientY: 270 } };
-  world.viewCamera = { camera: { baseAngle: 0, desiredBaseAngle: 0 } };
+  world.viewCamera = { camera: { baseAngle: 0, desiredBaseAngle: 0, currentV3Position: [0, 0, 0], desiredV3Position: [0, 0, 0], currentV3Focus: [0, 0, 0], desiredV3Focus: [0, 0, 0], currentFOV: 1, desiredFOV: 1 } };
   global.window = { guestWorld: world, PolycraftCoopActions: { pickTarget(w, event) { assert.equal(w, world); assert.ok(Number.isFinite(event.clientX) && Number.isFinite(event.clientY)); return state.pick ? state.pick(event) : state.target; } } };
   const guest = { async evaluate(callback, argument) { return callback(argument); },
     keyboard: { async down(key) { events.push(['down', key]); }, async up(key) { events.push(['up', key]); } },
@@ -25,7 +25,7 @@ test('ground-click helper projects the assigned display height, respects canvas 
   const f = fixture(t), location = [30, .5, 40], before = JSON.stringify(location);
   const result = await clickGround(f.guest, location);
   assert.deepEqual(f.projected, [[30, 7, 40]]); assert.equal(JSON.stringify(location), before);
-  assert.deepEqual(f.events, [['wait', 150], ['move', 410, 270], ['click', 410, 270, { delay: 100 }], ['sent']]);
+  assert.deepEqual(f.events, [['wait', 150], ['camera-settled'], ['move', 410, 270], ['click', 410, 270, { delay: 100 }], ['sent']]);
   assert.equal(result.sequenceBefore, 12); assert.equal(f.world.movement.sequence, 13);
 });
 test('ground-click helper rejects HUD, invalid projection, blocked input, entities and a mismatched ray before clicking', async t => {
@@ -58,7 +58,8 @@ test('ground-click helper uses a visible shorter leg when the full waypoint is b
 });
 test('ground-click helper preserves a failed input delivery instead of retrying or accepting it as a walk', async t => {
   const f = fixture(t), failure = new Error('walking intent not observed');
-  f.guest.waitForFunction = async () => { throw failure; };
+  const wait = f.guest.waitForFunction;
+  f.guest.waitForFunction = async (callback, argument, options) => { if (argument === .001) return wait(callback, argument, options); throw failure; };
   await assert.rejects(clickGround(f.guest, [30, .5, 40]), error => error === failure);
   assert.equal(f.events.filter(event => event[0] === 'click').length, 1);
 });
@@ -134,11 +135,12 @@ test('camera reframing always releases its key and preserves a failed hold witho
 });
 test('camera reframing waits for the native angular blend, including wraparound, before projecting the walking click', async t => {
   const f = fixture(t); f.state.screen = [1900, 500];
-  f.world.viewCamera = { camera: { baseAngle: 0, desiredBaseAngle: .5 } };
-  f.guest.keyboard = { async down(key) { f.events.push(['down', key]); }, async up(key) { f.events.push(['up', key]); } };
+  const camera = f.world.viewCamera.camera;
+  f.guest.keyboard = { async down(key) { f.events.push(['down', key]); }, async up(key) { f.events.push(['up', key]); camera.desiredBaseAngle = .5; } };
   const wait = f.guest.waitForFunction;
   f.guest.waitForFunction = async (callback, argument, options) => {
     if (argument !== .001) return wait(callback, argument, options);
+    if (!camera.desiredBaseAngle) return wait(callback, argument, options);
     assert.equal(options.timeout, 5000); assert.equal(callback(argument), false);
     f.world.viewCamera.camera.baseAngle = .5005; assert.equal(callback(argument), true);
     f.world.viewCamera.camera.baseAngle += 2 * Math.PI; assert.equal(callback(argument), true);
@@ -172,4 +174,38 @@ test('ground click skips entity-covered projected ground and chooses an unobstru
   assert.deepEqual(result.location, [17, 7, 23]);
   assert.equal(f.events.filter(event => event[0] === 'click').length, 1);
   assert.equal(f.events.filter(event => event[0] === 'down').length, 0);
+});
+
+test('ground click waits for camera translation, focus and field of view before projecting even without a rotation', async t => {
+  const f = fixture(t), camera = f.world.viewCamera.camera;
+  Object.assign(camera, { currentV3Position: [0, 0, 0], desiredV3Position: [1, 0, 0], currentV3Focus: [0, 0, 0], desiredV3Focus: [0, 0, 0], currentFOV: 1, desiredFOV: 1 });
+  const wait = f.guest.waitForFunction; let checked = false;
+  f.guest.waitForFunction = async (callback, argument, options) => {
+    if (argument !== .001) return wait(callback, argument, options);
+    checked = true; assert.equal(f.projected.length, 0); assert.equal(options.timeout, 5000);
+    assert.equal(callback(argument), false);
+    camera.currentV3Position[0] = 1; camera.desiredV3Focus[2] = .5; assert.equal(callback(argument), false);
+    camera.currentV3Focus[2] = .5; camera.desiredFOV = 1.1; assert.equal(callback(argument), false);
+    camera.currentFOV = 1.1; assert.equal(callback(argument), true);
+  };
+  await clickGround(f.guest, [30, .5, 40]); assert.equal(checked, true);
+  assert.equal(f.events.filter(event => event[0] === 'click').length, 1);
+});
+
+test('camera settling reads native vectors without invoking the engine buffer-writer map API', async t => {
+  const { parse } = require('@babel/parser'), traverse = require('@babel/traverse').default, generate = require('@babel/generator').default;
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'game.canvas.js'), 'utf8'), maps = [];
+  traverse(parse(source), { AssignmentExpression(p) {
+    const left = p.node.left;
+    if (left.type === 'MemberExpression' && left.property.name === 'map' && left.object.type === 'MemberExpression' && left.object.property.name === 'prototype' && left.object.object.name === 'Float32Array') maps.push(p.node.right);
+  } });
+  assert.equal(maps.length, 1);
+  const legacyMap = Function('return (' + generate(maps[0]).code + ')')(), f = fixture(t), camera = f.world.viewCamera.camera;
+  for (const name of ['currentV3Position', 'desiredV3Position', 'currentV3Focus', 'desiredV3Focus']) {
+    camera[name] = new Float32Array([1, 2, 3]); Object.defineProperty(camera[name], 'map', { value: legacyMap });
+    assert.equal(typeof camera[name].map(), 'function');
+  }
+  await clickGround(f.guest, [30, .5, 40]);
+  for (const name of ['currentV3Position', 'desiredV3Position', 'currentV3Focus', 'desiredV3Focus']) assert.deepEqual(Array.from(camera[name]), [1, 2, 3]);
+  assert.equal(f.events.filter(event => event[0] === 'click').length, 1);
 });

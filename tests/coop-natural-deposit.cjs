@@ -35,7 +35,7 @@ module.exports = async function naturalDeposit({ host, guest, guests, focusGuest
       const next = await guest.evaluate(location => {
         const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, m = w.controls.app.globals.camera.matrix;
         const dx = location[0] - p[0], dz = location[2] - p[2];
-        return { position: [...p], waypointLocation: [...location], cameraAxes: [m[0], m[2], m[6], m[8]], distance: Math.hypot(dx, dz), focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, tick: w.scene.tick, movementSequence: w.movement.sequence };
+        return { position: [...p], waypointLocation: [...location], cameraAxes: [m[0], m[2], m[6], m[8]], distance: Math.hypot(dx, dz), focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), paused: w.controls.paused, tick: w.scene.tick, movementSequence: w.movement.sequence, navigation: w.scene.snapshot.camera };
       }, destination.route[waypoint]);
       trace.push({ step, waypoint, ...next });
       if (next.distance < 0.65 && waypoint < destination.route.length - 1) { waypoint++; commandedLocation = null; continue; }

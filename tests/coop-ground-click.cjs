@@ -27,14 +27,19 @@ module.exports = async function clickGround(guest, location) {
   for (cameraTurns = 0; cameraTurns <= 4; cameraTurns++) {
     // Aim after the existing camera/UI settling delay.
     await guest.waitForTimeout(150);
+    await guest.waitForFunction(tolerance => {
+      const camera = window.guestWorld.viewCamera.camera, delta = camera.baseAngle - camera.desiredBaseAngle;
+      return Math.abs(Math.atan2(Math.sin(delta), Math.cos(delta))) < tolerance &&
+        ['Position', 'Focus'].every(name => {
+          const current = camera['currentV3' + name], desired = camera['desiredV3' + name];
+          return Math.hypot(current[0] - desired[0], current[1] - desired[1], current[2] - desired[2]) < .01;
+        }) &&
+        Math.abs(camera.currentFOV - camera.desiredFOV) < tolerance;
+    }, .001, { timeout: 5000 });
     projection = await guest.evaluate(project, { location });
     if (projection.point || !projection.canTurn || cameraTurns === 4) break;
     await guest.keyboard.down('ArrowLeft');
     try { await guest.waitForTimeout(500); } finally { await guest.keyboard.up('ArrowLeft'); }
-    await guest.waitForFunction(tolerance => {
-      const camera = window.guestWorld.viewCamera.camera, delta = camera.baseAngle - camera.desiredBaseAngle;
-      return Math.abs(Math.atan2(Math.sin(delta), Math.cos(delta))) < tolerance;
-    }, .001, { timeout: 5000 });
   }
   let point = projection.point;
   assert.ok(point, 'The walking waypoint must be visible and clear of the original HUD: ' + JSON.stringify(projection));
