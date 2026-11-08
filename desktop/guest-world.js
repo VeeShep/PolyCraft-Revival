@@ -689,17 +689,16 @@
       const controller = this.game.getGameController(), target = (!this.groundDrag || this.groundDrag.targeted) && pickTarget(this, this.pointerEvent);
       if (target) {
         controller.setCursorTexture(this.scene.entities.get(target).record.attackCursor ? 'textures/cursors/attack.png' : 'textures/cursors/interact.png');
-        return;
       }
       const cursor = this.construction.cursor();
       if (!cursor) return;
       const globals = this.controls.app.globals;
-      controller.setCursorTexture(this.groundDrag ? 'textures/cursors/move.png' : 'textures/cursors/default.png');
-      if (this.groundDrag) return;
+      if (!target) controller.setCursorTexture(this.groundDrag ? 'textures/cursors/move.png' : 'textures/cursors/default.png');
+      if (!target && this.groundDrag) return;
       const hero = this.viewCamera.actor(this.scene.snapshot.hero), nav = hero.getEC('ECNav');
       const destination = nav.isOnPath() ? nav.getv3Destination() : hero.getEC('ECLocomotion').getDestination();
       if (!destination) return;
-      const gesture = this.controls.movementMethods.gesture, location = Array.from(destination);
+      const gesture = this.controls.movementMethods.gesture, location = Array.from(this.groundDrag ? cursor : destination);
       location[1] = hero.getv3Location()[1] - gesture.CURSOR_YOFFSET;
       gesture.drawCommandDestination.call({ globals, crashMobController: controller }, location, globals.mathDevice.v3BuildYAxis());
     }

@@ -685,7 +685,7 @@ test('guest hover and targeted holds use host-selected original attack/interact 
   w.groundDrag = { targeted: true }; w.drawMovementCursor(); assert.equal(f.cursors.at(-1), 'textures/cursors/attack.png');
   record.attackCursor = false; w.drawMovementCursor(); assert.equal(f.cursors.at(-1), 'textures/cursors/interact.png');
   w.groundDrag = null; w.drawMovementCursor(); assert.equal(f.cursors.at(-1), 'textures/cursors/interact.png');
-  record.attackCursor = true; assert.equal(JSON.stringify(record), before); assert.equal(f.sprites.length, 0);
+  record.attackCursor = true; assert.equal(JSON.stringify(record), before);
   w.scene.entities.delete(record.id); w.drawMovementCursor(); assert.equal(f.cursors.at(-1), 'textures/cursors/default.png');
 });
 test('target pointers respect input, GUI and placement blocking while ordinary ground drags retain the move pointer', () => {
@@ -725,13 +725,46 @@ test('original command and movement drawing use different cursor and destination
   assert.deepEqual(f.sprites.map(sprite => sprite.texture), ['textures/bigcircle.dds', 'textures/bigcircle.dds', 'textures/bigarrow.dds']);
   assert.deepEqual(f.sprites[0].v3Location, [12, 3.9, 14]); assert.deepEqual(f.sprites[2].v3Location, [40, 3.9, 50]);
 });
-test('movement feedback disappears for blocked input, local UI, targeted holds, placement and invalid projection', () => {
+test('movement feedback disappears for blocked input, local UI, holds without a target, placement and invalid projection', () => {
   const f = movementCursor();
   f.unavailable(true); f.world.drawMovementCursor(); f.unavailable(false);
   f.capture(true); f.world.drawMovementCursor(); f.capture(false);
   f.world.groundDrag = { targeted: true }; f.world.drawMovementCursor(); f.world.groundDrag = null;
   f.world.construction.placement = {}; f.world.drawMovementCursor(); f.world.construction.placement = null;
   f.invalidCursor(); f.world.drawMovementCursor(); assert.equal(f.sprites.length, 0);
+});
+test('guest command destination feedback matches the complete native renderer for target hover, holds and movement', () => {
+  const ast = require('./runtime-ast.cjs'), f = movementCursor(), w = f.world, globals = w.controls.app.globals;
+  Object.assign(globals.mathDevice, { v3Build: (...values) => values, v3ScalarMul: (a, scale, out = []) => { a.forEach((value, index) => { out[index] = value * scale; }); return out; } });
+  globals.camera.getv3Location = () => [0, 0, 0]; globals.camera.screenRadiusToWorldRadius = () => 1;
+  const controller = Object.assign(w.game.getGameController(), { selectionRadius: 35, addedSelectionRadius: 10 });
+  w.game.getGameController = () => controller;
+  w.sendTarget = () => assert.fail('Command drawing cannot send an action.');
+  const actor = w.viewCamera.actor('guest'), gesture = w.controls.movementMethods.gesture, command = ast.movementDrawing('drawIssueCommand');
+  for (const row of [
+    { target: null, held: false }, { target: 'enemy', held: false }, { target: 'enemy', held: true },
+    { target: 'friend', held: true }, { target: 'resource', held: false }, { target: 'resource', held: true },
+    { target: 'resource', held: true, path: false }, { target: 'enemy', held: true, noDestination: true },
+    { target: 'resource', held: false, noDestination: true }, { target: null, held: true }
+  ]) {
+    w.scene.snapshot.camera.pathDestination = row.path === false || row.noDestination ? null : [40, 3, 50];
+    w.scene.snapshot.camera.destination = row.noDestination ? null : [5, 3, 6];
+    const record = { id: 'target', interactive: true, attackCursor: row.target === 'enemy', location: [50, 50, 0], mesh: { visible: true } };
+    if (row.target) w.scene.entities.set(record.id, { record }); else w.scene.entities.delete(record.id);
+    w.groundDrag = row.held ? { targeted: !!row.target } : null;
+    const target = row.target ? { v3Location: record.location, getv3Location: () => record.location, getCentreLocation: () => [50, 50.25, 0],
+      getEC: name => name === 'ECSelectable' ? { isSelectable: () => true, getRadiusFactor: () => 1 } : name === 'ECTarget' && row.target !== 'resource' ? {} : null } : null;
+    const hero = { v3Location: actor.v3Location, getv3Location: () => actor.getv3Location(), isFriendlyWith: () => row.target === 'friend',
+      getEC: name => name === 'ECHero' ? { r: 1, g: 0.5, b: 0 } : name === 'ECPlayerBuilder' ? { isBuilding: () => false } : actor.getEC(name) };
+    const view = Object.assign(Object.create(gesture), { globals, prevDown: row.held, crashMobController: controller,
+      getHeroEntity: () => hero, getTargetEntity: () => target, getv3WorldCursorLocation: () => w.construction.cursor(), gameManager: { getHero: () => hero } });
+    const before = JSON.stringify(w.scene.snapshot);
+    f.sprites.length = f.cursors.length = 0; command.call(view);
+    const expected = structuredClone({ sprites: f.sprites, cursors: f.cursors });
+    f.sprites.length = f.cursors.length = 0; w.drawMovementCursor();
+    assert.deepEqual({ sprites: f.sprites, cursors: f.cursors }, expected, JSON.stringify(row));
+    assert.equal(JSON.stringify(w.scene.snapshot), before);
+  }
 });
 function resourceHighlight() {
   const ast = require('./runtime-ast.cjs'), f = movementCursor(), w = f.world, globals = w.controls.app.globals;
