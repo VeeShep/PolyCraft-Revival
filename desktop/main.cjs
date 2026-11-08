@@ -104,16 +104,16 @@ app.whenReady().then(() => {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   log('startup-phase', { phase: 'window-created' });
-  const sendNetworkEvent = (channel, event) => {
+  const sendWindowEvent = (channel, event) => {
     if (!window.isDestroyed() && !window.webContents.isDestroyed()) window.webContents.send(channel, event);
   };
-  direct = new DirectNetwork(event => sendNetworkEvent('polycraft:direct-event', event));
-  roomSocket = new RoomSocket(event => sendNetworkEvent('polycraft:room-event', event));
+  direct = new DirectNetwork(event => sendWindowEvent('polycraft:direct-event', event));
+  roomSocket = new RoomSocket(event => sendWindowEvent('polycraft:room-event', event));
   window.on('closed', () => { roomSocket.close(); direct.stop().catch(error => log('direct-cleanup-failed', { message: error.message })); });
-  window.on('enter-full-screen', () => window.webContents.send('polycraft:fullscreen-changed', true));
-  window.on('leave-full-screen', () => window.webContents.send('polycraft:fullscreen-changed', false));
-  window.on('focus', () => window.webContents.send('polycraft:focus-changed', true));
-  window.on('blur', () => window.webContents.send('polycraft:focus-changed', false));
+  window.on('enter-full-screen', () => sendWindowEvent('polycraft:fullscreen-changed', true));
+  window.on('leave-full-screen', () => sendWindowEvent('polycraft:fullscreen-changed', false));
+  window.on('focus', () => sendWindowEvent('polycraft:focus-changed', true));
+  window.on('blur', () => sendWindowEvent('polycraft:focus-changed', false));
   window.webContents.session.webRequest.onBeforeRequest((details, callback) => {
     callback({ cancel: !details.url.startsWith('polycraft://game/') && !details.url.startsWith('data:') && !details.url.startsWith('blob:') && !details.url.startsWith('devtools:') });
   });

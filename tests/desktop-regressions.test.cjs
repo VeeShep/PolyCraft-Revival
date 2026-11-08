@@ -14,6 +14,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
     setPermissionRequestHandler(handler) { this.request = handler; }
   };
   let window, direct, room;
+  const windowEvents = {};
   class Window {
     constructor() {
       window = this;
@@ -22,7 +23,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
     }
     get webContents() { if (this.destroyed) throw new TypeError('Object has been destroyed'); return this.contents; }
     isDestroyed() { return !!this.destroyed; }
-    on() {}
+    on(name, handler) { windowEvents[name] = handler; }
     loadURL() { return Promise.resolve(); }
     isFullScreen() { return !!this.fullscreen; }
     setFullScreen(value) { this.fullscreen = value; }
@@ -66,16 +67,20 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
   assert.equal(window.isFullScreen(), true);
   await handlers['polycraft:fullscreen'](event);
   assert.equal(window.isFullScreen(), false);
-  await t.test('native room/direct events stop at destroyed contents or window without throwing', () => {
-    const callbacks = [[direct, 'polycraft:direct-event'], [room, 'polycraft:room-event']];
+  await t.test('native network, focus and fullscreen events stop at destroyed contents or window without throwing', () => {
     const message = { type: 'closed' };
-    for (const [network] of callbacks) network.emit(message);
-    assert.deepEqual(contents.sent, callbacks.map(([, channel]) => [channel, message]));
+    const callbacks = [
+      [() => direct.emit(message), 'polycraft:direct-event', message], [() => room.emit(message), 'polycraft:room-event', message],
+      [windowEvents.focus, 'polycraft:focus-changed', true], [windowEvents.blur, 'polycraft:focus-changed', false],
+      [windowEvents['enter-full-screen'], 'polycraft:fullscreen-changed', true], [windowEvents['leave-full-screen'], 'polycraft:fullscreen-changed', false]
+    ];
+    for (const [emit] of callbacks) emit();
+    assert.deepEqual(contents.sent, callbacks.map(([, channel, value]) => [channel, value]));
     contents.destroyed = true;
-    for (const [network] of callbacks) assert.doesNotThrow(() => network.emit(message));
+    for (const [emit] of callbacks) assert.doesNotThrow(emit);
     window.destroyed = true;
-    for (const [network] of callbacks) assert.doesNotThrow(() => network.emit(message));
-    assert.equal(contents.sent.length, 2, 'Late events must not reach closed renderer IPC.');
+    for (const [emit] of callbacks) assert.doesNotThrow(emit);
+    assert.equal(contents.sent.length, callbacks.length, 'Late events must not reach closed renderer IPC.');
   });
 });
 

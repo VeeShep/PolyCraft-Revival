@@ -60,25 +60,28 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Resources gathered.');
     }
     await guest.waitForTimeout(500);
+    const pickupTrace = [];
     for (let step = 0; step < 80; step++) {
       const pickup = await host.evaluate(({ hero, minimum, resource }) => {
         const w = window.hostWorld, actor = w.players.active.get(hero).hero;
         if (actor.getEC('ECResourceCarrier').getResource(resource) >= minimum) return { collected: true };
         const drops = w.game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup')).filter(entity => !entity.shouldBeDestroyed() && entity.getEC('ECPickup').archetype.carriedResource[resource] > 0 && entity.getEC('ECPickup').collectorName === undefined);
         drops.sort((a, b) => a.getDistanceUsingSize(actor.getv3Location()) - b.getDistanceUsingSize(actor.getv3Location()));
-        return { collected: false, location: drops[0] && Array.from(drops[0].getv3Location()) };
+        return { collected: false, actor: Array.from(actor.getv3Location()), drop: drops[0]?.getName(), location: drops[0] && Array.from(drops[0].getv3Location()) };
       }, { hero, minimum: target.minimumCarry, resource });
       if (pickup.collected) break;
       if (!pickup.location) { await guest.waitForTimeout(200); continue; }
-      const key = await guest.evaluate(location => {
+      const view = await guest.evaluate(location => {
         const w = window.guestWorld, p = w.scene.entities.get(w.identity.entity).record.location, m = w.controls.app.globals.camera.matrix;
         const dx = location[0] - p[0], dz = location[2] - p[2], right = dx * m[0] + dz * m[2], forward = -dx * m[6] - dz * m[8];
-        return Math.abs(right) > Math.abs(forward) ? right > 0 ? 'd' : 'a' : forward > 0 ? 'w' : 's';
+        return { key: Math.abs(right) > Math.abs(forward) ? right > 0 ? 'd' : 'a' : forward > 0 ? 'w' : 's', available: w.movement.available(), focused: document.hasFocus(), nativeFocused: w.movement.nativeFocused, paused: w.controls.paused, tick: w.scene.tick };
       }, pickup.location);
-      await guest.keyboard.down(key);
-      try { await guest.waitForTimeout(100); } finally { await guest.keyboard.up(key); }
+      pickupTrace.push({ step, ...pickup, ...view });
+      await guest.keyboard.down(view.key);
+      try { await guest.waitForTimeout(100); } finally { await guest.keyboard.up(view.key); }
       await guest.waitForTimeout(100);
     }
+    console.log('Native pickup walking trace:', JSON.stringify(pickupTrace.filter((_, index) => index < 4 || index >= pickupTrace.length - 12)));
     const result = await host.evaluate(async ({ hero, target, task }) => {
       const w = window.hostWorld, actor = w.players.active.get(hero).hero, tree = w.game.getGameEntityByName(target);
       await window.polycraft.checkpoint(true);
@@ -87,6 +90,18 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
         otherCarried: [...w.players.active].filter(([id]) => id !== hero).map(([id, entry]) => ({ id, carried: w.players.captureHero(entry.hero).inventory.carried })) };
     }, { hero, target: target.id, task });
     console.log('Original guest ' + task + ' depletion:', JSON.stringify({ clicks, result }));
+    if (result.inventory.carried[resource] < target.minimumCarry) console.log('Native pickup failure state:', JSON.stringify(await host.evaluate(({ hero, resource }) => {
+      const w = window.hostWorld, actor = w.players.active.get(hero).hero, carrier = actor.getEC('ECResourceCarrier'), location = actor.getv3Location();
+      return { actor: Array.from(location), tick: w.game.gameClock.getFrameIndex(), full: carrier.isFull(resource), inbound: carrier.hasAnyInboundResource(), flying: carrier.hasAnyFlyingResource(),
+        drops: w.game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup')).filter(entity => !entity.shouldBeDestroyed() && entity.getEC('ECPickup').archetype.carriedResource[resource] > 0).map(entity => {
+          const pickup = entity.getEC('ECPickup'), p = entity.getv3Location();
+          let route = null, routeError;
+          try { route = w.game.getNavManager().getEntityToEntityPath(actor, entity, actor.getEC('ECFaction').getFactionName(), actor.getEC('ECNav').getMaxNavigableHeight(), true)?.getWaypointList().map(point => Array.from(point)); }
+          catch (error) { routeError = error.message; }
+          return { id: entity.getName(), location: Array.from(p), distance2D: Math.hypot(p[0] - location[0], p[2] - location[2]), radius: pickup.archetype.attractRadius,
+            collector: pickup.getCollectorName() || null, animatedIn: !!pickup.animatedIn, managed: pickup.isManagedByThisMachine(), flying: !!pickup.flyingTween, route, routeError };
+        }) };
+    }, { hero, resource })));
     assert.equal(result.complete, true); assert.equal(result.scripts, true); assert.equal(result.remaining, 0);
     assert.ok(result.events.some(event => event.interactor === target.actor && event.amount > 0));
     assert.ok(result.depletions.some(event => event.hero === target.actor && event.type === resource));
