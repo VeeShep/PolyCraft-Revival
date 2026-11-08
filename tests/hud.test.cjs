@@ -7,6 +7,7 @@ const playerDataMethods = ast.component('ECPlayerData', { kd: ranks });
 const scoreMethods = ast.prototypeWith('drawResourceBar', { Za: [{ barGUI: 'lumber', string: 'Lumber' }, { barGUI: 'stone', string: 'Stone' }], [ast.entityFactoryName()]: { archetypes: { a_melee: { familyName: 'melee' } } } });
 const { captureHud, GuestHud } = require('../desktop/hud.js');
 const { HostActions } = require('../desktop/coop-actions.js');
+const { GuestWorld } = require('../desktop/guest-world.js');
 const profile = () => ({ preparation: null, campaignResult: null, resources: [100, 50], caps: [500, 1000], amber: 10, xp: 0, points: 0, quests: null, island: { hq: null, prepare: null, invasion: null, upcoming: null }, flags: { resources: true, amber: true, rank: true } });
 function guest() {
   const drawn = [], globals = { appCurrentTime: 10, simpleFontRenderer: { numberToCommaString: String }, mathDevice: { lerp: (a, b, t) => a + (b - a) * t, saturate: value => Math.max(0, Math.min(1, value)) } };
@@ -17,6 +18,19 @@ function guest() {
   const hud = new GuestHud(world), receive = (value = profile(), sequence = 1, expected = 1) => hud.receive({ type: 'life', sequence, life: {}, hud: value }, expected);
   return { world, hud, receive, globals, drawn };
 }
+test('world readiness alone does not populate HUD; native focus and an unpaused status poll are required', () => {
+  const f = guest(), requests = [], w = f.world;
+  Object.assign(w, { identity: { entity: 'guest-hero' }, scene: { snapshot: {} }, movement: { nativeFocused: false }, lastLifeQuery: -Infinity,
+    sendTarget(type, target) { requests.push({ type, target }); return requests.length; } });
+  const update = () => GuestWorld.prototype.updateLife.call(w);
+  update(); assert.equal(requests.length, 0); assert.equal(f.hud.state, undefined);
+  w.movement.nativeFocused = true; w.controls.paused = true; update(); assert.equal(requests.length, 0);
+  w.controls.paused = false; w.resyncing = true; update(); assert.equal(requests.length, 0);
+  w.resyncing = false; update(); assert.deepEqual(requests, [{ type: 'life', target: 'guest-hero' }]);
+  assert.equal(f.hud.state, undefined, 'Focus sends a query; it must not invent HUD data');
+  update(); assert.equal(requests.length, 1, 'An in-flight status query must not be duplicated');
+  f.receive(profile(), w.lifeRequest, w.lifeRequest); assert.deepEqual(f.hud.state.resources, [100, 50]);
+});
 test('own-hero status supplies shared economy and individual progression through actual original player-data getters without saving', () => {
   const economy = { resources: [250.5, 50], caps: [500, 1000], amber: 80 };
   const actor = (xp, used, extra) => {

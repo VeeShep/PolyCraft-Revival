@@ -6,6 +6,11 @@ const fs = require('node:fs'), path = require('node:path');
 module.exports = async function recoveredParty({ host, application, expected, fixture, directory, file, errors, requests }) {
   const applications = [], guests = [], sourceBytes = new Map();
   let gear;
+  const focusGuest = async (app, page) => {
+    await app.evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
+    await page.bringToFront(); await page.locator('#turbulenz_game_engine_canvas').focus();
+    await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && window.guestWorld.movement.nativeFocused, null, { timeout: 5000 });
+  };
   try {
     await host.evaluate(async () => {
       window.recoveryErrors = [];
@@ -54,7 +59,27 @@ module.exports = async function recoveredParty({ host, application, expected, fi
       assert.equal(identity.playerId, saved.id); assert.equal(identity.name, saved.name);
       const buildings = await page.evaluate(() => window.guestWorld.scene.snapshot.spaces.flatMap(space => space.entities).map(entity => entity.id));
       for (const building of [...expected.hq, ...expected.lumbermills]) assert.ok(buildings.includes(building.name));
-      await page.waitForFunction(wood => window.guestWorld.hud.state?.resources[0] === wood, expected.coop.economy.resource[0]);
+      try {
+        // HUD status polling requires native focus; the initial world snapshot does not.
+        await focusGuest(app, page);
+        await page.waitForFunction(wood => window.connection.closed || window.guestWorld.hud.state?.resources[0] === wood, expected.coop.economy.resource[0]);
+        assert.equal(await page.evaluate(() => window.connection.closed), false, 'The guest disconnected before receiving the resource HUD.');
+      } catch (error) {
+        console.log('Recovered guest HUD expected wood:', expected.coop.economy.resource[0]);
+        try { console.log('Recovered guest HUD diagnostics:', JSON.stringify(await page.evaluate(async () => {
+          const w = window.guestWorld;
+          return { focused: document.hasFocus(), windowFocused: await window.desktop.windowFocused(), visibility: document.visibilityState, activeElement: document.activeElement?.id,
+            nativeFocused: w.movement.nativeFocused, paused: w.controls.paused, closed: w.closed, resyncing: w.resyncing, identity: w.identity,
+            connection: { closed: w.connection.closed, state: w.connection.state }, tick: w.scene.tick, snapshotAge: performance.now() - w.scene.receivedAt,
+            lifeRequest: w.lifeRequest, lifeQueryAge: Number.isFinite(w.lastLifeQuery) ? performance.now() - w.lastLifeQuery : null, targetSequence: w.targetSequence, hud: w.hud.state || null };
+        }))); } catch (diagnosticError) { console.log('Guest HUD diagnostics unavailable:', diagnosticError.message); }
+        try { console.log('Recovered host HUD diagnostics:', JSON.stringify(await host.evaluate(() => {
+          const w = window.hostWorld;
+          return { closed: w.closed, focused: document.hasFocus(), paused: w.controls.paused, tick: w.game.gameClock.getFrameIndex(), resources: w.players.registry.data.economy.resource,
+            guests: [...w.guestSlots.values()].map(slot => ({ id: slot.id, ready: slot.ready, joined: slot.joined, releasing: slot.releasing })) };
+        }))); } catch (diagnosticError) { console.log('Host HUD diagnostics unavailable:', diagnosticError.message); }
+        throw error;
+      }
       await page.evaluate(() => {
         const world = window.guestWorld, close = world.close;
         world.close = function () { close.call(this); window.recoveredOwnState = JSON.stringify(window.polycraft.bridge.state); this.close = close; };
@@ -78,11 +103,7 @@ module.exports = async function recoveredParty({ host, application, expected, fi
     }
     if (process.argv.includes('--resources')) {
       const guest = guests[0].page;
-      const focus = async () => {
-        await applications[0].evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
-        await guest.bringToFront(); await guest.locator('#turbulenz_game_engine_canvas').focus();
-        await guest.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && window.guestWorld.movement.nativeFocused);
-      };
+      const focus = () => focusGuest(applications[0], guest);
       const button = async id => {
         await focus();
         await guest.waitForFunction(id => window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap[id]?.scale > 0.95, id);
