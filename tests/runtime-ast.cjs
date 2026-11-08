@@ -182,7 +182,7 @@ function audioSourceMethods() {
 }
 function movementDrawing(name = 'drawMove') {
   const draw = one(properties.filter(p => key(p) === name), 'movement drawing ' + name).value;
-  return evaluate(draw, { [drawingDependency(draw, 'outlineSoft')]: objectWith('healthFull'),
+  return evaluate(draw, { [drawingDependency(draw, 'outline')]: objectWith('healthFull'),
     [drawingDependency(draw, 'NORMAL_NO_Z')]: { prototype: { blendStyle: { NORMAL_NO_Z: 'no-depth', NORMAL: 'normal' } } } });
 }
 function cameraMethods(zoomer) {

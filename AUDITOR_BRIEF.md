@@ -7,6 +7,7 @@ This is an implementation and evidence handoff, not an independent security asse
 ## Review baseline
 
 - Application version: **1.0.0-beta.88**; package/application name: **PolyCraft Offline**.
+- Working source has advanced to **Beta 89**: a shared native command-destination drawing helper, guest ground-marker correction and solo cursor restoration. Its 535 source checks pass; packaged/visual acceptance is pending. Treat that later engine/guest patch as a separate diff; the pinned Beta 88 baseline below remains unchanged.
 - Pin application review to **`637dd2569ff479b0f3495c645c440837962ced6a`**. The subsequent checkpoint `f642d67` changes documentation only. Review later code changes as separate diffs rather than assuming this brief describes every future commit.
 - [Build run 42443177035](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42443177035) completed successfully: **533 checks, eight jobs and eight artifacts**. Artifact suffix: **114.1**.
 - [RESTORATION_STATUS.md](RESTORATION_STATUS.md) is the current roadmap and detailed acceptance record. Its historical sections preserve earlier failures and superseded checkpoints; they are not all current requirements or current failures.

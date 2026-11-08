@@ -41321,24 +41321,30 @@
           out: n,
           angle: s
         }), s = d.getEC("ECSelectable"), r = d.getCentreLocation(), a.screenRadiusToWorldRadius(r, this.getSelectionRadius() + this.getAddedSelectionRadius()), s && s.isSelectable() && s.getRadiusFactor(), s = this.gameManager.getHero(), a = d.getEC("ECTarget"), s = s.isFriendlyWith(d), a && !s ? this.crashMobController.setCursorTexture("textures/cursors/attack.png") : this.crashMobController.setCursorTexture("textures/cursors/interact.png")) : this.prevDown ? (p = !0, this.crashMobController.setCursorTexture("textures/cursors/move.png")) : this.crashMobController.setCursorTexture("textures/cursors/default.png");
-        !p && w && (c.addSprite({
-          v3Location: this.prevDown ? g : t,
-          size: 0.75,
-          blendStyle: ya.prototype.blendStyle.NORMAL_NO_Z,
-          texture: this.crashMobController.bigCircleTexturePath,
-          v4color: k.outlineSoft,
-          out: n
-        }), c.addSprite({
-          v3Location: this.prevDown ? g : t,
-          size: 0.75,
-          blendStyle: ya.prototype.blendStyle.NORMAL,
-          texture: this.crashMobController.bigCircleTexturePath,
-          v4color: b.v4Build(j, i, l, 0.5),
-          out: n
-        }));
+        !p && w && this.drawCommandDestination(this.prevDown ? g : t, n);
         (b = e.getEC("ECPlayerBuilder")) && b.isBuilding() && b.drawPlacementInfo(this.getv3WorldCursorLocation(), !this.hasHeldOrSwiped());
         m && m.hasFinishedCharging() && m.drawSuper(d, this.interactType);
       }
+    },
+    drawCommandDestination: function (location, normal) {
+      var math = this.globals.mathDevice,
+        sprites = this.globals.simpleSpriteRenderer;
+      sprites.addSprite({
+        v3Location: location,
+        size: 0.75,
+        blendStyle: ya.prototype.blendStyle.NORMAL_NO_Z,
+        texture: this.crashMobController.bigCircleTexturePath,
+        v4color: k.outlineSoft,
+        out: normal
+      });
+      sprites.addSprite({
+        v3Location: location,
+        size: 0.75,
+        blendStyle: ya.prototype.blendStyle.NORMAL,
+        texture: this.crashMobController.bigCircleTexturePath,
+        v4color: math.v4Build(k.outline[0], k.outline[1], k.outline[2], 0.5),
+        out: normal
+      });
     },
     drawChargeableShotUI: function () {
       var a = this.getHeroEntity(),

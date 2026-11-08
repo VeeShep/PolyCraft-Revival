@@ -242,7 +242,7 @@
       this.scene = new GuestScene(globals, game.getBlockFactory());
       this.original = {
         update: app.updateGame, draw: game.draw, draw2D: game.draw2D, save: game.saveLevel, getCamera: game.getGameCamera, heroLightUpdate: game.gameLighting.updateHeroLightPosition,
-        time: globals.gameCurrentTime, dayTime: game.getGameDayTime(),
+        time: globals.gameCurrentTime, dayTime: game.getGameDayTime(), cursor: globals.graphicsDevice.canvas?.style?.cursor,
         paused: controls.paused, historySuspended: controls.effectHistory?.suspended, guiController: game.imgui.controller,
         camera: Object.fromEntries(['desiredV3Focus', 'desiredV3Position', 'currentV3Focus', 'currentV3Position', 'currentV3Up', 'currentv3Direction'].filter(key => camera[key]).map(key => [key, Array.from(camera[key])])),
         fov: camera.currentFOV,
@@ -650,13 +650,15 @@
       if (gui.hasCapturedInput() || gui.isHot('guest-shop') || gui.isHot('guest-pause') || gui.isHot('guest-fullscreen') || gui.isHot('guest-skip-prepare') || !this.groundDrag && pickTarget(this, this.pointerEvent)) return;
       const cursor = this.construction.cursor();
       if (!cursor) return;
-      const globals = this.controls.app.globals, controller = this.game.getGameController(), drag = this.groundDrag;
-      const view = Object.assign(Object.create(this.controls.movementMethods.gesture), {
-        globals, prevDown: !!drag, downTime: drag?.downTime ?? globals.appCurrentTime, downv2ScreenCoord: drag?.downv2ScreenCoord || this.guiInput.position,
-        getv3WorldCursorLocation: () => cursor, getHeroEntity: () => this.viewCamera.actor(this.scene.snapshot.hero),
-        crashMobController: { getv2ScreenCoord: () => this.guiInput.position, bigCircleTexturePath: controller.bigCircleTexturePath, bigArrowTexturePath: controller.bigArrowTexturePath }
-      });
-      view.drawMove();
+      const globals = this.controls.app.globals, controller = this.game.getGameController();
+      controller.setCursorTexture(this.groundDrag ? 'textures/cursors/move.png' : 'textures/cursors/default.png');
+      if (this.groundDrag) return;
+      const hero = this.viewCamera.actor(this.scene.snapshot.hero), nav = hero.getEC('ECNav');
+      const destination = nav.isOnPath() ? nav.getv3Destination() : hero.getEC('ECLocomotion').getDestination();
+      if (!destination) return;
+      const gesture = this.controls.movementMethods.gesture, location = Array.from(destination);
+      location[1] = hero.getv3Location()[1] - gesture.CURSOR_YOFFSET;
+      gesture.drawCommandDestination.call({ globals, crashMobController: controller }, location, globals.mathDevice.v3BuildYAxis());
     }
     drawCombatTarget() {
       if (this.resyncing) return;
@@ -736,6 +738,7 @@
       for (const light of original.lights) { light.node.setLocalTransform(new Float32Array(light.transform)); light.node.setDisabled(light.disabled); }
       game.gameClock.prevEngineTime = app.globals.appCurrentTime;
       camera.setShouldSnap(); game.getGameController().clearInputs();
+      if (original.cursor !== undefined && app.globals.graphicsDevice.canvas?.style) app.globals.graphicsDevice.canvas.style.cursor = original.cursor;
       if (this.controls.effectHistory) this.controls.effectHistory.suspended = original.historySuspended;
       delete this.controls.guestWorld;
       this.controls.pause(original.paused);

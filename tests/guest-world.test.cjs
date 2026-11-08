@@ -217,6 +217,8 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   game.imgui.draw2D = () => {}; globals.simpleFontRenderer.render = () => {};
   game.getGuiManager = () => game.guiManager;
   game.guiManager.completeDraw = () => scheduler.adddraw({ update: () => true });
+  globals.graphicsDevice.canvas ||= {};
+  globals.graphicsDevice.canvas.style = { cursor: 'original-solo-pointer' };
   const world = new GuestWorld(controls, connection);
   assert.notEqual(game.guiManager.drawList, soloGui.drawList); assert.notEqual(game.guiManager.prevDrawGuiMap, soloGui.prevDrawGuiMap);
   assert.notEqual(game.guiManager.gameMessages, soloGui.gameMessages); assert.deepEqual(game.guiManager.gameMessages, {});
@@ -353,7 +355,9 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(world.hud.state.preparation.episode, 7); world.targetSequence = world.campaign.prepareRequest = 16;
   connection.onMessage({ kind: 'result', payload: { type: 'skipPrepare', sequence: 16, message: 'Battle started.' } });
   assert.equal(world.campaign.prepareRequest, null);
+  globals.graphicsDevice.canvas.style.cursor = 'guest-move-pointer';
   connection.onState('closed', {});
+  assert.equal(globals.graphicsDevice.canvas.style.cursor, 'original-solo-pointer');
   for (const key of Object.keys(soloGui)) assert.equal(game.guiManager[key], soloGui[key]);
   assert.equal(world.visuals.drawQueue.length, 0);
   assert.equal(shadows && sounds && music, true, 'original local presentation preferences restored');
@@ -642,32 +646,34 @@ test('target gestures resample targets, stop on cancellation and handle release 
 });
 
 function movementCursor() {
-  const { GuestCamera } = require('../desktop/guest-world.js'), ast = require('./runtime-ast.cjs'), world = Object.create(GuestWorld.prototype), sprites = [];
+  const { GuestCamera } = require('../desktop/guest-world.js'), ast = require('./runtime-ast.cjs'), world = Object.create(GuestWorld.prototype), sprites = [], cursors = [];
   const math = { v3Copy: a => [...a], v3BuildYAxis: () => [0, 1, 0], v3Sub: (a, b) => a.map((value, i) => value - b[i]),
     v3ToAngle: a => Math.atan2(a[0], a[2]), v4Build: (...values) => values, v2DistanceSq: (a, b) => a.reduce((sum, value, i) => sum + (value - b[i]) ** 2, 0) };
   let available = true, captured = false, cursor = [12, 4, 14];
   world.controls = { app: { globals: { mathDevice: math, appCurrentTime: 1, simpleSpriteRenderer: { addSprite: value => sprites.push(structuredClone(value)) },
     graphicsDevice: { width: 100, height: 100, canvas: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } }, camera: { worldToScreen: location => location } } },
-    movementMethods: { gesture: { ...ast.prototypeWith('hasHeldOrSwiped'), drawMove: ast.movementDrawing() } } };
+    movementMethods: { gesture: { ...ast.prototypeWith('hasHeldOrSwiped'), drawMove: ast.movementDrawing(), drawCommandDestination: ast.movementDrawing('drawCommandDestination') } } };
   world.game = { getHero: () => assert.fail('cursor must not use the suspended solo hero'), getIMGui: () => ({ hasCapturedInput: () => captured, isHot: () => false }),
-    getGameController: () => ({ bigCircleTexturePath: 'textures/bigcircle.dds', bigArrowTexturePath: 'textures/bigarrow.dds' }) };
+    getGameController: () => ({ bigCircleTexturePath: 'textures/bigcircle.dds', bigArrowTexturePath: 'textures/bigarrow.dds', setCursorTexture: path => cursors.push(path) }) };
   world.identity = { entity: 'guest' }; world.guiInput = { position: [50, 50] }; world.pointerEvent = { clientX: 50, clientY: 50 };
   world.movement = { available: () => available }; world.construction = { cursor: () => cursor };
   world.scene = { snapshot: { hero: 'guest', camera: { pathDestination: [40, 3, 50], destination: [5, 3, 6] } },
     entities: new Map([['guest', { record: { id: 'guest', location: [2, 3, 4] }, displayLocation: [3, 4, 5] }]]) };
   world.viewCamera = Object.assign(Object.create(GuestCamera.prototype), { world, actors: new Map() });
-  return { world, sprites, unavailable: value => { available = !value; }, capture: value => { captured = value; }, invalidCursor: () => { cursor = null; } };
+  return { world, sprites, cursors, unavailable: value => { available = !value; }, capture: value => { captured = value; }, invalidCursor: () => { cursor = null; } };
 }
-test('guest movement cursor uses actual original circles/arrows and final host path at the interpolated assigned hero height', () => {
+test('guest ground movement uses the original command destination hexagon and pointer textures', () => {
   const f = movementCursor(); f.world.drawMovementCursor();
-  assert.deepEqual(f.sprites.map(value => value.texture), ['textures/bigcircle.dds', 'textures/bigcircle.dds', 'textures/bigarrow.dds']);
-  assert.deepEqual(f.sprites.map(value => value.blendStyle), ['no-depth', 'normal', 'no-depth']);
-  assert.deepEqual(f.sprites[0].v3Location, [12, 3.9, 14]); assert.deepEqual(f.sprites[2].v3Location, [40, 3.9, 50]);
+  assert.deepEqual(f.cursors, ['textures/cursors/default.png']);
+  assert.deepEqual(f.sprites.map(value => value.texture), ['textures/bigcircle.dds', 'textures/bigcircle.dds']);
+  assert.deepEqual(f.sprites.map(value => value.blendStyle), ['no-depth', 'normal']);
+  assert.deepEqual(f.sprites.map(value => value.v3Location), [[40, 3.9, 50], [40, 3.9, 50]]);
   assert.deepEqual(f.world.scene.snapshot.camera.pathDestination, [40, 3, 50]);
-  f.sprites.length = 0; f.world.scene.snapshot.camera.pathDestination = null; f.world.drawMovementCursor(); assert.deepEqual(f.sprites[2].v3Location, [5, 3.9, 6]);
-  f.world.scene.snapshot.camera.destination = null; f.sprites.length = 0; f.world.drawMovementCursor(); assert.equal(f.sprites.length, 2);
-  f.world.groundDrag = { downTime: 0.4, downv2ScreenCoord: [50, 50], targeted: false }; f.sprites.length = 0; f.world.drawMovementCursor();
-  assert.equal(f.sprites.length, 4); assert.equal(f.sprites[0].texture, 'textures/bigarrow.dds'); assert.equal(f.sprites[0].v4color[3], 0.5);
+  f.sprites.length = 0; f.world.scene.snapshot.camera.pathDestination = null; f.world.drawMovementCursor();
+  assert.deepEqual(f.sprites[0].v3Location, [5, 3.9, 6]);
+  f.world.scene.snapshot.camera.destination = null; f.sprites.length = 0; f.world.drawMovementCursor(); assert.equal(f.sprites.length, 0);
+  f.world.groundDrag = { downTime: 0.4, downv2ScreenCoord: [50, 50], targeted: false }; f.world.drawMovementCursor();
+  assert.equal(f.cursors.at(-1), 'textures/cursors/move.png'); assert.equal(f.sprites.length, 0);
 });
 test('original command and movement drawing use different cursor and destination feedback', () => {
   const ast = require('./runtime-ast.cjs'), f = movementCursor(), globals = f.world.controls.app.globals, cursors = [];
