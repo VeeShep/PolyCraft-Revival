@@ -61,6 +61,8 @@ jobs:
           cache: npm
       - run: sudo apt-get update && sudo apt-get install -y coturn xvfb
       - run: npm ci
+      - name: Install verified native Electron runtime
+        run: node node_modules/electron/install.js
       - name: Test disposable two/four-participant direct and forced-relay links
         run: xvfb-run -a node tests/webrtc-renewal-smoke.cjs
 
@@ -123,6 +125,8 @@ jobs:
           BUILD_ARCH: ${{ matrix.runnerArch || matrix.arch }}
         run: node -e "const assert = require('node:assert/strict'); assert.equal(process.platform, process.env.BUILD_PLATFORM); assert.equal(process.arch, process.env.BUILD_ARCH);"
       - run: npm ci
+      - name: Install verified native Electron runtime
+        run: node node_modules/electron/install.js
       - name: Build packages without publishing
         run: npx --no-install electron-builder ${{ matrix.arguments }} --config scripts/ci-builder-config.cjs --publish never --config.directories.output=dist/ci
       - name: Verify finished Mac ZIP architecture and signature

@@ -13,21 +13,22 @@ function load({ platform = 'darwin', arch = 'arm64', version = project.devDepend
 }
 test('CI preserves existing package options and selects the installed matching runtime for all six native targets', () => {
   for (const platform of ['darwin', 'linux', 'win32']) for (const arch of ['arm64', 'x64']) {
-    const { config, dist } = load({ platform, arch }), { electronDist, afterExtract, ...rest } = config;
+    const { config, dist } = load({ platform, arch }), { electronDist, beforePack, afterExtract, ...rest } = config;
     assert.deepEqual(rest, project.build); assert.equal(typeof afterExtract, 'function');
-    assert.equal(electronDist({ platformName: platform, arch }), dist);
+    assert.equal(electronDist, dist);
+    beforePack({ electronPlatformName: platform, arch: require('builder-util').Arch[arch] });
     assert.equal(config.electronDownload, undefined, 'No second Electron archive download or checksum bypass is configured.');
   }
 });
 test('CI refuses a mismatched package/runtime version, missing runtime or cross-platform/architecture target', () => {
   assert.throws(() => load({ version: '0.0.0' }), /locked Electron version/);
   const missing = Object.assign(new Error('missing runtime'), { code: 'ENOENT' });
-  assert.throws(() => load({ runtimeError: missing }).config.electronDist({ platformName: 'darwin', arch: 'arm64' }), error => error === missing);
+  assert.throws(() => load({ runtimeError: missing }), error => error === missing);
   const { config } = load();
-  assert.throws(() => config.electronDist({ platformName: 'win32', arch: 'arm64' }), /native platform/);
-  assert.throws(() => config.electronDist({ platformName: 'darwin', arch: 'x64' }), /native architecture/);
-  assert.throws(() => load({ runtimeVersion: '0.0.0' }).config.electronDist({ platformName: 'darwin', arch: 'arm64' }), /runtime must match/);
-  assert.equal(load({ runtimeVersion: 'v' + project.devDependencies.electron + '\n' }).config.electronDist({ platformName: 'darwin', arch: 'arm64' }).endsWith('dist'), true);
+  assert.throws(() => config.beforePack({ electronPlatformName: 'win32', arch: require('builder-util').Arch.arm64 }), /native platform/);
+  assert.throws(() => config.beforePack({ electronPlatformName: 'darwin', arch: require('builder-util').Arch.x64 }), /native architecture/);
+  assert.throws(() => load({ runtimeVersion: '0.0.0' }), /runtime must match/);
+  assert.equal(load({ runtimeVersion: 'v' + project.devDependencies.electron + '\n' }).config.electronDist.endsWith('dist'), true);
 });
 test('CI custom-runtime cleanup removes only default startup files, retains game/source files before packaging integrity metadata', t => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-runtime-cleanup-')); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -51,4 +52,16 @@ test('CI cleanup refuses directories instead of recursively deleting unexpected 
   const context = { electronPlatformName: 'linux', appOutDir: root }, { config } = load();
   assert.throws(() => config.afterExtract(context)); assert.equal(fs.statSync(blocked).isDirectory(), true);
   assert.equal(fs.readFileSync(path.join(root, 'version'), 'utf8'), 'must remain after failed cleanup');
+});
+
+test('CI explicitly installs Electron before native testing and packaging, while unit checks stay download-free', () => {
+  const workflow = require('js-yaml').load(fs.readFileSync(path.join(__dirname, '../.github/workflows/build.yml'), 'utf8'));
+  for (const job of ['native-network', 'package']) {
+    const steps = workflow.jobs[job].steps, install = steps.findIndex(step => step.run === 'node node_modules/electron/install.js');
+    const dependencies = steps.findIndex(step => step.run === 'npm ci');
+    const consumer = steps.findIndex(step => /electron-builder|webrtc-renewal-smoke/.test(step.run || ''));
+    assert.ok(dependencies >= 0 && install > dependencies && install < consumer, job + ': install the verified runtime before first use');
+  }
+  assert.equal(workflow.jobs.checks.steps.some(step => step.run === 'node node_modules/electron/install.js'), false);
+  assert.equal(workflow.jobs.checks.steps.find(step => step.run === 'npm ci').env.ELECTRON_SKIP_BINARY_DOWNLOAD, '1');
 });
