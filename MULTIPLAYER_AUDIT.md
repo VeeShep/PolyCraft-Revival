@@ -4,7 +4,7 @@ The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sec
 
 ## Current source checkpoint — Beta 88, 2026-11-07
 
-Desktop focus/blur/fullscreen notifications now reuse the existing window/contents lifetime guard; live channel names/payloads remain unchanged. The exact destroyed-object exception reproduces in actual-main-code regression before the fix; nine focused checks and all 533 in-memory checks pass afterward. No native Beta 88 gameplay/package claim yet. Pickup diagnostics are prepared without changing steering or resource rules; the next visible disposable case must distinguish focus/terrain/eligibility/animation before a collection fix. [Current evidence](RESTORATION_STATUS.md#current-source-beta-88-guarded-desktop-window-notifications--2026-11-07).
+Desktop focus/blur/fullscreen notifications now reuse the existing window/contents lifetime guard; live channel names/payloads remain unchanged. The exact destroyed-object exception reproduces in actual-main-code regression before the fix; nine focused checks and all 533 in-memory checks pass afterward. All eight CI jobs/artifacts now pass. Two visible source runs and the independently verified CI ARM64 app pass the complete recovered-party/wood/native-reload flow with 12 clean native logs; both downloaded Mac artifacts pass source/icon/architecture/signature checks, with Intel never launched. Earlier pickup failure remains unexplained: steering/resource rules are unchanged and diagnostics remain for recurrence. Other-platform/WAN/endurance gates stay open. [Current evidence](RESTORATION_STATUS.md#current-source-beta-88-guarded-desktop-window-notifications--2026-11-07).
 
 ## Previous source checkpoint — Beta 87, 2026-11-06
 
