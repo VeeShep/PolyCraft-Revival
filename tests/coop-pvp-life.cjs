@@ -1,7 +1,8 @@
 'use strict';
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 
-module.exports = async function pvpLife({ host, attackerPage, victimPage, focusAttacker, focusVictim, attackerId, victimId, paid, hostFile, directory, huts }) {
+module.exports = async function pvpLife({ host, attackerPage, victimPage, focusAttacker, focusVictim, attackerId, victimId, paid, lumber = false, hostFile, directory, huts }) {
+  const amberCost = paid && !lumber ? 10 : 0, woodCost = paid && lumber ? 50 : 0;
   const before = await host.evaluate(({ attackerId, victimId, huts }) => window.hostWorld.atRewardBoundary(() => {
     const w = window.hostWorld, game = w.game, attacker = w.players.active.get(attackerId).hero, victim = w.players.active.get(victimId).hero;
     if (!w.transport.pvp || Object.getOwnPropertyDescriptor(w.transport, 'pvp').writable) throw new Error('This disposable session needs fixed PvP enabled.');
@@ -24,13 +25,13 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
     const binding = [...w.peerPlayers.values()].find(row => row.id === attackerId); binding.input.discard(); binding.actions.stop(attacker);
     attacker.getEC('ECNav')?.endPath(); attacker.getEC('ECLocomotion').clearDestination(); attacker.teleport(location);
     if (!firearm.getCanFire() || firearm.getAmmo() <= 0) throw new Error('The staged native pistol must be ready.');
-    const factory = game.getProjectileFactory(), create = factory.createProjectile, damage = health.takeDamage, lose = life.loseLife, respawn = life.respawn;
-    const ownCreate = Object.hasOwn(factory, 'createProjectile'), ownDamage = Object.hasOwn(health, 'takeDamage'), ownLose = Object.hasOwn(life, 'loseLife'), ownRespawn = Object.hasOwn(life, 'respawn');
-    const trace = window.pvpLifeTrace = { projectiles: [], impacts: [], hits: [], deaths: [], respawns: [] }, projectileObservers = [];
+    const factory = game.getProjectileFactory(), create = factory.createProjectile, damage = health.takeDamage, lose = life.loseLife, respawn = life.respawn, pay = life.payToRevive;
+    const ownCreate = Object.hasOwn(factory, 'createProjectile'), ownDamage = Object.hasOwn(health, 'takeDamage'), ownLose = Object.hasOwn(life, 'loseLife'), ownRespawn = Object.hasOwn(life, 'respawn'), ownPay = Object.hasOwn(life, 'payToRevive');
+    const trace = window.pvpLifeTrace = { projectiles: [], impacts: [], hits: [], deaths: [], respawns: [], payments: [], deposits: [] }, projectileObservers = [];
     const sample = () => {
       const actor = w.players.active.get(victimId).hero, component = actor.getEC('ECHealth');
       return { tick: game.gameClock.getFrameIndex(), life: w.players.captureLife(actor), health: component.getHealth(), maximum: component.getMaxHealth(), active: actor.getEC('ECLocomotion').active,
-        amber: game.getPlayerData().getSoftCurrency(), xp: actor.getEC('ECPlayerData').getXP(), workers: huts.map(id => game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECWildlingAgent').lastUpdateTime),
+        amber: game.getPlayerData().getSoftCurrency(), wood: game.getPlayerData().getResource(0), xp: actor.getEC('ECPlayerData').getXP(), workers: huts.map(id => game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECWildlingAgent').lastUpdateTime),
         others: [...w.players.active].filter(([id]) => id !== victimId).map(([id, entry]) => ({ id, health: entry.hero.getEC('ECHealth').getHealth(), xp: entry.hero.getEC('ECPlayerData').getXP() })) };
     };
     factory.createProjectile = function (...args) {
@@ -50,6 +51,13 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
     };
     life.loseLife = function (...args) { const result = lose.apply(this, args); trace.deaths.push({ state: this.state, expected: this.states.DYING }); return result; };
     life.respawn = function (...args) { const result = respawn.apply(this, args); trace.respawns.push({ state: this.state, expected: this.states.NORMAL, health: health.getHealth(), invulnerable: health.getInvulnerable() }); return result; };
+    life.payToRevive = function (...args) {
+      const previous = sample(), result = pay.apply(this, args);
+      trace.payments.push({ args, result, before: { amber: previous.amber, wood: previous.wood }, after: { amber: game.getPlayerData().getSoftCurrency(), wood: game.getPlayerData().getResource(0) }, remaining: this.getTimeToRespawn() });
+      return result;
+    };
+    const deposit = event => trace.deposits.push({ resource: event.type, amount: event.amount });
+    game.eventManager.subscribe('ResourceDeposited', deposit);
     window.samplePvpLife = sample;
     window.restorePvpLifeObserver = () => {
       if (ownCreate) factory.createProjectile = create; else delete factory.createProjectile;
@@ -57,13 +65,15 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
       if (ownDamage) health.takeDamage = damage; else delete health.takeDamage;
       if (ownLose) life.loseLife = lose; else delete life.loseLife;
       if (ownRespawn) life.respawn = respawn; else delete life.respawn;
+      if (ownPay) life.payToRevive = pay; else delete life.payToRevive;
+      game.eventManager.unsubscribe('ResourceDeposited', deposit);
       w.players.active.get(attackerId)?.hero.getEC('ECAutoFire')?.disable();
       delete window.samplePvpLife; delete window.restorePvpLifeObserver;
     };
-    return { ...sample(), target: victim.getName(), respawnDelay: life.getRespawnDelay(), hasChargeComponent: !!attacker.getEC('ECChargeableShot') };
+    return { ...sample(), target: victim.getName(), respawnDelay: life.getRespawnDelay(), highCostDelay: life.getRespawnHighCostDelay(), hasChargeComponent: !!attacker.getEC('ECChargeableShot') };
   }), { attackerId, victimId, huts });
   try {
-    assert.ok(!paid || before.amber >= 10, 'Use the existing island funds for the original revive price.');
+    assert.ok(before.amber >= amberCost && before.wood >= woodCost, 'Use the existing island funds for the original revive price.');
     assert.equal(await attackerPage.evaluate(() => window.guestWorld.identity.pvp), true);
     await focusAttacker();
     await attackerPage.waitForFunction(() => {
@@ -80,6 +90,15 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
       return { x: b.left + p[0] * b.width / d.width, y: b.top + p[1] * b.height / d.height };
     }, before.target);
     await attackerPage.mouse.move(point.x, point.y); await attackerPage.mouse.click(point.x, point.y, { delay: 100 });
+    if (paid) await victimPage.evaluate(() => {
+      const renderer = window.guestWorld.controls.app.globals.guiRenderer, render = renderer.render, own = Object.hasOwn(renderer, 'render');
+      renderer.render = function (...args) {
+        const result = render.apply(this, args);
+        if (['respawnButtonAmber', 'respawnButtonLumber'].includes(args[0])) window.pvpReviveRender = { archetype: args[0], price: args[1].text2, at: performance.now() };
+        return result;
+      };
+      window.restorePvpReviveRender = () => { if (own) renderer.render = render; else delete renderer.render; delete window.pvpReviveRender; delete window.restorePvpReviveRender; };
+    });
     await focusVictim();
     await host.waitForFunction(() => window.pvpLifeTrace.deaths.length > 0, null, { timeout: 10000 });
     const damage = await host.evaluate(() => window.pvpLifeTrace);
@@ -89,10 +108,16 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
     const waiting = await host.evaluate(() => window.samplePvpLife());
     assert.equal(waiting.health, 0); assert.ok(waiting.life.remaining > 0 && waiting.life.remaining <= before.respawnDelay);
     if (paid) {
-      await victimPage.waitForFunction(() => {
-        const w = window.guestWorld, row = w.game.getGuiManager().prevDrawGuiMap['guest-revive'];
-        return w.lifeState?.phase === 'waiting' && w.lifeState.option === 'amber' && w.lifeState.affordable && row?.scale > .95 && row.archetypeName === 'respawnButtonAmber';
-      }, null, { timeout: 4000 });
+      await victimPage.waitForFunction(lumber => {
+        const w = window.guestWorld, row = w.game.getGuiManager().prevDrawGuiMap['guest-revive'], draw = window.pvpReviveRender;
+        return w.lifeState?.phase === 'waiting' && w.lifeState.option === (lumber ? 'lumber' : 'amber') && w.lifeState.affordable && row?.scale > .95 &&
+          draw?.archetype === (lumber ? 'respawnButtonLumber' : 'respawnButtonAmber') && draw.price === (lumber ? '50' : '10') && performance.now() - draw.at < 250;
+      }, lumber, { timeout: lumber ? 12000 : 4000 });
+      if (lumber) {
+        const offer = await victimPage.evaluate(() => window.guestWorld.lifeState);
+        assert.ok(offer.remaining > .200001 && offer.remaining <= before.highCostDelay);
+        await victimPage.screenshot({ path: path.join(directory, 'pvp-guest-lumber-revive.png') });
+      }
       assert.equal(await victimPage.evaluate(() => window.guestWorld.movement.available()), false);
       const episode = await victimPage.evaluate(() => window.guestWorld.lifeState.episode);
       const button = await victimPage.evaluate(() => {
@@ -103,9 +128,15 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
       await victimPage.mouse.click(button.x, button.y, { delay: 100 });
       await victimPage.waitForFunction(() => window.guestWorld.lastTargetResult?.type === 'revive', null, { timeout: 10000 });
       assert.equal(await victimPage.evaluate(() => window.guestWorld.lastTargetResult.message), 'Revive purchased and saved.');
-      assert.equal(JSON.parse(JSON.parse(fs.readFileSync(hostFile)).state.userData.desktopCoop).economy.softCurrency, before.amber - 10);
+      const paidDisk = JSON.parse(JSON.parse(fs.readFileSync(hostFile)).state.userData.desktopCoop).economy;
+      assert.equal(paidDisk.softCurrency, before.amber - amberCost);
+      if (lumber) {
+        const observation = await host.evaluate(() => ({ sample: window.samplePvpLife(), trace: window.pvpLifeTrace }));
+        assert.equal(observation.trace.payments.length, 1);
+        assert.ok(paidDisk.resource[0] >= observation.trace.payments[0].after.wood && paidDisk.resource[0] <= observation.sample.wood, 'The acknowledged disk balance must include the wood charge and any subsequent worker income.');
+      }
       await victimPage.waitForFunction(() => window.guestWorld.lifeState?.phase === 'normal' && window.guestWorld.movement.available(), null, { timeout: 10000 });
-      await victimPage.evaluate(episode => { const w = window.guestWorld; w.lastTargetResult = null; w.connection.send('action', { type: 'revive', sequence: ++w.targetSequence, target: w.identity.entity, amber: true, episode }); }, episode);
+      await victimPage.evaluate(({ episode, lumber }) => { const w = window.guestWorld; w.lastTargetResult = null; w.connection.send('action', { type: 'revive', sequence: ++w.targetSequence, target: w.identity.entity, amber: !lumber, episode }); }, { episode, lumber });
       await victimPage.waitForFunction(() => window.guestWorld.lastTargetResult?.type === 'revive');
       assert.match(await victimPage.evaluate(() => window.guestWorld.lastTargetResult.message), /changed|unavailable/);
     } else {
@@ -119,12 +150,19 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
     const after = await host.evaluate(() => ({ sample: window.samplePvpLife(), trace: window.pvpLifeTrace }));
     assert.equal(after.trace.respawns.length, 1); assert.equal(after.trace.respawns[0].state, after.trace.respawns[0].expected); assert.equal(after.trace.respawns[0].health, before.maximum); assert.equal(after.trace.respawns[0].invulnerable, true);
     assert.equal(after.sample.xp, before.xp); assert.equal(after.sample.life.lives, before.life.lives); assert.equal(after.sample.life.infiniteLives, before.life.infiniteLives);
-    assert.deepEqual(after.sample.others, before.others); assert.equal(after.sample.amber, before.amber - (paid ? 10 : 0));
+    assert.deepEqual(after.sample.others, before.others); assert.equal(after.sample.amber, before.amber - amberCost);
+    assert.equal(after.sample.wood, before.wood + after.trace.deposits.filter(row => row.resource === 0).reduce((sum, row) => sum + row.amount, 0) - woodCost);
+    assert.equal(after.trace.payments.length, paid ? 1 : 0);
+    if (paid) {
+      const payment = after.trace.payments[0]; assert.deepEqual(payment.args, [amberCost, woodCost, !lumber]); assert.equal(payment.result, true);
+      assert.equal(payment.after.amber, payment.before.amber - amberCost); assert.equal(payment.after.wood, payment.before.wood - woodCost);
+    }
     assert.ok(after.sample.tick > before.tick && after.sample.workers.every((time, i) => time > before.workers[i]));
     await host.evaluate(() => window.polycraft.checkpoint(true));
     const disk = JSON.parse(JSON.parse(fs.readFileSync(hostFile)).state.userData.desktopCoop), record = disk.players.find(row => row.id === victimId);
-    assert.equal(record.life.phase, 'normal'); assert.equal(record.health.current, record.health.maximum); assert.equal(record.progress.xp, before.xp); assert.equal(disk.economy.softCurrency, before.amber - (paid ? 10 : 0));
-    console.log('PASS: original lethal PvP projectile and native ' + (paid ? 'guest paid revive/stale-episode refusal' : 'host automatic respawn/unpaused worker AI') + ':', JSON.stringify({ before, waiting, after }));
+    assert.equal(record.life.phase, 'normal'); assert.equal(record.health.current, record.health.maximum); assert.equal(record.progress.xp, before.xp); assert.equal(disk.economy.softCurrency, before.amber - amberCost);
+    assert.ok(disk.economy.resource[0] >= after.sample.wood);
+    console.log('PASS: original lethal PvP projectile and native ' + (paid ? 'guest ' + (lumber ? 'lumber' : 'Amber') + ' paid revive/stale-episode refusal' : 'host automatic respawn/unpaused worker AI') + ':', JSON.stringify({ before, waiting, after }));
   } catch (error) {
     console.log('PvP failure diagnostics:', JSON.stringify(await host.evaluate(({ attackerId, victimId }) => {
       const w = window.hostWorld, actor = w.players.active.get(attackerId).hero, victim = w.players.active.get(victimId).hero, binding = [...w.peerPlayers.values()].find(row => row.id === attackerId);
@@ -132,5 +170,8 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
     }, { attackerId, victimId }).catch(diagnostic => ({ unavailable: diagnostic.message }))));
     console.log('PvP attacker input:', JSON.stringify(await attackerPage.evaluate(() => { const w = window.guestWorld, gui = w.game.getIMGui(); return { available: w.movement.available(), result: w.lastTargetResult, sequence: w.targetSequence, captured: gui.hasCapturedInput(), hot: gui.hotID, active: gui.activeID, gobbled: gui.prevGobbled }; }).catch(diagnostic => ({ unavailable: diagnostic.message }))));
     throw error;
-  } finally { await host.evaluate(() => window.restorePvpLifeObserver?.()); }
+  } finally {
+    try { await victimPage.evaluate(() => window.restorePvpReviveRender?.()); }
+    finally { await host.evaluate(() => window.restorePvpLifeObserver?.()); }
+  }
 };

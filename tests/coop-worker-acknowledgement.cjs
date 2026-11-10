@@ -156,6 +156,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
   };
   try {
     if (process.argv.includes('--health-item-transitions') || process.argv.includes('--pvp-death')) {
+      await require('./solo-quest-reward.cjs')({ page: host, focus: focusHost });
       await host.waitForFunction(() => {
         const game = window.polycraft.controls.manager();
         return game.getPlayerData().getXP() >= game.getTaskManager().taskArchetypes.buildStonelingHut.xpReward && !window.PolycraftCoopPlayers.CoopPlayers.hasPendingRewards(game, game.getHero());
@@ -219,7 +220,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
       attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });
     if (pvpLife) await pvpLife({ host, attackerPage: guests[1].page, victimPage: guests[0].page, focusAttacker: () => focus(1), focusVictim: () => focus(0),
-      attackerId: party.players[2].id, victimId: party.players[1].id, paid: true, hostFile: file, directory, huts });
+      attackerId: party.players[2].id, victimId: party.players[1].id, paid: true, lumber: process.argv.includes('--pvp-lumber'), hostFile: file, directory, huts });
     const finalReward = rewards ? await rewards.finalSaveRecovery({ host, guests: guests.map(row => row.page), focusGuest: focus, hostFile: file,
       departure: process.argv.includes('--final-save-departure'), hero: party.players[1].id, reconnect }) : null;
     const saved = JSON.parse(fs.readFileSync(file)).state, earned = JSON.parse(saved.userData.desktopCoop);

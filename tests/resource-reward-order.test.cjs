@@ -84,7 +84,9 @@ test('reward-sensitive hosting waits for the original solo quest XP and its owne
   traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { IfStatement(p) {
     const condition = p.node.test.type === 'LogicalExpression' ? p.node.test.left : p.node.test;
     if (condition.type !== 'CallExpression' || condition.arguments[0]?.value !== '--health-item-transitions' || p.node.consequent.type !== 'BlockStatement') return;
-    const statement = p.node.consequent.body[0]; assert.equal(statement.expression.type, 'AwaitExpression');
+    const statement = p.node.consequent.body.find(row => row.expression?.argument?.callee?.property?.name === 'waitForFunction');
+    if (!statement) return;
+    assert.equal(statement.expression.type, 'AwaitExpression');
     callbacks.push(statement.expression.argument.arguments[0]);
   } });
   assert.equal(callbacks.length, 1);
@@ -124,6 +126,62 @@ test('PvP firing-lane muzzle math matches original firing with scaled and tilted
     assert.ok(origin.every((value, i) => Math.abs(value - capsule[i] - computed[i]) < 1e-12));
     assert.notDeepEqual(Array.from(computed), offset);
   }
+});
+test('native revive observer forwards the original receiver, arguments and result and records exact resource changes', () => {
+  const observers = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-pvp-life.cjs'), 'utf8')), { AssignmentExpression(p) {
+    if (p.node.left.object?.name === 'life' && p.node.left.property?.name === 'payToRevive' && p.node.right.type === 'FunctionExpression') observers.push(p.node.right);
+  } });
+  assert.equal(observers.length, 1);
+  for (const result of [true, false]) {
+    const data = { amber: 11, wood: 132, getSoftCurrency() { return this.amber; }, getResource() { return this.wood; } }, trace = { payments: [] }, calls = [];
+    const life = { getTimeToRespawn: () => .2 }, args = [0, 50, false];
+    const observe = vm.runInNewContext('(' + generate(observers[0]).code + ')', { trace, game: { getPlayerData: () => data }, sample: () => ({ amber: data.amber, wood: data.wood }),
+      pay(...values) { assert.equal(this, life); calls.push(values); if (result) data.wood -= values[1]; return result; } });
+    assert.equal(observe.apply(life, args), result); assert.deepEqual(calls, [args]); assert.equal(trace.payments.length, 1);
+    assert.equal(trace.payments[0].result, result); assert.equal(trace.payments[0].before.wood, 132); assert.equal(trace.payments[0].after.wood, result ? 82 : 132);
+    assert.equal(trace.payments[0].after.amber, 11);
+  }
+});
+test('original GUI can retain Amber animation metadata while actually rendering current lumber artwork and price', () => {
+  const draws = [], entry = { archetypeName: 'respawnButtonAmber', argumentObject: {}, scale: 1 };
+  const gui = { prevDrawGuiMap: { 'guest-revive': entry }, drawGuiMap: {}, globals: { guiRenderer: { begin() {}, end() {}, render: (name, args) => draws.push({ name, price: args.text2 }) } } };
+  require('./runtime-ast.cjs').method('drawGui').call(gui, 'respawnButtonLumber', { text2: '50' }, 'guest-revive');
+  assert.deepEqual(draws, [{ name: 'respawnButtonLumber', price: '50' }]);
+  assert.equal(gui.drawGuiMap['guest-revive'].archetypeName, 'respawnButtonAmber');
+  assert.equal(gui.drawGuiMap['guest-revive'].argumentObject.text2, '50');
+});
+function soloRewardFixture(t) {
+  const prior = { window: global.window, document: global.document }, state = { xp: 0, pending: false }, events = [];
+  t.after(() => { for (const key of ['window', 'document']) { if (prior[key] === undefined) delete global[key]; else global[key] = prior[key]; } });
+  const pickup = { shouldBeDestroyed: () => false, getEC: () => ({ xp: 20, getCollectorName: () => undefined }), getName: () => 'original-reward', getv3Location: () => [2, 0, 0] };
+  const game = { getHero: () => ({ getv3Location: () => [0, 0, 0] }), getPlayerData: () => ({ getXP: () => state.xp }), getTaskManager: () => ({ taskArchetypes: { buildStonelingHut: { xpReward: 20 } } }),
+    getGameSpaceList: () => [{ getEntitiesWithEC: () => [pickup] }],
+    getGameController: () => ({ isActive: () => true }), getIMGui: () => ({ hasCapturedInput: () => false }) };
+  global.window = { polycraft: { controls: { manager: () => game, app: { globals: { camera: { matrix: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0] } } } } }, desktop: { windowFocused: async () => true }, PolycraftCoopPlayers: { CoopPlayers: { hasPendingRewards: () => state.pending } } };
+  global.document = { hasFocus: () => true };
+  const page = { locator: () => ({ boundingBox: async () => ({ x: 10, y: 20, width: 800, height: 600 }) }), mouse: { move: async (...args) => events.push(['pointer', ...args]) },
+    evaluate: async callback => callback(), waitForFunction: async (callback, _arg, options) => { assert.equal(options.timeout, 5000); assert.equal(await callback(), true); },
+    keyboard: { down: async key => events.push(['down', key]), up: async key => { events.push(['up', key]); state.xp = 20; } },
+    waitForTimeout: async () => { if (state.failure) throw state.failure; } };
+  return { state, events, page, focus: async () => events.push(['focus']) };
+}
+test('solo quest readiness approaches an unclaimed original reward with normal camera-relative keyboard input', async t => {
+  const f = soloRewardFixture(t); await require('./solo-quest-reward.cjs')(f);
+  assert.deepEqual(f.events.filter(row => ['down', 'up'].includes(row[0])), [['down', 'd'], ['up', 'd']]);
+  assert.equal(f.state.xp, 20);
+});
+test('already settled or incoming solo quest XP needs no extra movement before the original readiness guard', async t => {
+  const f = soloRewardFixture(t);
+  for (const state of [{ xp: 20, pending: false }, { xp: 0, pending: true }]) {
+    Object.assign(f.state, state); await require('./solo-quest-reward.cjs')(f);
+  }
+  assert.ok(!f.events.some(row => row[0] === 'down'));
+});
+test('failed normal solo quest approach releases held keys and preserves the original failure', async t => {
+  const f = soloRewardFixture(t), failure = f.state.failure = new Error('Interrupted ordinary movement');
+  await assert.rejects(require('./solo-quest-reward.cjs')(f), error => error === failure);
+  assert.deepEqual(f.events.filter(row => ['down', 'up'].includes(row[0])), [['down', 'd'], ['up', 'd']]);
 });
 test('natural gear observation waits for a reward-ready boundary before any live hero capture', async () => {
   let captureCount = 0, readLater, ready = false;
