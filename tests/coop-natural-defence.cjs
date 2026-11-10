@@ -33,10 +33,13 @@ module.exports = async function naturalDefence(context) {
   });
   assert.equal(observation, true);
   try {
-    for (const [task, options] of context.outpostOnly ? [['buildOutpost', { outpost: true }]] : [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }], ['goToCaves', null], ['buildOutpost', { outpost: true }]]) {
+    const tasks = context.speedupOnly ? [] : context.outpostOnly ? [['buildOutpost', { outpost: true }]] : [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }], ['goToCaves', null], ['buildOutpost', { outpost: true }]];
+    if (context.speedupOutpost) tasks.push(['speedUpOutpost', { speedup: true }]);
+    for (const [task, options] of tasks) {
       await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
       const initial = await sample();
-      if (options) await require('./coop-natural-building.cjs')({ ...context, button, ...options });
+      if (options?.speedup) await require('./coop-natural-speedup.cjs')({ ...context, button });
+      else if (options) await require('./coop-natural-building.cjs')({ ...context, button, ...options });
       else await require('./coop-natural-guide.cjs')(context);
       const before = await sample();
       assert.equal(before.xp, initial.xp);

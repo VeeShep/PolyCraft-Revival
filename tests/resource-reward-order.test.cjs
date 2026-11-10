@@ -17,15 +17,62 @@ function evaluatedCallback(file, variable) {
   assert.equal(found.length, 1, file + ':' + variable);
   return generate(found[0]).code;
 }
+test('guest setup retries real focus once only after native focus loss and retains all readiness failures', async () => {
+  const { waitForGuestReady } = require('./coop-worker-acknowledgement.cjs');
+  const timeout = Object.assign(new Error('not ready'), { name: 'TimeoutError' });
+  for (const [focused, secondFailure] of [[false, false], [true, false], [false, true]]) {
+    let waits = 0, focuses = 0;
+    const page = { async waitForFunction(_read, phase) { assert.equal(phase, 'normal'); if (++waits === 1 || secondFailure) throw timeout; }, async evaluate() { return focused; } };
+    const result = waitForGuestReady(page, 'normal', async () => { focuses++; });
+    if (focused || secondFailure) await assert.rejects(result, error => error === timeout); else await result;
+    assert.equal(focuses, focused ? 0 : 1); assert.equal(waits, focused ? 1 : 2);
+  }
+});
+test('save timing observes original sync/async calls without changing results or errors and restores property ownership', async () => {
+  const { installSaveTiming } = require('./save-timing.cjs');
+  let time = 0, disconnected = false; const expected = new Error('native failure'), promise = Promise.resolve('saved');
+  const game = { saveLevel() { assert.equal(this, game); return 42; } }, original = function (argument) { assert.equal(this, controls); assert.equal(argument, 'bridge'); return promise; };
+  const controls = Object.create({ checkpoint: original }); controls.manager = () => game; controls.writeCheckpoint = () => { throw expected; };
+  const before = controls.writeCheckpoint, window = { polycraft: { controls } };
+  vm.runInNewContext('(' + installSaveTiming.toString() + ')()', { window, performance: { now: () => ++time }, document: { getElementById: () => ({}) }, requestAnimationFrame() {}, MutationObserver: class { observe() {} disconnect() { disconnected = true; } } });
+  assert.equal(controls.checkpoint('bridge'), promise); assert.equal(game.saveLevel(), 42); assert.throws(() => controls.writeCheckpoint(), error => error === expected); await promise;
+  assert.deepEqual(Array.from(window.saveTiming.records, row => row.phase).sort(), ['checkpoint', 'saveLevel', 'writeCheckpoint']);
+  window.saveTiming.restore(); assert.equal(disconnected, true); assert.equal(window.saveTiming, undefined); assert.equal(Object.hasOwn(controls, 'checkpoint'), false); assert.equal(controls.checkpoint, original); assert.equal(controls.writeCheckpoint, before);
+});
+test('native speedup observer forwards payment receiver/arguments/result and restores own or inherited methods', async () => {
+  for (const own of [true, false]) {
+    let funds = 96, complete = .001; const actor = { getName: () => 'assigned', getEC: () => ({ getSoftCurrency: () => funds, getXP: () => 310 }) };
+    const calls = [], original = function (...args) { assert.equal(this, scaffold); assert.equal(args[0], actor); calls.push(args); funds -= 50; complete = 1; return 'native-result'; };
+    const scaffold = Object.assign(Object.create({ instantlyBuild: original }), { getCostToInstantlyBuild: () => 50, canEntityAffordInstantBuild: () => true, getBuildCompleteFraction: () => complete });
+    if (own) scaffold.instantlyBuild = original;
+    const entity = { getName: () => 'scaffold', getEC: () => scaffold }, world = { players: { active: new Map([['guest', { hero: actor }]]) }, atRewardBoundary: read => read(),
+      game: { getBuildingManager: () => ({ getBuildingsAtMinLevel: () => [entity] }), getPlayerData: () => ({ getXP: () => 0 }) } };
+    const window = { hostWorld: world }, observe = vm.runInNewContext('(' + evaluatedCallback('coop-natural-speedup.cjs', 'setup') + ')', { window });
+    const before = await observe('guest'); assert.equal(before.amber, 96); assert.equal(funds, 96); assert.equal(complete, .001);
+    assert.equal(scaffold.instantlyBuild(actor, 'forwarded'), 'native-result'); assert.deepEqual(calls, [[actor, 'forwarded']]);
+    assert.deepEqual(Array.from(window.naturalSpeedupPayments, row => [row.actor, row.cost, row.before, row.after, row.complete]), [['assigned', 50, 96, 46, 1]]);
+    window.restoreNaturalSpeedup(); assert.equal(scaffold.instantlyBuild, original); assert.equal(Object.hasOwn(scaffold, 'instantlyBuild'), own); assert.equal(window.naturalSpeedupPayments, undefined);
+  }
+});
 test('Outpost continuation admits only the earned clean-stage party before copying files or opening a game', async () => {
   const code = block('worker-reload-smoke.cjs', node => node.name === 'outpostContinuation');
-  const valid = { state: { userData: { taskFlags: JSON.stringify({ goToCaves: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 290 } }] }),
+  const valid = { speedupOnly: false, state: { userData: { taskFlags: JSON.stringify({ goToCaves: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 290 } }] }),
     buildings: [{ archetypeName: 'a_b_defencefactory' }, { archetypeName: 'a_b_wildlinghouse_war' }] };
   await vm.runInNewContext(code, { ...structuredClone(valid), assert });
   for (const change of [f => f.pending.push({ task: 'buildStonelingHut' }), f => { f.state.userData.taskFlags = '{}'; }, f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true, buildOutpost: true }); },
     f => { f.party = JSON.stringify({ players: [{}, { progress: { xp: 310 } }] }); }, f => f.buildings.pop(), f => f.buildings.push({ ...f.buildings[0] })]) {
     const fixture = structuredClone(valid); change(fixture);
     await assert.rejects(vm.runInNewContext(code, { ...fixture, assert }), assert.AssertionError);
+  }
+});
+test('speedup-only continuation requires earned310XP and an unfinished original Outpost, without relaxing placement-stage guards', async () => {
+  const code = block('worker-reload-smoke.cjs', node => node.name === 'outpostContinuation');
+  const valid = { speedupOnly: true, state: { userData: { taskFlags: JSON.stringify({ goToCaves: true, buildOutpost: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 310 } }] }),
+    buildings: [{ archetypeName: 'a_b_defencefactory' }, { archetypeName: 'a_b_wildlinghouse_war' }, { archetypeName: 'a_b_scaffold', ecData: { ECScaffold: { plannedObject: 'a_b_outpost', buildComplete: .01 } } }] };
+  await vm.runInNewContext(code, { ...structuredClone(valid), assert });
+  for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true }); }, f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true, buildOutpost: true, speedUpOutpost: true }); },
+    f => { f.party = JSON.stringify({ players: [{}, { progress: { xp: 290 } }] }); }, f => f.buildings.pop(), f => f.buildings.push({ ...f.buildings[2] }), f => { f.buildings[2].ecData.ECScaffold.buildComplete = 1; }, f => f.buildings.push({ archetypeName: 'a_b_outpost' })]) {
+    const fixture = structuredClone(valid); change(fixture); await assert.rejects(vm.runInNewContext(code, { ...fixture, assert }), assert.AssertionError);
   }
 });
 test('natural Defence reward approach excludes old pickups, new worker resources and destroyed reward remnants', () => {
@@ -337,14 +384,11 @@ test('failed normal solo quest approach releases held keys and preserves the ori
   await assert.rejects(require('./solo-quest-reward.cjs')(f), error => error === failure);
   assert.deepEqual(f.events.filter(row => ['down', 'up'].includes(row[0])), [['down', 'd'], ['up', 'd']]);
 });
-test('rejoin readiness separates normal, waiting and dying guests without weakening movement or phase checks', () => {
-  const callbacks = [];
-  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { CallExpression(p) {
-    if (p.node.callee.property?.name === 'waitForFunction' && p.node.arguments[0]?.params?.[0]?.name === 'phase') callbacks.push(p.node.arguments[0]);
-  } });
-  assert.equal(callbacks.length, 1);
+test('rejoin readiness separates normal, waiting and dying guests without weakening movement or phase checks', async () => {
+  const { waitForGuestReady } = require('./coop-worker-acknowledgement.cjs'); let callback;
+  await waitForGuestReady({ async waitForFunction(read) { callback = read; } }, 'normal', () => { throw new Error('Unexpected refocus'); });
   const state = { hud: { state: {} }, lifeState: { phase: 'waiting' }, movement: { available: () => false } };
-  const ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { guestWorld: state } });
+  const ready = vm.runInNewContext('(' + callback.toString() + ')', { window: { guestWorld: state } });
   assert.equal(ready('waiting'), true); assert.equal(ready('dying'), true); assert.equal(ready('normal'), false);
   state.lifeState.phase = 'dying'; assert.equal(ready('waiting'), false); assert.equal(ready('dying'), true); assert.equal(ready('normal'), false);
   state.movement.available = () => true; assert.equal(ready('waiting'), false); assert.equal(ready('dying'), false); assert.equal(ready('normal'), true);

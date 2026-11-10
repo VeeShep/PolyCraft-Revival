@@ -16,9 +16,10 @@
       const placement = ['build', 'preview'].includes(value?.type), upgrade = value?.type === 'upgrade', revive = value?.type === 'revive';
       const buildingUpgrade = value?.type === 'upgradeBuilding', cancelUpgrade = value?.type === 'cancelUpgrade';
       const quest = ['questOpen', 'questReward'].includes(value?.type), campaign = ['campaignStart', 'campaignClose'].includes(value?.type);
-      const crafting = value?.type === 'craftResource';
+      const crafting = value?.type === 'craftResource', speedup = value?.type === 'speedup';
       const held = value?.archetype !== undefined, targeted = value?.type === 'target';
-      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade || crafting ? 5 : value?.type === 'repair' || quest || campaign || value?.type === 'skipPrepare' ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (!value || Object.keys(value).length !== (upgrade ? 6 : placement ? 5 : revive ? 5 : buildingUpgrade || cancelUpgrade || crafting || speedup ? 5 : value?.type === 'repair' || quest || campaign || value?.type === 'skipPrepare' ? 4 : 3) + (held ? 1 : 0) + (targeted ? 1 : 0) || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource', 'speedup'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 || typeof value.target !== 'string' || !value.target.length || value.target.length > 256) throw new Error('Invalid or repeated target action.');
+      if (speedup && (typeof value.planned !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.planned) || !Number.isSafeInteger(value.cost) || value.cost < 1 || value.cost > 2147483647)) throw new Error('Invalid scaffold speedup quote.');
       if (crafting && (!Number.isInteger(value.index) || value.index < 0 || value.index >= 6 || !Number.isSafeInteger(value.quote) || value.quote < 1 || value.quote >= value.sequence)) throw new Error('Invalid crafting choice.');
       if (campaign && (typeof value.campaign !== 'string' || !/^[a-zA-Z][\w-]{0,99}$/.test(value.campaign))) throw new Error('Invalid campaign request.');
       if (quest && (typeof value.quest !== 'string' || !/^taskId(?:crit|fill)_\d{1,4}$/.test(value.quest))) throw new Error('Invalid quest request.');
@@ -179,6 +180,7 @@
       }
       if (type === 'upgradeBuilding') return game.desktopConstruction?.upgradeBuilding(hero, target, action.next, action.costs) || 'Construction is not ready.';
       if (type === 'cancelUpgrade') return game.desktopConstruction?.cancelUpgrade(hero, target, action.next, action.episode) || 'Construction is not ready.';
+      if (type === 'speedup') return game.desktopConstruction?.speedup(hero, target, action.planned, action.cost) || 'Construction is not ready.';
       if (type === 'repair') return game.desktopConstruction?.repair(hero, target, action.costs) || 'Construction is not ready.';
       if (type === 'move') return game.desktopConstruction?.move(hero, target) || 'Construction is not ready.';
       if (['build', 'preview'].includes(type)) return game.desktopConstruction?.[type](hero, target, action.index, action.location) || 'Construction is not ready.';
@@ -203,7 +205,7 @@
       const totem = type === 'target' && !rangedTarget ? totemMenu(hero, target, controls) : null;
       if (totem) return { message: 'Choose a hero upgrade. Escape cancels.', totem };
       const construction = type === 'target' && !rangedTarget ? game.desktopConstruction?.menu(hero, target, controls) : null;
-      if (construction && (construction.products.length || construction.move || construction.repair || construction.upgrade)) return { message: 'Choose a building action. Escape cancels.', construction };
+      if (construction && (construction.products.length || construction.move || construction.repair || construction.upgrade || construction.speedup)) return { message: 'Choose a building action. Escape cancels.', construction };
       const building = rangedTarget ? null : controls?.demolitionInfo(target);
       if (type === 'demolish') {
         if (!building || building.reason) return building?.reason || 'This building cannot be demolished.';

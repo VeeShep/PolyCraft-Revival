@@ -29,7 +29,8 @@
       if (value.type === 'held' && this.heldRequest === value.sequence) this.heldRequest = null;
       if (value.construction) {
         const menu = value.construction, indices = new Set(), factory = this.world.game.getEntityFactory();
-        if (value.type !== 'target' || !keys(menu, ['source', 'products', 'move', 'repair', 'upgrade', 'demolition']) || typeof menu.move !== 'boolean' || !text(menu.source) || !Array.isArray(menu.products) || (!menu.products.length && !menu.move && !menu.repair && !menu.upgrade) || menu.products.length > 32) throw new Error('Invalid construction menu.');
+        if (value.type !== 'target' || !keys(menu, ['source', 'products', 'move', 'repair', 'upgrade', 'demolition', ...(Object.hasOwn(menu, 'speedup') ? ['speedup'] : [])]) || typeof menu.move !== 'boolean' || !text(menu.source) || !Array.isArray(menu.products) || (!menu.products.length && !menu.move && !menu.repair && !menu.upgrade && !menu.speedup) || menu.products.length > 32) throw new Error('Invalid construction menu.');
+        if (Object.hasOwn(menu, 'speedup') && (!keys(menu.speedup, ['planned', 'cost', 'affordable']) || !text(menu.speedup.planned) || !factory.getECArchetype(menu.speedup.planned, 'ECBuilding') || !Number.isSafeInteger(menu.speedup.cost) || menu.speedup.cost < 1 || menu.speedup.cost > 2147483647 || typeof menu.speedup.affordable !== 'boolean')) throw new Error('Invalid scaffold speedup choice.');
         if (menu.demolition !== null && (!keys(menu.demolition, ['id', 'name', 'reason']) || menu.demolition.id !== menu.source || !text(menu.demolition.name) || menu.demolition.reason !== '')) throw new Error('Invalid building demolition choice.');
         if (menu.repair !== null && (!keys(menu.repair, ['costs', 'affordable']) || !Array.isArray(menu.repair.costs) || menu.repair.costs.length !== 2 || ![0, 1].every(index => typeof menu.repair.costs[index] === 'number' && Number.isFinite(menu.repair.costs[index]) && menu.repair.costs[index] >= 0 && menu.repair.costs[index] <= 2147483647) || typeof menu.repair.affordable !== 'boolean')) throw new Error('Invalid repair choice.');
         if (menu.upgrade !== null) {
@@ -109,7 +110,7 @@
           if (world.controls.infoPanels.doUpgradeInfoPanel(panelGame, globals, { archetypeName: upgrade.from, getEC: () => component })) this.upgradePanel = false;
           return;
         }
-        const products = this.menu.products, count = products.length + (this.menu.move ? 1 : 0) + (this.menu.repair ? 1 : 0) + (this.menu.demolition ? 1 : 0) + (this.menu.upgrade ? 1 : 0), scale = gui.getRadialScaleFactor(count);
+        const products = this.menu.products, count = products.length + (this.menu.move ? 1 : 0) + (this.menu.repair ? 1 : 0) + (this.menu.demolition ? 1 : 0) + (this.menu.upgrade ? 1 : 0) + (this.menu.speedup ? 1 : 0), scale = gui.getRadialScaleFactor(count);
         const point = globals.camera.worldToScreen(entry.displayLocation || record.location);
         if (!point) return;
         const center = count > 1 ? gui.getRadialCentre(point, scale) : point;
@@ -136,6 +137,10 @@
             if (upgrade.active) world.requestBuildingUpgrade(source, upgrade); else this.upgradePanel = true;
             return;
           }
+        }
+        if (this.menu?.speedup) {
+          const speedup = this.menu.speedup, language = globals.currentLanguage || {};
+          if (gui.doButton({ id: 'guest-speedup-' + source, text1: speedup.affordable ? language.GAME_HUD_SPEED_UP || 'Speed up' : 'Need Amber', text2: String(speedup.cost), v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, products.length + (this.menu.move ? 1 : 0) + (this.menu.repair ? 1 : 0) + (this.menu.upgrade ? 1 : 0), count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: speedup.affordable ? 'speedup' : 'addAmber' }) && speedup.affordable && performance.now() - this.menuUpdated < 2000) { world.requestScaffoldSpeedup(source, speedup); return; }
         }
         if (this.menu?.demolition && gui.doButton({ id: 'guest-demolish-' + source, text: 'Demolish', v2ScreenLocation: count > 1 ? gui.addRadialOffset(center, count - 1, count, scale) : center, buttonType: world.controls.guiTypes.BUTTON_ROUND, guiArchetype: 'demolish' })) {
           const demolition = this.menu.demolition; world.cancelLocalMenu(); world.demolition = demolition;

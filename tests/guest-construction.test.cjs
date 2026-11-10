@@ -42,6 +42,19 @@ test('host menu validation refuses duplicate products, uninstalled archetypes, f
   const { ui, preview } = setup(), value = preview(true); value.preview.position[1] = NaN;
   assert.throws(() => ui.receive(value, false), /Invalid/);
 });
+test('guest scaffold speedup shows original artwork/price and submits only a fresh affordable selection', () => {
+  for (const affordable of [true, false]) {
+    const { ui, world, drawn, click } = setup(); let request;
+    const value = menu(); value.construction.products = []; value.construction.speedup = { planned: 'wall', cost: 50, affordable };
+    world.requestScaffoldSpeedup = (target, info) => { request = { target, ...info }; world.cancelLocalMenu(); };
+    ui.receive(value, true); click('guest-speedup-Workshop'); ui.update();
+    assert.equal(drawn[0].guiArchetype, affordable ? 'speedup' : 'addAmber'); assert.equal(drawn[0].text2, '50'); assert.equal(drawn[0].text1, affordable ? 'Speed up' : 'Need Amber');
+    assert.deepEqual(request, affordable ? { target: 'Workshop', planned: 'wall', cost: 50, affordable: true } : undefined);
+    ui.receive(value, true); ui.menuUpdated = performance.now() - 3000; world.selectionRequest = 99; request = undefined;
+    ui.update(); assert.equal(request, undefined);
+    for (const speedup of [null, {}, { ...value.construction.speedup, planned: 'unknown' }, { ...value.construction.speedup, cost: NaN }, { ...value.construction.speedup, cost: 0 }, { ...value.construction.speedup, affordable: 1 }, { ...value.construction.speedup, free: true }]) assert.throws(() => ui.receive({ ...value, construction: { ...value.construction, speedup } }, true), /Invalid/);
+  }
+});
 test('original product artwork selects a repeat blueprint; one outstanding preview controls valid-click builds and cancel leaves no request active', () => {
   const { ui, sent, drawn, sprites, click, preview } = setup();
   ui.receive(menu(), true); ui.update(); assert.equal(drawn[0].guiArchetype, 'buildStone');

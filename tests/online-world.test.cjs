@@ -19,14 +19,14 @@ test('host exit waits for accepted action saves and then captures a fresh final 
   release(); await closing;
   assert.deepEqual(order, ['action saved', 'final saved', 'heroes restored']); assert.equal(world.closed, true);
 });
-test('demolition acknowledgement waits for a fresh checkpoint and save failure rejects only its connection', async t => {
+for (const type of ['demolish', 'speedup']) test(type + ' acknowledgement waits for a fresh checkpoint and save failure rejects only its connection', async t => {
   const { controls, transport } = setup(t), previous = global.polycraft;
   t.after(() => { global.polycraft = previous; });
   const world = await startHostingWorld(controls, transport); t.after(() => { delete world.players; return world.close(); });
   let finish, failed, writes = 0;
   const sent = [], connection = { state: 'connected', closed: false, send: async (kind, value) => sent.push({ kind, value }), fail: error => { failed = error; } };
   world.players = { active: new Map([['guest', { hero: {} }]]) };
-  const payload = { type: 'demolish', sequence: 1, message: 'Building demolished and saved.' };
+  const payload = { type, sequence: 1, message: 'Building action saved.' };
   world.peerPlayers.set('peer', { id: 'guest', ready: true, connection, input: { apply() {} }, actions: { apply: () => ({ ...payload, save: true }) } });
   global.polycraft = { checkpoint: fresh => { assert.equal(fresh, true); writes++; return new Promise(resolve => { finish = resolve; }); } };
   world.beginTick(); assert.equal(writes, 1); assert.deepEqual(sent, []);
@@ -576,8 +576,15 @@ test('the host dispatcher keeps walking, directional cancellation and constructi
     send({ type: 'campaignClose', sequence: 3, target: 'banner', campaign: 'campaign_tutorial_01' });
     assert.deepEqual(actions.queue.slice(1).map(action => action.type), ['campaignStart', 'campaignClose']); assert.equal(input.sequence, 3);
     send({ type: 'skipPrepare', sequence: 4, target: 'guest', episode: 7 }); assert.equal(actions.queue.at(-1).type, 'skipPrepare'); assert.equal(input.sequence, 3);
+    actions.queue.length = 0;
+    const speedup = { type: 'speedup', sequence: 5, target: 'scaffold', planned: 'a_b_outpost', cost: 50 };
+    send(speedup); assert.deepEqual(actions.queue, [speedup]); assert.equal(input.sequence, 3);
+    assert.throws(() => send({ ...speedup, sequence: 6, playerId: 'host' }), /Invalid/);
+    world.closing = true; send({ ...speedup, sequence: 6 });
+    assert.deepEqual(actions.queue.map(action => action.type), ['speedup', 'speedup']); assert.equal(input.sequence, 3);
 
-  } finally { world.peerPlayers.clear(); transport.peers.clear(); delete world.players; await world.close(); }
+
+  } finally { world.closing = false; world.peerPlayers.clear(); transport.peers.clear(); delete world.players; await world.close(); }
 });
 
 test('hosting installs one world-audio recorder and closing restores original native audio hooks', async t => {

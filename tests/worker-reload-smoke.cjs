@@ -4,6 +4,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
+  assert.ok(!process.argv.includes('--save-timing') || process.argv.includes('--natural-outpost'), 'Save timing requires the disposable earned Outpost fixture.');
+  assert.ok(!process.argv.includes('--speedup-only') || process.argv.includes('--outpost-speedup'), 'Speedup-only requires the Outpost speedup phase.');
+  assert.ok(!process.argv.includes('--focus-diagnostic') || process.argv.includes('--coop'), 'Focus diagnostics require the visible co-op case.');
+  assert.ok(!process.argv.includes('--outpost-speedup') || process.argv.includes('--natural-outpost'), 'Outpost speedup requires the earned Outpost continuation.');
   assert.ok(!process.argv.includes('--final-save-departure') || process.argv.includes('--reward-transitions'), 'Final-save departure requires the reward transition phase.');
   assert.ok(!process.argv.includes('--pvp-lumber') || process.argv.includes('--pvp-death'), 'Lumber revival requires the PvP death phase.');
   assert.ok(!process.argv.includes('--pvp-rejoin') || process.argv.includes('--pvp-death'), 'Death rejoin requires the PvP death phase.');
@@ -11,7 +15,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   assert.ok(!(process.argv.includes('--pvp-rejoin') && process.argv.includes('--pvp-lumber')), 'Choose either death rejoin or paid lumber revival.');
   for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
   assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
-  const outpostContinuation = process.argv.includes('--natural-outpost');
+  const outpostContinuation = process.argv.includes('--natural-outpost'), speedupOnly = process.argv.includes('--speedup-only');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(fixture).startsWith('polycraft-hq-recovery-'), 'Use only an existing disposable recovery-test checkpoint.');
   const source = path.join(fixture, 'saves'), names = fs.readdirSync(source), originals = new Map(names.map(name => [name, fs.readFileSync(path.join(source, name))]));
@@ -23,8 +27,16 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   if (outpostContinuation) {
     assert.equal(pending.length, 0);
     const flags = JSON.parse(state.userData.taskFlags);
-    assert.equal(flags.goToCaves, true); assert.notEqual(flags.buildOutpost, true);
-    assert.equal(JSON.parse(party).players[1].progress.xp, 290);
+    assert.equal(flags.goToCaves, true);
+    if (speedupOnly) {
+      assert.equal(flags.buildOutpost, true); assert.notEqual(flags.speedUpOutpost, true);
+      assert.equal(JSON.parse(party).players[1].progress.xp, 310);
+      const scaffolds = buildings.filter(e => e.archetypeName === 'a_b_scaffold' && e.ecData?.ECScaffold?.plannedObject === 'a_b_outpost');
+      assert.equal(scaffolds.length, 1); assert.ok(scaffolds[0].ecData.ECScaffold.buildComplete < 1);
+      assert.equal(buildings.some(e => e.archetypeName === 'a_b_outpost'), false);
+    } else {
+      assert.notEqual(flags.buildOutpost, true); assert.equal(JSON.parse(party).players[1].progress.xp, 290);
+    }
     for (const type of ['a_b_defencefactory', 'a_b_wildlinghouse_war']) assert.equal(buildings.filter(entity => entity.archetypeName === type).length, 1);
   } else { assert.equal(pending.length, 1); assert.equal(pending[0].task, 'buildStonelingHut'); }
   const huts = ['a_b_wildlinghouse_lumber', 'a_b_wildlinghouse_stone'].map(type => {
@@ -67,6 +79,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   try {
     console.log('Disposable solo worker profile:', directory);
     const page = await open();
+    if (process.argv.includes('--save-timing') && !speedupOnly) { await require('./save-timing.cjs')({ page, directory }); await close(); return; }
     if (!outpostContinuation) {
       const reward = 'idAcceptTaskRewardButton' + pending[0].id;
       await focus();

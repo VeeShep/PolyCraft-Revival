@@ -4,6 +4,16 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
 const clickGround = require('./coop-ground-click.cjs');
 
+async function waitForGuestReady(page, phase, focus) {
+  const ready = phase => window.guestWorld.hud.state && (phase === 'normal' ? window.guestWorld.movement.available() : (phase === 'dying' ? ['dying', 'waiting'].includes(window.guestWorld.lifeState?.phase) : phase === 'waiting' && window.guestWorld.lifeState?.phase === 'waiting') && !window.guestWorld.movement.available());
+  try { await page.waitForFunction(ready, phase, { timeout: 5000 }); }
+  catch (error) {
+    if (error.name !== 'TimeoutError' || await page.evaluate(() => window.desktop.windowFocused())) throw error;
+    console.log('Guest setup lost native focus; making one real window-refocus attempt.');
+    await focus(); await page.waitForFunction(ready, phase, { timeout: 10000 });
+  }
+}
+
 module.exports = async function workerAcknowledgement({ host, fixture, directory, file, huts, errors, requests, closeHost, openHost, focusHost }) {
   const originals = new Map(), guests = [], applications = [];
   const party = JSON.parse(JSON.parse(fs.readFileSync(file)).state.userData.desktopCoop);
@@ -31,8 +41,9 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     assert.equal(await page.evaluate(() => window.connection.closed), false);
     await focus(index);
     try {
-      await page.waitForFunction(phase => window.guestWorld.hud.state && (phase === 'normal' ? window.guestWorld.movement.available() : (phase === 'dying' ? ['dying', 'waiting'].includes(window.guestWorld.lifeState?.phase) : phase === 'waiting' && window.guestWorld.lifeState?.phase === 'waiting') && !window.guestWorld.movement.available()), phase, { timeout: 10000 });
+      await waitForGuestReady(page, phase, () => focus(index));
     } catch (error) {
+      if (process.argv.includes('--focus-diagnostic')) console.log('Native focus trace:', JSON.stringify(await guests[index].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace)));
       console.log('Worker guest readiness diagnostics:', JSON.stringify(await page.evaluate(async () => {
         const w = window.guestWorld;
         return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, activeElement: document.activeElement?.id,
@@ -60,10 +71,14 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     const app = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: profile }, timeout: 90000 });
     applications.push(app);
     const page = await app.firstWindow(); page.on('pageerror', error => errors.push(error.message)); page.on('request', request => requests.push(request.url()));
-    await app.evaluate(({ app, BrowserWindow }, index) => {
+    await app.evaluate(({ app, BrowserWindow }, { index, trace }) => {
       const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Worker co-op test must be visible.');
+      if (trace) {
+        window.focusTrace = [];
+        for (const event of ['focus', 'blur']) window.on(event, () => { window.focusTrace.push({ event, time: Date.now(), focused: window.isFocused() }); if (window.focusTrace.length > 50) window.focusTrace.shift(); });
+      }
       window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — worker guest ' + (index + 1)); app.focus({ steal: true }); window.moveTop(); window.focus();
-    }, index);
+    }, { index, trace: process.argv.includes('--focus-diagnostic') });
     await page.bringToFront();
     await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
     await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
@@ -173,6 +188,12 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     await host.evaluate(() => window.hostWorld.enablePlayers(window.polycraft.bridge));
     if (rewards) await rewards.checkSolo(host);
     await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
+    if (process.argv.includes('--focus-diagnostic')) {
+      await guests[0].page.waitForTimeout(5000);
+      assert.equal(await guests[0].page.evaluate(async () => await window.desktop.windowFocused() && window.guestWorld.movement.nativeFocused && window.guestWorld.movement.available()), true);
+      console.log('PASS: native guest focus/readiness remains available five seconds after connection; no construction or resource actions tested.');
+      return;
+    }
     const pvpLife = process.argv.includes('--pvp-death') ? require('./coop-pvp-life.cjs') : null;
     if (rewards) await rewards.guestDeparture({ host, guest: guests[0].page, hero: party.players[1].id, reconnect, hostFile: file });
     if (process.argv.includes('--health-item-transitions')) await require('./coop-health-item-transitions.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, reconnect, hostFile: file });
@@ -212,13 +233,18 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await require('./coop-natural-resources.cjs')({ ...context, stone: true, gatherOnly: true, checkHighlights: true });
       await require('./coop-natural-deposit.cjs')({ ...context, resource: 1 });
     }
-    await acknowledge(huts[0], 'lumber');
-    if (process.argv.includes('--pve-combat')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory });
-    await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4); await acknowledge(huts[1], 'stone');
-    await host.waitForFunction(ids => ids.every(id => !window.hostWorld.game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECResourceCarrier').hasAnyFlyingResource()), huts, { timeout: 15000 });
-    await require('./coop-native-pause.cjs')({ host, guest: guests[0].page, focus: () => focus(0), focusHost, hostFile: file });
-    await require('./coop-natural-workers.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hostFile: file });
-    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost') });
+    if (!process.argv.includes('--speedup-only')) {
+      await acknowledge(huts[0], 'lumber');
+      if (process.argv.includes('--pve-combat')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory });
+      await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4); await acknowledge(huts[1], 'stone');
+      await host.waitForFunction(ids => ids.every(id => !window.hostWorld.game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECResourceCarrier').hasAnyFlyingResource()), huts, { timeout: 15000 });
+      await require('./coop-native-pause.cjs')({ host, guest: guests[0].page, focus: () => focus(0), focusHost, hostFile: file });
+      await require('./coop-natural-workers.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hostFile: file });
+    } else {
+      await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4);
+      if (process.argv.includes('--save-timing')) { await focusHost(); await require('./save-timing.cjs')({ page: host, directory, activeHost: true }); }
+    }
+    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost'), speedupOutpost: process.argv.includes('--outpost-speedup'), speedupOnly: process.argv.includes('--speedup-only') });
     if (process.argv.includes('--pve-melee')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory, melee: true });
     if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
       attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });
@@ -252,7 +278,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     for (const resource of [0, 1]) assert.ok(restored.party.economy.resource[resource] >= earned.economy.resource[resource]);
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     await closeHost();
-    console.log('PASS: two/four-player native guest worker acknowledgement, shared fresh income/all guest HUDs, non-pausing menus, normal host save/reopen and isolated guest solo restoration.');
+    console.log(process.argv.includes('--speedup-only') ? 'PASS: focused four-player speedup, normal host save/reopen and isolated guest solo restoration.' : 'PASS: two/four-player native guest worker acknowledgement, shared fresh income/all guest HUDs, non-pausing menus, normal host save/reopen and isolated guest solo restoration.');
   } catch (error) {
     console.log('Worker reward readiness diagnostics:', JSON.stringify(await host.evaluate(() => {
       const game = window.polycraft.controls.manager(), hero = game.getHero();
@@ -268,3 +294,5 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     console.log('Source guest fixture files unchanged:', originals.size);
   }
 };
+
+module.exports.waitForGuestReady = waitForGuestReady;

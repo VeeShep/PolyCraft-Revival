@@ -310,9 +310,10 @@
         else if (message.kind === 'result') {
           const value = message.payload;
           const extras = value && ['building', 'construction', 'preview', 'totem', 'held', 'life', 'hud', 'quests', 'campaign', 'craft'].filter(key => Object.hasOwn(value, key));
-          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
+          if (!value || extras.length > 1 && !(value.type === 'life' && extras.length === 2 && extras.includes('life') && extras.includes('hud')) || Object.keys(value).length !== 3 + extras.length || !['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource', 'speedup'].includes(value.type) || !Number.isSafeInteger(value.sequence) || value.sequence < 1 || value.sequence > this.targetSequence || typeof value.message !== 'string' || value.message.length > 160) throw new Error('Invalid interaction result.');
           if (value.type === 'life' && Object.hasOwn(value, 'life') !== Object.hasOwn(value, 'hud')) throw new Error('Incomplete hero status.');
           if (extras.length && !(extras[0] === 'held' && value.held === null) && (!value[extras[0]] || typeof value[extras[0]] !== 'object' || Array.isArray(value[extras[0]]))) throw new Error('Invalid interaction details.');
+          if (value.type === 'speedup' && value.sequence === this.speedupRequest) this.speedupRequest = null;
           if (value.type === 'repair' && value.sequence === this.repairRequest) this.repairRequest = null;
           if (value.type === 'rotateCamera' && value.sequence === this.cameraRequest) this.cameraRequest = null;
           if (['pauseGame', 'enterFullscreen'].includes(value.type) && this.uiRequests.get(value.type) === value.sequence) this.uiRequests.delete(value.type);
@@ -382,6 +383,11 @@
       this.cancelLocalMenu();
       this.repairRequest = ++this.targetSequence;
       this.connection.send('action', { type: 'repair', sequence: this.repairRequest, target, costs: [...costs] }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
+    }
+    requestScaffoldSpeedup(target, info) {
+      if (this.speedupRequest) return;
+      this.cancelLocalMenu(); this.speedupRequest = ++this.targetSequence;
+      this.connection.send('action', { type: 'speedup', sequence: this.speedupRequest, target, planned: info.planned, cost: info.cost }).catch(error => { if (!this.connection.closed) this.connection.fail(error); });
     }
     requestBuildingUpgrade(target, upgrade) {
       if (this.upgradeRequest) return;

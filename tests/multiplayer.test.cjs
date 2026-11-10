@@ -77,7 +77,7 @@ test('invitations round-trip, survive wrapping and reject incompatible, expired,
   const encoded = encodeInvitation(original);
   assert.deepEqual(decodeInvitation('  ' + encoded.slice(0, 30) + '\n' + encoded.slice(30), 'offer'), original);
   assert.throws(() => decodeInvitation(encoded, 'answer'), /reply/);
-  for (const bad of [packet({ protocol: 99 }), packet({ runtime: 'other' }), packet({ runtime: 'polycraft-1.0.0.25-coop-39' }), packet({ runtime: 'polycraft-1.0.0.25-coop-40' }), packet({ runtime: 'polycraft-1.0.0.25-coop-41' }), packet({ expires: 0 }), packet({ expires: Date.now() + 1e10 }), packet({ pvp: 'true' }), packet({ peer: '../bad' }), packet({ extra: true }), packet({ description: { type: 'answer', sdp: 'v=0' } })]) {
+  for (const bad of [packet({ protocol: 99 }), packet({ runtime: 'other' }), packet({ runtime: 'polycraft-1.0.0.25-coop-39' }), packet({ runtime: 'polycraft-1.0.0.25-coop-40' }), packet({ runtime: 'polycraft-1.0.0.25-coop-41' }), packet({ runtime: 'polycraft-1.0.0.25-coop-42' }), packet({ expires: 0 }), packet({ expires: Date.now() + 1e10 }), packet({ pvp: 'true' }), packet({ peer: '../bad' }), packet({ extra: true }), packet({ description: { type: 'answer', sdp: 'v=0' } })]) {
     assert.throws(() => encodeInvitation(bad));
     assert.throws(() => decodeInvitation('polycraft1.' + Buffer.from(JSON.stringify(bad)).toString('base64')));
   }

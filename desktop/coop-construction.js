@@ -116,14 +116,28 @@
       source.getEC('ECUpgrader').cancelUpgrade(hero);
       return { message: 'Upgrade cancelled; half the resource cost refunded and saved.', save: true };
     }
+    speedupInfo(hero, source) {
+      const scaffold = source.getEC('ECScaffold'), radial = source.getEC('ECRadialMenu');
+      if (!this.owns(hero.getEC('ECPlayerBuilder')) || !scaffold || source.shouldBeDestroyed() || (scaffold.plannedFactionName || this.game.getFactionManager().getHeroFactionName()) !== this.game.getFactionManager().getHeroFactionName() || source.getEC('ECHealth')?.getHealth() <= 0 || !radial?.isRadialMenuEnabled() || radial.isRepairButtonExclusive() || !radial.isInstantBuildButtonValid() || scaffold.getBuildCompleteFraction() >= 1 || this.claimed(source)) return null;
+      return { planned: scaffold.getPlannedObject(), cost: scaffold.getCostToInstantlyBuild(), affordable: !!scaffold.canEntityAffordInstantBuild(hero) };
+    }
+    speedup(hero, source, planned, cost) {
+      const info = this.speedupInfo(hero, source);
+      if (!info || !info.affordable || info.planned !== planned || info.cost !== cost) return 'Speedup is unavailable or price/resources changed. Select it again.';
+      const scaffold = source.getEC('ECScaffold');
+      scaffold.sendBuildingSpeedupBought(info.planned);
+      scaffold.instantlyBuild(hero);
+      return { message: 'Building sped up and saved.', save: true };
+    }
     menu(hero, source, controls) {
       const repair = this.repairInfo(hero, source), move = this.canMove(hero, source), upgrade = this.upgradeInfo(hero, source);
+      const speedup = this.speedupInfo(hero, source), extra = speedup ? { speedup } : {};
       const info = controls?.demolitionInfo(source);
       const demolition = info?.reason === '' ? { id: info.id, name: info.name, reason: '' } : null;
       const dispenser = source.getEC('ECRadialMenu')?.isRepairButtonExclusive() ? null : this.dispenser(hero, source);
-      if (!dispenser?.contents.length) return repair || upgrade ? { source: source.getName(), move, repair, upgrade, demolition, products: [] } : null;
+      if (!dispenser?.contents.length) return repair || upgrade || speedup ? { source: source.getName(), move, repair, upgrade, demolition, ...extra, products: [] } : null;
       dispenser.evaluateProductInfo();
-      return { source: source.getName(), move, repair, upgrade, demolition, products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
+      return { source: source.getName(), move, repair, upgrade, demolition, ...extra, products: dispenser.contents.slice(0, 32).flatMap((product, index) => {
         if (dispenser.archetype.showUnavailableDueToPrerequisites === false && !dispenser.arePrerequisitesMet(index)) return [];
         if (dispenser.getQuantityPerPurchase(index) !== 1 || !this.game.getEntityFactory().getECArchetype(product.dispensedArchetypeName, 'ECBuilding')) return [];
         return [{ index, name: dispenser.getDispenseName(index), archetype: product.dispensedArchetypeName,

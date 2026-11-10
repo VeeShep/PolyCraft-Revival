@@ -194,7 +194,7 @@
     receiveMessage(message, connection) {
       const binding = this.peerPlayers.get(connection.peer);
       const directional = message.kind === 'action' && message.payload?.type === 'move' && Object.hasOwn(message.payload, 'move');
-      const targetAction = message.kind === 'action' && !directional && ['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource'].includes(message.payload?.type);
+      const targetAction = message.kind === 'action' && !directional && ['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource', 'speedup'].includes(message.payload?.type);
       if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) {
         // Retain validated requests for rollback; executing them during the final save is forbidden.
         if (!this.closed && !connection.closed && ['connected', 'disconnected'].includes(connection.state) && binding.ready && !binding.releasing && this.players?.active.has(binding.id) && message.kind === 'action') {

@@ -355,6 +355,14 @@ test('guest boundary freezes the local simulation and persistence, receives stat
   assert.equal(world.hud.state.preparation.episode, 7); world.targetSequence = world.campaign.prepareRequest = 16;
   connection.onMessage({ kind: 'result', payload: { type: 'skipPrepare', sequence: 16, message: 'Battle started.' } });
   assert.equal(world.campaign.prepareRequest, null);
+  world.requestScaffoldSpeedup('scaffold', { planned: 'a_b_outpost', cost: 50 });
+  world.requestScaffoldSpeedup('scaffold', { planned: 'a_b_outpost', cost: 50 });
+  const speedupSequence = world.speedupRequest;
+  assert.equal(world.targetSequence, speedupSequence);
+  assert.equal(requests.filter(row => row.payload?.type === 'speedup').length, 1);
+  assert.deepEqual(requests.at(-1), { kind: 'action', payload: { type: 'speedup', sequence: speedupSequence, target: 'scaffold', planned: 'a_b_outpost', cost: 50 } });
+  connection.onMessage({ kind: 'result', payload: { type: 'speedup', sequence: speedupSequence - 1, message: 'Earlier action.' } }); assert.equal(world.speedupRequest, speedupSequence);
+  connection.onMessage({ kind: 'result', payload: { type: 'speedup', sequence: speedupSequence, message: 'Building sped up and saved.' } }); assert.equal(world.speedupRequest, null);
   globals.graphicsDevice.canvas.style.cursor = 'guest-move-pointer';
   connection.onState('closed', {});
   assert.equal(globals.graphicsDevice.canvas.style.cursor, 'original-solo-pointer');
