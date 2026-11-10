@@ -79,6 +79,20 @@ function resourceCarrierMethods(tweens) {
     [drawingDependency(flight, 'depositStartSound')]: [{}, {}]
   });
 }
+function pickupMethods(tweens) {
+  const pickup = one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === 'ECPickup')), 'pickup component');
+  let owner;
+  traverse(ast, { VariableDeclarator(p) { if (p.node.init?.arguments?.[0] === pickup) owner = p.node.id.name; } });
+  if (!owner) throw new Error('Missing pickup constructor role');
+  const fly = pickup.properties.find(p => key(p) === 'beginFly').value, grant = pickup.properties.find(p => key(p) === 'onPickupCarriedResource').value;
+  function Pickup() {}
+  Pickup.prototype = evaluate(pickup, { [owner]: Pickup, [drawingDependency(fly, 'Easing')]: tweens, [drawingDependency(grant, 'NUM_RESOURCES')]: objectWith('NUM_RESOURCES') });
+  Pickup.prototype.liveCount = 100;
+  const manager = one(assignments.filter(a => a.left.property?.name === 'prototype' && a.right.type === 'ObjectExpression' && a.right.properties.some(p => key(p) === 'serializeArguments')), 'action manager role');
+  function Manager() {}
+  Manager.prototype = evaluate(manager.right);
+  return { pickup: Pickup.prototype, createActionManager: staticMethod(manager.left.object.name, 'create', { [manager.left.object.name]: Manager }) };
+}
 function healthDrawing() {
   const health = one(objects.filter(o => o.properties.some(p => key(p) === 'entityComponentName' && p.value.value === 'ECHealth')), 'health component');
   const drawHealth = health.properties.find(p => key(p) === 'drawHealthBar').value;
@@ -225,4 +239,4 @@ function taskGroupMethods(tasks) {
   const lookup = render.body.body[0].declarations.find(d => d.init?.type === 'MemberExpression' && d.init.object.property?.name === 'archetypes');
   return evaluate(prototype, { [lookup.init.object.object.name]: tasks });
 }
-module.exports = { campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, selectableDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, projectionCameraMethods, taskGroupMethods, resourceCarrierMethods };
+module.exports = { pickupMethods, campaignScorePanel, campaignRewards, campaignScore, preparationButton, campaignRuntime, guiManagerMethods, battleNoticeArchetype, method, prototypeWith, component, scriptCommand, objectWith, assignedObject, entityFactoryName, archetypeComponent, staticMethod, taskManagerFactory, healthDrawing, movementDrawing, selectableDrawing, visualEffectMethods, soundManagerMethods, audioActionMethods, audioSourceMethods, cameraMethods, projectionCameraMethods, taskGroupMethods, resourceCarrierMethods };

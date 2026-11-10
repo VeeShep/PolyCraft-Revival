@@ -108,9 +108,44 @@
       const builder = hero.getEC('ECPlayerBuilder');
       if (builder.isBuilding() || builder.isThrowing() || this.game.globals.gamePurchaseManager.consumeBuildingInProgress) throw new Error('Finish placing the held building and wait for shop requests before saving, switching heroes or ending co-op.');
     }
+    settleIncomingResources(hero) {
+      const resourcePickup = entity => {
+        const pickup = entity?.getEC('ECPickup'), definition = pickup?.archetype;
+        return pickup && [0, 1].some(type => pickup.getCarriedResource(type) > 0) &&
+          !pickup.item && !pickup.xp && !definition.health && !definition.cost && !definition.softCurrency && !definition.resource?.some(Boolean) ? pickup : null;
+      };
+      try {
+        for (const space of this.game.getGameSpaceList()) for (const entity of space.getEntitiesWithEC('ECPickup')) {
+          const pickup = resourcePickup(entity);
+          if (!pickup || pickup.getCollectorName() !== hero.getName()) continue;
+          const flight = pickup.flyingTween;
+          try {
+            if (flight) flight.complete();
+            else { pickup.givePickupIfCollector(); entity.setToBeDestroyed(); }
+          } catch (error) {
+            if (flight) { flight.stop(); pickup.flyingTween = flight; }
+            throw error;
+          }
+        }
+        const manager = this.game.actionManager;
+        for (const queue of [manager.actionList, manager.otherActionList]) for (let index = 0; index < queue.length;) {
+          const action = queue[index];
+          if (action.actionName === 'GivePickup' && action.actionArguments.collector === hero && resourcePickup(action.actionArguments.pickup)) {
+            // Remove before granting: a failed or reentrant callback must never replay this payment.
+            queue.splice(index, 1); manager.actionFunctionMap.GivePickup(action.actionArguments);
+          } else index++;
+        }
+      } catch (error) {
+        (this.incomingResourceFailures ||= new WeakMap()).set(hero, error);
+        throw error;
+      }
+      if (hero.getEC('ECResourceCarrier').hasAnyInboundResource()) throw new Error('Finish collecting incoming rewards before saving or ending co-op.');
+    }
     captureHero(hero) {
+      if (this.incomingResourceFailures?.has(hero)) throw this.incomingResourceFailures.get(hero);
       const construction = this.captureConstruction(hero);
       const carrier = hero.getEC('ECResourceCarrier');
+      if (carrier.hasAnyInboundResource()) this.settleIncomingResources(hero);
       // Complete in-flight deliveries before removing their carrier, so they cannot be lost or paid twice.
       if (carrier.hasAnyFlyingResource()) for (const tween of [...carrier.flyingTweens]) tween.complete();
       const health = hero.getEC('ECHealth'), firearm = hero.getEC('ECFirearm'), inventory = hero.getEC('ECInventory');
@@ -248,8 +283,8 @@
       if (!entry) throw new Error('Cannot refresh a hero outside this co-op session.');
       const [id, value] = entry, record = this.registry.player(id);
       const builder = hero.getEC('ECPlayerBuilder');
-      // shortcut: defer replacement while holding construction; persist held construction before allowing forced removal.
-      if (builder.isBuilding() || builder.isThrowing()) { this.pendingRefresh.add(id); return hero; }
+      // Level-up can run while the native action batch still owes pickups to this actor.
+      if (builder.isBuilding() || builder.isThrowing() || hero.getEC('ECResourceCarrier')?.hasAnyInboundResource()) { this.pendingRefresh.add(id); return hero; }
       this.pendingRefresh.delete(id);
       Object.assign(record, this.captureHero(hero));
       this.destroy(hero);

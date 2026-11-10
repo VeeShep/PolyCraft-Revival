@@ -2,20 +2,21 @@
 
 This is the test map and runbook, not a blanket claim that every platform or scenario passes. Read the current section of [RESTORATION_STATUS.md](RESTORATION_STATUS.md) before continuing work; it owns the dated success/failure ledger, exact source/package identities, evidence paths and open acceptance gates. [README.md](README.md#checks) describes player-facing setup and the main acceptance commands. [AGENTS.md](AGENTS.md) defines repository safety and publication rules.
 
-Inventory/checkpoint date: **2026-11-08**, latest application work **1.0.0-beta.99** (source/static and scoped native rock/worker gameplay pass; broader gates remain open). There are **71 `tests/*.test.cjs` suite files**. A suite file can contain several tests or parameterized cases; 71 is not the test-result count.
+Inventory/checkpoint date: **2026-11-08**, latest application work **1.0.0-beta.100** (focused source/static checks pass; native incoming case pending; broader gates remain open). There are **72 `tests/*.test.cjs` suite files**. A suite file can contain several tests or parameterized cases; 72 is not the test-result count.
 
 ## Current evidence and its limits
 
 | Checkpoint | Recorded result | What it does and does not establish |
 | --- | --- | --- |
-| Published Beta99 source `a29f794118278e11531b736d06e84516fa597c9e` | [CI run42515816607](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42515816607) **in progress** | Local630checks/native30847pass; new CI/package results pending. No duplicate dispatch or public release. |
+| Published Beta99 source `a29f794118278e11531b736d06e84516fa597c9e` | [CI run42515816607](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42515816607) **all8jobs pass /630checks /eight artifacts132.1** | Native package static checks and Linux stub-world transport pass. Artifacts not independently downloaded/launched; local finished-package gameplay is separate. No public release. |
+| Beta100 incoming resource capture | **28 focused /639 full checks pass**, initial red0/3; later focused rerun43215 includes the added failed-flight case | Native pickup/tween/action-manager/capture phases, ownership, cap, queue order, partial-failure refusal and pending-resource level-up deferral. Local ARM64 package verifies. The full639run predates that added case; next full640result is pending. These are native-method fixtures, not a visible incoming-flight interruption pass. Generic XP/coin/item/health interruptions remain open. |
 | Beta99 resource-ready selection | **115 focused production /23 route-harness /630 full checks pass** | Native growth/strict full-delta flag/runtime compatibility and all five actual original mesh definitions pass. First full628/1 loopback failure is retained; isolated9/0, full629/0 and final630/0 pass. Cause remains unproven. Native30847exit0 covers actual rock04 ring/depletion, normal stone deposit and full two/four-player worker/menu/income/save/reload/solo-restoration follow-through. Native35389remains an overall worker-route failure despite its ring/deposit subsection passing. |
 | Last completed Beta97 local source/harness | **623 checks / zero failures**, including **23 focused flight-observer/diagnostic/reward-order checks** | Non-graphical local regression evidence; no new CI or native-platform claim follows from this number. |
 | Beta98 disconnect classification | **39 focused /624 full checks pass**; local ARM64 build/source/icons/14MachO/signature pass | Only a closed data channel with native `sctp-failure` and numeric cause 12 uses the existing remote-disconnect path. Other errors retain failure behavior. Source checks alone do not establish gameplay; see the separate69014finished-package row. |
 | Local approach diagnostics | **5 focused /626 full checks pass**, including the prior624 | Bounded movement/focus/screen samples and pre-cleanup failure capture; original assertions preserved on observation errors. Visible retry69014 passes with the625-check diagnostic helper. Two later real-focus restoration guards are unit checked; their actual native branch awaits the next visible case. |
 | Published native/harness source `3659fbfa06ae896f09a030f9f87897173c2c805e` | [CI run42513164819](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42513164819) **all8jobs pass /626checks /eight artifacts131.1** | Six native package static checks and Linux stub-world native transport pass. Artifacts not independently downloaded/launched; local finished-package gameplay is separate. Application is Beta98. |
 | Published Beta98 source `f019ed2461dc991c4110690e3af0282f638dfb63` | [CI run42512214489](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42512214489) **all8jobs pass /624checks /eight artifacts130.1** | Six native package static checks and Linux stub-world native transport pass. Artifacts not independently downloaded/launched; local finished-package gameplay is separate. |
-| Published timed-save source `cbca6f49c421b2aa1a7d9a39388d00da245f4191` | [CI run 42509810346](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42509810346): **613 unit checks**, all eight jobs successful, tester artifacts **129.1** | Six native package targets plus the separate Linux network-only job; those CI artifacts were not independently downloaded/launched at this checkpoint. These CI results belong to earlier source; current local630checks are recorded separately. |
+| Published timed-save source `cbca6f49c421b2aa1a7d9a39388d00da245f4191` | [CI run 42509810346](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42509810346): **613 unit checks**, all eight jobs successful, tester artifacts **129.1** | Six native package targets plus the separate Linux network-only job; those CI artifacts were not independently downloaded/launched at this checkpoint. These CI results belong to earlier source; current local results are recorded separately. |
 | Finished local ARM64 worker regression, session **19022** | **exit 0** | Ordinary two/four-player worker acknowledgements, pause/HUD behavior, fresh income, all guest HUDs, solo isolation and normal host close/reopen; not a timed in-flight interruption. |
 | Finished local ARM64 Save Now case, session **26083** | **exit 0** | A first completed 10-wood payment, then a later 15-wood flight on the same carrier; actual Save Now clicked with active flights, coherent capture clears them, bank **16→31** without repaying the first delivery. Four-player worker/save/isolation follow-through and normal host close/reopen pass. |
 | Finished local ARM64 Beta98 close/rejoin, session **69014** | **exit0** | Natural first15wood6→21, same carrier later10wood21→31 once; actual close5887/capture5889 clears2/2→0/0; assigned saved hero rejoins. Two/four-player worker/pause/AI/HUD, fresh shared156/68→158/70 income, all guest solo restoration and normal host save/reopen pass. All8source/10helper hashes match; owned apps closed. Intentional outbound close only; other interruption/WAN/platform gates remain. |
@@ -44,7 +45,7 @@ Run from the repository root with locked dependencies installed. These commands 
 npm test
 node --test tests/in-flight-save.test.cjs tests/in-flight-disconnect.test.cjs tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-order.test.cjs
 node --test tests/multiplayer.test.cjs tests/in-flight-save.test.cjs tests/in-flight-disconnect.test.cjs tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-order.test.cjs
-node --test tests/resource-flight.test.cjs tests/coop-players.test.cjs
+node --test tests/resource-pickup.test.cjs tests/resource-flight.test.cjs tests/coop-players.test.cjs
 node --test tests/world-state.test.cjs tests/guest-world.test.cjs tests/online-world.test.cjs tests/multiplayer.test.cjs
 node --test tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-order.test.cjs tests/ground-click.test.cjs
 ```
@@ -53,7 +54,7 @@ node --test tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-ord
 
 There is no catch-all acceptance flag: choose a driver below for the behavior actually being changed. Run the relevant source checks first, then announce the visible case. Do not repeatedly rerun unrelated suites after successful checks unless new changes or failures justify it.
 
-## Non-graphical suite inventory — all 71 files
+## Non-graphical suite inventory — all 72 files
 
 All paths in this section are under `tests/`. Descriptions summarize assertions in the source, not claims of full-game coverage.
 
@@ -134,10 +135,11 @@ All paths in this section are under `tests/`. Descriptions summarize assertions 
 | [in-flight-disconnect.test.cjs](tests/in-flight-disconnect.test.cjs) | Close/rejoin observer requires active-flight removal, cleared queues, matching saved hero and hook cleanup; rejects expired/stuck/invalid cases. |
 | [natural-deposit-diagnostics.test.cjs](tests/natural-deposit-diagnostics.test.cjs) | Bounded deposit/resource-approach screenshots preserve the original failure; resource walking restores real focus before more input, and worker walking delegates guarded native ground clicks while preserving range/focus/input failures. |
 
-### Resource accounting and helper ordering (3)
+### Resource accounting and helper ordering (4)
 
 | Suite | Checks |
 | --- | --- |
+| [resource-pickup.test.cjs](tests/resource-pickup.test.cjs) | Original wood/stone pickup reservation/flight/queued grant capture, exact once-only credit, other owners/unclaimed objects/queue order, native caps, partial-failure no replay/removal, stopped-flight no restart/requeue, native XP batch refresh deferral and mixed-reward normal completion. |
 | [resource-flight.test.cjs](tests/resource-flight.test.cjs) | Actual original tween/carrier/destination/co-op-capture methods: completed entry removal, later-flight capture/destruction, no duplicate payments and zero counters. |
 | [resource-reward-order.test.cjs](tests/resource-reward-order.test.cjs) | Natural wood/stone helpers collect original completed rewards before navigation/deposit/building continues. |
 | [projectile-collision.test.cjs](tests/projectile-collision.test.cjs) | Original projectile collision behavior and relevant collision/protection regression boundaries. |
