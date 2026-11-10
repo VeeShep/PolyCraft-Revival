@@ -8,6 +8,41 @@ function block(file, select) {
   assert.equal(found.length, 1);
   return '(async () => ' + generate(found[0]).code + ')()';
 }
+function evaluatedCallback(file, variable) {
+  const found = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, file), 'utf8')), { VariableDeclarator(p) {
+    const call = p.node.init?.argument;
+    if (p.node.id.name === variable && call?.callee?.object?.name === 'host' && call.callee.property?.name === 'evaluate') found.push(call.arguments[0]);
+  } });
+  assert.equal(found.length, 1, file + ':' + variable);
+  return generate(found[0]).code;
+}
+test('campaign combat staging waits for prior native rewards before retaining its actor and XP baseline', async () => {
+  for (const [file, variable] of [['coop-campaign-acceptance.cjs', 'combat'], ['coop-campaign-victory.cjs', 'actor']]) {
+    let queued, release;
+    const world = { atBoundary() { assert.fail('Campaign staging must wait for pending native rewards.'); }, atRewardBoundary(read) { queued = read; return new Promise(resolve => { release = resolve; }); } };
+    const callback = vm.runInNewContext('(' + evaluatedCallback(file, variable) + ')', { window: { polycraft: { controls: { onlineWorld: world } } } });
+    const pending = callback({ id: 'enemy', hero: 'guest' });
+    assert.equal(typeof queued, 'function'); release('reward-ready'); assert.equal(await pending, 'reward-ready');
+  }
+});
+test('campaign staging skips a victim that disappears, is destroyed or dies before the reward boundary', async () => {
+  const callback = evaluatedCallback('coop-campaign-victory.cjs', 'actor');
+  for (const enemy of [null, { shouldBeDestroyed: () => true }, { shouldBeDestroyed: () => false, getEC: () => ({ getHealth: () => 0 }) }]) {
+    const world = { game: { getGameEntityByName: () => enemy }, atRewardBoundary: read => read(), atBoundary: read => read() };
+    const choose = vm.runInNewContext('(' + callback + ')', { window: { polycraft: { controls: { onlineWorld: world } } } });
+    assert.equal(await choose({ id: 'enemy', hero: 'guest' }), null);
+  }
+});
+test('campaign post-shot observation resolves a replacement hero by player identity while retaining original kill attribution', () => {
+  const current = { getEC: name => name === 'ECFirearm' ? { getAmmo: () => 3 } : { getTargetEntity: () => null }, getName: () => 'replacement-entity' };
+  const world = { game: { getGameEntityByName: () => null }, players: { active: new Map([['guest', { hero: current }]]) } };
+  const observe = vm.runInNewContext('(' + evaluatedCallback('coop-campaign-victory.cjs', 'attempt') + ')', {
+    window: { polycraft: { controls: { onlineWorld: world } }, campaignVictoryKills: [{ victim: 'enemy', aggressor: 'original-entity' }] }
+  });
+  const result = observe({ id: 'enemy', actor: 'original-entity', hero: 'guest' });
+  assert.equal(result.killed, true); assert.equal(result.ammo, 3); assert.equal(result.target, undefined);
+});
 function fixture() {
   const events = [], guest = { async waitForFunction() { events.push('next-task'); } };
   const button = async id => events.push('collect:' + id);

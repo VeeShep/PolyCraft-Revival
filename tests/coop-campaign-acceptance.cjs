@@ -85,7 +85,7 @@ module.exports = async function campaignAcceptance({ host, guest, hero, join, en
   const hostMenuEnemy = await observeMovement();
   assert.equal(await host.locator('#multiplayer-dialog').evaluate(node => node.open), true);
   await click(0, '#close-multiplayer');
-  const combat = await host.evaluate(({ id, hero }) => window.polycraft.controls.onlineWorld.atBoundary(() => {
+  const combat = await host.evaluate(({ id, hero }) => window.polycraft.controls.onlineWorld.atRewardBoundary(() => {
     const world = window.polycraft.controls.onlineWorld, game = world.game, victim = game.getGameEntityByName(id), actor = world.players.active.get(hero).hero;
     if (!victim || victim.shouldBeDestroyed() || victim.getEC('ECHealth').getHealth() <= 0) throw new Error('Need the live native wave enemy for combat.');
     const target = Array.from(victim.getv3Location());

@@ -22,8 +22,10 @@ module.exports = async function campaignVictory({ host, guest, hero, campaign, s
     }, campaign.region);
     if (state.reward) { victory = state.reward; break; }
     if (!state.enemy) { await guest.waitForTimeout(200); continue; }
-    const actor = await host.evaluate(({ id, hero }) => window.polycraft.controls.onlineWorld.atBoundary(() => {
-      const world = window.polycraft.controls.onlineWorld, game = world.game, enemy = game.getGameEntityByName(id), actor = world.players.active.get(hero).hero, target = Array.from(enemy.getv3Location());
+    const actor = await host.evaluate(({ id, hero }) => window.polycraft.controls.onlineWorld.atRewardBoundary(() => {
+      const world = window.polycraft.controls.onlineWorld, game = world.game, enemy = game.getGameEntityByName(id);
+      if (!enemy || enemy.shouldBeDestroyed() || enemy.getEC('ECHealth').getHealth() <= 0) return null;
+      const actor = world.players.active.get(hero).hero, target = Array.from(enemy.getv3Location());
       const position = [3, 5].flatMap(radius => Array.from({ length: 12 }, (_, index) => game.placeOnGround([target[0] + radius * Math.cos(index * Math.PI / 6), target[1], target[2] + radius * Math.sin(index * Math.PI / 6)], 0.5))).find(point => !game.getCollisionInfo(target, point, false, enemy));
       if (!position) return null;
       actor.getEC('ECAutoFire').disable(); actor.getEC('ECLocomotion').clearDestination(); actor.teleport(position);
@@ -33,10 +35,10 @@ module.exports = async function campaignVictory({ host, guest, hero, campaign, s
     if (!actor) { await guest.waitForTimeout(200); continue; }
     await selectTarget(state.enemy);
     await guest.waitForTimeout(1200);
-    const attempt = await host.evaluate(({ id, actor }) => {
-      const world = window.polycraft.controls.onlineWorld, enemy = world.game.getGameEntityByName(id), hero = [...world.players.active.values()].find(entry => entry.hero.getName() === actor).hero;
-      return { killed: window.campaignVictoryKills.some(event => event.victim === id && event.aggressor === actor), health: enemy?.getEC('ECHealth')?.getHealth(), ammo: hero.getEC('ECFirearm').getAmmo(), target: hero.getEC('ECAutoFire').getTargetEntity()?.getName() };
-    }, { id: state.enemy, actor });
+    const attempt = await host.evaluate(({ id, actor, hero }) => {
+      const world = window.polycraft.controls.onlineWorld, enemy = world.game.getGameEntityByName(id), current = world.players.active.get(hero).hero;
+      return { killed: window.campaignVictoryKills.some(event => event.victim === id && event.aggressor === actor), health: enemy && !enemy.shouldBeDestroyed() ? enemy.getEC('ECHealth').getHealth() : 0, ammo: current.getEC('ECFirearm').getAmmo(), target: current.getEC('ECAutoFire').getTargetEntity()?.getName() };
+    }, { id: state.enemy, actor, hero });
     console.log('Native campaign combat attempt:', { enemy: state.enemy, ...attempt });
   }
   assert.ok(victory, 'The unmodified native campaign must reach its completion reward within the test deadline.');
