@@ -1,5 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const { build, devDependencies } = require('../package.json');
 const installed = require('electron/package.json');
 assert.equal(installed.version, devDependencies.electron, 'Build with the locked Electron version.');
@@ -9,7 +10,9 @@ module.exports = { ...build,
   electronDist: dist,
   beforePack: ({ electronPlatformName, arch }) => {
     assert.equal(electronPlatformName, process.platform, 'CI must package its native platform.');
-    assert.equal(require('builder-util').Arch[arch], process.arch, 'CI must package its native architecture.');
+    const target = require('builder-util').Arch[arch];
+    assert.ok(target === process.arch || process.platform === 'darwin' && process.arch === 'x64' && target === 'arm64', 'CI must package its native architecture or the Intel Mac to ARM Mac target.');
+    if (electronPlatformName === 'darwin') assert.equal(execFileSync('lipo', ['-archs', path.join(dist, 'Electron.app/Contents/MacOS/Electron')], { encoding: 'utf8' }).trim(), target === 'x64' ? 'x86_64' : target, 'Installed Electron runtime architecture must match the target.');
   },
   afterExtract: context => {
     const resources = context.electronPlatformName === 'darwin' ? path.join(context.appOutDir, context.packager.info.framework.distMacOsAppName, 'Contents', 'Resources') : path.join(context.appOutDir, 'resources');

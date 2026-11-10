@@ -3,22 +3,35 @@ const { test } = require('node:test'), assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), vm = require('node:vm');
 const project = require('../package.json');
 const filename = path.join(__dirname, '../scripts/ci-builder-config.cjs'), source = fs.readFileSync(filename, 'utf8');
-function load({ platform = 'darwin', arch = 'arm64', version = project.devDependencies.electron, runtimeVersion = version, fileSystem = fs, runtimeError } = {}) {
+function load({ platform = 'darwin', arch = 'arm64', runtimeArch = arch === 'x64' ? 'x86_64' : arch, version = project.devDependencies.electron, runtimeVersion = version, fileSystem = fs, runtimeError, lipoError } = {}) {
   const root = path.join(os.tmpdir(), 'controlled-electron-module'), metadata = path.join(root, 'package.json');
-  const scopedRequire = name => name === '../package.json' ? project : name === 'electron/package.json' ? { version } : name === 'node:fs' ? { ...fileSystem, readFileSync(file, ...args) { if (file === path.join(root, 'dist', 'version')) { if (runtimeError) throw runtimeError; return runtimeVersion; } return fileSystem.readFileSync(file, ...args); } } : require(name);
+  const lipoCalls = [], scopedRequire = name => name === 'node:child_process' ? { execFileSync(command, args, options) {
+    assert.equal(command, 'lipo'); assert.deepEqual(Array.from(args), ['-archs', path.join(root, 'dist/Electron.app/Contents/MacOS/Electron')]); assert.equal(options.encoding, 'utf8'); lipoCalls.push(args);
+    if (lipoError) throw lipoError; return runtimeArch;
+  } } : name === '../package.json' ? project : name === 'electron/package.json' ? { version } : name === 'node:fs' ? { ...fileSystem, readFileSync(file, ...args) { if (file === path.join(root, 'dist', 'version')) { if (runtimeError) throw runtimeError; return runtimeVersion; } return fileSystem.readFileSync(file, ...args); } } : require(name);
   scopedRequire.resolve = name => { assert.equal(name, 'electron/package.json'); return metadata; };
   const module = { exports: {} };
   vm.runInNewContext(source, { module, require: scopedRequire, __dirname: path.dirname(filename), process: { platform, arch } }, { filename });
-  return { config: module.exports, dist: path.join(root, 'dist') };
+  return { config: module.exports, dist: path.join(root, 'dist'), lipoCalls };
 }
 test('CI preserves existing package options and selects the installed matching runtime for all six native targets', () => {
   for (const platform of ['darwin', 'linux', 'win32']) for (const arch of ['arm64', 'x64']) {
-    const { config, dist } = load({ platform, arch }), { electronDist, beforePack, afterExtract, ...rest } = config;
+    const { config, dist, lipoCalls } = load({ platform, arch }), { electronDist, beforePack, afterExtract, ...rest } = config;
     assert.deepEqual(rest, project.build); assert.equal(typeof afterExtract, 'function');
     assert.equal(electronDist, dist);
     beforePack({ electronPlatformName: platform, arch: require('builder-util').Arch[arch] });
+    assert.equal(lipoCalls.length, platform === 'darwin' ? 1 : 0);
     assert.equal(config.electronDownload, undefined, 'No second Electron archive download or checksum bypass is configured.');
   }
+});
+test('CI permits only Intel Mac to ARM Mac cross-packaging and verifies the actual target runtime without executing it', () => {
+  const { Arch } = require('builder-util');
+  const cross = load({ platform: 'darwin', arch: 'x64', runtimeArch: 'arm64' });
+  cross.config.beforePack({ electronPlatformName: 'darwin', arch: Arch.arm64 }); assert.equal(cross.lipoCalls.length, 1);
+  for (const runtimeArch of ['x86_64', 'arm64 x86_64', '']) assert.throws(() => load({ arch: 'x64', runtimeArch }).config.beforePack({ electronPlatformName: 'darwin', arch: Arch.arm64 }), /runtime architecture/);
+  const failure = new Error('lipo refused'); assert.throws(() => load({ lipoError: failure }).config.beforePack({ electronPlatformName: 'darwin', arch: Arch.arm64 }), error => error === failure);
+  for (const platform of ['linux', 'win32']) assert.throws(() => load({ platform, arch: 'x64' }).config.beforePack({ electronPlatformName: platform, arch: Arch.arm64 }), /native architecture/);
+  assert.throws(() => cross.config.beforePack({ electronPlatformName: 'linux', arch: Arch.arm64 }), /native platform/);
 });
 test('CI refuses a mismatched package/runtime version, missing runtime or cross-platform/architecture target', () => {
   assert.throws(() => load({ version: '0.0.0' }), /locked Electron version/);
@@ -69,4 +82,16 @@ test('CI installs and caches verified Electron before native consumers, while un
   }
   assert.equal(workflow.jobs.checks.steps.some(step => step.run === 'node node_modules/electron/install.js'), false);
   assert.equal(workflow.jobs.checks.steps.find(step => step.run === 'npm ci').env.ELECTRON_SKIP_BINARY_DOWNLOAD, '1');
+});
+test('Mac ARM packaging uses an Intel runner, explicit locked target download and target-specific Electron cache', () => {
+  const workflow = require('js-yaml').load(fs.readFileSync(path.join(__dirname, '../.github/workflows/build.yml'), 'utf8'));
+  const job = workflow.jobs.package, arm = job.strategy.matrix.include.find(row => row.id === 'mac-arm64');
+  assert.equal(arm.os, 'macos-15-intel'); assert.equal(arm.runnerArch, 'x64'); assert.equal(arm.arch, 'arm64'); assert.match(arm.arguments, /--arm64/);
+  const install = job.steps.find(step => step.run === 'node node_modules/electron/install.js');
+  assert.equal(install.env.ELECTRON_INSTALL_ARCH, '${{ matrix.arch }}');
+  const cache = job.steps.find(step => step.id === 'electron-cache');
+  assert.match(cache.with.key, /electron-v2/); assert.ok(cache.with.key.includes('${{ matrix.arch }}'));
+  assert.ok(job.steps.find(step => step.name === 'Cache packaging tools').with.key.includes('${{ runner.arch }}'));
+  assert.ok(job.steps.some(step => step.run?.includes('node scripts/verify-mac.cjs') && step.run.includes('${{ matrix.arch }}')));
+  assert.equal(workflow.jobs['native-network'].steps.find(step => step.run === 'node node_modules/electron/install.js').env.ELECTRON_INSTALL_ARCH, undefined);
 });
