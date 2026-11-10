@@ -2,6 +2,49 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const runtime = require('./runtime-ast.cjs');
+function heroTargets() {
+  const { CoopPlayers } = require('../desktop/coop-players.js'), targetMethods = runtime.component('ECTarget');
+  const actor = (name, position) => {
+    const state = { health: 50, destroyed: false, friendly: false, limited: false }, target = Object.assign(Object.create(targetMethods), {
+      valid: true, archetype: { onlyTargetedByFriendlyUnits: false }, getEntityEC: type => type === 'ECHealth' ? { getHealth: () => state.health } : type === 'ECAttackerLimit' ? { isFull: value => { assert.equal(value, true); return state.limited; } } : null
+    });
+    return { name, state, target, getv3Location: () => position, shouldBeDestroyed: () => state.destroyed, getEC: type => type === 'ECTarget' ? target : null };
+  };
+  const host = actor('host', [80, 0, 0]), guest = actor('guest', [3, 0, 0]), other = actor('other', [6, 0, 0]), fourth = actor('fourth', [9, 0, 0]);
+  const enemy = { getv3Location: () => [0, 0, 0], isFriendlyWith: hero => hero.state.friendly };
+  const game = { getHero: () => host, globals: { mathDevice: { v3DistanceSq: runtime.method('v3DistanceSq') } } };
+  const players = game.desktopPlayers = Object.assign(Object.create(CoopPlayers.prototype), { game, active: new Map([host, guest, other, fourth].map(hero => [hero.name, { hero }])) });
+  return { host, guest, other, fourth, enemy, game, players, choose: () => runtime.method('getNearestEnemyHero').call({ entity: enemy, gameManager: game }) };
+}
+test('native hero-priority enemy targeting chooses the nearest active co-op hero rather than a distant host', () => {
+  const f = heroTargets(); assert.equal(f.choose(), f.guest);
+  f.host.getv3Location = () => [1, 0, 0]; assert.equal(f.choose(), f.host);
+  f.players.active.delete('host'); assert.equal(f.choose(), f.guest);
+  f.players.active.clear(); assert.equal(f.choose(), null);
+});
+test('co-op hero-priority targeting preserves native health, validity, attacker-limit and allegiance checks and excludes destroyed heroes', () => {
+  const f = heroTargets(); f.players.active.delete('other'); f.players.active.delete('fourth');
+  assert.equal(f.choose(), f.guest);
+  for (const invalid of ['health', 'valid', 'limited', 'friendly', 'destroyed', 'onlyFriendly']) {
+    Object.assign(f.guest.state, { health: 50, destroyed: false, friendly: false, limited: false }); f.guest.target.valid = true; f.guest.target.archetype.onlyTargetedByFriendlyUnits = false;
+    if (invalid === 'health') f.guest.state.health = 0;
+    if (invalid === 'valid') f.guest.target.valid = false;
+    if (invalid === 'onlyFriendly') f.guest.target.archetype.onlyTargetedByFriendlyUnits = true;
+    if (['limited', 'friendly', 'destroyed'].includes(invalid)) f.guest.state[invalid] = true;
+    assert.equal(f.choose(), f.host, invalid);
+  }
+});
+test('co-op hero-priority target distance is native three-dimensional distance with stable iteration ties', () => {
+  const f = heroTargets(); f.host.getv3Location = () => [0, 10, 0]; assert.equal(f.choose(), f.guest);
+  f.host.getv3Location = () => [3, 0, 0]; assert.equal(f.choose(), f.host);
+});
+test('ending co-op retains original solo hero-only targeting and its native validity checks', () => {
+  const f = heroTargets(); delete f.game.desktopPlayers; assert.equal(f.choose(), f.host);
+  f.guest.state.health = 0; assert.equal(f.choose(), f.host);
+  f.host.target.valid = false; assert.equal(f.choose(), null);
+  f.host.target.valid = true; f.host.state.friendly = true; assert.equal(f.choose(), null);
+  assert.equal(runtime.method('getNearestEnemyHero').call({ gameManager: null }), null);
+});
 test('guest EmptyHanded events cannot consume host premium inventory; original host and solo placement callbacks remain', () => {
   const host = {}, guest = {}; let callback, removed = 0, claimed = 0;
   const game = { desktopPlayers: {}, getHero: () => host, eventManager: { subscribe: (name, value) => { assert.equal(name, 'EmptyHanded'); callback = value; } } };

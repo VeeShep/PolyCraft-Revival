@@ -82,7 +82,8 @@ test('timed-out native final-save observation restores its hook and cannot arm a
 test('reward-sensitive hosting waits for the original solo quest XP and its owned callbacks before rebinding', () => {
   const callbacks = [];
   traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { IfStatement(p) {
-    const condition = p.node.test.type === 'LogicalExpression' ? p.node.test.left : p.node.test;
+    let condition = p.node.test;
+    while (condition.type === 'LogicalExpression') condition = condition.left;
     if (condition.type !== 'CallExpression' || condition.arguments[0]?.value !== '--health-item-transitions' || p.node.consequent.type !== 'BlockStatement') return;
     const statement = p.node.consequent.body.find(row => row.expression?.argument?.callee?.property?.name === 'waitForFunction');
     if (!statement) return;

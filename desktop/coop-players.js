@@ -98,6 +98,18 @@
     allowsHeroPvp(entity) {
       return this.game.globals.desktopWorld?.transport.pvp === true && [...this.active.values()].some(entry => entry.hero === entity);
     }
+    getNearestEnemyHero(enemy) {
+      const origin = enemy.getv3Location(), math = this.game.globals.mathDevice;
+      let nearest = null, distance = Infinity;
+      for (const { hero } of this.active.values()) {
+        if (hero.shouldBeDestroyed() || enemy.isFriendlyWith(hero)) continue;
+        const target = hero.getEC('ECTarget');
+        if (!target || !target.isValidTarget(true)) continue;
+        const squared = math.v3DistanceSq(origin, hero.getv3Location());
+        if (squared < distance) { distance = squared; nearest = hero; }
+      }
+      return nearest;
+    }
     isNearFamily(name, distance) {
       const game = this.game, limit = distance * distance;
       for (const { hero } of this.active.values()) {

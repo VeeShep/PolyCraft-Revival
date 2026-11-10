@@ -45506,6 +45506,7 @@
       return c;
     },
     getNearestEnemyHero: function () {
+      if (this.gameManager && this.gameManager.desktopPlayers) return this.gameManager.desktopPlayers.getNearestEnemyHero(this.entity);
       var a = null,
         b = this.gameManager,
         c;
