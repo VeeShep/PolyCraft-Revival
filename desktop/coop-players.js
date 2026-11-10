@@ -2,14 +2,30 @@
 (function (root) {
   const { CoopData, validateConstruction, validateLife } = typeof module !== 'undefined' ? require('./coop-data.js') : root.PolycraftCoopData;
   class CoopPlayers {
+    static hasPendingRewards(game, hero) {
+      const name = hero?.getName?.();
+      if (!name) return false;
+      const reward = entity => {
+        const p = entity?.getEC('ECPickup'), a = p?.archetype;
+        return p && (p.xp || p.item || a?.health || a?.cost || a?.softCurrency || a?.resource?.some(Boolean));
+      };
+      for (const space of game.getGameSpaceList?.() || []) for (const entity of space.getEntitiesWithEC('ECPickup')) {
+        if (reward(entity) && entity.getEC('ECPickup').getCollectorName() === name) return true;
+      }
+      for (const queue of [game.actionManager?.actionList || [], game.actionManager?.otherActionList || []]) {
+        if (queue.some(action => action.actionName === 'GivePickup' && action.actionArguments.collector === hero && reward(action.actionArguments.pickup))) return true;
+      }
+      return false;
+    }
     constructor(game, bridge) {
       if (game.desktopPlayers || bridge.coopEconomy || !game.getHero()) throw new Error('This island already has co-op heroes or has no solo hero.');
-      this.game = game; this.bridge = bridge; this.registry = new CoopData(bridge.state); this.active = new Map();
-      this.pendingRefresh = new Set();
       const soloHero = game.getHero(), globals = game.globals;
       // Tutorial commands retain this hero by name until its interaction finishes.
       if (game.runScripts && (soloHero.getEC('ECSleeping')?.sleeping || soloHero.getEC('ECLocomotion')?.active === false)) throw new Error('Finish waking your hero or the current interaction before hosting.');
+      if (CoopPlayers.hasPendingRewards(game, soloHero)) throw new Error('Finish collecting incoming rewards before hosting.');
+      this.game = game; this.bridge = bridge; this.active = new Map(); this.pendingRefresh = new Set();
       this.requireIdle(soloHero);
+      this.registry = new CoopData(bridge.state);
       this.weaponDefinition = soloHero.getEC('ECInventory').getWeaponDefinition;
       for (const record of this.registry.data.players) { this.checkWeapons(record); this.checkConstruction(record.construction); }
       this.solo = { model: game.playerData, name: soloHero.getName(), archetype: soloHero.getArchetypeName(),
@@ -77,6 +93,7 @@
     }
     requireSettled(hero) {
       if (hero.getEC('ECPlayerBuilder').isThrowing() || this.game.globals.gamePurchaseManager.consumeBuildingInProgress) throw new Error('Finish placing the thrown building and wait for shop requests before saving, switching heroes or ending co-op.');
+      if (CoopPlayers.hasPendingRewards(this.game, hero)) throw new Error('Finish collecting incoming rewards before saving, switching heroes or ending co-op.');
     }
     allowsHeroPvp(entity) {
       return this.game.globals.desktopWorld?.transport.pvp === true && [...this.active.values()].some(entry => entry.hero === entity);
@@ -284,7 +301,7 @@
       const [id, value] = entry, record = this.registry.player(id);
       const builder = hero.getEC('ECPlayerBuilder');
       // Level-up can run while the native action batch still owes pickups to this actor.
-      if (this.game.globals.desktopWorld?.simulating || builder.isBuilding() || builder.isThrowing() || hero.getEC('ECResourceCarrier')?.hasAnyInboundResource()) { this.pendingRefresh.add(id); return hero; }
+      if (this.game.globals.desktopWorld?.simulating || builder.isBuilding() || builder.isThrowing() || hero.getEC('ECResourceCarrier')?.hasAnyInboundResource() || CoopPlayers.hasPendingRewards(this.game, hero)) { this.pendingRefresh.add(id); return hero; }
       this.pendingRefresh.delete(id);
       Object.assign(record, this.captureHero(hero));
       this.destroy(hero);

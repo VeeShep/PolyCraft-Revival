@@ -7,6 +7,16 @@ function hero() {
   return { getv3Location: () => [10, 2, 20], getEC: name => ({ ECHealth: { getHealth: () => health }, ECLocomotion: { setDestination: value => { destination = value; }, clearDestination: () => { destination = null; }, clearDestinationEntity() {} } })[name],
     destination: () => destination, die: () => { health = 0; } };
 }
+test('discarded movement still validates/advances sequence and cannot replay walking or a previous direction on rollback', () => {
+  const input = new HostMovement(), actor = hero();
+  input.receive({ type: 'move', sequence: 1, move: [1, 0] }); input.apply(actor); assert.ok(actor.destination());
+  input.discard(); input.apply(actor); assert.equal(actor.destination(), null); assert.equal(input.sequence, 1);
+  input.receive({ type: 'walk', sequence: 2, mode: 'click', location: [15, 2, 20] }, true);
+  assert.equal(input.pendingWalk, null); input.apply(actor); assert.equal(actor.destination(), null);
+  input.receive({ type: 'move', sequence: 3, move: [1, 0] }, true); input.apply(actor); assert.equal(actor.destination(), null);
+  assert.throws(() => input.receive({ type: 'move', sequence: 5, move: [0, 0] }, true), /Invalid/);
+  input.receive({ type: 'move', sequence: 4, move: [0, 1] }); input.apply(actor); assert.deepEqual(actor.destination(), [10, 2, 25]);
+});
 test('host applies normalized intent through the assigned hero locomotion and stops on neutral, timeout or death', () => {
   let now = 0; const input = new HostMovement(() => now), actor = hero(), other = hero();
   input.receive({ type: 'move', sequence: 1, move: [1, 0] }); input.apply(actor);

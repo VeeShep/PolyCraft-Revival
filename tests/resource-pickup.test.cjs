@@ -27,10 +27,16 @@ function fixture(archetype) {
     nodes.push(node); entities.set(node.name, node); return { pickup, node };
   };
   const { pickup, node } = makePickup(); entities.set(actor.name, actor);
-  const players = Object.assign(Object.create(CoopPlayers.prototype), { game, active: new Map([['guest', { hero: actor, model: progress }]]), pendingRefresh: new Set(), registry: { data: { host: 'host' }, player: () => record, persist: () => events.push('persist') }, captureConstruction: () => null, captureLife: () => null });
+  const players = Object.assign(Object.create(CoopPlayers.prototype), { game, active: new Map([['guest', { hero: actor, model: progress }]]), pendingRefresh: new Set(), registry: { data: { host: 'host' }, player: () => record, persist: () => events.push('persist') }, captureLife: () => null });
   const capture = () => players.captureHero(actor);
   const finish = () => { for (const tween of [...active]) { tween.update(10000, 10000); tweens.remove(tween); } game.actionManager.update(); };
   return { pickup, carrier, actor, node, game, active, bank, events, progress, record, data, players, entities, makePickup, capture, finish, remove() { actor.destroyed = true; entities.delete(actor.name); } };
+}
+
+function bindNativeXP(f) {
+  Object.assign(f.data, { adjustXP: ast.component('ECPlayerData').adjustXP, entity: f.actor, gameManager: f.game, globals: f.game.globals,
+    getVisibleXP: () => f.progress.xp, getLevel: () => 1 + Math.floor(f.progress.xp / 100), getv3Location: f.actor.getv3Location.bind(f.actor), playerData: { addXP: amount => { f.progress.xp += amount; } }, onLevelUp() {}, saveProgress() {}, autoSaveProgress() {} });
+  f.game.desktopPlayers = f.players; f.game.refreshHeroEntity = ast.method('refreshHeroEntity');
 }
 
 for (const phase of ['claimed', 'flying', 'queued']) test('co-op capture retains original incoming resource exactly once in ' + phase + ' phase', () => {
@@ -78,9 +84,7 @@ test('a partial native grant failure blocks capture/removal and cannot replay th
 test('native XP level-up waits for the rest of its action batch to deliver incoming resources before hero replacement', () => {
   const f = fixture('a_r_lumber'), manager = f.game.actionManager;
   const xp = f.makePickup(); xp.pickup.archetype.carriedResource = [0, 0]; xp.pickup.xp = 100;
-  Object.assign(f.data, { adjustXP: ast.component('ECPlayerData').adjustXP, entity: f.actor, gameManager: f.game, globals: f.game.globals,
-    getVisibleXP: () => f.progress.xp, getLevel: () => 1 + Math.floor(f.progress.xp / 100), getv3Location: f.actor.getv3Location.bind(f.actor), playerData: { addXP: amount => { f.progress.xp += amount; } }, onLevelUp() {}, saveProgress() {}, autoSaveProgress() {} });
-  f.game.desktopPlayers = f.players; f.game.refreshHeroEntity = ast.method('refreshHeroEntity');
+  bindNativeXP(f);
   xp.pickup.storeCollector(f.actor); xp.pickup.givePickupIfCollector(); xp.node.setToBeDestroyed();
   f.pickup.storeCollector(f.actor); f.pickup.givePickupIfCollector(); f.node.setToBeDestroyed();
   manager.update();
@@ -92,9 +96,7 @@ test('native XP level-up waits for the rest of its action batch to deliver incom
 });
 for (const laterXP of [30, 100]) test('an XP-only native batch finishes all grants before replacing its hero (later XP=' + laterXP + ')', () => {
   const f = fixture('a_r_lumber'), manager = f.game.actionManager;
-  Object.assign(f.data, { adjustXP: ast.component('ECPlayerData').adjustXP, entity: f.actor, gameManager: f.game, globals: f.game.globals,
-    getVisibleXP: () => f.progress.xp, getLevel: () => 1 + Math.floor(f.progress.xp / 100), getv3Location: f.actor.getv3Location.bind(f.actor), playerData: { addXP: amount => { f.progress.xp += amount; } }, onLevelUp() {}, saveProgress() {}, autoSaveProgress() {} });
-  f.game.desktopPlayers = f.players; f.game.refreshHeroEntity = ast.method('refreshHeroEntity');
+  bindNativeXP(f);
   f.game.globals.desktopWorld = { simulating: true };
   const replacement = { ...f.actor, destroyed: false, name: 'replacement' };
   f.players.destroy = () => { f.events.push('destroy'); f.remove(); };
@@ -140,4 +142,69 @@ test('a failed native completion stops its animation and cannot restart or repla
   f.pickup.beginFlyIfNeeded(); f.finish(); assert.throws(f.capture, reason => reason === error);
   assert.equal(attempts, 1); assert.deepEqual(f.carrier.resource, [0, 0]); assert.deepEqual(f.carrier.inboundResource, [5, 0]);
   assert.equal(f.node.dead, false); assert.deepEqual(f.bank, [0, 0]);
+});
+
+for (const kind of ['xp', 'amber', 'health', 'item']) for (const pending of [false, true]) test('original ' + kind + ' reward survives ' + (pending ? 'refused pending removal' : 'normal completion'), () => {
+  const f = fixture('a_r_lumber'), state = { amount: 0, found: 0, health: 25, weapon: null };
+  f.pickup.archetype.carriedResource = [0, 0]; f.game.desktopPlayers = f.players; f.players.destroy = f.remove;
+  if (kind === 'xp') { f.pickup.xp = 20; bindNativeXP(f); }
+  if (kind === 'amber') {
+    f.pickup.archetype.softCurrency = 3;
+    f.data.adjustSoftCurrency = amount => { state.amount += amount; }; f.data.addSoftCurrencyFound = amount => { state.found += amount; };
+  }
+  if (kind === 'health') {
+    f.pickup.archetype.health = 5;
+    Object.assign(f.actor.components.ECHealth, { getHealth: () => state.health, onHealthChange() {}, addHealth(amount) { const before = state.health; state.health = Math.min(50, before + amount); state.amount += state.health - before; } });
+  }
+  if (kind === 'item') {
+    f.pickup.item = 'wp_h_pistol';
+    Object.assign(f.actor.components.ECInventory, { getHeldWeapon: () => state.weapon, canEquipItem: () => true, equipWeapon(name) { state.weapon = name; state.amount++; } });
+  }
+  f.pickup.storeCollector(f.actor); if (kind !== 'item') f.pickup.beginFly();
+  assert.equal(f.carrier.hasAnyInboundResource(), false);
+  if (pending) {
+    assert.throws(f.capture, /Finish collecting incoming rewards/);
+    assert.throws(() => f.players.remove('guest'), /Finish collecting incoming rewards/);
+    assert.equal(f.actor.destroyed, false); assert.equal(f.players.active.has('guest'), true); assert.deepEqual(f.record, {});
+  }
+  f.finish(); f.players.remove('guest'); f.finish();
+  assert.equal(kind === 'xp' ? f.progress.xp : state.amount, { xp: 20, amber: 3, health: 5, item: 1 }[kind]);
+  if (kind === 'amber') assert.equal(state.found, 3);
+  if (kind === 'health') assert.equal(f.record.health.current, 30);
+  if (kind === 'item') assert.equal(f.record.inventory.weapon, 'wp_h_pistol');
+});
+
+for (const finishFirst of [false, true]) test('replacement retains another XP flight (finish before flush=' + finishFirst + ')', () => {
+  const f = fixture('a_r_lumber'); bindNativeXP(f); f.game.globals.desktopWorld = { simulating: true };
+  const replacement = { ...f.actor, destroyed: false, name: 'replacement' };
+  f.players.destroy = f.remove; f.players.spawn = () => replacement;
+  const early = f.makePickup(), later = f.makePickup();
+  for (const drop of [early, later]) drop.pickup.archetype.carriedResource = [0, 0];
+  early.pickup.xp = 100; early.pickup.storeCollector(f.actor); early.pickup.givePickupIfCollector(); early.node.setToBeDestroyed();
+  later.pickup.xp = 20; later.pickup.storeCollector(f.actor); later.pickup.beginFly();
+  if (finishFirst) f.finish(); else f.game.actionManager.update();
+  f.game.globals.desktopWorld.simulating = false; f.players.flushRefreshes();
+  if (!finishFirst) { assert.equal(f.actor.destroyed, false); assert.equal(f.players.pendingRefresh.has('guest'), true); }
+  f.finish(); f.players.flushRefreshes();
+  assert.equal(f.progress.xp, 120); assert.equal(f.players.active.get('guest').hero, replacement); assert.equal(f.players.pendingRefresh.size, 0);
+});
+
+test('pending reward queries isolate owners, unclaimed objects and pure resources without draining either queue', () => {
+  const f = fixture('a_r_lumber'), pending = hero => CoopPlayers.hasPendingRewards(f.game, hero);
+  const xp = f.makePickup(); xp.pickup.archetype.carriedResource = [0, 0]; xp.pickup.xp = 20;
+  const other = { ...f.actor, name: 'other' }; f.entities.set(other.name, other);
+  assert.equal(pending(f.actor), false);
+  xp.pickup.storeCollector(other); assert.equal(pending(f.actor), false); assert.equal(pending(other), true);
+  f.pickup.storeCollector(f.actor); assert.equal(pending(f.actor), false, 'Pure resources retain their immediate settlement contract.');
+  xp.pickup.collectorName = f.actor.name; xp.pickup.givePickupIfCollector();
+  assert.equal(pending(f.actor), true); const action = f.game.actionManager.actionList.pop(); f.game.actionManager.otherActionList.push(action);
+  assert.equal(pending(f.actor), true); assert.equal(f.game.actionManager.otherActionList.length, 1); assert.equal(f.game.actionManager.otherActionList[0], action);
+  f.game.actionManager.otherActionList.pop(); assert.equal(pending(f.actor), false);
+});
+
+test('initial hosting rejects pending rewards before creating a party or rebinding the solo model', () => {
+  const f = fixture('a_r_lumber'), state = require('../desktop/saves.cjs').emptyState(), before = JSON.stringify(state);
+  f.pickup.archetype.carriedResource = [0, 0]; f.pickup.xp = 20; f.pickup.storeCollector(f.actor); f.game.getHero = () => f.actor;
+  assert.throws(() => new CoopPlayers(f.game, { state }), /Finish collecting incoming rewards before hosting/);
+  assert.equal(JSON.stringify(state), before); assert.equal(f.game.desktopPlayers, undefined); assert.equal(f.actor.destroyed, false);
 });

@@ -31,17 +31,24 @@
       catch (error) { this.audio?.close(); if (this.ownsEffects) this.effects.close(); throw error; }
       game.desktopCampaignResults = this.results;
       game.desktopEffects = this.effects; game.desktopAudio = this.audio;
-      this.original = { pause: clock.pause, controllerUpdate: controller.update, simulation: game.updateSimulation };
+      this.original = { pause: clock.pause, controllerUpdate: controller.update, simulation: game.updateSimulation, refreshHero: game.refreshHeroEntity };
       clock.pause = () => {};
       clock.resume();
       controller.update = (...args) => {
-        if (!controls.paused && !root.document?.querySelector('dialog[open]') && root.document?.getElementById('launcher')?.hidden !== false) this.original.controllerUpdate.apply(controller, args);
+        if (!this.closing && !controls.paused && !root.document?.querySelector('dialog[open]') && root.document?.getElementById('launcher')?.hidden !== false) this.original.controllerUpdate.apply(controller, args);
       };
       game.updateSimulation = (...args) => {
         this.worldUpdated = true;
+        if (this.finalUpdate) return;
         this.simulating = true;
         try { return this.original.simulation.apply(game, args); }
         finally { this.simulating = false; }
+      };
+      game.refreshHeroEntity = (...args) => {
+        if (!game.desktopPlayers && (this.simulating || CoopPlayers.hasPendingRewards(game, game.getHero()))) {
+          this.pendingSoloRefresh = true; return game.getHero();
+        }
+        return this.original.refreshHero.apply(game, args);
       };
       controls.onlineWorld = this;
       controls.app.globals.desktopWorld = this;
@@ -67,15 +74,18 @@
     }
     endTick() {
       if (this.closed || !this.game.hasLoadedLevel) return;
-      if (!this.worldUpdated) {
+      if (!this.worldUpdated && !this.finalUpdate) {
         this.game.getPlayState()?.update();
         this.game.beginWorldUpdate(true);
         this.game.updateSimulation();
       }
-      this.players?.flushRefreshes();
-      if (this.game.desktopQuestRewards && this.game.getActiveGameState().name !== 'GamestatePlaying') this.game.updateOnlineTasks();
-      this.players?.syncTutorialWeapons();
-      this.results.update();
+      if (!this.finalUpdate) {
+        this.flushSoloRefresh();
+        this.players?.flushRefreshes();
+        if (this.game.desktopQuestRewards && this.game.getActiveGameState().name !== 'GamestatePlaying') this.game.updateOnlineTasks();
+        this.players?.syncTutorialWeapons();
+        this.results.update();
+      }
       const captures = this.captures.splice(0);
       for (const capture of captures) {
         clearTimeout(capture.timer);
@@ -86,8 +96,18 @@
         } catch (error) { capture.reject(error); }
       }
     }
+    flushSoloRefresh() {
+      if (this.pendingSoloRefresh && !CoopPlayers.hasPendingRewards(this.game, this.game.getHero())) {
+        this.pendingSoloRefresh = false; this.original.refreshHero.call(this.game);
+      }
+    }
     atBoundary(read) {
       if (this.closed || !this.controls.ready() || this.captures.length >= 16) return Promise.reject(new Error('The online island is not ready to capture a snapshot.'));
+      if (this.finalUpdate) return Promise.resolve().then(() => {
+        const value = read();
+        if (value && typeof value.then === 'function') throw new Error('A world snapshot must be captured synchronously.');
+        return value;
+      });
       return new Promise((resolve, reject) => {
         const capture = { read, resolve, reject };
         capture.timer = setTimeout(() => {
@@ -98,12 +118,41 @@
         this.captures.push(capture);
       });
     }
+    pendingRewards(id) {
+      const heroes = this.players?.active ? id === undefined ? [...this.players.active.values()].map(entry => entry.hero) : [this.players.active.get(id)?.hero] : [this.game.getHero?.()];
+      return heroes.some(hero => CoopPlayers.hasPendingRewards(this.game, hero));
+    }
+    async atRewardBoundary(read, id) {
+      const deadline = Date.now() + 10000;
+      for (;;) {
+        const result = await this.atBoundary(() => {
+          if (this.pendingRewards(id)) return { pending: true };
+          const value = read();
+          if (value && typeof value.then === 'function') throw new Error('A world snapshot must be captured synchronously.');
+          return { value };
+        });
+        if (!result.pending) return result.value;
+        if (this.finalUpdate || Date.now() >= deadline) throw new Error('Incoming rewards did not finish. Your heroes and previous save are safe.');
+      }
+    }
+    freezeFinalSave() {
+      this.finalUpdate = this.controls.app.updateGame;
+      this.controls.app.updateGame = () => {};
+      this.original.pause.call(this.game.gameClock);
+    }
+    resumeFinalSave() {
+      if (!this.finalUpdate) return;
+      this.controls.app.updateGame = this.finalUpdate; delete this.finalUpdate;
+      const now = this.controls.app.globals.appCurrentTime;
+      this.game.gameClock.prevEngineTime = now; this.game.prevAppCurrentTime = now;
+      if (!this.closed || !this.game.isPaused()) this.game.gameClock.resume();
+    }
     async checkpoint(bridge) {
       await this.controls.settle(bridge, this.game);
       let state;
       do {
         await this.construction?.settle();
-        state = await this.atBoundary(() => {
+        state = await this.atRewardBoundary(() => {
           if (this.construction?.pending.size) return null;
           this.game.desktopQuestRewards?.assertHealthy();
           this.players?.capture();
@@ -118,7 +167,7 @@
     async enablePlayers(bridge) {
       if (this.players) throw new Error('Co-op heroes are already active.');
       await root.polycraft.checkpoint();
-      this.players = await this.atBoundary(() => {
+      this.players = await this.atRewardBoundary(() => {
         const players = new CoopPlayers(this.game, bridge);
         try { this.construction = new HostConstruction(this.game); if (!this.game.desktopQuestRewards) new QuestRewards(this.game, bridge); return players; }
         catch (error) { this.construction?.close(); this.construction = null; players.close(); throw error; }
@@ -144,12 +193,20 @@
     }
     receiveMessage(message, connection) {
       const binding = this.peerPlayers.get(connection.peer);
-      if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) return;
+      const directional = message.kind === 'action' && message.payload?.type === 'move' && Object.hasOwn(message.payload, 'move');
+      const targetAction = message.kind === 'action' && !directional && ['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource'].includes(message.payload?.type);
+      if (this.closing && binding?.connection === connection && this.transport.peers.get(connection.peer) === connection) {
+        // Retain validated requests for rollback; executing them during the final save is forbidden.
+        if (!this.closed && !connection.closed && ['connected', 'disconnected'].includes(connection.state) && binding.ready && !binding.releasing && this.players?.active.has(binding.id) && message.kind === 'action') {
+          if (targetAction) binding.actions.receive(message.payload);
+          else binding.input.receive(message.payload, true);
+        }
+        return;
+      }
       this.playerFor(connection);
       if (message.kind === 'resync') { this.requestResync(connection, message.payload); return; }
       if (message.kind === 'action') {
-        const directional = message.payload.type === 'move' && Object.hasOwn(message.payload, 'move');
-        if (!directional && ['target', 'demolish', 'build', 'preview', 'upgrade', 'held', 'cancelBuild', 'life', 'revive', 'move', 'repair', 'upgradeBuilding', 'cancelUpgrade', 'questOpen', 'questReward', 'campaignStart', 'campaignClose', 'skipPrepare', 'rotateCamera', 'pauseGame', 'enterFullscreen', 'craftMenu', 'craftResource'].includes(message.payload.type)) binding.actions.receive(message.payload);
+        if (targetAction) binding.actions.receive(message.payload);
         else binding.input.receive(message.payload);
         return;
       }
@@ -199,7 +256,11 @@
     async connectPlayer(peer) {
       const binding = this.peerPlayers.get(peer), connection = this.transport.peers.get(peer);
       if (!binding || binding.connection !== connection) throw new Error('This invitation has no host-assigned hero.');
-      if (binding.joining || binding.joined || binding.releasing) return;
+      if (binding.joined) {
+        if (!this.closing && binding.ready && !binding.releasing && connection.state === 'connected' && !this.streams.has(connection)) this.streamTo(connection);
+        return;
+      }
+      if (binding.joining || binding.releasing) return;
       binding.joining = true;
       const joined = await this.atBoundary(() => {
         if (this.closing || connection.closed || binding.releasing) return null;
@@ -224,18 +285,16 @@
       this.streams.get(binding.connection)?.stop();
       try {
         if (binding.joined && !this.closed) {
-          await this.atBoundary(() => {
+          await this.atRewardBoundary(() => {
             const entry = this.players.active.get(binding.id);
             if (entry) { binding.input.stop(entry.hero, true); binding.actions.stop(entry.hero); }
-            try { this.players.remove(binding.id); }
-            catch (error) {
-              // Keep a disconnected hero's held construction alive until the host can reconnect or finish it.
-              if (!this.players.active.has(binding.id)) throw error;
-              this.detachedPlayers.add(binding.id);
-              throw error;
-            }
-          });
+            this.players.remove(binding.id);
+          }, binding.id);
         }
+      } catch (error) {
+        // A timed-out reward or held construction must retain its disconnected actor for recovery.
+        if (this.players?.active?.has(binding.id)) this.detachedPlayers.add(binding.id);
+        throw error;
       } finally {
         if (this.peerPlayers.get(binding.peer) === binding) this.peerPlayers.delete(binding.peer);
         if (this.guestSlots.get(binding.id) === binding) this.guestSlots.delete(binding.id);
@@ -295,11 +354,20 @@
       if (this.closing) throw new Error('The host session is already ending.');
       this.closing = true;
       try {
+        for (const binding of this.peerPlayers.values()) binding.input?.discard?.();
         for (const stream of this.streams.values()) stream.stop();
+        if (this.pendingSoloRefresh) await this.atRewardBoundary(() => this.flushSoloRefresh());
         if (this.players) {
           await Promise.all(this.actionSaves);
+          const deadline = Date.now() + 10000;
+          do {
+            await this.atRewardBoundary(() => this.freezeFinalSave());
+            // The rest of this native frame (including tweens) must drain before the final snapshot.
+            if (this.pendingRewards()) this.resumeFinalSave();
+            if (!this.finalUpdate && Date.now() >= deadline) throw new Error('Incoming rewards kept changing. Your heroes and previous save are safe.');
+          } while (!this.finalUpdate);
           await root.polycraft.checkpoint(true);
-          await this.atBoundary(() => this.players.close());
+          await this.atRewardBoundary(() => this.players.close());
           this.construction?.close();
         }
         this.closed = true;
@@ -311,6 +379,7 @@
         clock.pause = this.original.pause;
         controller.update = this.original.controllerUpdate;
         game.updateSimulation = this.original.simulation;
+        game.refreshHeroEntity = this.original.refreshHero;
         delete this.controls.app.globals.desktopWorld;
         delete this.controls.onlineWorld;
         if (game.isPaused()) clock.pause();
@@ -323,7 +392,13 @@
         if (this.players) { this.transport.onState = this.original.peerState; this.transport.onMessage = this.original.peerMessage; }
         this.guestSlots.clear(); this.peerPlayers.clear(); this.detachedPlayers.clear();
         await root.desktop.onlineMode(false);
-      } finally { this.closing = false; }
+      } finally {
+        this.resumeFinalSave(); this.closing = false;
+        if (!this.closed) for (const binding of this.peerPlayers.values()) {
+          const connection = binding.connection;
+          if (binding.ready && !binding.releasing && !connection.closed && connection.state === 'connected' && this.transport.peers.get(connection.peer) === connection && !this.streams.has(connection)) this.streamTo(connection);
+        }
+      }
     }
   }
   async function startHostingWorld(controls, transport) {

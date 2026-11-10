@@ -7,7 +7,7 @@
       this.now = now; this.sequence = 0; this.move = [0, 0]; this.receivedAt = -Infinity;
       this.tokens = 30; this.tokenTime = now(); this.walkTokens = 4; this.walkTime = now();
     }
-    receive(value) {
+    receive(value, discard = false) {
       const walk = value?.type === 'walk';
       if (!value || Object.keys(value).length !== (walk ? 4 : 3) || !['move', 'walk'].includes(value.type) ||
           !Number.isSafeInteger(value.sequence) || value.sequence !== this.sequence + 1 ||
@@ -30,7 +30,9 @@
         this.move = value.move.map(number => number / length); this.pendingWalk = null; this.cancelWalk = this.walking || this.cancelWalk;
       }
       this.tokens--; this.sequence = value.sequence; this.receivedAt = now;
+      if (discard) this.discard();
     }
+    discard() { this.move = [0, 0]; this.pendingWalk = null; this.cancelWalk = true; }
     apply(hero, game, controls) {
       const life = hero.getEC('ECPlayerLife'), incapacitated = life && (life.isDead?.() || life.states && life.state !== life.states.NORMAL);
       if (hero.getEC('ECHealth').getHealth() <= 0 || incapacitated || game?.isScriptLocked?.()) { this.stop(hero); return; }

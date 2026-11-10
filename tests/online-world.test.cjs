@@ -40,10 +40,10 @@ test('demolition acknowledgement waits for a fresh checkpoint and save failure r
 });
 function setup(t) {
   const previousDesktop = global.desktop, previousDocument = global.document;
-  const modes = [];
+  const modes = [], cleanups = [];
   global.desktop = { onlineMode: async enabled => modes.push(enabled) };
   global.document = { querySelector: () => null, getElementById: () => ({ hidden: true }), exitPointerLock() {} };
-  t.after(() => { global.desktop = previousDesktop; global.document = previousDocument; });
+  t.after(async () => { try { for (const cleanup of cleanups) await cleanup(); } finally { global.desktop = previousDesktop; global.document = previousDocument; } });
   const events = [];
   const clock = { isStopped: false, pause() { this.isStopped = true; }, resume() { this.isStopped = false; } };
   const controller = { update: () => events.push('input'), clearInputs: () => events.push('clear'), unlockMouse() {} };
@@ -59,8 +59,141 @@ function setup(t) {
   controls.attach({ globals: { gameManager: game }, updateGame: () => events.push('app') }, [], {});
   const transport = new HostSession();
   t.after(() => transport.close());
-  return { controls, game, controller, clock, transport, modes, events };
+  return { controls, game, controller, clock, transport, modes, events, cleanup: callback => cleanups.push(callback) };
 }
+test('reward boundaries wait for natural completion, re-resolve a replaced solo hero and read exactly once', async t => {
+  const { controls, game, transport, cleanup } = setup(t), world = await startHostingWorld(controls, transport);
+  cleanup(() => world.close());
+  let collector = 'old', hero = { getName: () => 'old' }, reads = 0, attempts = 0;
+  game.getHero = () => hero;
+  game.getGameSpaceList = () => [{ getEntitiesWithEC: () => [{ getEC: () => ({ xp: 20, getCollectorName: () => collector }) }] }];
+  world.atBoundary = async read => { if (++attempts === 2) { collector = undefined; hero = { getName: () => 'replacement' }; } return read(); };
+  assert.equal(await world.atRewardBoundary(() => { reads++; return game.getHero().getName(); }), 'replacement');
+  assert.equal(attempts, 2); assert.equal(reads, 1);
+  await assert.rejects(world.atRewardBoundary(async () => 1), /synchronously/);
+});
+test('initial hosting defers solo replacement through its batch and later pickup, then restores the original refresh hook', async t => {
+  const { controls, game, transport, cleanup } = setup(t);
+  let hero = { getName: () => 'solo' }, collector = 'solo', replacements = 0;
+  game.getHero = () => hero;
+  game.getGameSpaceList = () => [{ getEntitiesWithEC: () => [{ getEC: () => ({ xp: 20, getCollectorName: () => collector }) }] }];
+  const original = game.refreshHeroEntity = function () { assert.equal(this, game); replacements++; hero = { getName: () => 'replacement' }; };
+  game.updateSimulation = () => { game.refreshHeroEntity(hero); game.refreshHeroEntity(hero); };
+  const world = await startHostingWorld(controls, transport); cleanup(() => world.close());
+  game.updateSimulation(); world.endTick(); assert.equal(replacements, 0); assert.equal(hero.getName(), 'solo');
+  collector = undefined;
+  const ready = world.atRewardBoundary(() => game.getHero().getName());
+  await new Promise(resolve => setImmediate(resolve)); world.endTick();
+  assert.equal(await ready, 'replacement'); assert.equal(replacements, 1);
+  await world.close(); assert.equal(game.refreshHeroEntity, original);
+});
+test('reward boundary timeout preserves actors, models and callback and rejects a pending frozen read without spinning', async t => {
+  const { controls, game, transport, cleanup } = setup(t), world = await startHostingWorld(controls, transport);
+  cleanup(() => world.close());
+  let now = 0, reads = 0; t.mock.method(Date, 'now', () => now);
+  world.pendingRewards = () => true; world.atBoundary = async read => { now += 10001; return read(); };
+  await assert.rejects(world.atRewardBoundary(() => reads++), /heroes and previous save are safe/);
+  assert.equal(reads, 0); assert.equal(world.closed, false);
+  world.freezeFinalSave();
+  await assert.rejects(world.atRewardBoundary(() => reads++), /heroes and previous save are safe/);
+  assert.equal(reads, 0); world.resumeFinalSave();
+});
+test('final-save freeze stops native clock/tween progress and resumes without absence catch-up', async t => {
+  const { controls, game, transport, cleanup } = setup(t), ast = require('./runtime-ast.cjs');
+  const globals = Object.assign(controls.app.globals, { appCurrentTime: 1, gameCurrentTime: 0, appTimeStep: 1 / 60, appMaxTimeSteps: 4 });
+  const clock = game.gameClock = Object.assign(Object.create(ast.prototypeWith('getTimeDilation')), { globals, timeDilation: 1 }); clock.start();
+  const tweens = ast.visualEffectMethods([]).tweens; Object.assign(tweens, { globals, add() {}, remove() {} });
+  const state = { value: 0 }, tween = tweens.Create(state).to({ value: 1 }, 1).start();
+  const update = controls.app.updateGame = () => {
+    if (clock.tick(false, true)) { globals.gameCurrentTime = clock.getCurrentTime(); game.updateSimulation(); tween.update(globals.gameCurrentTime * 1000, globals.appCurrentTime * 1000); }
+  };
+  const world = await startHostingWorld(controls, transport); cleanup(() => world.close());
+  globals.appCurrentTime += 1 / 60; update(); const before = { time: clock.getCurrentTime(), value: state.value };
+  world.freezeFinalSave(); globals.appCurrentTime += 120; controls.app.updateGame();
+  assert.equal(clock.getCurrentTime(), before.time); assert.equal(state.value, before.value); assert.equal(clock.isStopped, true);
+  await assert.rejects(world.atBoundary(async () => 1), /synchronously/);
+  world.resumeFinalSave(); assert.equal(controls.app.updateGame, update); assert.equal(clock.isStopped, false);
+  assert.equal(game.prevAppCurrentTime, globals.appCurrentTime);
+  globals.appCurrentTime += 1 / 60; controls.app.updateGame();
+  assert.ok(clock.getCurrentTime() > before.time && clock.getCurrentTime() < 0.1); assert.ok(state.value > before.value && state.value < 0.1);
+});
+test('pending guest removal reserves its actor until completion, and timeout retains it detached', async t => {
+  const { controls, game, transport, cleanup } = setup(t), world = await startHostingWorld(controls, transport), previous = global.polycraft;
+  cleanup(() => { delete world.players; world.peerPlayers.clear(); global.polycraft = previous; return world.close(); });
+  global.polycraft = { checkpoint: async () => {} };
+  for (const fail of [false, true]) {
+    const actor = { getName: () => 'guest' }, connection = { peer: 'peer', closed: true };
+    const binding = { id: 'guest', peer: 'peer', joined: true, connection, input: { stop() {} }, actions: { stop() {} } };
+    world.players = { active: new Map([['guest', { hero: actor }]]), remove(id) { this.active.delete(id); } };
+    world.guestSlots.set('guest', binding); world.peerPlayers.set('peer', binding);
+    let now = 0, attempts = 0; t.mock.method(Date, 'now', () => now);
+    world.pendingRewards = id => { assert.equal(id, 'guest'); return fail || attempts === 1; };
+    world.atBoundary = async read => {
+      attempts++; assert.equal(binding.releasing, true); assert.equal(world.guestSlots.get('guest'), binding); assert.equal(world.players.active.get('guest').hero, actor);
+      if (fail) now = 10001;
+      return read();
+    };
+    if (fail) {
+      await assert.rejects(world.releasePlayer(binding), /Incoming rewards/);
+      assert.equal(world.players.active.get('guest').hero, actor); assert.equal(world.detachedPlayers.has('guest'), true);
+    } else { await world.releasePlayer(binding); assert.equal(attempts, 2); assert.equal(world.players.active.has('guest'), false); }
+    assert.equal(world.guestSlots.has('guest'), false); assert.equal(world.peerPlayers.has('peer'), false);
+  }
+});
+test('closing retains validated guest requests for rollback without executing them or accepting forged streams', async t => {
+  const { controls, transport, cleanup } = setup(t), world = await startHostingWorld(controls, transport);
+  const { HostActions } = require('../desktop/coop-actions.js'), { HostMovement } = require('../desktop/coop-input.js'), actions = new HostActions(), input = new HostMovement();
+  const connection = { peer: 'guest', closed: false, state: 'connected' };
+  world.players = { active: new Map([['assigned', { hero: {} }]]) };
+  const binding = { id: 'assigned', connection, ready: true, actions, input };
+  world.peerPlayers.set('guest', binding);
+  transport.peers.set('guest', connection);
+  cleanup(() => { world.closing = false; world.peerPlayers.clear(); transport.peers.clear(); delete world.players; return world.close(); });
+  const send = payload => world.receiveMessage({ kind: 'action', payload }, connection);
+  world.closing = true;
+  send({ type: 'life', sequence: 1, target: 'hero' }); assert.equal(actions.sequence, 1); assert.equal(actions.queue.length, 1);
+  assert.throws(() => send({ type: 'life', sequence: 2, target: 'hero', forged: true }), /Invalid/);
+  for (const [object, key, value] of [[binding, 'ready', false], [binding, 'releasing', true], [connection, 'closed', true]]) {
+    const before = object[key]; object[key] = value; send({ type: 'life', sequence: 2, target: 'hero' }); assert.equal(actions.sequence, 1); object[key] = before;
+  }
+  send({ type: 'move', sequence: 1, move: [1, 0] }); assert.equal(actions.sequence, 1); assert.equal(input.sequence, 1); assert.deepEqual(input.move, [0, 0]);
+  send({ type: 'walk', sequence: 2, mode: 'click', location: [1, 2, 3] }); assert.equal(input.sequence, 2); assert.equal(input.pendingWalk, null);
+  assert.throws(() => send({ type: 'move', sequence: 4, move: [0, 0] }), /Invalid/);
+  assert.throws(() => world.receiveMessage({ kind: 'action', payload: { type: 'life', sequence: 2, target: 'hero' } }, { ...connection }), /no assigned/);
+  world.closing = false; send({ type: 'life', sequence: 2, target: 'hero' });
+  send({ type: 'move', sequence: 3, move: [0, 1] }); assert.equal(input.sequence, 3); assert.deepEqual(input.move, [0, 1]);
+  assert.deepEqual(actions.queue.map(row => row.sequence), [1, 2]);
+});
+for (const fail of [false, true]) test('host final save drains a late reward, freezes through acknowledgement and restores hooks/streams on failure=' + fail, async t => {
+  const { controls, game, transport, clock, controller, events, cleanup } = setup(t), previous = global.polycraft;
+  const world = await startHostingWorld(controls, transport), originalUpdate = controls.app.updateGame;
+  cleanup(() => { global.polycraft = previous; delete world.players; world.peerPlayers.clear(); transport.peers.clear(); return world.close(); });
+  let pending = false, late = false, xp = 0, destroyed = false, savedXP, release, reject;
+  const gate = new Promise((resolve, refuse) => { release = resolve; reject = refuse; });
+  world.players = { active: new Map(), close: () => { destroyed = true; } };
+  world.pendingRewards = () => pending;
+  world.atBoundary = async read => {
+    if (!world.finalUpdate && pending) { xp += 20; pending = false; }
+    const result = read();
+    if (world.finalUpdate && !late) { pending = true; late = true; }
+    return result;
+  };
+  let streamsRestored = 0;
+  const connection = { peer: 'guest', closed: false, state: 'connected', close() { this.closed = true; } };
+  world.peerPlayers.set('guest', { ready: true, connection }); transport.peers.set('guest', connection);
+  world.streamTo = received => { assert.equal(received, connection); streamsRestored++; };
+  global.polycraft = { checkpoint: async fresh => { assert.equal(fresh, true); assert.ok(world.finalUpdate); assert.equal(pending, false); savedXP = xp; await gate; assert.equal(destroyed, false); } };
+  const closing = world.close();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(xp, 20); assert.equal(savedXP, 20); assert.equal(destroyed, false); assert.equal(clock.isStopped, true);
+  events.length = 0; controls.app.updateGame(); game.updateSimulation(); controller.update(); world.endTick();
+  assert.deepEqual(events, []); assert.equal(destroyed, false);
+  if (fail) {
+    const reason = new Error('Disk full'); reject(reason); await assert.rejects(closing, error => error === reason);
+    assert.equal(world.closed, false); assert.equal(destroyed, false); assert.equal(streamsRestored, 1);
+  } else { release(); await closing; assert.equal(world.closed, true); assert.equal(destroyed, true); assert.equal(streamsRestored, 0); }
+  assert.equal(controls.app.updateGame, originalUpdate); assert.equal(world.finalUpdate, undefined); assert.equal(world.closing, false); assert.equal(clock.isStopped, false);
+});
 test('host-selected invitation slots reserve identities, reject duplicate claims and keep saved heroes across peer replacement', async t => {
   const { controls, transport, game } = setup(t), previous = global.polycraft;
   let saves = 0, unblock;
@@ -74,7 +207,7 @@ test('host-selected invitation slots reserve identities, reject duplicate claims
   const hero = name => ({ getGameSpace: () => ({ getv3Location: () => [0, 0, 0] }), name, getName: () => name, getEC: component => component === 'ECLocomotion' ? { clearDestination() {}, clearDestinationEntity() {}, getDestination: () => null, getTimeHeld: () => 0 } : null, shouldBeDestroyed: () => false, getv3Location: () => [0, 0, 0], getV3Scale: () => [1, 1, 1], getRotationY: () => 0 });
   const host = hero('Host'); game.getHero = () => host; game.getPlayFlags = () => ({}); game.applyToHeroEntities = apply => apply(host); game.getFactionManager = () => ({ applyToEnemies() {} });
   game.gameClock.getFrameIndex = () => 1; game.globals = { gameCurrentTime: 0 }; game.getGameDayTime = () => 12;
-  game.getGameSpaceList = () => [{ calculateExtents: () => [-10, -10, -10, 10, 10, 10], getM43FullTransform: () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], getBlockList: () => [], getEntityList: () => [host, ...[...active.values()].map(entry => entry.hero)] }];
+  game.getGameSpaceList = () => [{ calculateExtents: () => [-10, -10, -10, 10, 10, 10], getM43FullTransform: () => [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], getEntitiesWithEC: () => [], getBlockList: () => [], getEntityList: () => [host, ...[...active.values()].map(entry => entry.hero)] }];
   world.players = { registry, active, add(id) { active.set(id, { hero: hero('Hero_' + id), model: { id } }); },
     remove(id) { active.delete(id); } };
   const deliveries = [], streams = [];

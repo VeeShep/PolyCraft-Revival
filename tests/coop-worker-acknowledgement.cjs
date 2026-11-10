@@ -79,6 +79,13 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     guests.push({ page, app, ownFile, ownBytes, ownState });
     await connect(index);
   };
+  const reconnect = async () => {
+    const row = guests[0], guest = row.page;
+    assert.equal(await guest.evaluate(() => window.restoredWorkerSoloState), row.ownState, 'Disconnect must restore the guest solo state before reconnect.');
+    await guest.evaluate(() => window.polycraft.checkpoint(true));
+    row.ownState = await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)); row.ownBytes = fs.readFileSync(row.ownFile);
+    await connect(0);
+  };
   const acknowledge = async (hut, cue) => {
     const worker = await workerState(hut), guest = guests[0].page;
     assert.equal(worker.waiting, true, 'The saved worker must actually be awaiting acknowledgement.');
@@ -152,9 +159,13 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       window.workerConnectionErrors = [];
       window.hostSession = new window.PolycraftMultiplayer.HostSession({ onError: (_peer, error) => window.workerConnectionErrors.push(error.message) });
       window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
-      await window.hostWorld.enablePlayers(window.polycraft.bridge);
     });
+    const rewards = process.argv.includes('--reward-transitions') ? require('./coop-reward-transitions.cjs') : null;
+    if (rewards) await rewards.stageSolo(host);
+    await host.evaluate(() => window.hostWorld.enablePlayers(window.polycraft.bridge));
+    if (rewards) await rewards.checkSolo(host);
     await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
+    if (rewards) await rewards.guestDeparture({ host, guest: guests[0].page, hero: party.players[1].id, reconnect, hostFile: file });
     if (process.argv.includes('--xp-batch')) await require('./coop-xp-batch.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, hostFile: file });
     if (process.argv.includes('--save-in-flight') || process.argv.includes('--disconnect-in-flight') || process.argv.includes('--disconnect-incoming')) {
       const guest = guests[0].page;
@@ -174,13 +185,6 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
         if (reward) { await button('guest-idAcceptTaskRewardButton' + reward); await guest.waitForFunction(id => window.guestWorld.quests.state?.completed?.id !== id, reward); }
       };
       const context = { host, guest, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), button, hero: party.players[1].id, hostFile: file };
-      const reconnect = async () => {
-        const row = guests[0];
-        assert.equal(await guest.evaluate(() => window.restoredWorkerSoloState), row.ownState, 'Disconnect must restore the guest solo state before reconnect.');
-        await guest.evaluate(() => window.polycraft.checkpoint(true));
-        row.ownState = await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)); row.ownBytes = fs.readFileSync(row.ownFile);
-        await connect(0);
-      };
       let priorCarrier;
       for (let cycle = 0; cycle < 2; cycle++) {
         await collectReward();
@@ -203,9 +207,11 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     await host.waitForFunction(ids => ids.every(id => !window.hostWorld.game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECResourceCarrier').hasAnyFlyingResource()), huts, { timeout: 15000 });
     await require('./coop-native-pause.cjs')({ host, guest: guests[0].page, focus: () => focus(0), focusHost, hostFile: file });
     await require('./coop-natural-workers.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hostFile: file });
+    const finalReward = rewards ? await rewards.finalSaveRecovery({ host, guests: guests.map(row => row.page), focusGuest: focus, hostFile: file }) : null;
     const saved = JSON.parse(fs.readFileSync(file)).state, earned = JSON.parse(saved.userData.desktopCoop);
     assert.equal(saved.cheats.everEnabled, false); assert.equal(earned.players.length, 4);
     await host.evaluate(() => window.hostWorld.close());
+    if (rewards) rewards.checkFinalDisk(file, finalReward);
     for (const row of guests) {
       await row.page.waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
       assert.equal(await row.page.evaluate(() => window.restoredWorkerSoloState), row.ownState);
