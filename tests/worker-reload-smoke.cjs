@@ -4,8 +4,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
-  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'Mid-flight testing requires the visible co-op case.');
-  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one mid-flight operation per visible run.');
+  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
+  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(fixture).startsWith('polycraft-hq-recovery-'), 'Use only an existing disposable recovery-test checkpoint.');
   const source = path.join(fixture, 'saves'), names = fs.readdirSync(source), originals = new Map(names.map(name => [name, fs.readFileSync(path.join(source, name))]));

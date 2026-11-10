@@ -155,6 +155,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await window.hostWorld.enablePlayers(window.polycraft.bridge);
     });
     await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
+    if (process.argv.includes('--xp-batch')) await require('./coop-xp-batch.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, hostFile: file });
     if (process.argv.includes('--save-in-flight') || process.argv.includes('--disconnect-in-flight') || process.argv.includes('--disconnect-incoming')) {
       const guest = guests[0].page;
       const button = async id => {

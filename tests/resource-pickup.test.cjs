@@ -90,6 +90,28 @@ test('native XP level-up waits for the rest of its action batch to deliver incom
   f.players.spawn = record => { assert.deepEqual(record.inventory.carried, [5, 0]); f.events.push('spawn'); return f.actor; };
   f.players.flushRefreshes(); assert.deepEqual(f.events, ['destroy', 'spawn', 'persist']); assert.equal(f.players.pendingRefresh.size, 0);
 });
+for (const laterXP of [30, 100]) test('an XP-only native batch finishes all grants before replacing its hero (later XP=' + laterXP + ')', () => {
+  const f = fixture('a_r_lumber'), manager = f.game.actionManager;
+  Object.assign(f.data, { adjustXP: ast.component('ECPlayerData').adjustXP, entity: f.actor, gameManager: f.game, globals: f.game.globals,
+    getVisibleXP: () => f.progress.xp, getLevel: () => 1 + Math.floor(f.progress.xp / 100), getv3Location: f.actor.getv3Location.bind(f.actor), playerData: { addXP: amount => { f.progress.xp += amount; } }, onLevelUp() {}, saveProgress() {}, autoSaveProgress() {} });
+  f.game.desktopPlayers = f.players; f.game.refreshHeroEntity = ast.method('refreshHeroEntity');
+  f.game.globals.desktopWorld = { simulating: true };
+  const replacement = { ...f.actor, destroyed: false, name: 'replacement' };
+  f.players.destroy = () => { f.events.push('destroy'); f.remove(); };
+  f.players.spawn = () => { f.events.push('spawn'); return replacement; };
+  for (const xp of [100, laterXP]) {
+    const drop = f.makePickup(); drop.pickup.archetype.carriedResource = [0, 0]; drop.pickup.xp = xp;
+    drop.pickup.storeCollector(f.actor); drop.pickup.givePickupIfCollector(); drop.node.setToBeDestroyed();
+  }
+  manager.update(); f.game.globals.desktopWorld.simulating = false;
+  assert.equal(f.progress.xp, 100 + laterXP, 'Later original GivePickup callbacks must still find their living collector.');
+  assert.equal(f.players.active.get('guest').hero, f.actor); assert.equal(f.actor.destroyed, false);
+  assert.equal(f.players.pendingRefresh.has('guest'), true); assert.deepEqual(f.events, []);
+  f.players.flushRefreshes();
+  assert.equal(f.players.active.get('guest').hero, replacement); assert.equal(f.players.pendingRefresh.size, 0);
+  assert.deepEqual(f.events, ['destroy', 'spawn', 'persist']);
+  assert.equal(f.progress.xp, 100 + laterXP);
+});
 test('incoming settlement preserves the original carrying cap', () => {
   const f = fixture('a_r_lumber_large'); f.carrier.resource[0] = 95; f.pickup.storeCollector(f.actor); f.pickup.beginFly();
   assert.deepEqual(f.capture().inventory.carried, [100, 0]); assert.deepEqual(f.carrier.inboundResource, [0, 0]); f.finish();

@@ -165,6 +165,21 @@ test('online host menus update the world once per tick and block only local moda
   controls.pause(true); controls.app.updateGame();
   assert.deepEqual(events, [], 'Solo desktop pause is restored');
 });
+test('native simulation marks the whole update and always clears its replacement guard, preserving return, errors and solo restoration', async t => {
+  const { controls, game, transport } = setup(t), reason = new Error('native simulation failed'), seen = [];
+  let fail = false;
+  const original = game.updateSimulation = function (...args) {
+    assert.equal(this, game); seen.push({ active: controls.app.globals.desktopWorld.simulating, args });
+    if (fail) throw reason;
+    return 'native result';
+  };
+  const world = await startHostingWorld(controls, transport);
+  t.after(() => world.close());
+  assert.equal(game.updateSimulation(1, 2), 'native result'); assert.equal(world.simulating, false);
+  fail = true; assert.throws(() => game.updateSimulation(3), error => error === reason); assert.equal(world.simulating, false);
+  assert.deepEqual(seen, [{ active: true, args: [1, 2] }, { active: true, args: [3] }]);
+  await world.close(); assert.equal(game.updateSimulation, original);
+});
 test('online captures occur only after simulation and checkpoint preserves the captured tick during acknowledgements', async t => {
   const { controls, game, transport, events } = setup(t);
   const world = await startHostingWorld(controls, transport); t.after(() => world.close());

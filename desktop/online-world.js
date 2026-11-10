@@ -39,7 +39,9 @@
       };
       game.updateSimulation = (...args) => {
         this.worldUpdated = true;
-        return this.original.simulation.apply(game, args);
+        this.simulating = true;
+        try { return this.original.simulation.apply(game, args); }
+        finally { this.simulating = false; }
       };
       controls.onlineWorld = this;
       controls.app.globals.desktopWorld = this;

@@ -284,7 +284,7 @@
       const [id, value] = entry, record = this.registry.player(id);
       const builder = hero.getEC('ECPlayerBuilder');
       // Level-up can run while the native action batch still owes pickups to this actor.
-      if (builder.isBuilding() || builder.isThrowing() || hero.getEC('ECResourceCarrier')?.hasAnyInboundResource()) { this.pendingRefresh.add(id); return hero; }
+      if (this.game.globals.desktopWorld?.simulating || builder.isBuilding() || builder.isThrowing() || hero.getEC('ECResourceCarrier')?.hasAnyInboundResource()) { this.pendingRefresh.add(id); return hero; }
       this.pendingRefresh.delete(id);
       Object.assign(record, this.captureHero(hero));
       this.destroy(hero);
