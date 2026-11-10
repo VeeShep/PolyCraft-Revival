@@ -219,18 +219,34 @@ test('failed normal solo quest approach releases held keys and preserves the ori
   await assert.rejects(require('./solo-quest-reward.cjs')(f), error => error === failure);
   assert.deepEqual(f.events.filter(row => ['down', 'up'].includes(row[0])), [['down', 'd'], ['up', 'd']]);
 });
-test('rejoin readiness explicitly accepts a waiting incapacitated guest without weakening normal movement readiness', () => {
+test('rejoin readiness separates normal, waiting and dying guests without weakening movement or phase checks', () => {
   const callbacks = [];
   traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { CallExpression(p) {
-    if (p.node.callee.property?.name === 'waitForFunction' && p.node.arguments[0]?.params?.[0]?.name === 'waiting') callbacks.push(p.node.arguments[0]);
+    if (p.node.callee.property?.name === 'waitForFunction' && p.node.arguments[0]?.params?.[0]?.name === 'phase') callbacks.push(p.node.arguments[0]);
   } });
   assert.equal(callbacks.length, 1);
   const state = { hud: { state: {} }, lifeState: { phase: 'waiting' }, movement: { available: () => false } };
   const ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { guestWorld: state } });
-  assert.equal(ready(true), true); assert.equal(ready(false), false);
-  state.movement.available = () => true; assert.equal(ready(true), false); assert.equal(ready(false), true);
-  state.lifeState.phase = 'normal'; state.movement.available = () => false; assert.equal(ready(true), false);
-  state.hud.state = null; state.movement.available = () => true; assert.ok(!ready(false));
+  assert.equal(ready('waiting'), true); assert.equal(ready('dying'), true); assert.equal(ready('normal'), false);
+  state.lifeState.phase = 'dying'; assert.equal(ready('waiting'), false); assert.equal(ready('dying'), true); assert.equal(ready('normal'), false);
+  state.movement.available = () => true; assert.equal(ready('waiting'), false); assert.equal(ready('dying'), false); assert.equal(ready('normal'), true);
+  state.lifeState.phase = 'normal'; state.movement.available = () => false; assert.equal(ready('waiting'), false); assert.equal(ready('dying'), false);
+  state.lifeState.phase = 'unknown'; assert.equal(ready('unknown'), false);
+  state.hud.state = null; state.movement.available = () => true; assert.ok(!ready('normal'));
+});
+test('dying departure arms its observer before the normal attack callback and closes only after the native dying sample', async () => {
+  const events = [], stop = new Error('Stop at the real disconnect boundary'); let reads = 0;
+  const host = { async evaluate() {
+    switch (reads++) {
+      case 0: events.push('armed'); return { actor: { health: 50, life: { phase: 'normal' } } };
+      case 1: events.push('sample'); return { actor: { health: 0, life: { phase: 'dying', remaining: .8 } } };
+      case 2: events.push('damage'); return { projectiles: [{ archetype: 'pj_h_pistol_weak' }], hits: [{ amount: 90, after: 0 }], deaths: [{ state: 1, expected: 1 }] };
+    }
+  }, async waitForFunction() { events.push('wait-dying'); } };
+  const guest = { async evaluate() { events.push('close'); throw stop; } }, m = { exports: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'coop-death-rejoin.cjs'), 'utf8'), { module: m, require, console: { log() {} } });
+  await assert.rejects(m.exports({ host, guest, before: { health: 50 }, attack: async () => events.push('attack') }), error => error === stop);
+  assert.deepEqual(events, ['armed', 'attack', 'wait-dying', 'sample', 'damage', 'close']);
 });
 test('natural gear observation waits for a reward-ready boundary before any live hero capture', async () => {
   let captureCount = 0, readLater, ready = false;

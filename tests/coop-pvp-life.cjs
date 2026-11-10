@@ -1,7 +1,7 @@
 'use strict';
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 
-module.exports = async function pvpLife({ host, attackerPage, victimPage, focusAttacker, focusVictim, attackerId, victimId, paid, lumber = false, deathRejoin, hostFile, directory, huts }) {
+module.exports = async function pvpLife({ host, attackerPage, victimPage, focusAttacker, focusVictim, attackerId, victimId, paid, lumber = false, deathRejoin, dyingRejoin = false, hostFile, directory, huts }) {
   const amberCost = paid && !deathRejoin && !lumber ? 10 : 0, woodCost = paid && !deathRejoin && lumber ? 50 : 0;
   const before = await host.evaluate(({ attackerId, victimId, huts }) => window.hostWorld.atRewardBoundary(() => {
     const w = window.hostWorld, game = w.game, attacker = w.players.active.get(attackerId).hero, victim = w.players.active.get(victimId).hero;
@@ -89,7 +89,12 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
       const w = window.guestWorld, entry = w.scene.entities.get(id), p = w.controls.app.globals.camera.worldToScreen(entry.displayLocation || entry.record.location), b = w.movement.canvas.getBoundingClientRect(), d = w.controls.app.globals.graphicsDevice;
       return { x: b.left + p[0] * b.width / d.width, y: b.top + p[1] * b.height / d.height };
     }, before.target);
-    await attackerPage.mouse.move(point.x, point.y); await attackerPage.mouse.click(point.x, point.y, { delay: 100 });
+    await attackerPage.mouse.move(point.x, point.y);
+    if (dyingRejoin) {
+      await deathRejoin({ before, attack: () => attackerPage.mouse.click(point.x, point.y, { delay: 100 }) });
+      return;
+    }
+    await attackerPage.mouse.click(point.x, point.y, { delay: 100 });
     if (paid) await victimPage.evaluate(() => {
       const renderer = window.guestWorld.controls.app.globals.guiRenderer, render = renderer.render, own = Object.hasOwn(renderer, 'render');
       renderer.render = function (...args) {
