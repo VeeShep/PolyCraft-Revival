@@ -28,6 +28,16 @@ test('ground-click helper projects the assigned display height, respects canvas 
   assert.deepEqual(f.events, [['wait', 150], ['camera-settled'], ['move', 410, 270], ['click', 410, 270, { delay: 100 }], ['sent']]);
   assert.equal(result.sequenceBefore, 12); assert.equal(f.world.movement.sequence, 13);
 });
+test('ground click lets native GUI capture refresh after moving off a hovered widget, while persistent capture still refuses input', async t => {
+  const f = fixture(t), move = f.guest.mouse.move, wait = f.guest.waitForTimeout; let moved = false;
+  f.guest.mouse.move = async (...args) => { await move(...args); f.state.captured = true; moved = true; };
+  f.guest.waitForTimeout = async ms => { await wait(ms); if (moved) f.state.captured = false; };
+  await clickGround(f.guest, [30, .5, 40]);
+  assert.equal(f.events.filter(row => row[0] === 'click').length, 1);
+  f.world.movement.sequence = 12; f.events.length = 0; f.guest.waitForTimeout = wait;
+  await assert.rejects(clickGround(f.guest, [30, .5, 40]), /walking click must hit empty ground/);
+  assert.equal(f.events.filter(row => row[0] === 'click').length, 0);
+});
 test('ground-click helper rejects HUD, invalid projection, blocked input, entities and a mismatched ray before clicking', async t => {
   const f = fixture(t);
   for (const reason of ['hud', 'projection', 'input', 'gui', 'hot', 'target', 'cursor', 'ray']) {

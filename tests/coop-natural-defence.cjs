@@ -33,10 +33,11 @@ module.exports = async function naturalDefence(context) {
   });
   assert.equal(observation, true);
   try {
-    for (const [task, options] of [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }]]) {
+    for (const [task, options] of [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }], ['goToCaves', null]]) {
       await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
       const initial = await sample();
-      await require('./coop-natural-building.cjs')({ ...context, button, ...options });
+      if (options) await require('./coop-natural-building.cjs')({ ...context, button, ...options });
+      else await require('./coop-natural-guide.cjs')(context);
       const before = await sample();
       assert.equal(before.xp, initial.xp);
       const reward = await guest.evaluate(() => window.guestWorld.quests.state.completed);

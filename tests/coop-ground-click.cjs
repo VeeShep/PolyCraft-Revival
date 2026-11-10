@@ -46,13 +46,18 @@ module.exports = async function clickGround(guest, location) {
   let before, aims;
   for (aims = 1; aims <= 3; aims++) {
     await guest.mouse.move(point.x, point.y);
-    before = await guest.evaluate(location => {
+    const read = location => {
       const w = window.guestWorld, cursor = w.construction.cursor(), gui = w.game.getIMGui();
       const available = w.movement.available(), captured = gui.hasCapturedInput(), hot = ['guest-shop', 'guest-pause', 'guest-fullscreen', 'guest-skip-prepare'].filter(id => gui.isHot(id));
       const target = window.PolycraftCoopActions.pickTarget(w, w.pointerEvent), distance = cursor && Math.hypot(cursor[0] - location[0], cursor[2] - location[2]);
       return { sequence: w.movement.sequence, available, captured, hot, target, cursor, distance, tick: w.scene.tick, baseAngle: w.viewCamera?.camera?.baseAngle, desiredBaseAngle: w.viewCamera?.camera?.desiredBaseAngle,
         ready: available && !captured && !hot.length && !target && cursor && distance < 0.1 };
-    }, point.location);
+    };
+    before = await guest.evaluate(read, point.location);
+    if (before.available && before.captured && !before.hot.length && !before.target) {
+      await guest.waitForTimeout(50);
+      before = await guest.evaluate(read, point.location);
+    }
     if (before.ready || !before.available || before.captured || before.hot.length || before.target || !before.cursor || !Number.isFinite(before.distance) || aims === 3) break;
     // The view may still translate after rotation settles; re-aim before sending any action.
     projection = await guest.evaluate(project, { location: point.location, exact: true });

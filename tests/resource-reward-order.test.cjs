@@ -33,6 +33,22 @@ test('natural Defendling recipe selects the original war hut and rejects simulta
   await assert.rejects(build({ host, worker: 'war' }), error => error === stop);
   await assert.rejects(build({ worker: 'war', defenceFactory: true }), assert.AssertionError);
 });
+test('natural tunnel journey refuses completed quests, unlocked movement, another nearby hero or missing navigation before sending input', async () => {
+  const guide = require('./coop-natural-guide.cjs');
+  const valid = { complete: false, canMove: false, others: [{ distance: 100 }], route: [[0, 0, 0], [10, 0, 10]] };
+  for (const invalid of [{ complete: true }, { canMove: true }, { others: [{ distance: 14.99 }] }, { route: null }]) {
+    await assert.rejects(guide({ host: { evaluate: async () => ({ ...valid, ...invalid }) }, focus: () => assert.fail('No input before setup admission') }), assert.AssertionError);
+  }
+});
+test('normal tunnel driver re-aims through ordinary input after a stalled partial waypoint instead of waiting forever', async () => {
+  const stop = new Error('Second ordinary waypoint click'), m = { exports: {} }; let reads = 0, clicks = 0;
+  const setup = { complete: false, canMove: false, others: [{ distance: 100 }], route: [[0, 0, 0], [50, 0, 0]] };
+  const host = { async evaluate() { return reads++ === 0 ? setup : { complete: false, position: [5, 0, 0], waypointDistance: 45, moving: true }; } };
+  const guest = { locator: () => ({ boundingBox: async () => ({ x: 0, y: 0, width: 100, height: 100 }) }), mouse: { async move() {} }, async evaluate() { return true; }, async waitForTimeout() {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'coop-natural-guide.cjs'), 'utf8'), { module: m, console: { log() {} }, require: name => name === './coop-ground-click.cjs' ? async () => { if (++clicks === 2) throw stop; return { location: [6, 0, 0] }; } : require(name) });
+  await assert.rejects(m.exports({ host, guest, focus: async () => {} }), error => error === stop);
+  assert.equal(clicks, 2); assert.ok(reads <= 12, 'A stalled click must be retried within the bounded normal-input window.');
+});
 test('natural reward audit forwards native receiver, arguments and result and restores own or inherited award methods', () => {
   for (const own of [false, true]) {
     const calls = [], guest = { getName: () => 'guest' }, original = function (...args) { assert.equal(this, ledger); calls.push(args); return args[0] === 'wake' || args[0] === 'build'; };
