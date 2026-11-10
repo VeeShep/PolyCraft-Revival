@@ -24,6 +24,28 @@ test('natural Defence reward approach excludes old pickups, new worker resources
   const select = vm.runInNewContext('(' + evaluatedCallback('coop-natural-defence.cjs', 'drops') + ')', { window: { hostWorld: { game: { getGameSpaceList: () => [{ getEntitiesWithEC: () => entities }] } } } });
   assert.deepEqual(Array.from(select(['old'])), ['xp', 'amber']);
 });
+test('natural Defendling recipe selects the original war hut and rejects simultaneous factory construction', async () => {
+  const build = require('./coop-natural-building.cjs'), stop = new Error('Stop before UI interaction');
+  const host = { async waitForFunction() {}, async evaluate(_read, { definition }) {
+    assert.deepEqual(definition, { family: 'defendlinghutworkshop', type: 'Defendling Hut', archetype: 'a_b_wildlinghouse_war', task: 'buildDefendlingHut', costs: [10, 0, 0] });
+    throw stop;
+  } };
+  await assert.rejects(build({ host, worker: 'war' }), error => error === stop);
+  await assert.rejects(build({ worker: 'war', defenceFactory: true }), assert.AssertionError);
+});
+test('natural reward audit forwards native receiver, arguments and result and restores own or inherited award methods', () => {
+  for (const own of [false, true]) {
+    const calls = [], guest = { getName: () => 'guest' }, original = function (...args) { assert.equal(this, ledger); calls.push(args); return args[0] === 'wake' || args[0] === 'build'; };
+    const ledger = Object.assign(Object.create({ award: original }), { data: { pending: [{ id: 'wake', task: 'wakeUpWildling' }, { id: 'build', task: 'buildDefendlingHut' }] }, manager: { taskArchetypes: { wakeUpWildling: { xpReward: 100, amberReward: 1 }, buildDefendlingHut: { xpReward: 20, amberReward: 1 } } } });
+    if (own) ledger.award = original;
+    const window = { hostWorld: { game: { desktopQuestRewards: ledger, getHero: () => ({ getName: () => 'host' }) } } };
+    const observe = vm.runInNewContext('(' + evaluatedCallback('coop-natural-defence.cjs', 'observation') + ')', { window });
+    assert.equal(observe(), true); assert.equal(ledger.award('wake'), true); assert.equal(ledger.award('build', guest), true); assert.equal(ledger.award('missing'), false);
+    assert.deepEqual(calls, [['wake'], ['build', guest], ['missing']]);
+    assert.deepEqual(Array.from(window.naturalDefenceAwards, row => [row.task, row.xp, row.actor, row.explicitHero]), [['wakeUpWildling', 100, 'host', false], ['buildDefendlingHut', 20, 'guest', true]]);
+    window.restoreNaturalDefenceAwards(); assert.equal(ledger.award, original); assert.equal(Object.hasOwn(ledger, 'award'), own); assert.equal(window.naturalDefenceAwards, undefined);
+  }
+});
 test('campaign combat staging waits for prior native rewards before retaining its actor and XP baseline', async () => {
   for (const [file, variable] of [['coop-campaign-acceptance.cjs', 'combat'], ['coop-campaign-victory.cjs', 'actor']]) {
     let queued, release;
