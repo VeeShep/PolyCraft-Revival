@@ -183,6 +183,19 @@ test('failed normal solo quest approach releases held keys and preserves the ori
   await assert.rejects(require('./solo-quest-reward.cjs')(f), error => error === failure);
   assert.deepEqual(f.events.filter(row => ['down', 'up'].includes(row[0])), [['down', 'd'], ['up', 'd']]);
 });
+test('rejoin readiness explicitly accepts a waiting incapacitated guest without weakening normal movement readiness', () => {
+  const callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { CallExpression(p) {
+    if (p.node.callee.property?.name === 'waitForFunction' && p.node.arguments[0]?.params?.[0]?.name === 'waiting') callbacks.push(p.node.arguments[0]);
+  } });
+  assert.equal(callbacks.length, 1);
+  const state = { hud: { state: {} }, lifeState: { phase: 'waiting' }, movement: { available: () => false } };
+  const ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { guestWorld: state } });
+  assert.equal(ready(true), true); assert.equal(ready(false), false);
+  state.movement.available = () => true; assert.equal(ready(true), false); assert.equal(ready(false), true);
+  state.lifeState.phase = 'normal'; state.movement.available = () => false; assert.equal(ready(true), false);
+  state.hud.state = null; state.movement.available = () => true; assert.ok(!ready(false));
+});
 test('natural gear observation waits for a reward-ready boundary before any live hero capture', async () => {
   let captureCount = 0, readLater, ready = false;
   const players = { active: new Map(Array.from({ length: 4 }, (_, id) => [id, { hero: { getEC: () => ({ hasWeapon: () => true }) } }])),

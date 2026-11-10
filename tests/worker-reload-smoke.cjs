@@ -6,6 +6,8 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 (async () => {
   assert.ok(!process.argv.includes('--final-save-departure') || process.argv.includes('--reward-transitions'), 'Final-save departure requires the reward transition phase.');
   assert.ok(!process.argv.includes('--pvp-lumber') || process.argv.includes('--pvp-death'), 'Lumber revival requires the PvP death phase.');
+  assert.ok(!process.argv.includes('--pvp-rejoin') || process.argv.includes('--pvp-death'), 'Death rejoin requires the PvP death phase.');
+  assert.ok(!(process.argv.includes('--pvp-rejoin') && process.argv.includes('--pvp-lumber')), 'Choose either death rejoin or paid lumber revival.');
   for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
   assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');

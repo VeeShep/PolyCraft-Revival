@@ -1,8 +1,8 @@
 'use strict';
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 
-module.exports = async function pvpLife({ host, attackerPage, victimPage, focusAttacker, focusVictim, attackerId, victimId, paid, lumber = false, hostFile, directory, huts }) {
-  const amberCost = paid && !lumber ? 10 : 0, woodCost = paid && lumber ? 50 : 0;
+module.exports = async function pvpLife({ host, attackerPage, victimPage, focusAttacker, focusVictim, attackerId, victimId, paid, lumber = false, deathRejoin, hostFile, directory, huts }) {
+  const amberCost = paid && !deathRejoin && !lumber ? 10 : 0, woodCost = paid && !deathRejoin && lumber ? 50 : 0;
   const before = await host.evaluate(({ attackerId, victimId, huts }) => window.hostWorld.atRewardBoundary(() => {
     const w = window.hostWorld, game = w.game, attacker = w.players.active.get(attackerId).hero, victim = w.players.active.get(victimId).hero;
     if (!w.transport.pvp || Object.getOwnPropertyDescriptor(w.transport, 'pvp').writable) throw new Error('This disposable session needs fixed PvP enabled.');
@@ -107,6 +107,12 @@ module.exports = async function pvpLife({ host, attackerPage, victimPage, focusA
     await host.waitForFunction(() => window.samplePvpLife().life.phase === 'waiting', null, { timeout: 10000 });
     const waiting = await host.evaluate(() => window.samplePvpLife());
     assert.equal(waiting.health, 0); assert.ok(waiting.life.remaining > 0 && waiting.life.remaining <= before.respawnDelay);
+    if (deathRejoin) {
+      await victimPage.evaluate(() => window.restorePvpReviveRender?.());
+      await host.evaluate(() => window.restorePvpLifeObserver());
+      await deathRejoin({ before, waiting, damage });
+      return;
+    }
     if (paid) {
       await victimPage.waitForFunction(lumber => {
         const w = window.guestWorld, row = w.game.getGuiManager().prevDrawGuiMap['guest-revive'], draw = window.pvpReviveRender;

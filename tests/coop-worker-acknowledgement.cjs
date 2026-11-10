@@ -18,7 +18,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     const entity = window.hostWorld.game.getGameEntityByName(hut).getEC('ECWildlingHouse').getWildling(), agent = entity.getEC('ECWildlingAgent');
     return { id: entity.getName(), waiting: agent.isWaitingForClick(), sleeping: agent.isSleeping(), location: Array.from(entity.getv3Location()) };
   }, hut);
-  const connect = async index => {
+  const connect = async (index, waiting = false) => {
     const { page } = guests[index];
     const offer = await host.evaluate(id => window.hostWorld.createPlayerInvitation(id), party.players[index + 1].id);
     const reply = await page.evaluate(async invitation => {
@@ -31,7 +31,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     assert.equal(await page.evaluate(() => window.connection.closed), false);
     await focus(index);
     try {
-      await page.waitForFunction(() => window.guestWorld.hud.state && window.guestWorld.movement.available(), null, { timeout: 10000 });
+      await page.waitForFunction(waiting => window.guestWorld.hud.state && (waiting ? window.guestWorld.lifeState?.phase === 'waiting' && !window.guestWorld.movement.available() : window.guestWorld.movement.available()), waiting, { timeout: 10000 });
     } catch (error) {
       console.log('Worker guest readiness diagnostics:', JSON.stringify(await page.evaluate(async () => {
         const w = window.guestWorld;
@@ -79,12 +79,12 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     guests.push({ page, app, ownFile, ownBytes, ownState });
     await connect(index);
   };
-  const reconnect = async () => {
+  const reconnect = async ({ waiting = false } = {}) => {
     const row = guests[0], guest = row.page;
     assert.equal(await guest.evaluate(() => window.restoredWorkerSoloState), row.ownState, 'Disconnect must restore the guest solo state before reconnect.');
     await guest.evaluate(() => window.polycraft.checkpoint(true));
     row.ownState = await guest.evaluate(() => JSON.stringify(window.polycraft.bridge.state)); row.ownBytes = fs.readFileSync(row.ownFile);
-    await connect(0);
+    await connect(0, waiting);
   };
   const acknowledge = async (hut, cue) => {
     const worker = await workerState(hut), guest = guests[0].page;
@@ -220,7 +220,8 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
       attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });
     if (pvpLife) await pvpLife({ host, attackerPage: guests[1].page, victimPage: guests[0].page, focusAttacker: () => focus(1), focusVictim: () => focus(0),
-      attackerId: party.players[2].id, victimId: party.players[1].id, paid: true, lumber: process.argv.includes('--pvp-lumber'), hostFile: file, directory, huts });
+      attackerId: party.players[2].id, victimId: party.players[1].id, paid: true, lumber: process.argv.includes('--pvp-lumber'), hostFile: file, directory, huts,
+      deathRejoin: process.argv.includes('--pvp-rejoin') ? context => require('./coop-death-rejoin.cjs')({ ...context, host, guest: guests[0].page, hero: party.players[1].id, reconnect, hostFile: file, huts, directory }) : undefined });
     const finalReward = rewards ? await rewards.finalSaveRecovery({ host, guests: guests.map(row => row.page), focusGuest: focus, hostFile: file,
       departure: process.argv.includes('--final-save-departure'), hero: party.players[1].id, reconnect }) : null;
     const saved = JSON.parse(fs.readFileSync(file)).state, earned = JSON.parse(saved.userData.desktopCoop);
