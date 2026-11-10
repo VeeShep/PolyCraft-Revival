@@ -17,6 +17,17 @@ function evaluatedCallback(file, variable) {
   assert.equal(found.length, 1, file + ':' + variable);
   return generate(found[0]).code;
 }
+test('Outpost continuation admits only the earned clean-stage party before copying files or opening a game', async () => {
+  const code = block('worker-reload-smoke.cjs', node => node.name === 'outpostContinuation');
+  const valid = { state: { userData: { taskFlags: JSON.stringify({ goToCaves: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 290 } }] }),
+    buildings: [{ archetypeName: 'a_b_defencefactory' }, { archetypeName: 'a_b_wildlinghouse_war' }] };
+  await vm.runInNewContext(code, { ...structuredClone(valid), assert });
+  for (const change of [f => f.pending.push({ task: 'buildStonelingHut' }), f => { f.state.userData.taskFlags = '{}'; }, f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true, buildOutpost: true }); },
+    f => { f.party = JSON.stringify({ players: [{}, { progress: { xp: 310 } }] }); }, f => f.buildings.pop(), f => f.buildings.push({ ...f.buildings[0] })]) {
+    const fixture = structuredClone(valid); change(fixture);
+    await assert.rejects(vm.runInNewContext(code, { ...fixture, assert }), assert.AssertionError);
+  }
+});
 test('natural Defence reward approach excludes old pickups, new worker resources and destroyed reward remnants', () => {
   const entity = (id, pickup, destroyed = false) => ({ getName: () => id, getEC: () => pickup, shouldBeDestroyed: () => destroyed });
   const entities = [entity('old', { xp: 20, archetype: {} }), entity('stone', { xp: 0, archetype: { resource: [0, 1] } }),
@@ -32,6 +43,68 @@ test('natural Defendling recipe selects the original war hut and rejects simulta
   } };
   await assert.rejects(build({ host, worker: 'war' }), error => error === stop);
   await assert.rejects(build({ worker: 'war', defenceFactory: true }), assert.AssertionError);
+});
+test('natural Outpost placement uses the original recipe and cannot be combined with a short-build recipe', async () => {
+  const build = require('./coop-natural-building.cjs'), stop = new Error('Stop before UI interaction');
+  const host = { async waitForFunction() {}, async evaluate(_read, { definition }) {
+    assert.deepEqual(definition, { family: 'outpostworkshop', type: 'Outpost', archetype: 'a_b_outpost', task: 'buildOutpost', costs: [100, 0, 0] });
+    throw stop;
+  } };
+  await assert.rejects(build({ host, outpost: true }), error => error === stop);
+  for (const other of [{ defenceFactory: true }, { worker: 'war' }, { lumbermill: true }]) await assert.rejects(build({ outpost: true, ...other }), assert.AssertionError);
+});
+test('natural building observation distinguishes an unfinished original scaffold from a completed building after saving', async () => {
+  const actor = {}, events = [], scaffold = { buildTime: 1800, getPlannedObject: () => 'a_b_outpost', getBuildTimeRemaining: () => 1790,
+    getCostToInstantlyBuild: () => 50, canEntityAffordInstantBuild(hero) { assert.equal(hero, actor); return true; } };
+  const source = { getName: () => 'outpost', getEC: () => scaffold }, menu = { source: 'outpost', products: [] };
+  const world = { players: { active: new Map([['guest', { hero: actor }]]) }, game: { runScripts: true, getBuildingManager: () => ({ getBuildingsAtMinLevel(type, level, includeScaffolds) { assert.equal(type, 'Outpost'); assert.equal(level, 1); assert.equal(includeScaffolds, true); return [source]; } }) },
+    construction: { pending: new Set(), menu(hero, entity) { assert.equal(hero, actor); assert.equal(entity, source); return menu; } } };
+  const observe = vm.runInNewContext('(' + evaluatedCallback('coop-natural-building.cjs', 'result') + ')', { window: {
+    hostWorld: world, nativeBuildingIncome: { wood: 2, stone: 1, amber: 0 }, polycraft: { async checkpoint(fresh) { assert.equal(fresh, true); events.push('saved'); }, controls: { amounts: () => ({ wood: 264, stone: 69, amber: 95 }) } }
+  } });
+  const result = await observe({ type: 'Outpost', hero: 'guest', outpost: true });
+  assert.deepEqual(events, ['saved']); assert.equal(result.scaffolds.length, 1); assert.equal(result.scaffolds[0].remaining, 1790);
+  assert.equal(result.scaffolds[0].cost, 50); assert.equal(result.scaffolds[0].menu, menu); assert.equal(result.scaffolds[0].affordable, true);
+  source.getEC = () => null;
+  assert.equal((await observe({ type: 'Outpost', hero: 'guest', outpost: true })).scaffolds.length, 0);
+});
+test('original building lookup excludes unfinished scaffolds unless its includeScaffolds argument is true', () => {
+  const native = require('./runtime-ast.cjs'), scaffold = { getBuildCompleteFraction: () => .01 }, entity = { getEC: () => scaffold };
+  const manager = { globals: { gameManager: { getEntityFactory: () => ({}) } }, buildings: [{ getBuildingType: () => 'Outpost', getLevel: () => 1, entity }] };
+  const find = native.method('getBuildingsAtMinLevel');
+  assert.equal(find.call(manager, 'Outpost', 1, false).length, 0);
+  assert.equal(find.call(manager, 'Outpost', 1, true)[0], entity);
+  scaffold.getBuildCompleteFraction = () => 1;
+  assert.equal(find.call(manager, 'Outpost', 1, false)[0], entity);
+});
+test('Outpost return walks the native route before requiring workshop eligibility or querying its menu', async () => {
+  const events = [], stop = new Error('Stop at native eligibility'), m = { exports: {} }; let reads = 0;
+  const source = { id: 'workshop', location: [100, 0, 0], existing: 0, menu: null, route: [[0, 0, 0], [1, 0, 0], [100, 0, 0]] };
+  const host = { async evaluate() { events.push('lookup'); return source; }, async waitForFunction(_read, id) { assert.equal(id, source.id); events.push('eligibility'); throw stop; } };
+  const guest = { async evaluate(_read, args) { events.push('waypoint:' + args.destination[0]); return reads++ === 0 ? { distance: 100, waypointDistance: .1 } : reads === 2 ? { distance: 100, waypointDistance: 10, key: 'd' } : { distance: 4 }; },
+    keyboard: { async down(key) { events.push('down:' + key); }, async up(key) { events.push('up:' + key); } }, async waitForTimeout() {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'coop-natural-building.cjs'), 'utf8'), { module: m, require, console: { log() {} } });
+  await assert.rejects(m.exports({ host, guest, outpost: true, focus: async () => events.push('focus') }), error => error === stop);
+  assert.deepEqual(events, ['lookup', 'focus', 'waypoint:1', 'waypoint:100', 'down:d', 'up:d', 'waypoint:100', 'eligibility']);
+});
+test('Outpost footprint search uses native-validated ground at its authored marker instead of the excluded village', () => {
+  const actor = { getv3Location: () => [100, .9, 100] }, source = { getv3Location: () => [0, 1, 0] }, hq = { getv3Location: () => [0, 0, 0] };
+  const world = { players: { active: new Map([['guest', { hero: actor }]]) }, game: { getGameEntityByName: () => source, getGameSpaceList: () => [{ getEntitiesWithFamilyName: () => [hq] }] },
+    construction: { preview(hero, entity, index, location) { assert.equal(hero, actor); assert.equal(entity, source); assert.equal(index, 0); return { preview: { valid: location[0] === 108 && location[2] === 100 } }; } } };
+  const locations = vm.runInNewContext('(' + evaluatedCallback('coop-natural-building.cjs', 'locations') + ')', { window: { hostWorld: world } });
+  assert.deepEqual(Array.from(locations({ hero: 'guest', source: 'workshop', index: 0, paid: true, marker: [100, .9, 100] }), row => Array.from(row)), [[108, .9, 100]]);
+  assert.equal(locations({ hero: 'guest', source: 'workshop', index: 0, paid: true }).length, 0);
+});
+test('original canPlaceAnywhere never bypasses the inclusive32unit village exclusion for Outposts', () => {
+  const native = require('./runtime-ast.cjs'), definition = native.archetypeComponent('a_s_buildRadius', 'ECBuildingPlacementRadius');
+  const radius = Object.assign(native.component('ECBuildingPlacementRadius'), { archetype: { square: true, ...definition }, getv3Location: () => [0, 0, 0], _super() {},
+    globals: { mathDevice: { v3Sub: (a, b) => a.map((v, i) => v - b[i]), v3Abs: (a, out) => { for (let i = 0; i < 3; i++) out[i] = Math.abs(a[i]); return out; } } } });
+  radius.init(null, definition);
+  const builder = { gameManager: { getEntitiesWithEC: () => [{ getEC: () => radius }] } }, obeys = native.method('obeysBuildingPlacementRadiusEntities');
+  assert.equal(definition.buildingRadius, 32);
+  for (const position of [[0, 0, 0], [32, 0, 32], [-32, 0, -32]]) assert.equal(obeys.call(builder, position, false, 'Outpost', true), false);
+  assert.equal(obeys.call(builder, [32.01, 0, 0], false, 'Outpost', true), true);
+  assert.equal(obeys.call(builder, [0, 0, 0], false, 'HQ', false), true);
 });
 test('natural tunnel journey refuses completed quests, unlocked movement, another nearby hero or missing navigation before sending input', async () => {
   const guide = require('./coop-natural-guide.cjs');

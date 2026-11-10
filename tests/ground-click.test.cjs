@@ -38,6 +38,19 @@ test('ground click lets native GUI capture refresh after moving off a hovered wi
   await assert.rejects(clickGround(f.guest, [30, .5, 40]), /walking click must hit empty ground/);
   assert.equal(f.events.filter(row => row[0] === 'click').length, 0);
 });
+for (const clears of [true, false]) test('a worker entering the projected ground point ' + (clears ? 'can leave before one normal walking click' : 'must keep blocking every walking click'), async t => {
+  const f = fixture(t), move = f.guest.mouse.move, wait = f.guest.waitForTimeout; let moves = 0;
+  f.guest.mouse.move = async (...args) => { await move(...args); if (++moves === 1) f.state.target = 'moving-worker'; };
+  f.guest.waitForTimeout = async ms => { await wait(ms); if (ms === 100 && clears) f.state.target = null; };
+  if (clears) {
+    const result = await clickGround(f.guest, [30, .5, 40]);
+    assert.equal(result.aims, 2); assert.equal(f.events.filter(row => row[0] === 'click').length, 1);
+  } else {
+    await assert.rejects(clickGround(f.guest, [30, .5, 40]), /walking click must hit empty ground/);
+    assert.equal(f.events.filter(row => row[0] === 'click').length, 0); assert.equal(f.world.movement.sequence, 12);
+  }
+  assert.ok(moves <= 3);
+});
 test('ground-click helper rejects HUD, invalid projection, blocked input, entities and a mismatched ray before clicking', async t => {
   const f = fixture(t);
   for (const reason of ['hud', 'projection', 'input', 'gui', 'hot', 'target', 'cursor', 'ray']) {

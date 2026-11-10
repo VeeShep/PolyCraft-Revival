@@ -9,8 +9,9 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   assert.ok(!process.argv.includes('--pvp-rejoin') || process.argv.includes('--pvp-death'), 'Death rejoin requires the PvP death phase.');
   assert.ok(!process.argv.includes('--pvp-dying') || process.argv.includes('--pvp-rejoin'), 'Dying departure requires death rejoin.');
   assert.ok(!(process.argv.includes('--pvp-rejoin') && process.argv.includes('--pvp-lumber')), 'Choose either death rejoin or paid lumber revival.');
-  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
-  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
+  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
+  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
+  const outpostContinuation = process.argv.includes('--natural-outpost');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(fixture).startsWith('polycraft-hq-recovery-'), 'Use only an existing disposable recovery-test checkpoint.');
   const source = path.join(fixture, 'saves'), names = fs.readdirSync(source), originals = new Map(names.map(name => [name, fs.readFileSync(path.join(source, name))]));
@@ -18,8 +19,14 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   const state = JSON.parse(originals.get(islands[0])).state, party = state.userData.desktopCoop;
   assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(party).players.length, 4);
   const pending = JSON.parse(state.userData.desktopQuests).pending;
-  assert.equal(pending.length, 1); assert.equal(pending[0].task, 'buildStonelingHut');
   const buildings = JSON.parse(state.userData.AdventureIncGameState).gameSpaceList.flatMap(space => space.entityList);
+  if (outpostContinuation) {
+    assert.equal(pending.length, 0);
+    const flags = JSON.parse(state.userData.taskFlags);
+    assert.equal(flags.goToCaves, true); assert.notEqual(flags.buildOutpost, true);
+    assert.equal(JSON.parse(party).players[1].progress.xp, 290);
+    for (const type of ['a_b_defencefactory', 'a_b_wildlinghouse_war']) assert.equal(buildings.filter(entity => entity.archetypeName === type).length, 1);
+  } else { assert.equal(pending.length, 1); assert.equal(pending[0].task, 'buildStonelingHut'); }
   const huts = ['a_b_wildlinghouse_lumber', 'a_b_wildlinghouse_stone'].map(type => {
     const found = buildings.filter(entity => entity.archetypeName === type); assert.equal(found.length, 1); return found[0].name;
   });
@@ -60,20 +67,22 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   try {
     console.log('Disposable solo worker profile:', directory);
     const page = await open();
-    const reward = 'idAcceptTaskRewardButton' + pending[0].id;
-    await focus();
-    await page.waitForFunction(id => window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap[id]?.scale > 0.95, reward);
-    const point = await page.evaluate(id => {
-      const controls = window.polycraft.controls, args = controls.manager().getGuiManager().prevDrawGuiMap[id].argumentObject;
-      const location = args.v2ScreenLocation || [args.x, args.y], bounds = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect(), device = controls.app.globals.graphicsDevice;
-      return { x: bounds.left + location[0] * bounds.width / device.width, y: bounds.top + location[1] * bounds.height / device.height };
-    }, reward);
-    await page.mouse.move(point.x, point.y); await page.waitForFunction(id => window.polycraft.controls.manager().getIMGui().isHot(id), reward);
-    await page.mouse.click(point.x, point.y, { delay: 100 });
-    await page.waitForFunction(id => !JSON.parse(window.polycraft.bridge.state.userData.desktopQuests).pending.some(task => task.id === id), pending[0].id);
-    const time = await page.evaluate(() => window.polycraft.controls.app.globals.gameCurrentTime);
-    await page.waitForFunction(time => window.polycraft.controls.app.globals.gameCurrentTime > time, time, { timeout: 5000 });
-    console.log('Original pending worker reward collected through its native button; solo game time advances.');
+    if (!outpostContinuation) {
+      const reward = 'idAcceptTaskRewardButton' + pending[0].id;
+      await focus();
+      await page.waitForFunction(id => window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap[id]?.scale > 0.95, reward);
+      const point = await page.evaluate(id => {
+        const controls = window.polycraft.controls, args = controls.manager().getGuiManager().prevDrawGuiMap[id].argumentObject;
+        const location = args.v2ScreenLocation || [args.x, args.y], bounds = document.getElementById('turbulenz_game_engine_canvas').getBoundingClientRect(), device = controls.app.globals.graphicsDevice;
+        return { x: bounds.left + location[0] * bounds.width / device.width, y: bounds.top + location[1] * bounds.height / device.height };
+      }, reward);
+      await page.mouse.move(point.x, point.y); await page.waitForFunction(id => window.polycraft.controls.manager().getIMGui().isHot(id), reward);
+      await page.mouse.click(point.x, point.y, { delay: 100 });
+      await page.waitForFunction(id => !JSON.parse(window.polycraft.bridge.state.userData.desktopQuests).pending.some(task => task.id === id), pending[0].id);
+      const time = await page.evaluate(() => window.polycraft.controls.app.globals.gameCurrentTime);
+      await page.waitForFunction(time => window.polycraft.controls.app.globals.gameCurrentTime > time, time, { timeout: 5000 });
+      console.log('Original pending worker reward collected through its native button; solo game time advances.');
+    }
     if (process.argv.includes('--coop')) {
       await require('./coop-worker-acknowledgement.cjs')({ host: page, fixture, directory, file, huts, errors, requests, closeHost: close, openHost: open, focusHost: focus });
       return;

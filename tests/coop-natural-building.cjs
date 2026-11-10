@@ -2,35 +2,49 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, lumbermill = false, stonemill = false, worker = null, defenceFactory = false }) {
+module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, lumbermill = false, stonemill = false, worker = null, defenceFactory = false, outpost = false }) {
   assert.ok(worker === null || worker === 'lumber' || worker === 'stone' || worker === 'war');
-  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) + Number(defenceFactory) <= 1);
-  const definition = worker === 'war' ? { family: 'defendlinghutworkshop', type: 'Defendling Hut', archetype: 'a_b_wildlinghouse_war', task: 'buildDefendlingHut', costs: [10, 0, 0] } : defenceFactory ? { family: 'defencefactoryworkshop', type: 'Defence Factory', archetype: 'a_b_defencefactory', task: 'buildDefenceFactory', costs: [10, 0, 0] } : worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
+  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) + Number(defenceFactory) + Number(outpost) <= 1);
+  const definition = outpost ? { family: 'outpostworkshop', type: 'Outpost', archetype: 'a_b_outpost', task: 'buildOutpost', costs: [100, 0, 0] } : worker === 'war' ? { family: 'defendlinghutworkshop', type: 'Defendling Hut', archetype: 'a_b_wildlinghouse_war', task: 'buildDefendlingHut', costs: [10, 0, 0] } : defenceFactory ? { family: 'defencefactoryworkshop', type: 'Defence Factory', archetype: 'a_b_defencefactory', task: 'buildDefenceFactory', costs: [10, 0, 0] } : worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
     { family: 'hqworkshop', type: 'HQ', archetype: 'a_b_hq', task: 'buildHq', costs: [0, 0, 0] };
-  await host.waitForFunction(family => window.hostWorld.game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(family)).some(entity => entity.getEC('ECSelectable')?.permanentValid === true), definition.family, { timeout: 10000 });
+  if (!outpost) await host.waitForFunction(family => window.hostWorld.game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(family)).some(entity => entity.getEC('ECSelectable')?.permanentValid === true), definition.family, { timeout: 10000 });
   const source = await host.evaluate(({ hero, definition }) => {
     const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero;
     const entity = game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(definition.family))[0];
     if (!entity) throw new Error('The original ' + definition.type + ' workshop is missing.');
-    return { id: entity.getName(), location: Array.from(entity.getv3Location()), menu: world.construction.menu(actor, entity, world.controls), amounts: window.polycraft.controls.amounts(),
+    return { id: entity.getName(), location: Array.from(entity.getv3Location()), menu: definition.type === 'Outpost' ? null : world.construction.menu(actor, entity, world.controls), amounts: window.polycraft.controls.amounts(),
+      route: definition.type === 'Outpost' ? game.getNavManager().getEntityToEntityPath(actor, entity, actor.getEC('ECFaction').getFactionName(), actor.getEC('ECNav').getMaxNavigableHeight(), true)?.getWaypointList().map(point => Array.from(point)) : null,
       existing: game.getBuildingManager().getBuildingsAtMinLevel(definition.type, 1, false).length };
   }, { hero, definition });
   console.log('Natural ' + definition.type + ' source:', JSON.stringify(source));
   assert.equal(source.existing, 0);
-  const product = source.menu.products.find(product => product.archetype === definition.archetype);
-  assert.ok(product?.valid && product.affordable); assert.deepEqual(product.costs, definition.costs); assert.equal(product.time, 2);
-  await focus();
-  for (let step = 0; step < 100; step++) {
-    const next = await guest.evaluate(location => {
-      const world = window.guestWorld, p = world.scene.entities.get(world.identity.entity).record.location, m = world.controls.app.globals.camera.matrix;
-      const dx = location[0] - p[0], dz = location[2] - p[2], right = dx * m[0] + dz * m[2], forward = -dx * m[6] - dz * m[8];
-      return { distance: Math.hypot(dx, dz), key: Math.abs(right) > Math.abs(forward) ? right > 0 ? 'd' : 'a' : forward > 0 ? 'w' : 's' };
-    }, source.location);
-    if (next.distance < 5) break;
-    await guest.keyboard.down(next.key);
-    try { await guest.waitForTimeout(150); } finally { await guest.keyboard.up(next.key); }
-    await guest.waitForTimeout(100);
+  if (outpost) assert.ok(source.route?.length, 'The native navigator must supply the return route from the tunnels.');
+  const approach = async destination => {
+    await focus();
+    let waypoint = Math.min(1, (destination.route?.length || 1) - 1), nearby = false;
+    for (let step = 0; step < (outpost ? 400 : 100); step++) {
+      const next = await guest.evaluate(({ location, destination }) => {
+        const world = window.guestWorld, p = world.scene.entities.get(world.identity.entity).record.location, m = world.controls.app.globals.camera.matrix;
+        const dx = destination[0] - p[0], dz = destination[2] - p[2], right = dx * m[0] + dz * m[2], forward = -dx * m[6] - dz * m[8];
+        return { distance: Math.hypot(location[0] - p[0], location[2] - p[2]), waypointDistance: Math.hypot(dx, dz), key: Math.abs(right) > Math.abs(forward) ? right > 0 ? 'd' : 'a' : forward > 0 ? 'w' : 's' };
+      }, { location: destination.location, destination: destination.route?.[waypoint] || destination.location });
+      if (next.distance < 5) { nearby = true; break; }
+      if (destination.route && next.waypointDistance < .65 && waypoint < destination.route.length - 1) { waypoint++; continue; }
+      if (outpost && step % 25 === 0) console.log('Normal guest building approach:', JSON.stringify({ target: destination.id, step, waypoint, ...next }));
+      await guest.keyboard.down(next.key);
+      try { await guest.waitForTimeout(150); } finally { await guest.keyboard.up(next.key); }
+      await guest.waitForTimeout(100);
+    }
+    assert.ok(nearby, 'Ordinary guest movement must reach the original workshop or placement marker.');
+  };
+  await approach(source);
+  if (outpost) {
+    // Native dispenser eligibility updates locally; approach before querying its menu.
+    await host.waitForFunction(id => window.hostWorld.game.getGameEntityByName(id).getEC('ECSelectable').permanentValid === true, source.id, { timeout: 10000 });
+    source.menu = await host.evaluate(({ hero, id }) => { const w = window.hostWorld; return w.construction.menu(w.players.active.get(hero).hero, w.game.getGameEntityByName(id), w.controls); }, { hero, id: source.id });
   }
+  const product = source.menu.products.find(product => product.archetype === definition.archetype);
+  assert.ok(product?.valid && product.affordable); assert.deepEqual(product.costs, definition.costs); assert.equal(product.time, outpost ? 1800 : 2);
   await guest.waitForFunction(id => {
     const w = window.guestWorld, entry = w.scene.entities.get(id), point = w.controls.app.globals.camera.worldToScreen(entry.displayLocation || entry.record.location);
     const previous = window.hqProjection;
@@ -62,16 +76,29 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     await guest.waitForFunction(id => window.guestWorld.construction.menu?.source === id, source.id, { timeout: 10000 });
     await button('guest-build-' + source.id + '-' + product.index);
     await guest.waitForFunction(() => window.guestWorld.construction.placement);
-    const locations = await host.evaluate(({ hero, source, index, paid }) => {
+    let marker = null;
+    if (outpost) {
+      marker = await host.evaluate(hero => {
+        const w = window.hostWorld, game = w.game, actor = w.players.active.get(hero).hero;
+        const entity = game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName('suggestOutpost'))[0];
+        if (!entity) throw new Error('The authored Outpost placement marker must exist.');
+        const route = game.getNavManager().getEntityToEntityPath(actor, entity, actor.getEC('ECFaction').getFactionName(), actor.getEC('ECNav').getMaxNavigableHeight(), true);
+        return { id: entity.getName(), location: Array.from(entity.getv3Location()), route: route?.getWaypointList().map(point => Array.from(point)) };
+      }, hero);
+      assert.ok(marker.route?.length, 'The native navigator must supply a route outside the village exclusion zone.');
+      console.log('Authored Outpost placement journey:', JSON.stringify(marker));
+      await approach(marker);
+    }
+    const locations = await host.evaluate(({ hero, source, index, paid, marker }) => {
       const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero, entity = game.getGameEntityByName(source);
       const suggestion = game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(paid ? 'hq' : 'suggestHq'))[0];
-      const center = suggestion ? suggestion.getv3Location() : entity.getv3Location(), locations = [];
+      const center = marker || (suggestion ? suggestion.getv3Location() : entity.getv3Location()), locations = [];
       for (let x = -10; x <= 10; x += 2) for (let z = -10; z <= 10; z += 2) {
         const location = [center[0] + x, actor.getv3Location()[1], center[2] + z];
         if (world.construction.preview(actor, entity, index, location).preview?.valid) locations.push(location);
       }
       return locations;
-    }, { hero, source: source.id, index: product.index, paid: lumbermill || stonemill || worker !== null || defenceFactory });
+    }, { hero, source: source.id, index: product.index, paid: lumbermill || stonemill || worker !== null || defenceFactory || outpost, marker: marker?.location });
     const placement = await guest.evaluate(locations => {
       const world = window.guestWorld, globals = world.controls.app.globals, b = world.movement.canvas.getBoundingClientRect();
       return locations.map(location => {
@@ -79,6 +106,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
         return { location, x: b.left + point[0] * b.width / globals.graphicsDevice.width, y: b.top + point[1] * b.height / globals.graphicsDevice.height };
       }).find(point => point.x > b.left + 60 && point.x < b.right - 60 && point.y > b.top + 60 && point.y < b.bottom - 100);
     }, locations);
+    console.log('Native building placement candidates:', JSON.stringify({ type: definition.type, count: locations.length, sample: locations.slice(0, 3), placement }));
     assert.ok(placement, 'The guest needs a visible original-rule building footprint.');
     await guest.mouse.move(placement.x, placement.y);
     await guest.waitForFunction(() => { const ui = window.guestWorld.construction; return ui.preview?.valid && ui.matches(ui.preview.location); });
@@ -92,7 +120,9 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     await guest.waitForFunction(() => window.guestWorld.construction.lastBuildResult);
     assert.equal(await guest.evaluate(() => window.guestWorld.construction.lastBuildResult.message), 'Building placed and saved.');
     await host.waitForFunction(task => window.hostWorld.game.getPlayerData().getTaskFlags()[task] === true, definition.task, { timeout: 20000 });
-    try {
+    if (outpost) {
+      await host.waitForFunction(amber => window.polycraft.controls.amounts().amber >= amber + 80, before.amber, { timeout: 10000 });
+    } else try {
       await host.waitForFunction(type => window.hostWorld.game.getBuildingManager().getBuildingsAtMinLevel(type, 1, false).some(entity => !entity.getEC('ECScaffold')), definition.type, { timeout: 20000 });
     } catch (error) {
       console.log('Native construction state:', await host.evaluate(() => {
@@ -103,20 +133,30 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
       }));
       throw error;
     }
-    const result = await host.evaluate(async type => {
+    const result = await host.evaluate(async ({ type, hero, outpost }) => {
       const world = window.hostWorld, game = world.game;
       await window.polycraft.checkpoint(true);
-      return { buildings: game.getBuildingManager().getBuildingsAtMinLevel(type, 1, false).map(entity => entity.getName()),
+      return { buildings: game.getBuildingManager().getBuildingsAtMinLevel(type, 1, outpost).map(entity => entity.getName()),
+        scaffolds: game.getBuildingManager().getBuildingsAtMinLevel(type, 1, outpost).flatMap(entity => {
+          const scaffold = entity.getEC('ECScaffold');
+          return scaffold ? [{ id: entity.getName(), planned: scaffold.getPlannedObject(), time: scaffold.buildTime, remaining: scaffold.getBuildTimeRemaining(), cost: scaffold.getCostToInstantlyBuild(), affordable: scaffold.canEntityAffordInstantBuild(world.players.active.get(hero).hero), menu: world.construction.menu(world.players.active.get(hero).hero, entity, world.controls) }] : [];
+        }),
         scripts: game.runScripts, amounts: window.polycraft.controls.amounts(), pending: world.construction.pending.size, income: { ...window.nativeBuildingIncome } };
-    }, definition.type);
+    }, { type: definition.type, hero, outpost });
     console.log('Original guest ' + definition.type + ' construction:', JSON.stringify({ placement, result }));
     assert.equal(result.buildings.length, 1); assert.equal(result.pending, 0); assert.equal(result.scripts, true);
-    for (const [resource, cost] of [['wood', product.costs[0]], ['stone', product.costs[1]], ['amber', product.costs[2]]]) assert.equal(result.amounts[resource], before[resource] + result.income[resource] - cost);
+    for (const [resource, cost] of [['wood', product.costs[0]], ['stone', product.costs[1]], ['amber', product.costs[2]]]) assert.equal(result.amounts[resource], before[resource] + result.income[resource] - cost + (outpost ? resource === 'wood' ? 250 : resource === 'amber' ? 80 : 0 : 0));
+    if (outpost) {
+      assert.equal(result.scaffolds.length, 1); assert.equal(result.scaffolds[0].planned, definition.archetype);
+      assert.equal(result.scaffolds[0].time, 1800); assert.ok(result.scaffolds[0].remaining > 1700);
+      assert.equal(result.scaffolds[0].affordable, true);
+      console.log('Original Outpost placement grants250wood/80Amber before its unchanged30minute build finishes; guest speedup menu observation:', JSON.stringify(result.scaffolds));
+    } else assert.equal(result.scaffolds.length, 0);
     await guest.waitForFunction(task => window.guestWorld.quests.state?.completed?.task === task, definition.task);
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state;
     assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(state.userData.taskFlags)[definition.task], true);
     assert.ok(JSON.parse(state.userData.desktopQuests).pending.some(task => task.task === definition.task));
-    if (lumbermill || stonemill || worker || defenceFactory) {
+    if (lumbermill || stonemill || worker || defenceFactory || outpost) {
       for (let index = 0; index < guests.length; index++) {
         await focusGuest(index);
         await guests[index].waitForFunction(amounts => window.guestWorld.hud.state?.resources[0] === amounts.wood && window.guestWorld.hud.state?.resources[1] === amounts.stone, result.amounts);

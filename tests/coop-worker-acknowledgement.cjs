@@ -155,7 +155,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     console.log('PASS: ordinary guest click acknowledged the original waiting worker:', JSON.stringify({ participants: guests.length + 1, worker }));
   };
   try {
-    if (process.argv.includes('--health-item-transitions') || process.argv.includes('--pvp-death') || process.argv.includes('--pve-combat') || process.argv.includes('--pve-melee') || process.argv.includes('--natural-defence')) {
+    if (process.argv.includes('--health-item-transitions') || process.argv.includes('--pvp-death') || process.argv.includes('--pve-combat') || process.argv.includes('--pve-melee') || process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) {
       await require('./solo-quest-reward.cjs')({ page: host, focus: focusHost });
       await host.waitForFunction(() => {
         const game = window.polycraft.controls.manager();
@@ -218,7 +218,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     await host.waitForFunction(ids => ids.every(id => !window.hostWorld.game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECResourceCarrier').hasAnyFlyingResource()), huts, { timeout: 15000 });
     await require('./coop-native-pause.cjs')({ host, guest: guests[0].page, focus: () => focus(0), focusHost, hostFile: file });
     await require('./coop-natural-workers.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hostFile: file });
-    if (process.argv.includes('--natural-defence')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory });
+    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost') });
     if (process.argv.includes('--pve-melee')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory, melee: true });
     if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
       attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });

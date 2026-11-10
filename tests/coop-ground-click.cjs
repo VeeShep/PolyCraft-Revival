@@ -58,6 +58,12 @@ module.exports = async function clickGround(guest, location) {
       await guest.waitForTimeout(50);
       before = await guest.evaluate(read, point.location);
     }
+    if (before.available && !before.captured && !before.hot.length && before.target && aims < 3) {
+      await guest.waitForTimeout(100);
+      projection = await guest.evaluate(project, { location: point.location, exact: true });
+      if (projection.point) point = { ...projection.point, fraction: point.fraction };
+      continue;
+    }
     if (before.ready || !before.available || before.captured || before.hot.length || before.target || !before.cursor || !Number.isFinite(before.distance) || aims === 3) break;
     // The view may still translate after rotation settles; re-aim before sending any action.
     projection = await guest.evaluate(project, { location: point.location, exact: true });
