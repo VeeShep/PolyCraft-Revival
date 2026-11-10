@@ -155,23 +155,24 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     console.log('PASS: ordinary guest click acknowledged the original waiting worker:', JSON.stringify({ participants: guests.length + 1, worker }));
   };
   try {
-    if (process.argv.includes('--health-item-transitions')) {
+    if (process.argv.includes('--health-item-transitions') || process.argv.includes('--pvp-death')) {
       await host.waitForFunction(() => {
         const game = window.polycraft.controls.manager();
         return game.getPlayerData().getXP() >= game.getTaskManager().taskArchetypes.buildStonelingHut.xpReward && !window.PolycraftCoopPlayers.CoopPlayers.hasPendingRewards(game, game.getHero());
       }, null, { timeout: 10000 });
-      console.log('Original worker quest XP settled on the solo model before health/item hosting:', await host.evaluate(() => window.polycraft.controls.manager().getPlayerData().getXP()));
+      console.log('Original worker quest XP settled on the solo model before reward-sensitive hosting:', await host.evaluate(() => window.polycraft.controls.manager().getPlayerData().getXP()));
     }
-    await host.evaluate(async () => {
+    await host.evaluate(async pvp => {
       window.workerConnectionErrors = [];
-      window.hostSession = new window.PolycraftMultiplayer.HostSession({ onError: (_peer, error) => window.workerConnectionErrors.push(error.message) });
+      window.hostSession = new window.PolycraftMultiplayer.HostSession({ pvp, onError: (_peer, error) => window.workerConnectionErrors.push(error.message) });
       window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
-    });
+    }, process.argv.includes('--pvp-death'));
     const rewards = process.argv.includes('--reward-transitions') ? require('./coop-reward-transitions.cjs') : null;
     if (rewards) await rewards.stageSolo(host);
     await host.evaluate(() => window.hostWorld.enablePlayers(window.polycraft.bridge));
     if (rewards) await rewards.checkSolo(host);
     await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
+    const pvpLife = process.argv.includes('--pvp-death') ? require('./coop-pvp-life.cjs') : null;
     if (rewards) await rewards.guestDeparture({ host, guest: guests[0].page, hero: party.players[1].id, reconnect, hostFile: file });
     if (process.argv.includes('--health-item-transitions')) await require('./coop-health-item-transitions.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, reconnect, hostFile: file });
     if (process.argv.includes('--xp-batch')) await require('./coop-xp-batch.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, hostFile: file });
@@ -215,6 +216,10 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     await host.waitForFunction(ids => ids.every(id => !window.hostWorld.game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECResourceCarrier').hasAnyFlyingResource()), huts, { timeout: 15000 });
     await require('./coop-native-pause.cjs')({ host, guest: guests[0].page, focus: () => focus(0), focusHost, hostFile: file });
     await require('./coop-natural-workers.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hostFile: file });
+    if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
+      attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });
+    if (pvpLife) await pvpLife({ host, attackerPage: guests[1].page, victimPage: guests[0].page, focusAttacker: () => focus(1), focusVictim: () => focus(0),
+      attackerId: party.players[2].id, victimId: party.players[1].id, paid: true, hostFile: file, directory, huts });
     const finalReward = rewards ? await rewards.finalSaveRecovery({ host, guests: guests.map(row => row.page), focusGuest: focus, hostFile: file,
       departure: process.argv.includes('--final-save-departure'), hero: party.players[1].id, reconnect }) : null;
     const saved = JSON.parse(fs.readFileSync(file)).state, earned = JSON.parse(saved.userData.desktopCoop);
@@ -243,6 +248,11 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     await closeHost();
     console.log('PASS: two/four-player native guest worker acknowledgement, shared fresh income/all guest HUDs, non-pausing menus, normal host save/reopen and isolated guest solo restoration.');
   } catch (error) {
+    console.log('Worker reward readiness diagnostics:', JSON.stringify(await host.evaluate(() => {
+      const game = window.polycraft.controls.manager(), hero = game.getHero();
+      return { tick: game.gameClock.getFrameIndex(), modelXP: game.getPlayerData().getXP(), heroXP: hero?.getEC('ECPlayerData')?.getXP(), pending: window.PolycraftCoopPlayers.CoopPlayers.hasPendingRewards(game, hero),
+        pickups: game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup').map(entity => { const p = entity.getEC('ECPickup'); return { name: entity.getName(), collector: p.getCollectorName(), xp: p.xp, location: Array.from(entity.getv3Location()) }; })) };
+    }).catch(diagnostic => ({ unavailable: diagnostic.message }))));
     for (const [index, row] of guests.entries()) await row.page.screenshot({ path: path.join(directory, 'worker-guest-failure-' + index + '.png'), timeout: 5000 }).catch(() => {});
     throw error;
   } finally {

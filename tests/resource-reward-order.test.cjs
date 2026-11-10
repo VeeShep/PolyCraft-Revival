@@ -79,10 +79,11 @@ test('timed-out native final-save observation restores its hook and cannot arm a
   f.releaseOriginal(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(f.w.finalCloseResult, 'Temporary final-save observer cancelled.'); assert.equal(f.w.rejectFinalCapture, null);
 });
-test('health/item hosting waits for the original solo quest XP and its owned callbacks before rebinding', () => {
+test('reward-sensitive hosting waits for the original solo quest XP and its owned callbacks before rebinding', () => {
   const callbacks = [];
   traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { IfStatement(p) {
-    if (p.node.test.type !== 'CallExpression' || p.node.test.arguments[0]?.value !== '--health-item-transitions' || p.node.consequent.type !== 'BlockStatement') return;
+    const condition = p.node.test.type === 'LogicalExpression' ? p.node.test.left : p.node.test;
+    if (condition.type !== 'CallExpression' || condition.arguments[0]?.value !== '--health-item-transitions' || p.node.consequent.type !== 'BlockStatement') return;
     const statement = p.node.consequent.body[0]; assert.equal(statement.expression.type, 'AwaitExpression');
     callbacks.push(statement.expression.argument.arguments[0]);
   } });
@@ -92,6 +93,37 @@ test('health/item hosting waits for the original solo quest XP and its owned cal
   const ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { polycraft: { controls: { manager: () => game } },
     PolycraftCoopPlayers: { CoopPlayers: { hasPendingRewards(current, hero) { assert.equal(current, game); assert.equal(hero, actor); return state.pending; } } } } });
   assert.equal(ready(), false); state.xp = 25; state.pending = true; assert.equal(ready(), false); state.pending = false; assert.equal(ready(), true);
+});
+test('worker hosting forwards its explicit PvP option into an immutable native session before hero binding', async () => {
+  const callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { AssignmentExpression(p) {
+    if (p.node.left.object?.name === 'window' && p.node.left.property?.name === 'hostSession') callbacks.push(p.findParent(parent => parent.isArrowFunctionExpression()).node);
+  } });
+  assert.equal(callbacks.length, 1);
+  for (const pvp of [false, true]) {
+    const w = { PolycraftMultiplayer: require('../desktop/multiplayer.js'), polycraft: { controls: {}, bridge: {} },
+      PolycraftOnlineWorld: { async startHostingWorld() { return {}; } } };
+    await vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: w })(pvp);
+    assert.equal(w.hostSession.pvp, pvp); assert.equal(Object.getOwnPropertyDescriptor(w.hostSession, 'pvp').writable, false); w.hostSession.close();
+  }
+});
+test('PvP firing-lane muzzle math matches original firing with scaled and tilted mesh axes', () => {
+  const expressions = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-pvp-life.cjs'), 'utf8')), { VariableDeclarator(p) { if (p.node.id.name === 'muzzleOffset') expressions.push(p.node.init); } });
+  assert.equal(expressions.length, 1);
+  const fire = require('./runtime-ast.cjs').method('fireAtLocation');
+  for (const axes of [[[1.25, 0, 0], [0, 1.25, 0], [0, 0, 1.25]], [[0, 0, 2], [.3, 1.2, 0], [-1.5, .2, 0]]]) {
+    const offset = [.4, -.25, -.4], capsule = [1, 2, 3]; let origin;
+    const computed = vm.runInNewContext('(' + generate(expressions[0]).code + ')', { axes, offset });
+    const mesh = { getX: () => axes[0], getY: () => axes[1], getZ: () => axes[2] };
+    const firearm = { globals: { mathDevice: { v3Copy: a => [...a], v3AddScalarMul: (a, b, scale, out) => { for (let i = 0; i < 3; i++) out[i] = a[i] + b[i] * scale; return out; } } },
+      entity: { isManagedByThisMachine: () => true }, getEntityEC: name => name === 'ECMesh' ? mesh : { getv3CapsuleTopLocation: () => capsule },
+      hasShootOffset: true, archetype: { shootOffset: offset }, getProjectilesPerShot: () => 1, getMaxRandomSpreadAngle: () => 0,
+      createProjectiles: (_type, _count, _target, _direction, muzzle) => { origin = muzzle; }, playFire() {}, playFireEffect() {}, beginRechamber() {}, ammo: 2, temporaryWeaponAmmo: 0 };
+    fire.call(firearm, [5, 2, 3], [1, 0, 0]);
+    assert.ok(origin.every((value, i) => Math.abs(value - capsule[i] - computed[i]) < 1e-12));
+    assert.notDeepEqual(Array.from(computed), offset);
+  }
 });
 test('natural gear observation waits for a reward-ready boundary before any live hero capture', async () => {
   let captureCount = 0, readLater, ready = false;

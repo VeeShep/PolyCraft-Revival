@@ -5,8 +5,8 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 
 (async () => {
   assert.ok(!process.argv.includes('--final-save-departure') || process.argv.includes('--reward-transitions'), 'Final-save departure requires the reward transition phase.');
-  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
-  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
+  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
+  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(fixture).startsWith('polycraft-hq-recovery-'), 'Use only an existing disposable recovery-test checkpoint.');
   const source = path.join(fixture, 'saves'), names = fs.readdirSync(source), originals = new Map(names.map(name => [name, fs.readFileSync(path.join(source, name))]));
@@ -32,10 +32,10 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     application = await electron.launch({ ...(process.env.POLYCRAFT_EXECUTABLE ? { executablePath: process.env.POLYCRAFT_EXECUTABLE, args: [] } : { args: ['.'] }), env: { ...process.env, POLYCRAFT_TEST_DATA: directory }, timeout: 90000 });
     const page = await application.firstWindow();
     page.on('pageerror', error => errors.push(error.message)); page.on('request', request => requests.push(request.url()));
-    await application.evaluate(({ BrowserWindow }, coop) => {
+    await application.evaluate(({ BrowserWindow }, label) => {
       const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Worker restart test must be visible.');
-      window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — ' + (coop ? 'co-op worker save test' : 'solo worker restart'));
-    }, process.argv.includes('--coop'));
+      window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — ' + label);
+    }, process.argv.includes('--pvp-death') ? 'co-op PvP lifecycle and worker save test' : process.argv.includes('--coop') ? 'co-op worker save test' : 'solo worker restart');
     await focus();
     await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
     await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
