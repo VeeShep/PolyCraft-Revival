@@ -17,6 +17,13 @@ function evaluatedCallback(file, variable) {
   assert.equal(found.length, 1, file + ':' + variable);
   return generate(found[0]).code;
 }
+test('natural Defence reward approach excludes old pickups, new worker resources and destroyed reward remnants', () => {
+  const entity = (id, pickup, destroyed = false) => ({ getName: () => id, getEC: () => pickup, shouldBeDestroyed: () => destroyed });
+  const entities = [entity('old', { xp: 20, archetype: {} }), entity('stone', { xp: 0, archetype: { resource: [0, 1] } }),
+    entity('dead', { xp: 20, archetype: {} }, true), entity('xp', { xp: 20, archetype: {} }), entity('amber', { xp: 0, archetype: { softCurrency: 1 } })];
+  const select = vm.runInNewContext('(' + evaluatedCallback('coop-natural-defence.cjs', 'drops') + ')', { window: { hostWorld: { game: { getGameSpaceList: () => [{ getEntitiesWithEC: () => entities }] } } } });
+  assert.deepEqual(Array.from(select(['old'])), ['xp', 'amber']);
+});
 test('campaign combat staging waits for prior native rewards before retaining its actor and XP baseline', async () => {
   for (const [file, variable] of [['coop-campaign-acceptance.cjs', 'combat'], ['coop-campaign-victory.cjs', 'actor']]) {
     let queued, release;

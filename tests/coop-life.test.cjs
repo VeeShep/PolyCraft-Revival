@@ -36,6 +36,53 @@ test('death animation restores its own remaining duration even with positive sav
   restored.clock(500.25); restored.life.updateDeathAnimation(); assert.equal(restored.life.respawnTime, 530.25);
   assert.equal(restored.life.state, restored.life.states.RESPAWNING);
 });
+test('original finite and infinite lives survive repeated dying/waiting disk restores without replaying a death', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'polycraft-finite-life-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const saves = new Saves(path.join(root, 'saves')), slot = saves.create('Disposable lifecycle contracts');
+  function nativeActor(lives, infiniteLives, time = 100) {
+    const events = [], globals = { gameCurrentTime: time, mathDevice: { v3Copy: v => [...v], v3Build: (...v) => v, v3Add: (a, b) => a.map((v, i) => v + b[i]) } };
+    const health = { resetHealth: () => events.push('health'), setInvulnerable() {}, setDisableHealthBar() {}, setInvulnerableDuration() {} };
+    const locomotion = { reset() {}, setActive() {} }, components = { ECHealth: health, ECLocomotion: locomotion, ECPhysicsSphere: { reset() {} } };
+    const game = { globals, getHeroRespawnPosition: () => [1, 0, 2], getScoreInfo: () => ({ onHeroDeath: () => events.push('death') }) };
+    globals.metricsManager = { sendGameMetric: name => events.push(name) };
+    const entity = { getEC: name => components[name], setv3Location() {}, showMesh() {}, flashDeath() {} };
+    const life = components.ECPlayerLife = Object.assign(Object.create(runtime), { entity, gameManager: game, globals, state: runtime.states.NORMAL,
+      lives, infiniteLives, deathAnimationDuration: 1, archetype: { respawnDelay: 15, respawnInvulnerableTime: 5 },
+      getEntityEC: name => components[name], setToDraw() {}, playSound: name => events.push(name) });
+    return { life, entity, globals, events, players: Object.assign(Object.create(CoopPlayers.prototype), { game }) };
+  }
+  for (const infinite of [false, true]) for (const startingLives of [3, 1, 0]) for (const phase of ['dying', 'waiting']) {
+    let actor = nativeActor(startingLives, infinite);
+    actor.life.loseLife();
+    const remainingLives = startingLives - (infinite ? 0 : 1);
+    assert.equal(actor.life.lives, remainingLives); assert.equal(actor.events.filter(v => v === 'death').length, 1);
+    actor.globals.gameCurrentTime += phase === 'dying' ? .75 : 1;
+    if (phase === 'waiting') actor.life.updateDeathAnimation();
+    for (let reload = 0; reload < 2; reload++) {
+      const saved = actor.players.captureLife(actor.entity);
+      assert.equal(saved.phase, phase); assert.equal(saved.lives, remainingLives); assert.equal(saved.infiniteLives, infinite);
+      const state = saves.load(slot.id).state, data = new CoopData(state), player = data.data.players[0];
+      player.location = [4, 0, 5]; player.health = { current: 0, maximum: 50 }; player.life = saved;
+      data.persist(); saves.save(slot.id, state);
+      const disk = new CoopData(saves.load(slot.id).state).data.players[0].life;
+      assert.deepEqual(disk, saved);
+      actor = nativeActor(99, !infinite, 1000 + reload * 100);
+      actor.players.restoreLife(actor.entity, disk, { current: 0 });
+      assert.deepEqual(actor.players.captureLife(actor.entity), saved);
+      assert.ok(!actor.events.includes('death') && !actor.events.some(v => v.startsWith('heroDeath_')));
+    }
+    if (phase === 'dying') {
+      actor.globals.gameCurrentTime += .25; actor.life.updateDeathAnimation();
+      assert.equal(actor.players.captureLife(actor.entity).remaining, 15);
+    }
+    actor.globals.gameCurrentTime += 15; actor.life.updateScheduleRespawn(); actor.life.updateScheduleRespawn();
+    assert.equal(actor.life.state, runtime.states.NORMAL); assert.equal(actor.life.lives, remainingLives);
+    assert.equal(actor.events.filter(v => v === 'health').length, 1); assert.equal(actor.events.filter(v => v === 'spawnHero').length, 1);
+    actor.life.loseLife(); assert.equal(actor.life.lives, remainingLives - (infinite ? 0 : 1));
+    assert.equal(actor.events.filter(v => v === 'death').length, 1);
+  }
+});
 test('legacy unknown death timing restarts the original wait for zero health, while normal lives and malformed lifecycle checks are retained', () => {
   const f = fixture(); f.players.restoreLife(f.hero, null, { current: 0 }); assert.equal(f.life.respawnTime, 130); assert.equal(f.life.state, f.life.states.RESPAWNING); assert.deepEqual(f.healthEvents, [['invulnerable', true], ['bar', true]]);
   const normal = { phase: 'normal', remaining: 0, location: null, lives: 2, infiniteLives: true };

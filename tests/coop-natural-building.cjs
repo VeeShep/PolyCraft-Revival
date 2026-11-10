@@ -2,10 +2,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, lumbermill = false, stonemill = false, worker = null }) {
+module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, lumbermill = false, stonemill = false, worker = null, defenceFactory = false }) {
   assert.ok(worker === null || worker === 'lumber' || worker === 'stone');
-  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) <= 1);
-  const definition = worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
+  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) + Number(defenceFactory) <= 1);
+  const definition = defenceFactory ? { family: 'defencefactoryworkshop', type: 'Defence Factory', archetype: 'a_b_defencefactory', task: 'buildDefenceFactory', costs: [10, 0, 0] } : worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
     { family: 'hqworkshop', type: 'HQ', archetype: 'a_b_hq', task: 'buildHq', costs: [0, 0, 0] };
   await host.waitForFunction(family => window.hostWorld.game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(family)).some(entity => entity.getEC('ECSelectable')?.permanentValid === true), definition.family, { timeout: 10000 });
   const source = await host.evaluate(({ hero, definition }) => {
@@ -71,7 +71,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
         if (world.construction.preview(actor, entity, index, location).preview?.valid) locations.push(location);
       }
       return locations;
-    }, { hero, source: source.id, index: product.index, paid: lumbermill || stonemill || worker !== null });
+    }, { hero, source: source.id, index: product.index, paid: lumbermill || stonemill || worker !== null || defenceFactory });
     const placement = await guest.evaluate(locations => {
       const world = window.guestWorld, globals = world.controls.app.globals, b = world.movement.canvas.getBoundingClientRect();
       return locations.map(location => {
@@ -116,7 +116,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state;
     assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(state.userData.taskFlags)[definition.task], true);
     assert.ok(JSON.parse(state.userData.desktopQuests).pending.some(task => task.task === definition.task));
-    if (lumbermill || stonemill || worker) {
+    if (lumbermill || stonemill || worker || defenceFactory) {
       for (let index = 0; index < guests.length; index++) {
         await focusGuest(index);
         await guests[index].waitForFunction(amounts => window.guestWorld.hud.state?.resources[0] === amounts.wood && window.guestWorld.hud.state?.resources[1] === amounts.stone, result.amounts);
