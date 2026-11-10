@@ -79,3 +79,17 @@ test('timed-out native final-save observation restores its hook and cannot arm a
   f.releaseOriginal(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(f.w.finalCloseResult, 'Temporary final-save observer cancelled.'); assert.equal(f.w.rejectFinalCapture, null);
 });
+test('health/item hosting waits for the original solo quest XP and its owned callbacks before rebinding', () => {
+  const callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { IfStatement(p) {
+    if (p.node.test.type !== 'CallExpression' || p.node.test.arguments[0]?.value !== '--health-item-transitions' || p.node.consequent.type !== 'BlockStatement') return;
+    const statement = p.node.consequent.body[0]; assert.equal(statement.expression.type, 'AwaitExpression');
+    callbacks.push(statement.expression.argument.arguments[0]);
+  } });
+  assert.equal(callbacks.length, 1);
+  const actor = {}, state = { xp: 24, pending: false };
+  const game = { getPlayerData: () => ({ getXP: () => state.xp }), getTaskManager: () => ({ taskArchetypes: { buildStonelingHut: { xpReward: 25 } } }), getHero: () => actor };
+  const ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { polycraft: { controls: { manager: () => game } },
+    PolycraftCoopPlayers: { CoopPlayers: { hasPendingRewards(current, hero) { assert.equal(current, game); assert.equal(hero, actor); return state.pending; } } } } });
+  assert.equal(ready(), false); state.xp = 25; state.pending = true; assert.equal(ready(), false); state.pending = false; assert.equal(ready(), true);
+});

@@ -5,8 +5,8 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 
 (async () => {
   assert.ok(!process.argv.includes('--final-save-departure') || process.argv.includes('--reward-transitions'), 'Final-save departure requires the reward transition phase.');
-  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
-  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
+  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
+  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(fixture).startsWith('polycraft-hq-recovery-'), 'Use only an existing disposable recovery-test checkpoint.');
   const source = path.join(fixture, 'saves'), names = fs.readdirSync(source), originals = new Map(names.map(name => [name, fs.readFileSync(path.join(source, name))]));
