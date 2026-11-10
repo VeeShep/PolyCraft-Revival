@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
+  assert.ok(!process.argv.includes('--final-save-departure') || process.argv.includes('--reward-transitions'), 'Final-save departure requires the reward transition phase.');
   for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
   assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');

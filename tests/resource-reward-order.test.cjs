@@ -38,3 +38,44 @@ test('recovered stone and combined worker progression clear each completed rewar
   assert.ok(f.events.indexOf('deposit:0') < f.events.indexOf(combined), 'The incomplete combined wood phase has no reward to collect.');
   assert.deepEqual(f.events.slice(-8), ['next-task', 'build:lumber', 'collect:guest-idAcceptTaskRewardButtontaskIdcrit_11', 'next-task', 'build:stone', 'workers-spawned', 'worker-productivity', 'native-pause']);
 });
+
+function finalSaveFixture({ inherited = false, delayed = false, timeout = false } = {}) {
+  const state = { userData: { desktopCoop: '{}' } }, bridge = {}, w = { polycraft: {} };
+  let releaseOriginal;
+  const originalGate = delayed ? new Promise(resolve => { releaseOriginal = resolve; }) : Promise.resolve();
+  const checkpoint = async function (value) { assert.equal(this, w.polycraft.controls); assert.equal(value, bridge); await originalGate; return state; };
+  w.polycraft.controls = inherited ? Object.create({ checkpoint }) : { checkpoint };
+  w.hostWorld = { finalUpdate: true, close: () => w.polycraft.controls.checkpoint(bridge) };
+  const context = vm.createContext({ window: w, assert, stageReward: async () => ({ pending: true }) });
+  const host = {
+    async evaluate(callback) { return vm.runInContext('(' + callback.toString() + ')()', context); },
+    async waitForFunction(callback) {
+      if (timeout) throw new Error('Temporary observation timeout');
+      for (let i = 0; i < 5; i++) { if (await this.evaluate(callback)) return; await new Promise(resolve => setImmediate(resolve)); }
+      assert.fail('The final acknowledgement gate did not arm.');
+    }
+  };
+  const source = parse(fs.readFileSync(path.join(__dirname, 'coop-reward-transitions.cjs'), 'utf8'));
+  for (const name of ['holdFinalSave', 'finalSaveRecovery']) {
+    const node = source.program.body.find(node => node.type === 'FunctionDeclaration' && node.id.name === name); assert.ok(node);
+    vm.runInContext(generate(node).code, context);
+  }
+  return { w, state, checkpoint, host, context, releaseOriginal };
+}
+for (const reject of [false, true]) test('native final-save observer preserves method ownership and supports held acknowledgement reject=' + reject, async () => {
+  const f = finalSaveFixture({ inherited: reject });
+  await f.context.holdFinalSave(f.host);
+  assert.equal(f.w.failedFinalCapture, f.state); assert.equal(f.w.finalCloseResult, null);
+  if (reject) f.w.rejectFinalCapture(); else f.w.resolveFinalCapture();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.w.finalCloseResult, reject ? 'Temporary final-save acknowledgement failure.' : 'success');
+  f.w.restoreFinalCheckpoint(); assert.equal(f.w.polycraft.controls.checkpoint, f.checkpoint);
+  assert.equal(Object.hasOwn(f.w.polycraft.controls, 'checkpoint'), !reject);
+});
+test('timed-out native final-save observation restores its hook and cannot arm an orphaned gate after capture completes later', async () => {
+  const f = finalSaveFixture({ delayed: true, timeout: true, inherited: true });
+  await assert.rejects(f.context.finalSaveRecovery({ host: f.host, guests: [], focusGuest: async () => {} }), /Temporary observation timeout/);
+  assert.equal(f.w.polycraft.controls.checkpoint, f.checkpoint); assert.equal(Object.hasOwn(f.w.polycraft.controls, 'checkpoint'), false);
+  f.releaseOriginal(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.w.finalCloseResult, 'Temporary final-save observer cancelled.'); assert.equal(f.w.rejectFinalCapture, null);
+});

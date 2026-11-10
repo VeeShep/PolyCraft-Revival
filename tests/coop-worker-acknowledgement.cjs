@@ -207,7 +207,8 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     await host.waitForFunction(ids => ids.every(id => !window.hostWorld.game.getGameEntityByName(id).getEC('ECWildlingHouse').getWildling().getEC('ECResourceCarrier').hasAnyFlyingResource()), huts, { timeout: 15000 });
     await require('./coop-native-pause.cjs')({ host, guest: guests[0].page, focus: () => focus(0), focusHost, hostFile: file });
     await require('./coop-natural-workers.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hostFile: file });
-    const finalReward = rewards ? await rewards.finalSaveRecovery({ host, guests: guests.map(row => row.page), focusGuest: focus, hostFile: file }) : null;
+    const finalReward = rewards ? await rewards.finalSaveRecovery({ host, guests: guests.map(row => row.page), focusGuest: focus, hostFile: file,
+      departure: process.argv.includes('--final-save-departure'), hero: party.players[1].id, reconnect }) : null;
     const saved = JSON.parse(fs.readFileSync(file)).state, earned = JSON.parse(saved.userData.desktopCoop);
     assert.equal(saved.cheats.everEnabled, false); assert.equal(earned.players.length, 4);
     await host.evaluate(() => window.hostWorld.close());
