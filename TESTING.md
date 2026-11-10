@@ -2,14 +2,16 @@
 
 This is the test map and runbook, not a blanket claim that every platform or scenario passes. Read the current section of [RESTORATION_STATUS.md](RESTORATION_STATUS.md) before continuing work; it owns the dated success/failure ledger, exact source/package identities, evidence paths and open acceptance gates. [README.md](README.md#checks) describes player-facing setup and the main acceptance commands. [AGENTS.md](AGENTS.md) defines repository safety and publication rules.
 
-Inventory/checkpoint date: **2026-11-08**, latest application work **1.0.0-beta.100** (focused source/static checks pass; native incoming case pending; broader gates remain open). There are **72 `tests/*.test.cjs` suite files**. A suite file can contain several tests or parameterized cases; 72 is not the test-result count.
+Inventory/checkpoint date: **2026-11-09**, latest application work **1.0.0-beta.100** (focused source/static checks pass; native incoming case pending; broader gates remain open). There are **73 `tests/*.test.cjs` suite files**. A suite file can contain several tests or parameterized cases; 73 is not the test-result count.
 
 ## Current evidence and its limits
 
 | Checkpoint | Recorded result | What it does and does not establish |
 | --- | --- | --- |
 | Published Beta99 source `a29f794118278e11531b736d06e84516fa597c9e` | [CI run42515816607](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42515816607) **all8jobs pass /630checks /eight artifacts132.1** | Native package static checks and Linux stub-world transport pass. Artifacts not independently downloaded/launched; local finished-package gameplay is separate. No public release. |
-| Beta100 incoming resource capture | **28 focused /639 full checks pass**, initial red0/3; later focused rerun43215 includes the added failed-flight case | Native pickup/tween/action-manager/capture phases, ownership, cap, queue order, partial-failure refusal and pending-resource level-up deferral. Local ARM64 package verifies. The full639run predates that added case; next full640result is pending. These are native-method fixtures, not a visible incoming-flight interruption pass. Generic XP/coin/item/health interruptions remain open. |
+| Beta100 incoming acceptance | **Native34098 exit0; final full661/0;37focused/0** | Actual5wood incoming at close4339/capture4340 settles once and restores natively at4355. Two ordinary10wood deposits, two/four-player workers, fresh2wood+2stone/all HUDs, non-pausing menus, host save/reload and guest solo isolation pass. All11helper/8source hashes match; owned apps closed. First-restore guard and cleanup regression pass in final local full8020 (661checks/zero failures). Native evidence uses its exact earlier pinned helpers. |
+| Published Beta100 source `8c66f751ee9a2e9d34a512e46c26bb4d4f92dcbf` | [CI run42763109500](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42763109500) **all8jobs /640checks /eight artifacts133.1** | Static native packages and Linux stub-world transport pass. All decoded logs inspected. Artifacts not independently downloaded/launched; local finished-app gameplay remains separate. No public release. |
+| Beta100 incoming production checks | **28 focused /639 full local /640 CI pass**, initial red0/3 | Native pickup/tween/action-manager/capture phases, original variants/owners/caps/order, partial-failure refusal and pending-resource level-up deferral. Generic XP/coin/item/health interruptions remain open. |
 | Beta99 resource-ready selection | **115 focused production /23 route-harness /630 full checks pass** | Native growth/strict full-delta flag/runtime compatibility and all five actual original mesh definitions pass. First full628/1 loopback failure is retained; isolated9/0, full629/0 and final630/0 pass. Cause remains unproven. Native30847exit0 covers actual rock04 ring/depletion, normal stone deposit and full two/four-player worker/menu/income/save/reload/solo-restoration follow-through. Native35389remains an overall worker-route failure despite its ring/deposit subsection passing. |
 | Last completed Beta97 local source/harness | **623 checks / zero failures**, including **23 focused flight-observer/diagnostic/reward-order checks** | Non-graphical local regression evidence; no new CI or native-platform claim follows from this number. |
 | Beta98 disconnect classification | **39 focused /624 full checks pass**; local ARM64 build/source/icons/14MachO/signature pass | Only a closed data channel with native `sctp-failure` and numeric cause 12 uses the existing remote-disconnect path. Other errors retain failure behavior. Source checks alone do not establish gameplay; see the separate69014finished-package row. |
@@ -46,6 +48,7 @@ npm test
 node --test tests/in-flight-save.test.cjs tests/in-flight-disconnect.test.cjs tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-order.test.cjs
 node --test tests/multiplayer.test.cjs tests/in-flight-save.test.cjs tests/in-flight-disconnect.test.cjs tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-order.test.cjs
 node --test tests/resource-pickup.test.cjs tests/resource-flight.test.cjs tests/coop-players.test.cjs
+node --test tests/incoming-disconnect.test.cjs tests/in-flight-disconnect.test.cjs tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-order.test.cjs
 node --test tests/world-state.test.cjs tests/guest-world.test.cjs tests/online-world.test.cjs tests/multiplayer.test.cjs
 node --test tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-order.test.cjs tests/ground-click.test.cjs
 ```
@@ -54,7 +57,7 @@ node --test tests/natural-deposit-diagnostics.test.cjs tests/resource-reward-ord
 
 There is no catch-all acceptance flag: choose a driver below for the behavior actually being changed. Run the relevant source checks first, then announce the visible case. Do not repeatedly rerun unrelated suites after successful checks unless new changes or failures justify it.
 
-## Non-graphical suite inventory — all 72 files
+## Non-graphical suite inventory — all 73 files
 
 All paths in this section are under `tests/`. Descriptions summarize assertions in the source, not claims of full-game coverage.
 
@@ -113,7 +116,7 @@ All paths in this section are under `tests/`. Descriptions summarize assertions 
 | [campaign-results.test.cjs](tests/campaign-results.test.cjs) | Original scores/star roles and victory/defeat presentation, once-only retained results, validation and local dismissal. |
 | [campaign-rewards.test.cjs](tests/campaign-rewards.test.cjs) | Pending reward ledger, host ownership, partial/reentrant-grant refusal, original panel recovery and exact migration preservation. |
 
-### Guest presentation, input diagnostics and acceptance observers (17)
+### Guest presentation, input diagnostics and acceptance observers (18)
 
 | Suite | Checks |
 | --- | --- |
@@ -132,6 +135,7 @@ All paths in this section are under `tests/`. Descriptions summarize assertions 
 | [native-pause.test.cjs](tests/native-pause.test.cjs) | Acceptance-helper checks for keyboard-opened rendered pause menus, hidden gameplay HUD, advancing host/worker updates and cleanup failures. |
 | [worker-productivity.test.cjs](tests/worker-productivity.test.cjs) | Observer rejects harvest-only/unrelated/pre-harvest deposits, checks exact accounting, solo/shared save bank, guest HUD bounds and wrapper cleanup. |
 | [in-flight-save.test.cjs](tests/in-flight-save.test.cjs) | Save-observer rejects missed flights/capture boundaries, uncleared queues/failed UI saves and restores own/inherited capture hooks. |
+| [incoming-disconnect.test.cjs](tests/incoming-disconnect.test.cjs) | Incoming-flight observer requires actual inbound resources at removal, cap-respecting exactly-once grants and immediate native inventory/health restoration. Rejects missed flights, incomplete settlement, duplicate grants and bad restore; restores owned/inherited wrappers. |
 | [in-flight-disconnect.test.cjs](tests/in-flight-disconnect.test.cjs) | Close/rejoin observer requires active-flight removal, cleared queues, matching saved hero and hook cleanup; rejects expired/stuck/invalid cases. |
 | [natural-deposit-diagnostics.test.cjs](tests/natural-deposit-diagnostics.test.cjs) | Bounded deposit/resource-approach screenshots preserve the original failure; resource walking restores real focus before more input, and worker walking delegates guarded native ground clicks while preserving range/focus/input failures. |
 
@@ -213,9 +217,10 @@ POLYCRAFT_WORKER_FIXTURE="/absolute/temporary/polycraft-hq-recovery-EXAMPLE" nod
 POLYCRAFT_WORKER_FIXTURE="/absolute/temporary/polycraft-hq-recovery-EXAMPLE" node tests/worker-reload-smoke.cjs --coop --save-in-flight
 POLYCRAFT_WORKER_FIXTURE="/absolute/temporary/polycraft-hq-recovery-EXAMPLE" node tests/worker-reload-smoke.cjs --coop --disconnect-in-flight
 POLYCRAFT_WORKER_FIXTURE="/absolute/temporary/polycraft-hq-recovery-EXAMPLE" node tests/worker-reload-smoke.cjs --coop --resource-highlights
+POLYCRAFT_WORKER_FIXTURE="/absolute/temporary/polycraft-hq-recovery-EXAMPLE" node tests/worker-reload-smoke.cjs --coop --disconnect-incoming
 ```
 
-Use **one** command per announced run. All three optional phase flags require `--coop`; the two flight flags are mutually exclusive. Solo acknowledgement uses ordinary approach/input and original smart selection. Co-op acknowledgement uses assigned guest input and host-native callbacks. Offline credits/animations settle before productivity baseline; fresh harvest must precede qualifying delivery, while all deposits count toward exact bank accounting. Save mode clicks the real host Save Now UI during the later outbound transfer; close mode deliberately calls the real guest link's close operation, waits for host removal and rejoins the saved hero. Missing the active-flight timing window fails, rather than silently accepting an ordinary completed deposit. `--resource-highlights` approaches an original intact rock by normal input, requires the native selection ring with the shared growing/mature mesh, mines it and requires the depleted ring to disappear before a normal stone deposit. Its closer approach limit is a test setup requirement for original smart-range drawing; it does not change game interaction range. Both peers must use Beta99/runtimecoop42/snapshot18.
+Use **one** command per announced run. All four optional phase flags require `--coop`; the three interruption/save flags are mutually exclusive. Solo acknowledgement uses ordinary approach/input and original smart selection. Co-op acknowledgement uses assigned guest input and host-native callbacks. Offline credits/animations settle before productivity baseline; fresh harvest must precede qualifying delivery, while all deposits count toward exact bank accounting. Save mode clicks the real host Save Now UI during the later outbound transfer; close mode deliberately calls the real guest link's close operation, waits for host removal and rejoins the saved hero. Missing the active-flight timing window fails, rather than silently accepting an ordinary completed deposit. `--resource-highlights` approaches an original intact rock by normal input, requires the native selection ring with the shared growing/mature mesh, mines it and requires the depleted ring to disappear before a normal stone deposit. Its closer approach limit is a test setup requirement for original smart-range drawing; it does not change game interaction range. The incoming mode requires a Beta100 host; use matching builds for acceptance (runtimecoop42/snapshot18). `--disconnect-incoming` performs an ordinary first deposit, then closes the actual link after keyboard release during a later incoming pickup. It requires positive reservations at actual removal, exact capped credit, one native grant per captured pickup ID and immediate native restore before later pickups can change the bag. It rejoins the assigned saved hero, finishes normal gathering/deposit and continues the four-player worker/save/isolation case. No animation slowdown or assigned resource values.
 
 HQ recovery fixture: `POLYCRAFT_HQ_FIXTURE` must identify the `host` profile under a retained disposable `polycraft-coop-identities-*` root. It checks fixture shape/history and copies the backup. `--lumbermill` selects the matching saved progression; `--rehost` rejoins saved heroes. `--resources` requires `--rehost`; `--stonemill` requires `--lumbermill --rehost --resources`; `--workers` additionally requires `--stonemill`.
 
@@ -237,7 +242,7 @@ Running these files with `node` alone does not run an acceptance case. They expo
 | Helpers | Driver role |
 | --- | --- |
 | `coop-worker-acknowledgement`, `coop-native-pause`, `coop-natural-workers` | Worker two/four-player acknowledgement, original pause/HUD and fresh productivity; invoked by worker/recovery drivers. |
-| `coop-save-in-flight`, `coop-disconnect-in-flight`, `coop-natural-deposit` | Native outbound transfer observation, real UI save or intentional link close/rejoin, exact actor/shared-bank/save/HUD accounting. Wrappers observe/delegate and restore native methods. |
+| `coop-save-in-flight`, `coop-disconnect-in-flight`, `coop-incoming-disconnect`, `coop-natural-deposit` | Native incoming/outbound transfer observation, real UI save or intentional link close/rejoin, exact actor/shared-bank/save/HUD accounting. Wrappers observe/delegate and restore native methods. |
 | `coop-natural-weapon`, `coop-natural-crate`, `coop-natural-bridge`, `coop-natural-bandits`, `coop-natural-village`, `coop-natural-building`, `coop-natural-resources`, `coop-natural-gear` | Original gameplay progression phases; driver orders dependencies/rewards and owns windows. |
 | `coop-recovered-party` | Recovery driver's saved-party rejoin and optional resource/stonemill/worker continuation. |
 | `coop-quest-acceptance`, `coop-restoration-acceptance`, `coop-campaign-acceptance`, `coop-campaign-victory`, `coop-crafting-acceptance` | Connection/session driver's staged and natural UI/lifecycle/held/campaign/crafting subcases. |

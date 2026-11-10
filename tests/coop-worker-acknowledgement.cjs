@@ -155,7 +155,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await window.hostWorld.enablePlayers(window.polycraft.bridge);
     });
     await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
-    if (process.argv.includes('--save-in-flight') || process.argv.includes('--disconnect-in-flight')) {
+    if (process.argv.includes('--save-in-flight') || process.argv.includes('--disconnect-in-flight') || process.argv.includes('--disconnect-incoming')) {
       const guest = guests[0].page;
       const button = async id => {
         await focus(0);
@@ -183,14 +183,14 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       let priorCarrier;
       for (let cycle = 0; cycle < 2; cycle++) {
         await collectReward();
-        await require('./coop-natural-resources.cjs')({ ...context, gatherOnly: true });
+        await require('./coop-natural-resources.cjs')({ ...context, gatherOnly: true, disconnectDuringPickup: cycle === 1 && process.argv.includes('--disconnect-incoming') ? reconnect : undefined });
         await collectReward();
         const carrier = await host.evaluate(id => window.hostWorld.players.active.get(id).hero.getName(), party.players[1].id);
-        if (cycle === 1) assert.equal(carrier, priorCarrier, 'The later save must use the carrier that made the previous delivery.');
+        if (cycle === 1 && !process.argv.includes('--disconnect-incoming')) assert.equal(carrier, priorCarrier, 'The later save must use the carrier that made the previous delivery.');
         await require('./coop-natural-deposit.cjs')({ ...context, saveDuringFlight: cycle === 1 && process.argv.includes('--save-in-flight'), disconnectDuringFlight: cycle === 1 && process.argv.includes('--disconnect-in-flight') ? reconnect : undefined });
         priorCarrier = carrier;
       }
-      console.log('PASS: a normal completed deposit followed by ' + (process.argv.includes('--disconnect-in-flight') ? 'disconnect/reconnect' : 'Save Now') + ' during a later native deposit is accounted once and saved.');
+      console.log('PASS: a normal completed deposit followed by ' + (process.argv.includes('--disconnect-incoming') ? 'incoming-pickup disconnect/reconnect' : process.argv.includes('--disconnect-in-flight') ? 'outgoing disconnect/reconnect' : 'Save Now') + ' is accounted once and saved.');
     }
     if (process.argv.includes('--resource-highlights')) {
       const context = { host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file };

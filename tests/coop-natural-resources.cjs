@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
 
-module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false, combined = false, gatherOnly = false, checkHighlights = false }) {
+module.exports = async function naturalResources({ host, guest, focus, button, hero, hostFile, stone = false, combined = false, gatherOnly = false, checkHighlights = false, disconnectDuringPickup }) {
   const resource = stone ? 1 : 0, task = combined ? 'mineStoneAndLumber' : stone ? 'mineAStone' : 'chopATree';
   if (!gatherOnly && !combined) await button('guest-idAcceptTaskRewardButtontaskIdcrit_' + (stone ? 7 : 5));
   if (!gatherOnly) await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
@@ -30,6 +30,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     const x = p[0] * b.width / g.graphicsDevice.width, y = p[1] * b.height / g.graphicsDevice.height;
     return { x: b.left + x, y: b.top + y, clear: x > 100 && x < b.width - 300 && y > 100 && y < b.height - 100, sequence: w.lastTargetResult?.sequence || 0 };
   }, target.id);
+  let incoming;
   try {
     await guest.evaluate(require('./coop-input-trace.cjs'));
     await focus();
@@ -109,6 +110,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       console.log('Original depleted rock removes its guest selection ring:', target.id);
     }
     await guest.waitForTimeout(500);
+    if (disconnectDuringPickup) incoming = await require('./coop-incoming-disconnect.cjs')({ host, guest, hero, reconnect: disconnectDuringPickup });
     const pickupTrace = [];
     for (let step = 0; step < 80; step++) {
       const pickup = await host.evaluate(({ hero, minimum, resource }) => {
@@ -129,8 +131,10 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
       if (!view.focused || !view.nativeFocused) { await focus(); continue; }
       await guest.keyboard.down(view.key);
       try { await guest.waitForTimeout(100); } finally { await guest.keyboard.up(view.key); }
+      if (incoming) await incoming.attempt();
       await guest.waitForTimeout(100);
     }
+    incoming?.finish();
     console.log('Native pickup walking trace:', JSON.stringify(pickupTrace.filter((_, index) => index < 4 || index >= pickupTrace.length - 12)));
     const result = await host.evaluate(async ({ hero, target, task }) => {
       const w = window.hostWorld, actor = w.players.active.get(hero).hero, tree = w.game.getGameEntityByName(target);
@@ -166,6 +170,7 @@ module.exports = async function naturalResources({ host, guest, focus, button, h
     if (!gatherOnly) assert.equal(JSON.parse(state.userData.desktopQuests).pending.some(row => row.task === task), !combined || stone);
     console.log('Native guest ' + (gatherOnly ? 'independent resource' : task) + ' depletion, carried resources and clean history saved.');
   } finally {
+    await incoming?.close().catch(error => console.log('Incoming observer cleanup unavailable:', String(error?.message ?? error)));
     await guest.evaluate(() => window.guestWorld?.resourceInputTrace?.restore()).catch(() => {});
     await host.evaluate(() => window.restoreNaturalResourceObservers()).catch(() => {});
   }

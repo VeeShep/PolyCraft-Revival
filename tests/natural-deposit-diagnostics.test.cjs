@@ -3,6 +3,20 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const { parse } = require('@babel/parser'), traverse = require('@babel/traverse').default, generate = require('@babel/generator').default;
 
+test('incoming observer cleanup preserves the primary failure and continues other observer restoration', async () => {
+  const ast = parse(fs.readFileSync(path.join(__dirname, 'coop-natural-resources.cjs'), 'utf8'));
+  let finalizer;
+  traverse(ast, { TryStatement(p) { if (p.node.finalizer?.body.some(node => generate(node).code.includes('incoming?.close()'))) finalizer = p.node.finalizer; } });
+  assert.ok(finalizer);
+  for (const incoming of [undefined, { close: async () => { throw new Error('cleanup unavailable'); } }]) {
+    const primary = new Error('original pickup failure'), observed = [], messages = [];
+    const context = { incoming, primary, console: { log: (...args) => messages.push(args) },
+      guest: { async evaluate() { observed.push('guest'); } }, host: { async evaluate() { observed.push('host'); } } };
+    await assert.rejects(vm.runInNewContext('(async()=>{try{throw primary;}finally' + generate(finalizer).code + '})()', context), error => error === primary);
+    assert.deepEqual(observed, ['guest', 'host']); assert.equal(messages.length, incoming ? 1 : 0);
+  }
+});
+
 test('deposit failure diagnostics capture a bounded screenshot and preserve the original assertion when observations fail', async () => {
   const ast = parse(fs.readFileSync(path.join(__dirname, 'coop-natural-deposit.cjs'), 'utf8')), failures = [], assertions = [], errors = [];
   traverse(ast, {
