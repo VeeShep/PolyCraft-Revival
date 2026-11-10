@@ -48,10 +48,12 @@ module.exports = async function naturalBandits({ host, guest, focus, hero, hostF
       }
     }
     const result = await host.evaluate(async hero => {
-      const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero;
       await window.polycraft.checkpoint(true);
-      return { kills: window.naturalBanditKills, complete: game.getPlayerData().getTaskFlags().defeatWildlings === true, scripts: game.runScripts,
-        health: actor.getEC('ECHealth').getHealth(), inventory: world.players.captureHero(actor).inventory };
+      return window.hostWorld.atRewardBoundary(() => {
+        const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero;
+        return { kills: window.naturalBanditKills, complete: game.getPlayerData().getTaskFlags().defeatWildlings === true, scripts: game.runScripts,
+          health: actor.getEC('ECHealth').getHealth(), inventory: world.players.captureHero(actor).inventory };
+      });
     }, hero);
     console.log('Natural bridge combat result:', JSON.stringify({ clicks, result }));
     assert.equal(result.complete, true); assert.equal(result.scripts, true); assert.ok(clicks > 0);

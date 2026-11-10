@@ -8,11 +8,11 @@ module.exports = async function naturalWeapon({ host, guest, focus, button, hero
   await guest.waitForFunction(() => window.guestWorld.lastTargetResult?.type === 'questReward');
   assert.equal(await guest.evaluate(() => window.guestWorld.lastTargetResult.message), 'Quest reward dropped and saved.');
   await host.waitForFunction(() => window.hostWorld.game.getGameSpaceList().some(space => space.getEntitiesWithEC('ECPickup').some(entity => entity.getFamilyName() === 'tutorialgun')));
-  const target = await host.evaluate(hero => {
+  const target = await host.evaluate(hero => window.hostWorld.atRewardBoundary(() => {
     const world = window.hostWorld, gun = world.game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECPickup')).find(entity => entity.getFamilyName() === 'tutorialgun');
     return { name: gun.getName(), location: Array.from(gun.getv3Location()), radius: gun.getEC('ECPickup').archetype.attractRadius, weapon: gun.getEC('ECPickup').item,
       before: world.players.captureHero(world.players.active.get(hero).hero).inventory };
-  }, hero);
+  }), hero);
   console.log('Natural tutorial weapon before approach:', target);
   assert.equal(target.before.weapon, null, 'The new tutorial hero must not already hold the pickup weapon.');
   await focus();
@@ -39,12 +39,13 @@ module.exports = async function naturalWeapon({ host, guest, focus, button, hero
   }, { hero, name: target.name }));
   await host.waitForFunction(() => window.hostWorld.game.getPlayerData().getTaskFlags().pickupWeapon === true, null, { timeout: 10000 });
   const after = await host.evaluate(async ({ hero, target }) => {
-    const world = window.hostWorld, entity = world.players.active.get(hero).hero;
-    const inventory = world.players.captureHero(entity).inventory;
     await window.polycraft.checkpoint(true);
-    const data = JSON.parse(window.polycraft.bridge.state.userData.desktopCoop);
-    return { inventory, saved: data.players.find(player => player.id === hero).inventory,
-      scripts: world.game.runScripts, removed: !world.game.getGameEntityByName(target), flags: world.game.getPlayerData().getTaskFlags() };
+    return window.hostWorld.atRewardBoundary(() => {
+      const world = window.hostWorld, entity = world.players.active.get(hero).hero;
+      const inventory = world.players.captureHero(entity).inventory, data = JSON.parse(window.polycraft.bridge.state.userData.desktopCoop);
+      return { inventory, saved: data.players.find(player => player.id === hero).inventory,
+        scripts: world.game.runScripts, removed: !world.game.getGameEntityByName(target), flags: world.game.getPlayerData().getTaskFlags() };
+    });
   }, { hero, target: target.name });
   assert.equal(after.inventory.weapon, target.weapon); assert.equal(after.inventory.mainWeapon, target.weapon);
   assert.deepEqual(after.saved, after.inventory); assert.equal(after.scripts, true); assert.equal(after.removed, true);

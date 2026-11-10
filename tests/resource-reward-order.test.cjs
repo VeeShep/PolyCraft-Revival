@@ -93,3 +93,43 @@ test('health/item hosting waits for the original solo quest XP and its owned cal
     PolycraftCoopPlayers: { CoopPlayers: { hasPendingRewards(current, hero) { assert.equal(current, game); assert.equal(hero, actor); return state.pending; } } } } });
   assert.equal(ready(), false); state.xp = 25; state.pending = true; assert.equal(ready(), false); state.pending = false; assert.equal(ready(), true);
 });
+test('natural gear observation waits for a reward-ready boundary before any live hero capture', async () => {
+  let captureCount = 0, readLater, ready = false;
+  const players = { active: new Map(Array.from({ length: 4 }, (_, id) => [id, { hero: { getEC: () => ({ hasWeapon: () => true }) } }])),
+    registry: { player: id => ({ name: String(id) }) }, captureHero() { assert.equal(ready, true); captureCount++; return { inventory: { weapon: 'starter', mainWeapon: 'starter' } }; } };
+  const world = { players, atRewardBoundary(read) { return new Promise(resolve => { readLater = () => { ready = true; resolve(read()); }; }); } };
+  const host = { async evaluate(callback) { return vm.runInNewContext('(' + callback.toString() + ')()', { window: { hostWorld: world } }); } };
+  const m = { exports: {} }; vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'coop-natural-gear.cjs'), 'utf8'), { module: m, require, console: { log() {} } });
+  const pending = m.exports({ host }).before();
+  assert.equal(captureCount, 0); assert.equal(typeof readLater, 'function');
+  readLater(); await pending; assert.equal(captureCount, 4);
+});
+test('natural reward/combat observations wait and re-resolve actors after checkpoint-driven replacement', async () => {
+  for (const [file, variable, final] of [['coop-natural-weapon.cjs', 'target', false], ['coop-natural-crate.cjs', 'target', false], ['coop-natural-weapon.cjs', 'after', true], ['coop-natural-bandits.cjs', 'result', true]]) {
+    const callbacks = [];
+    traverse(parse(fs.readFileSync(path.join(__dirname, file), 'utf8')), { VariableDeclarator(p) {
+      const call = p.node.init?.type === 'AwaitExpression' && p.node.init.argument;
+      if (p.node.id.name === variable && call?.type === 'CallExpression' && call.callee.object?.name === 'host' && call.callee.property?.name === 'evaluate') callbacks.push(call.arguments[0]);
+    } });
+    assert.equal(callbacks.length, 1, file + ':' + variable);
+    let captures = 0, readLater, ready = false;
+    const actor = name => ({ name, getv3Location: () => [0, 0, 0], getEC: () => ({ getHealth: () => 42 }) }), old = actor('old'), replacement = actor('replacement');
+    const actions = { ApplyDamageToEntity() {} }, factory = { createProjectile() {} };
+    const target = { getName: () => 'target', getFamilyName: () => file.includes('weapon') ? 'tutorialgun' : 'tutorialcrate', getv3Location: () => [1, 0, 0], getDistanceUsingSize: () => 1,
+      getEC: name => name === 'ECPickup' ? { item: 'starter', archetype: { attractRadius: 6 } } : name === 'ECHealth' ? { getHealth: () => 50 } : {} };
+    const world = { players: { active: new Map([['guest', { hero: old }]]), canDamage: () => true,
+      captureHero(current) { assert.equal(ready, true); assert.equal(current, replacement); captures++; return { inventory: { weapon: 'replacement' } }; } },
+      game: { runScripts: true, getGameSpaceList: () => [{ getEntitiesWithEC: () => [target] }], getProjectileFactory: () => factory, actionManager: { actionFunctionMap: actions }, getGameEntityByName: () => null,
+        getPlayerData: () => ({ getTaskFlags: () => ({ defeatWildlings: true, pickupWeapon: true }) }) },
+      atRewardBoundary(read) { return new Promise(resolve => { readLater = () => { ready = true; resolve(read()); }; }); } };
+    const w = { hostWorld: world, naturalBanditKills: [], polycraft: { bridge: { state: { userData: { desktopCoop: JSON.stringify({ players: [{ id: 'guest', inventory: { weapon: 'replacement' } }] }) } } },
+      async checkpoint(fresh) { assert.equal(fresh, true); world.players.active.set('guest', { hero: replacement }); } } };
+    const callback = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: w });
+    const pending = callback(file.includes('weapon') && final ? { hero: 'guest', target: 'target' } : 'guest');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(captures, 0); assert.equal(typeof readLater, 'function'); world.players.active.set('guest', { hero: replacement });
+    readLater(); const result = await pending; assert.equal(captures, 1);
+    assert.equal((result.before || result.weapon || result.inventory).weapon, 'replacement');
+    w.restoreNaturalCrateObserver?.();
+  }
+});

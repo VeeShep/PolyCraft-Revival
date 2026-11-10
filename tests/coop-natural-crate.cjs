@@ -5,7 +5,7 @@ const fs = require('node:fs');
 module.exports = async function naturalCrate({ host, guest, focus, button, hero, hostFile }) {
   await button('guest-idAcceptTaskRewardButtontaskIdcrit_1');
   await guest.waitForFunction(() => window.guestWorld.quests.state?.tasks.some(task => task.task === 'shootCrate'));
-  const target = await host.evaluate(hero => {
+  const target = await host.evaluate(hero => window.hostWorld.atRewardBoundary(() => {
     const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero;
     const crate = game.getGameSpaceList().flatMap(space => space.getEntitiesWithEC('ECHealth')).find(entity => entity.getFamilyName() === 'tutorialcrate');
     if (!crate) throw new Error('The original tutorial crate is missing.');
@@ -28,7 +28,7 @@ module.exports = async function naturalCrate({ host, guest, focus, button, hero,
     return { id: crate.getName(), location: Array.from(crate.getv3Location()), health: crate.getEC('ECHealth').getHealth(),
       targeted: !!crate.getEC('ECTarget'), canDamage: world.players.canDamage(crate, actor),
       weapon: world.players.captureHero(actor).inventory, distance: crate.getDistanceUsingSize(actor.getv3Location()) };
-  }, hero);
+  }), hero);
   console.log('Natural tutorial shooting target:', target);
   try {
     await focus();

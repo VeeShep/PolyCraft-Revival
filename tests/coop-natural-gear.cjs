@@ -20,11 +20,11 @@ module.exports = function naturalGear({ host, focus, headquarters = false, pendi
   }, headquarters);
   return {
     async before() {
-      const party = await host.evaluate(() => {
+      const party = await host.evaluate(() => window.hostWorld.atRewardBoundary(() => {
         const world = window.hostWorld;
         return [...world.players.active].map(([id, entry]) => ({ id, name: world.players.registry.player(id).name,
           inventory: world.players.captureHero(entry.hero).inventory, armed: entry.hero.getEC('ECFirearm').hasWeapon() }));
-      });
+      }));
       console.log('Party gear after natural pickup:', JSON.stringify(party));
       assert.equal(party.length, 4);
       assert.ok(party.every(player => player.armed && player.inventory.weapon === player.inventory.mainWeapon), 'All four heroes regain their own unlocked starter firearm.');
