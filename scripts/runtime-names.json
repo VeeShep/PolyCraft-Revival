@@ -992,6 +992,24 @@
       "outputSHA256": "fd43180b09e3f399e1e2719eeb9b68704387b523f14bd60ee9192b8d40eb064b",
       "inputCanonicalSHA256": "3812805bff64152b403eca96080e6ec8c1a018c4d5016ee53cacf0e6673391d7",
       "proof": "Scoped reverse rename restores the canonical input syntax tree"
+    },
+    {
+      "id": "game-monitor-role-name",
+      "names": [
+        {
+          "original": "Ef",
+          "name": "GameMonitor",
+          "role": "gameMonitor",
+          "descriptive": true,
+          "evidence": "factory assigned to the created gameManager.gameMonitor, bound native construction and methods: start, stop, reset, getSampleIndex, getAverage, getAverageGathered, getAverageDeposited, onInteractWithResourceDispenser, onResourceDeposited",
+          "offset": 5821,
+          "references": 4
+        }
+      ],
+      "inputSHA256": "36d186e57b51b5f884568c9db92596970d25b343fd4ce25dba1b18af8814862c",
+      "outputSHA256": "ec0946272f9bf4ff4aacb5aff42821db0b79d7f9f8a4a27248e143dd93ace952",
+      "inputCanonicalSHA256": "a456e896e8de7ded1097654f11e311ca292cacb614112242c8080eb60883b621",
+      "proof": "Scoped reverse rename restores the canonical input syntax tree"
     }
   ]
 }

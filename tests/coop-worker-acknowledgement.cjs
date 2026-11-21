@@ -73,6 +73,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     const page = await app.firstWindow(); page.on('pageerror', error => errors.push(error.message)); page.on('request', request => requests.push(request.url()));
     await app.evaluate(({ app, BrowserWindow }, { index, trace }) => {
       const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Worker co-op test must be visible.');
+      if (!window.webContents.isAudioMuted()) throw new Error('Temporary test windows must be muted. Use the verified muted test build.');
       if (trace) {
         window.focusTrace = [];
         for (const event of ['focus', 'blur']) window.on(event, () => { window.focusTrace.push({ event, time: Date.now(), focused: window.isFocused() }); if (window.focusTrace.length > 50) window.focusTrace.shift(); });
@@ -233,7 +234,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await require('./coop-natural-resources.cjs')({ ...context, stone: true, gatherOnly: true, checkHighlights: true });
       await require('./coop-natural-deposit.cjs')({ ...context, resource: 1 });
     }
-    if (!process.argv.includes('--speedup-only')) {
+    if (!process.argv.includes('--speedup-only') && !process.argv.includes('--move-outpost')) {
       await acknowledge(huts[0], 'lumber');
       if (process.argv.includes('--pve-combat')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory });
       await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4); await acknowledge(huts[1], 'stone');
@@ -244,7 +245,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4);
       if (process.argv.includes('--save-timing')) { await focusHost(); await require('./save-timing.cjs')({ page: host, directory, activeHost: true }); }
     }
-    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost'), speedupOutpost: process.argv.includes('--outpost-speedup'), speedupOnly: process.argv.includes('--speedup-only') });
+    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost'), speedupOutpost: process.argv.includes('--outpost-speedup'), speedupOnly: process.argv.includes('--speedup-only'), moveOutpost: process.argv.includes('--move-outpost') });
     if (process.argv.includes('--pve-melee')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory, melee: true });
     if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
       attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });
@@ -275,10 +276,16 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     const restored = await reopened.evaluate(() => ({ party: JSON.parse(window.polycraft.bridge.state.userData.desktopCoop), history: window.polycraft.bridge.state.cheats.everEnabled }));
     assert.equal(restored.history, false);
     assert.deepEqual(restored.party, persisted);
+    if (process.argv.includes('--move-outpost')) {
+      const expected = JSON.parse(saved.userData.AdventureIncGameState).gameSpaceList.flatMap(space => space.entityList).filter(e => e.archetypeName === 'a_b_outpost');
+      assert.equal(expected.length, 1);
+      const actual = await reopened.evaluate(() => window.polycraft.controls.manager().getBuildingManager().getBuildingsAtMinLevel('Outpost', 1, false).map(e => ({ id: e.getName(), location: Array.from(e.getv3Location()), health: e.getEC('ECHealth').getHealth() })));
+      assert.deepEqual(actual, [{ id: expected[0].name, location: expected[0].v3Location, health: expected[0].ecData.ECHealth.health }]);
+    }
     for (const resource of [0, 1]) assert.ok(restored.party.economy.resource[resource] >= earned.economy.resource[resource]);
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     await closeHost();
-    console.log(process.argv.includes('--speedup-only') ? 'PASS: focused four-player speedup, normal host save/reopen and isolated guest solo restoration.' : 'PASS: two/four-player native guest worker acknowledgement, shared fresh income/all guest HUDs, non-pausing menus, normal host save/reopen and isolated guest solo restoration.');
+    console.log(process.argv.includes('--speedup-only') || process.argv.includes('--move-outpost') ? 'PASS: focused four-player Outpost continuation, normal host save/reopen and isolated guest solo restoration.' : 'PASS: two/four-player native guest worker acknowledgement, shared fresh income/all guest HUDs, non-pausing menus, normal host save/reopen and isolated guest solo restoration.');
   } catch (error) {
     console.log('Worker reward readiness diagnostics:', JSON.stringify(await host.evaluate(() => {
       const game = window.polycraft.controls.manager(), hero = game.getHero();

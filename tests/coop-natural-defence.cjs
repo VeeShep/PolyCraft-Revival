@@ -33,12 +33,13 @@ module.exports = async function naturalDefence(context) {
   });
   assert.equal(observation, true);
   try {
-    const tasks = context.speedupOnly ? [] : context.outpostOnly ? [['buildOutpost', { outpost: true }]] : [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }], ['goToCaves', null], ['buildOutpost', { outpost: true }]];
+    const tasks = context.moveOutpost ? [['moveBuilding', { move: true }]] : context.speedupOnly ? [] : context.outpostOnly ? [['buildOutpost', { outpost: true }]] : [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }], ['goToCaves', null], ['buildOutpost', { outpost: true }]];
     if (context.speedupOutpost) tasks.push(['speedUpOutpost', { speedup: true }]);
     for (const [task, options] of tasks) {
       await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);
       const initial = await sample();
-      if (options?.speedup) await require('./coop-natural-speedup.cjs')({ ...context, button });
+      if (options?.move) await require('./coop-natural-move.cjs')({ ...context, button });
+      else if (options?.speedup) await require('./coop-natural-speedup.cjs')({ ...context, button });
       else if (options) await require('./coop-natural-building.cjs')({ ...context, button, ...options });
       else await require('./coop-natural-guide.cjs')(context);
       const before = await sample();

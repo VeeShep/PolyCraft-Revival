@@ -181,7 +181,7 @@
   function Cf() {}
   function GameClock() {}
   function GameCamera() {}
-  function Ef() {}
+  function GameMonitor() {}
   function GameSpace() {}
   function GameLighting() {}
   function B() {}
@@ -63971,7 +63971,7 @@
     c.init();
     return c;
   };
-  Ef.prototype = {
+  GameMonitor.prototype = {
     NUM_SAMPLES: 60,
     SAMPLE_PERIOD: 60,
     start: function () {
@@ -64049,8 +64049,8 @@
       }
     }
   };
-  Ef.create = function (a) {
-    var b = new Ef();
+  GameMonitor.create = function (a) {
+    var b = new GameMonitor();
     b.globals = a;
     b.reset();
     return b;
@@ -68541,7 +68541,7 @@
     c.clockBasedDayTime = ba.clockBasedDayTime;
     c.overrideGameDayTime = !1;
     c.playFlags = ek.normal;
-    c.gameMonitor = Ef.create(b);
+    c.gameMonitor = GameMonitor.create(b);
     c.scriptsLocked = !1;
     c.dateObject = new Date();
     c.fpsCounterStartGameTime = 0;

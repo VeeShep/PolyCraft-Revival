@@ -6,8 +6,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const runtime = require('./runtime-ast.cjs');
 
-test('fullscreen is allowed only for the local game; the desktop toggle reaches the window', async t => {
-  const handlers = {};
+for (const testData of [undefined, '/tmp/polycraft-muted-test']) test('local fullscreen and isolated test audio: ' + (testData ? 'temporary island muted' : 'normal audio untouched'), async t => {
+  const handlers = {}, paths = {};
   const session = {
     webRequest: { onBeforeRequest() {} },
     setPermissionCheckHandler(handler) { this.check = handler; },
@@ -18,7 +18,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
   class Window {
     constructor() {
       window = this;
-      this.contents = { session, mainFrame: { url: 'polycraft://game/desktop/index.html' }, setWindowOpenHandler() {}, on() {}, setBackgroundThrottling(value) { this.throttled = value; },
+      this.contents = { session, mainFrame: { url: 'polycraft://game/desktop/index.html' }, setWindowOpenHandler() {}, on() {}, setBackgroundThrottling(value) { this.throttled = value; }, setAudioMuted(value) { this.muted = value; },
         isDestroyed() { return !!this.destroyed; }, sent: [], send(...args) { this.sent.push(args); } };
     }
     get webContents() { if (this.destroyed) throw new TypeError('Object has been destroyed'); return this.contents; }
@@ -29,7 +29,7 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
     setFullScreen(value) { this.fullscreen = value; }
   }
   const electron = {
-    app: { whenReady: () => Promise.resolve(), getPath: () => '/unused', getVersion: () => 'test', on() {} },
+    app: { setPath: (key, value) => { paths[key] = value; }, whenReady: () => Promise.resolve(), getPath: () => '/unused', getVersion: () => 'test', on() {} },
     BrowserWindow: Window, crashReporter: { start() {} },
     protocol: { registerSchemesAsPrivileged() {}, handle() {} },
     ipcMain: { handle: (name, handler) => { handlers[name] = handler; } },
@@ -37,10 +37,12 @@ test('fullscreen is allowed only for the local game; the desktop toggle reaches 
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../desktop/main.cjs'), 'utf8'), {
     require: name => name === 'electron' ? electron : name === './saves.cjs' ? { Saves: class {} } : name === './logging.cjs' ? { createLogger: () => () => {} } : name === './direct-network.cjs' ? { DirectNetwork: class extends require('../desktop/direct-network.cjs').DirectNetwork { constructor(emit) { super(emit); direct = this; } } } : name === './room-socket.cjs' ? { RoomSocket: class extends require('../desktop/room-socket.cjs').RoomSocket { constructor(emit) { super(emit); room = this; } } } : require(name),
-    __dirname: path.join(__dirname, '../desktop'), process: { env: {}, platform: 'darwin', versions: {}, on() {} }, URL, Response
+    __dirname: path.join(__dirname, '../desktop'), process: { env: testData ? { POLYCRAFT_TEST_DATA: testData } : {}, platform: 'darwin', versions: {}, on() {} }, URL, Response
   });
   await new Promise(resolve => setImmediate(resolve));
   const contents = window.webContents;
+  assert.equal(contents.muted, testData ? true : undefined);
+  assert.equal(paths.userData, testData ? path.resolve(testData) : undefined);
   assert.equal(session.check(contents, 'fullscreen', 'polycraft://game'), true);
   assert.equal(session.check(contents, 'fullscreen', 'polycraft://game/'), true);
   for (const [sender, permission, origin] of [[null, 'fullscreen', 'polycraft://game'], [contents, 'media', 'polycraft://game'], [contents, 'fullscreen', 'https://example.com']]) assert.equal(session.check(sender, permission, origin), false);

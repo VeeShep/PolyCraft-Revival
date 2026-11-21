@@ -56,7 +56,7 @@ test('native speedup observer forwards payment receiver/arguments/result and res
 });
 test('Outpost continuation admits only the earned clean-stage party before copying files or opening a game', async () => {
   const code = block('worker-reload-smoke.cjs', node => node.name === 'outpostContinuation');
-  const valid = { speedupOnly: false, state: { userData: { taskFlags: JSON.stringify({ goToCaves: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 290 } }] }),
+  const valid = { moveOutpost: false, speedupOnly: false, state: { userData: { taskFlags: JSON.stringify({ goToCaves: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 290 } }] }),
     buildings: [{ archetypeName: 'a_b_defencefactory' }, { archetypeName: 'a_b_wildlinghouse_war' }] };
   await vm.runInNewContext(code, { ...structuredClone(valid), assert });
   for (const change of [f => f.pending.push({ task: 'buildStonelingHut' }), f => { f.state.userData.taskFlags = '{}'; }, f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true, buildOutpost: true }); },
@@ -67,11 +67,44 @@ test('Outpost continuation admits only the earned clean-stage party before copyi
 });
 test('speedup-only continuation requires earned310XP and an unfinished original Outpost, without relaxing placement-stage guards', async () => {
   const code = block('worker-reload-smoke.cjs', node => node.name === 'outpostContinuation');
-  const valid = { speedupOnly: true, state: { userData: { taskFlags: JSON.stringify({ goToCaves: true, buildOutpost: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 310 } }] }),
+  const valid = { moveOutpost: false, speedupOnly: true, state: { userData: { taskFlags: JSON.stringify({ goToCaves: true, buildOutpost: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 310 } }] }),
     buildings: [{ archetypeName: 'a_b_defencefactory' }, { archetypeName: 'a_b_wildlinghouse_war' }, { archetypeName: 'a_b_scaffold', ecData: { ECScaffold: { plannedObject: 'a_b_outpost', buildComplete: .01 } } }] };
   await vm.runInNewContext(code, { ...structuredClone(valid), assert });
   for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true }); }, f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true, buildOutpost: true, speedUpOutpost: true }); },
     f => { f.party = JSON.stringify({ players: [{}, { progress: { xp: 290 } }] }); }, f => f.buildings.pop(), f => f.buildings.push({ ...f.buildings[2] }), f => { f.buildings[2].ecData.ECScaffold.buildComplete = 1; }, f => f.buildings.push({ archetypeName: 'a_b_outpost' })]) {
+    const fixture = structuredClone(valid); change(fixture); await assert.rejects(vm.runInNewContext(code, { ...fixture, assert }), assert.AssertionError);
+  }
+});
+test('native Outpost move recognizes the existing standalone protected-building Move button', () => {
+  const callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-natural-move.cjs'), 'utf8')), { CallExpression(p) {
+    const read = p.node.arguments[0];
+    if (p.node.callee.property?.name === 'waitForFunction' && read?.type === 'ArrowFunctionExpression' && generate(read).code.includes('selectedBuilding')) callbacks.push(read);
+  } });
+  assert.equal(callbacks.length, 1);
+  const world = { construction: { menu: null }, selectedBuilding: { id: 'Outpost', movable: true } }, ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { guestWorld: world } });
+  assert.equal(ready('Outpost'), true); assert.equal(ready('Other'), false); world.selectedBuilding.movable = false; assert.equal(ready('Outpost'), false);
+  world.selectedBuilding = null; world.construction.menu = { source: 'Outpost', move: true }; assert.equal(ready('Outpost'), true); world.construction.menu.move = false; assert.equal(ready('Outpost'), false);
+});
+test('native Outpost move waits for the real held-building placement acknowledgement', () => {
+  const { HostConstruction } = require('../desktop/coop-construction.js'), callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-natural-move.cjs'), 'utf8')), { CallExpression(p) {
+    const read = p.node.arguments[0];
+    if (p.node.callee.property?.name === 'waitForFunction' && read?.type === 'ArrowFunctionExpression' && generate(read).code.includes('lastBuildResult')) callbacks.push(read);
+  } });
+  assert.equal(callbacks.length, 1);
+  const builder = { isBuilding: () => true, isThrowing: () => false, attemptToPlaceBuilding: () => true };
+  const result = HostConstruction.prototype.placeHeld.call({ heldStatus: () => null }, { getEC: () => builder }, [4, 1, 4]);
+  const world = { construction: { lastBuildResult: result } }, ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { guestWorld: world } });
+  assert.equal(ready(), true); world.construction.lastBuildResult = { message: 'That held building cannot be placed here.' }; assert.equal(ready(), false);
+});
+test('Outpost move continuation admits only earned330XP and one completed original building', async () => {
+  const code = block('worker-reload-smoke.cjs', node => node.name === 'outpostContinuation');
+  const valid = { moveOutpost: true, speedupOnly: false, state: { userData: { taskFlags: JSON.stringify({ goToCaves: true, buildOutpost: true, speedUpOutpost: true }) } }, pending: [], party: JSON.stringify({ players: [{}, { progress: { xp: 330 } }] }),
+    buildings: [{ archetypeName: 'a_b_defencefactory' }, { archetypeName: 'a_b_wildlinghouse_war' }, { archetypeName: 'a_b_outpost' }] };
+  await vm.runInNewContext(code, { ...structuredClone(valid), assert });
+  for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true, buildOutpost: true }); }, f => { f.state.userData.taskFlags = JSON.stringify({ goToCaves: true, buildOutpost: true, speedUpOutpost: true, moveBuilding: true }); },
+    f => { f.party = JSON.stringify({ players: [{}, { progress: { xp: 310 } }] }); }, f => f.buildings.pop(), f => f.buildings.push({ ...f.buildings[2] }), f => f.buildings.push({ archetypeName: 'a_b_scaffold', ecData: { ECScaffold: { plannedObject: 'a_b_outpost' } } })]) {
     const fixture = structuredClone(valid); change(fixture); await assert.rejects(vm.runInNewContext(code, { ...fixture, assert }), assert.AssertionError);
   }
 });

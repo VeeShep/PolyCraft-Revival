@@ -103,6 +103,7 @@ app.whenReady().then(() => {
     backgroundColor: '#122226', icon: path.join(root, 'assets/offline-ui/icons/png/512x512.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
+  if (process.env.POLYCRAFT_TEST_DATA) window.webContents.setAudioMuted(true);
   log('startup-phase', { phase: 'window-created' });
   const sendWindowEvent = (channel, event) => {
     if (!window.isDestroyed() && !window.webContents.isDestroyed()) window.webContents.send(channel, event);
