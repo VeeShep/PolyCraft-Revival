@@ -30,6 +30,8 @@ The private `lc` constructor and its **nine bound references** are now `WorldCub
 
 The canonical inverse proof passes. An independent token audit reverses exactly **ten identifier edits** to **every byte** of the previous engine, including comments and formatting. Input SHA-256: `501ad882b2ec43a239ead4c910a53691134436dbaf3f808307c39319c6edbf01`; output: `fd43180b09e3f399e1e2719eeb9b68704387b523f14bd60ee9192b8d40eb064b`. Eight focused naming/factory checks pass. Actual native-method checks pass before and after naming for sphere overlap, collision ignoring and low/high step behavior. These isolated cases do not establish graphical, complete-simulation or native-platform acceptance. Full-suite/build evidence is recorded in RESTORATION_STATUS.md. Many aliases and local names remain unresolved; no engine rewrite or upstream replacement was introduced.
 
+<a id="current-native-lightingaudioeffects-role-names--beta-91"></a>
+
 ## Historical native lighting/audio/effects role names — Beta 91
 
 Three more private constructors have descriptive names verified from fields on the actual newly created GameManager:

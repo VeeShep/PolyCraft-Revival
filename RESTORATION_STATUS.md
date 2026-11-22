@@ -1,8 +1,42 @@
 # PolyCraft restoration: current roadmap and status
 
-Updated 2026-11-22. **The resumable restoration goal is active and incomplete.** The user explicitly resumed it and authorized the muted visible Outpost move test. Announce visible temporary-island tests; preserve personal saves, immutable Beta1 and all earlier evidence.
+Updated 2026-11-22. **The resumable restoration goal is active and incomplete.** The user resumed it and authorized muted visible testing. Announce every launch and use labelled disposable islands; preserve personal saves, immutable Beta 1 and all earlier evidence.
 
-## Current continuation — 2026-11-22
+## Current roadmap and acceptance — 2026-11-22
+
+The application is **1.0.0-beta.105**, published application baseline [83efcc0](https://github.com/VeeShep/PolyCraft-Revival/commit/83efcc04ad48e07b21a9434708d94ee8b22f3c22). Later revisions through [298dbef](https://github.com/VeeShep/PolyCraft-Revival/commit/298dbef3271cac556b05755f0f53627cc581df64) change tests/documentation only. The public offline prerelease remains **Beta 2**; temporary CI artifacts are separate tester builds. No new public release is claimed.
+
+Work order remains **finish foundations → accept original co-op → expand gameplay**. Later approved requirements extend the original copy/paste design with room codes and direct-first routing. Keep every gate below open to its actual verification scope.
+
+| Requirement | Implemented and evidenced | Remaining acceptance |
+| --- | --- | --- |
+| Original offline game | Accounts/payment services replaced; normal crafting/building costs, original artwork/menus, named islands, autosave/normal-exit saves/recovery/import/export, cheats, demolition protections, fullscreen/input/achievements and the `moreamberplease` / `moretips` Easter eggs retained. Recorded Apple Silicon runs exercise original progression. | Full-game regression and native Intel Mac, Windows x64/ARM64 and Linux x64/ARM64 gameplay/desktop behavior. Earlier intermittent Outpost release refusal and unexpected closure remain unexplained. |
+| Permanent cheat history | Persistence enforces `false` clean / `true` used / `null` unknown, sticky enable/use markers, legacy migration, original pre-migration backups and newer-format rejection; save selection shows Clean / Cheats used / Unknown history. [Save checks](tests/saves.test.cjs) and [co-op save checks](tests/coop-saves.test.cjs) cover history propagation. Resource totals/hero level are not cheating evidence. | Preserve through every future save/import/recovery/hosting change; not tamper-proof anti-cheat. Architecture-specific filesystem behavior remains part of native acceptance. |
+| Original hero badge icons | Platform formats and window/Dock/taskbar/executable/Linux desktop configuration implemented. Both Mac signatures/source/icons/14 Mach-O, Windows resources/7 PE and Linux source/icons/ELF are checked by CI. Windows resource editing remains enabled while signing is disabled. | Inspect installed/visible icons on each target OS; static resource checks do not prove desktop appearance. |
+| Readable runtime | Immutable Beta 1 source/reader references; entire running bundle formatted; scope-aware verified/descriptive names and inverse proofs; stable structural/native-method checks. Save and multiplayer adapters are separated without replacing the engine. [Readability limits](RUNTIME_READABILITY.md) and reference notices retained. | Naming remains partial. Recover only names justified by definitions/pinned upstream matches; retain unresolved names honestly. No complete engine rewrite or blanket behavioral-equivalence claim. |
+| Original co-op rules | 2–4 heroes on one host-owned island; shared resources/buildings/quests, separate hero progression and solo saves, validated guest construction/demolition, host-only cheats, session-fixed hero-only PvP, non-pausing online menus, host save/exit and no automatic host migration. Full snapshots/deltas, interpolation, resync and guarded reward/save ownership implemented. | Native mixed-platform/mixed-physical-machine late join/reconnect, spending, combat/PvP, menus, save/recovery and host-exit acceptance; broader original progression/interruption/latency and endurance. |
+| Connections and rooms | Electron WebRTC with a separate manual offer/reply for each guest; native pinned TCP/TLS; custom room name/password with separate approval/capabilities; configurable default Google STUN; manual-forward → opt-in UPnP → direct STUN/WebRTC → authenticated configured TURN fallback. Local native loopback tests exercise direct/relay and renewal without sending gameplay through the room service. [Server deployment instructions](server/README.md) retained. | Actual LAN/WAN/router/UPnP/NAT/provider deployment; direct/relay preference and setup latency, mixed routes, interrupted setup/signaling, real egress/cost and relay renewal/endurance across physical networks. No hosted relay or production room service is assumed. |
+| Save performance | Stationary manual saves and four-player moving normal-autosave profiles are preserved. Latest complete save UI windows of 217/227 ms; host callback gaps of 77/101 ms and guest gaps of 41/60 ms overlap them. Larger gaps also occur elsewhere. Durable/coherent save rules unchanged. | Reported hitch/startup cause is unresolved; short local profiles are not a fix or evidence of remote-client performance. Do not remove backups/fsync/coherent boundaries to improve a benchmark. |
+| Later expansion | Environmental/regrowth upgrades, carry size, rage/shot improvements, sprint/stamina, health/armor and concept-art-inspired additions remain recorded ideas. | Begin only after original gameplay/co-op acceptance; inventory actual assets/mechanics first and keep balance/unlocks in a separate expansion plan. |
+
+### Current evidence and next actions
+
+- Last fully inspected source CI: **782 passed, 0 failed, 0 skipped**, all eight jobs, [45078401082](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/45078401082) at `298dbef`. Eight artifacts with suffix `161.1` were unexpired on November 22 and expire November 29; all eight decoded logs and upload digests/IDs match metadata, with 12 files sealed under ignored `test-results/beta-105-autosave-motion/ci-autosave`. CI verifies package contents/architecture/icons/signatures and Linux stub-world direct/relay/renewal, not other-OS gameplay or real networks. Archives were not independently downloaded/launched.
+- Profiler checkpoint `298dbef` also has **94 focused checks** and two muted visible four-player native passes, including normal party save/reopen and guest solo restoration. Its four new diagnostic cases are included in the terminal 782-check CI above. The prior 778-check campaign run is preserved separately; no repeated local full suite or fresh game build was needed for these test-only changes.
+- The unchanged finished local Beta 105 ARM64 app passes separate earned Outpost move, Barricade, Gate, Gatling/native speedup and natural campaign continuations. The campaign uses original shotgun/AI/health/timers, 14 spawned enemies/native completed waves, real victory, exact guest 20 XP and 300 XP quest drops, host-owned score and normal save/reopen. These are separate recorded cases, not one full-game or cross-platform run. Earlier staged combat/PvP tests retain their narrower scope.
+- All owned game windows are closed at this checkpoint. Continue only visible, announced, muted tests on labelled temporary islands and disposable `POLYCRAFT_TEST_DATA`. Current user authorization permits those tests; preserve personal islands, `dist/beta-1`, original checksums, immutable readers/baselines and sealed evidence.
+- Windows/Linux test machines were offered, but no connection details or interactive session are configured here. When available, follow [the auditor's native-platform plan](AUDITOR_BRIEF.md#upcoming-windows-and-linux-test-machines), record exact build/GPU/driver/desktop/transport and keep credentials out of Git. Source/CI success cannot close these gates.
+- Keep [TESTING.md](TESTING.md) as the check/runbook map and [AUDITOR_BRIEF.md](AUDITOR_BRIEF.md) as the review entry point. Commit/push completed reviewed major milestones to origin only, with exact evidence and remaining gates. The persistent goal is active and incomplete.
+
+
+### Documentation consolidation checkpoint
+
+The current roadmap, README and auditor brief now distinguish application source, test source, local native acceptance, CI artifacts and public release. Earlier summaries/ledger text are preserved as history, with existing anchors retained and one missing readability alias added. A deterministic inverse restores the previous ledger exactly after undoing historical heading depth. Local file/fragment and version/schema/source-range checks are recorded in [TESTING.md](TESTING.md); source/package/saves/Beta1/baselines are unchanged. No game windows were opened in this documentation pass. Next work remains the open acceptance gates above; the persistent goal is not complete.
+## Historical appendix: dated implementation and test evidence
+
+The remaining records preserve their original chronology, source hashes, test scopes, failed attempts and observations. Their headings may say “current,” “running,” “pending,” “next” or “paused”; those statements apply to the dated checkpoint only. The current roadmap above and later terminal evidence take precedence. Existing heading text and link anchors are preserved; heading depth is adjusted to place the records in this appendix. Ignored evidence paths require the retained local capsule and are not included in a Git clone.
+
+### Current continuation — 2026-11-22
 
 **Published moving-autosave diagnostic checkpoint:** reviewed7-file milestone [298dbef3271cac556b05755f0f53627cc581df64](https://github.com/VeeShep/PolyCraft-Revival/commit/298dbef3271cac556b05755f0f53627cc581df64) pushed to origin/main after focused94/0,two announced successful native runs(24214/33497),45executed pins each,46+47sealed native files,12sealed exact campaign CI files,five helper syntax checks,189local documentation targets and complete intended diff/whitespace review. Source tree clean after push. Exact automatic [CI45078401082](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/45078401082) is live for this source; next inspect that exact run/logs/artifacts without duplicate dispatch. Prior3e36580CI45076951010 is terminal778/0/all8; do not substitute it for the new four profiler cases. Test-only source; no production/app/version/build/release change. All owned game windows closed,personal islands/Beta1/earned fixtures untouched. Goalactive/incomplete; reported save-hitch cause and otherOS/physical-network/WAN/endurance gates remain open.
 
@@ -62,7 +96,7 @@ Updated 2026-11-22. **The resumable restoration goal is active and incomplete.**
 
 **Next:** follow exact live CI45073285245 without duplicate dispatch; preserve its terminal evidence. Implement the guarded earned430XP stage with live eligible original banner lookup, native route/normal movement, original preview/confirmation and actual campaign outcome/host-score checks. Continue original startCampaign/winCampaign from the earned430XP/61Amber checkpoint using native banner/preview/score/guest-owned quest rewards; do not stage replacement progression or force victory. Broader natural campaign/defeat/endurance, save-hitch reproduction, native other-platform/mixed-machine gameplay and physical-network/WAN acceptance remain open. No test-machine host/access details supplied yet. No local game/process remains running. Goalactive/incomplete; preserve personal saves,Beta1 and all previous evidence; no public release or broad-suite/package repeat for test-only changes.
 
-### Earlier steps in this continuation — historical
+#### Earlier steps in this continuation — historical
 
 Attempt6/session61677 reaches genuine original placement: input guard true at both events, sequence18→19, durable `Held building placed and saved.` with held=null, completed runtime Outpost/unchanged250health/81Amber and moveBuilding quest unlocked. It exits1 comparing the acknowledged disk with the later completed object: the save correctly contains the original0.5second move scaffold, while normal-exit primary contains the finished Outpost at[-67.5,1,-87.5]; no save-loss defect established. As in the existing normal-building test, take a fresh original checkpoint after native completion before comparing the completed saved entity. Actual callback regression fails before correction and all53focused checks pass after it. All41old pins matched;44failed-attempt files sealed. No XP/resource/timer/placement/engine changes or new app. Announced muted attempt7 uses41fresh pins on the same earned fixture/package to finish reward/reopen acceptance; inputs frozen while live. Attempt5's intermittent release refusal remains unexplained; do not call it fixed from attempt6's successful placement.
 
@@ -74,7 +108,7 @@ Muted visible attempt3/session30946 exits1 at an early test assertion: held-stat
 
 The user is on their desktop and has authorized the muted visible test. The named Beta105 ARM64 package again passes source, hero-icon, 14 Mach-O and ad-hoc signature verification; the four diagnostic source hashes match their prepared checkpoint. The old temporary fixture directory remains but its save files were cleared; no game was launched against it. Recovered eight fresh disposable save/backup files byte-identically from preserved native104 attempt8 into `polycraft-hq-recovery-move-0VjTlN`. All 41 current helper/application/source-save/copy pins are recorded under ignored `test-results/beta-105-natural-move/native-attempt-3`. The announced next run uses the verified named/muted package and the unchanged earned330XP stage. Do not edit pinned helpers, the app or fixture while it runs. Native move placement/reward/reopen acceptance is not yet established; earlier blocked notes below are historical. No broad suite repeated.
 
-## Current continuation — 2026-11-21
+### Current continuation — 2026-11-21
 
 **Current checkpoint: Beta 105 source published.** Reviewed 18-file commit [83efcc04ad48e07b21a9434708d94ee8b22f3c22](https://github.com/VeeShep/PolyCraft-Revival/commit/83efcc04ad48e07b21a9434708d94ee8b22f3c22) is on `origin/main`; remote head was verified and the worktree was clean. Final non-graphical session 75841 exits 0 with **745 passed / zero failed, cancelled or skipped** in 485.9 seconds. Focused naming/readability (23 checks), desktop (11 checks) and move/helper contracts (56 checks) pass. The revision mutes only isolated test windows and gives the verified native monitor a descriptive private name. It also includes preparatory Outpost-move tests; native move acceptance is unfinished. The fresh ARM package passes source, hero-icon, 14 Mach-O and ad-hoc signature verification. Runtime 43, dependencies, gameplay behavior, save and network formats remain unchanged. All 153 local documentation targets resolve; the suite inventory contains 75 files. Eleven local evidence files are sealed under ignored `test-results/beta-105-runtime-monitor/`; older audio and failed native-move evidence remain separate. Personal saves and immutable Beta 1 are untouched.
 
@@ -86,7 +120,7 @@ The user is on their desktop and has authorized the muted visible test. The name
 
 **Next on resume:** keep new game windows closed until the desktop-availability question is answered. Then announce a muted visible disposable Outpost-move retry using `/private/tmp/polycraft-beta105-named.ir27ncyk/mac-arm64/PolyCraft Offline.app` and the unchanged earned 330-XP fixture; pin the updated helper inputs before launch. The auditor brief pins the correct source/contracts and separates the previous baseline into a historical appendix. No process or CI job remains running; do not poll the completed workflow again or repeat the full suite for this test-only draft. Original placement/reward/reopen acceptance, save-hitch reproduction, other-platform and mixed-machine gameplay, WAN and endurance remain open. The restoration goal is blocked and incomplete.
 
-### Earlier steps in this continuation — historical
+#### Earlier steps in this continuation — historical
 
 - **Auditor handoff refreshed — 2026-11-21.** The brief now pins source `83efcc0`/Beta105 and 745 local checks, states the actual current save/co-op/room/snapshot/delta/runtime contracts, separates native evidence from CI and lists the unfinished Outpost move and save-hitch investigation. Superseded baseline, format notes and evidence moved to a clearly historical appendix. Direct source-constant checks, byte-preserved historical baseline/evidence and all 54 local targets pass; whitespace is clean. No game/code/version changes or repeated full suite. Final combined validation resolves all 208 local targets across five documents; exact CI completion is recorded above.
 
@@ -105,7 +139,7 @@ The user is on their desktop and has authorized the muted visible test. The name
 - **Resumed with Beta104 CI verified.** Exact source8e385f70b33ece082050119e61c4e83193716477/run42897377716completed all8jobs successfully. All8decoded logs inspected:736checks/0failures, both Macs14MachO/source/icons/signatures, Windows7PEeach, Linux6ELFeach/AppImage12x64and6ARM; native Linux no-game2/4direct and forced relay plus3renewals per guest/same channels/fresh allocations/initial expiry/retirement8of8and24of24 pass. Logs show8uploaded153.1artifacts with7-day retention; current API lists none, so downloads are unavailable and no unexpired-artifact claim is made.13final CI log/metadata/inspection files sealed separately under ignored beta-104-scaffold-speedup/ci-beta104. No historical workflow rerun or new release. Latest published prerelease remainsBeta2 (live release list checked).
 - **Outpost move test prepared and launched.** Prior goal work made progress through published Beta104/native speedup acceptance before user pause; resume does not establish full restoration completion. Old temp app/fixtures and final prep output are gone. Recovered8save/backup files byte-identically from preserved native8archive into new disposable move-st978c4y; earned party0/330/120/0XP, clean history, completed Outpost and no pending quest reward retained. Original next task is moveBuilding (BuildingEvent placed+fromMove, no family filter). Fresh local app build17703exit0 at /private/tmp/polycraft-beta104-move-native.pdqajc4h verifies14ARM64MachO/current unchanged runtime/source/icons/deep-strict signature. No game/version/dependency/schema changes. Initial focused43/0 passes; new real held-placement acknowledgement regression fails as expected (43pass1fail), exposes the draft test waiting for normal construction text. Corrected helper expects actual Held building placed and saved.; final focused44/0. Added actual relocated Outpost location/health assertion after normal reopening, retains earned reward and guestsolo checks. Announced native41436/attempt1 now runs4labelled temporary islands with41pinned inputs; do not edit helpers/app/fixtures while live. No Outpost-move native acceptance yet. Goalactive/incomplete; save-lag/otherOS/WAN/endurance remain open.
 
-## Latest continuation — 2026-11-10
+### Latest continuation — 2026-11-10
 
 - **User paused the goal — stop here.** Published source8e385f70b33ece082050119e61c4e83193716477/docsd7f7c11remain on origin/main. Exact automatic CI42897377716was last observed running unit job130113959894; no platform/package acceptance yet and no duplicate dispatch. No game windows open. Uncommitted next-stage test-only work adds --move-outpost earned330XP/completed-Outpost guards, tests/coop-natural-move.cjs and original moveBuilding task integration; earlier focused89177passes42/0 before adding the final330XP guard regression. The final focused check33371was started as pause arrived; cleanup requested interruption, inspect its existing /private/tmp/polycraft-outpost-move-prep-final.txt on explicit resume rather than assuming acceptance. No visible move test was launched; no game/runtime/version change or push of these unfinished tests. Prepared untouched fixture /var/folders/rc/kvswdcx12wd0_10snqlnhy5c0000gn/T/polycraft-hq-recovery-move-bk62ptve copies native104mIukKK root/three restored guest solos; ignored move-continuation.json records16source/copy hashes. Original next task is moveBuilding, requiring BuildingEvent placed+fromMove; no family filter, but the test should move the actual Outpost through native UI/held preview and retain health, original Amber, durable claim release, reward and save/reopen. Review new unverified helper APIs/assertions before any launch. Save-lag report, otherOS/mixed-machine/WAN/endurance and full restoration acceptance remain open. Personal islands/Beta1 protected. Resume only at user request.
 
@@ -198,7 +232,7 @@ Dated entries below preserve the detailed chronology; earlier pending/next state
 
 **CI follow-through — 2026-11-10:** exact source4cdbd63/run42786909598 completes all8jobs/691checks/eight unexpired artifacts139.1. All8decoded logs inspected; both Mac14MachO/source/icons/signatures, Windows7PE each, Linux tar6ELF each/AppImage12x64/6ARM and native Linux stub-world direct/relay/three renewals per guest/expiry/credential retirement pass. Ignored natural-combat evidence root58files/ci11 has verified manifests. Artifacts not independently downloaded/launched; finished local native54613 remains separate. This supersedes the CI-pending statements above and below.
 
-## Current production work: Beta103 co-op hero-priority AI — 2026-11-10
+### Current production work: Beta103 co-op hero-priority AI — 2026-11-10
 
 **Reproduced and fixed locally; scoped native acceptance and final checks passed; [7a80b38](https://github.com/VeeShep/PolyCraft-Revival/commit/7a80b389919434c8909cb38069420794cce29029) published.** Original ranged ECAgent priorityTargetType Heroes reaches getNearestEnemyHero, whose sole candidate was GameManager.getHero. That points to the host during co-op; a nearer guest can therefore be ignored until another native targeting rule intervenes. All call sites inspected: getTargetOfType Heroes is the sole caller. The current fix adds one early native co-op bridge to CoopPlayers.getNearestEnemyHero; solo code remains byte-identical. The shared helper scans authoritative active heroes, preserves one-way native allegiance and ECTarget.isValidTarget(true) checks (health, validity, attacker limit, friendly-only targeting), skips destroyed actors and uses native3Ddistance/stable iteration ties. No stats, weapon, save, network or asset changes. Four actual native-method/target tests reproduce3red/1solo control on Beta102 and all pass with the fix;21hero-event/proximity/respawn focused checks pass.
 
@@ -208,7 +242,7 @@ App/lockfile1.0.0-beta.103. Ignored root `test-results/beta-103-enemy-targets/` 
 
 **Finished Beta103 ranged/worker save acceptance — 2026-11-10:** corrected announced native57444finishes exit0 on freshxjKWbn using verified newARM64 app (app.asar7240e215ed07c3e004094c6d8a53d8bd27136af6f30bb99578cbdd113846f2bf). Original75HP ranged actor with Heroespriority independently acquires nearby guest while hostover40units away before player damage; original enemy12damage reduces untouched50HP guest to38. Ordinary guest mouse targeting fires the original pistol and produces one guest-owned EnemyKilled. Original free-roam guest killstat3→4, guest230XP/host0XP/host0kills unchanged; engine enemy count0→1→0, guestHUD/coherent saved health/progress/stat verified. No victim HP/lives/damage/timers/target assignment or enemy-stat override; only guest original pistol and enemy spawn/faction/count staged. Original campaign-only XP scoring retained, no new rewards. Both worker acknowledgements2/4, native host+guest pause menus with advancing simulation/AI, original fresh1wood1stone131/68→132/69/all3guestHUDs/clean history, normal host close/reopen restoring wholeparty, everyguest solo bridge/files/backups restoration pass. No page/transport errors or externalHTTP. All18helper/eight protected sourcefixture/app hashes match;18helper sources and47native evidence files preserved, screenshot visually inspected and4native logs contain normal events only. Owned app absence verified. Earlier failed23073remains failed/preserved18files; its incorrect XP expectation was independently traced to campaign-only original scoring. Full703/0/focused21/0+prep29/0/2flag refusals pass; final full12894repeat passes703/0 after final helper changes. No personal island/Beta1/prior artifact change. Native otherOS/mixed-machine/WAN/endurance, melee/natural campaigns/four-player enemy encounters remain open.
 
-## Current test work: native knockout departure/rejoin — 2026-11-10
+### Current test work: native knockout departure/rejoin — 2026-11-10
 
 Test-only continuation from published d97af3a/cc5d02f; unchanged finished Beta102 ARM64 app. New `worker-reload-smoke.cjs --coop --pvp-death --pvp-rejoin` reuses actual original lethal projectile/DYING/native15second waiting. Before departure, detach observations bound to the old actor; close the real guest link, require disk health0/waiting/progression/inventory/destination/lives, observe host/workerAI advance while absent, and reconnect the assigned hero with an explicit test-only waiting+blocked-input readiness condition. Ordinary reconnect callers retain their original movement guard. Passive original restoreHero/new actor respawn/pay observations must prove saved waiting remaining/destination, zerohealth/XP/inventory/lives, then exactly one native automatic full-health/invulnerable revival with no paid call and normal guest input/disk. Whole-party normal reopen and guest solo restoration follow through.
 
@@ -220,7 +254,7 @@ All17helper/eight protected fixture hashes and unchanged app.asar verify. Rejoin
 
 **Previous lumber CI completion — 2026-11-10:** d97af3a/run42801268613 completes all8jobs/698checks/eight unexpired artifacts141.1 in attempt1. All8decoded logs inspected; both Mac14MachO/source/icons/signatures, Windows7PE each, Linux tar6ELF each/AppImage12x64/6ARM and native Linux stub-world2/4direct/relay/3renewals per guest/samechannels/freshallocations/expiry/credential retirement8/8and24/24pass. Ignored `beta-102-pvp-lumber-ci/` has11checked log/metadata files. Artifacts not independently downloaded/launched; native27158 and newer native88790 remain separate. This supersedes earlier pending CI states; no duplicate dispatch/public release.
 
-## Current test work: original lumber-priced revival — 2026-11-10
+### Current test work: original lumber-priced revival — 2026-11-10
 
 Test-only continuation from published ba60c4f/c64a3cf, unchanged finished Beta102 ARM64 app. `worker-reload-smoke.cjs --coop --pvp-death --pvp-lumber` retains original host automatic death/respawn, worker2/4/menu/income/save/reload/solo isolation, and changes the guest paid choice to native50wood after the original timer crosses its high-cost threshold. No assigned victim position/HP/damage/lives/timers; attacker position/original pistol remain staged. Original payment and ResourceDeposited observers account exact one-time price while native worker income continues, with normal acknowledgement/disk and stale-episode refusal checks. Observers forward original calls and restore method ownership/event subscription.
 
@@ -232,7 +266,7 @@ All16helper/eight protected fixture hashes match; app.asar unchanged; four nativ
 
 **Previous milestone CI follow-through — 2026-11-10:** ba60c4f/run42796190386 attempt1fails overall:7successful jobs/693checks/seven140.1artifacts, cancelled MacARM129765303756never runs a step or acquires a runner. Explicit annotation says hosted runner unavailable/capacity constraints.12failed-attempt evidence files retain7decoded logs/run/jobs/artifacts/annotations/cancelled-job metadata. Connected single-job retry returns403missing integration Actions write permission; existing authorized CLI POST reruns only this terminal job. Attempt2MacARM129774123142passes14ARM64MachO/source/original hero icons/deep-strict signature, produces140.2artifact. All8current job conclusions succeed and8decoded logs inspected; seven other execution timestamps carry forward. Both Macs14MachO, Windows7PE each, Linux tar6ELF each/AppImage12x64/6ARM and native Linux stub-world2/4direct/relay/3renewals per guest/samechannels/freshallocations/expiry/credential retirement8/8and24/24pass. Eight unexpired artifacts are seven140.1plusMacARM140.2, all same ba60c4f source. Successful attempt11checked files/CIroot25. These artifacts were not independently downloaded/launched. No duplicate full dispatch or new public release. This supersedes earlier pending/queued CI statements; local698/native27158 remain separate.
 
-## Current native acceptance: PvP lifecycle — 2026-11-10
+### Current native acceptance: PvP lifecycle — 2026-11-10
 
 Test-only continuation on the unchanged verified Beta102 ARM64 app. New `worker-reload-smoke.cjs --coop --pvp-death` chooses fixed PvP before hosting; stages attacker position/original pistol only; uses actual guest mouse targeting and native projectile/damage/death/countdown/revival. Victim health, damage, lives and timers are unchanged. Host automatic revival must leave AI running; guest original Amber button must save exactly10before acknowledgement and reject a fresh-sequence replay of the old death episode. Whole-party reload and guest solo isolation follow through. Full692/0, focused9/0 and3invalid-flag refusals pass before launch. Bounded read-only review found no blocker and launched nothing.
 
@@ -244,7 +278,7 @@ The shared ground-click helper now waits bounded1000ms for native GUI capture/ho
 
 All15helper/eight protected fixture hashes match; unchanged app.asar SHA verified. Host original countdown/knockout artwork screenshot visually inspected. Four native logs contain normal startup/operation/graphics/online/close/quit events only; no page/transport errors or externalHTTP. Owned app absence verified. Successful ignored attempt7 has42checked evidence files, including4logs and parsed projectile/damage/life observations; earlier failures remain separately sealed. Final reused read-only review found no new blocker and launched nothing. This is staged attacker-position/weapon, original full-strength PvP lifecycle acceptance on one Mac; victim position, HP, damage, lives and timers are not assigned. It does not establish PvE enemy AI, lumber-priced revival, dead-player persistence across disconnect, native otherOS/mixed-machine/WAN/endurance. No production/engine/assets/dependencies/formats/version change or new public release. Goal active/incomplete.
 
-## Current work: Beta102 pending-reward lifecycle transaction — 2026-11-10
+### Current work: Beta102 pending-reward lifecycle transaction — 2026-11-10
 
 **Implemented; scoped finished-package acceptance passed; source published.** The shared pending predicate covers claimed non-resource/mixed pickups and both queued GivePickup lists without touching other owners or unclaimed pickups. Capture/removal refuses before mutating records; constructor preflight occurs before creating the party; refresh waits for later owned flights. Existing pure-resource immediate settlement remains separate. The ten prior diagnostic controls/retention cases now all pass in session64972; these are controlled native-method fixtures, not visible acceptance.
 
@@ -295,7 +329,7 @@ No page/transport errors/externalHTTP; all four native logs contain only app-sta
 
 <a id="current-source-beta101-simulation-boundary-hero-refresh--2026-11-10"></a>
 
-## Previous source: Beta101 simulation-boundary hero refresh — 2026-11-10
+### Previous source: Beta101 simulation-boundary hero refresh — 2026-11-10
 
 **Implemented; scoped native acceptance passed.** Original action-manager update holds the current batch in a local array. In an XP-only batch, the first native XP grant could level up and replace/destroy its collector immediately; later grants then saw an unavailable hero and were lost. Two native-method controls reproduce this (0pass/2fail), including a second grant that would itself level up. The online simulation wrapper now marks the whole original call in try/finally. Co-op refresh joins the existing pending-refresh set while that call is active; original endTick flushes afterward, before captures. Calls outside online simulation and solo engine behavior are unchanged. Partial resource failure and held-construction guards remain.
 
@@ -311,7 +345,7 @@ No page/transport errors/externalHTTP; all four native logs contain only app-sta
 
 **Next:** implement the pending non-resource reward transaction described below. Keep Beta101’s same-batch fix distinct from the newly reproduced later-flight/lifecycle failures. Goal active; all local diagnostic sessions are terminal and no game was launched in this investigation. Native other-platform/mixed-machine, full-game WAN/provider and endurance acceptance remain open.
 
-## Pending non-resource reward transitions — 2026-11-10
+### Pending non-resource reward transitions — 2026-11-10
 
 Historical Beta101 investigation; Beta102 implementation/verification is tracked above. Preserve the original red findings and their scope.
 
@@ -343,7 +377,7 @@ Historical Beta101 investigation; Beta102 implementation/verification is tracked
 
 <a id="current-source-beta-100-incoming-resource-capture--2026-11-08"></a>
 
-## Previous source: Beta100 incoming-resource preservation — 2026-11-09
+### Previous source: Beta100 incoming-resource preservation — 2026-11-09
 
 **Implemented and scoped native acceptance passed.** Source [8c66f751ee9a2e9d34a512e46c26bb4d4f92dcbf](https://github.com/VeeShep/PolyCraft-Revival/commit/8c66f751ee9a2e9d34a512e46c26bb4d4f92dcbf) is on origin/main. Co-op capture/removal now finishes already-owned pure wood/stone pickups through original native callbacks before recording the hero inventory. Claimed, flying and queued grants retain original carrying caps and owner isolation. Removing each queued grant before invocation prevents replay after partial failure; a failed actor cannot be captured/removed again. Pending-resource level-up replacement waits for the action batch. Mixed/non-resource rewards keep normal simulation rather than forced callbacks. No synthetic resource/counter assignments or global action-manager update.
 
@@ -359,7 +393,7 @@ Historical Beta101 investigation; Beta102 implementation/verification is tracked
 
 **Next:** inspect that exact automatic CI run, then extend interruption coverage to original non-resource rewards and XP replacement batches without weakening existing resource/worker/menu/save guards. Keep the goal active. Generic pending XP/coin/health/item interruptions and XP-only replacement batches remain open, along with physical loss/grace periods, wider worker/combat coverage, the exact unidentified mining popup, native other-platform/mixed-machine gameplay, full-game WAN/provider and endurance acceptance. No game is currently running.
 
-## Historical Beta100 preparation and pause — 2026-11-08 to 2026-11-09
+### Historical Beta100 preparation and pause — 2026-11-08 to 2026-11-09
 
 **Implemented; native acceptance pending:** co-op capture/removal previously recorded only carried resources and completed outgoing flights. Original pickups reserve incoming capacity, then queue a separate native GivePickup grant; they are transient and are not saved. Removing their collector first could lose the reserved resource. Capture now settles only already-owned, pure carried-resource pickups through their original native completion/grant callbacks before recording inventory. Claimed-but-not-flying, active-flight and queued-grant phases are covered. Matching GivePickup actions are removed before granting; other owners, unclaimed pickups, unrelated actions/order and original carrying caps remain unchanged. No global action-manager update or synthetic resource/counter assignments.
 
@@ -387,7 +421,7 @@ Historical Beta101 investigation; Beta102 implementation/verification is tracked
 
 <a id="current-source-beta-99-native-resource-selection-readiness--2026-11-08"></a>
 
-## Previous source: Beta 99 native resource-selection readiness — 2026-11-08
+### Previous source: Beta 99 native resource-selection readiness — 2026-11-08
 
 This checkpoint is historical; the current Beta100 section supersedes older continuation states.
 
@@ -410,7 +444,7 @@ This checkpoint is historical; the current Beta100 section supersedes older cont
 
 <a id="current-source-beta-98-peer-close-handling-and-test-reference--2026-11-08"></a>
 
-## Previous source: Beta 98 peer-close handling and test reference — 2026-11-08
+### Previous source: Beta 98 peer-close handling and test reference — 2026-11-08
 
 This checkpoint is historical; current Beta99 instructions/results above supersede older pending states.
 
@@ -435,7 +469,7 @@ This checkpoint is historical; current Beta99 instructions/results above superse
 
 <a id="current-source-beta-97-resource-flight-accounting--2026-11-08"></a>
 
-## Previous source: Beta 97 resource-flight accounting — 2026-11-08
+### Previous source: Beta 97 resource-flight accounting — 2026-11-08
 
 This checkpoint is historical; the current Beta98 section supersedes older continuation states.
 
@@ -464,7 +498,7 @@ This checkpoint is historical; the current Beta98 section supersedes older conti
 
 <a id="current-source-beta-96-original-guest-worker-cues-and-acknowledgements--2026-11-08"></a>
 
-## Previous source: Beta 96 original guest worker cues and acknowledgements — 2026-11-08
+### Previous source: Beta 96 original guest worker cues and acknowledgements — 2026-11-08
 
 This checkpoint is historical; current source/continuation instructions above supersede its older pending states.
 
@@ -488,7 +522,7 @@ This checkpoint is historical; current source/continuation instructions above su
 
 <a id="current-source-beta-95-guest-pause-hud-visibility--2026-11-08"></a>
 
-## Previous source: Beta 95 guest pause HUD visibility — 2026-11-08
+### Previous source: Beta 95 guest pause HUD visibility — 2026-11-08
 
 This checkpoint is historical. Pending states and latest-complete-build statements below are superseded by the current Beta96 section above.
 
@@ -516,7 +550,7 @@ Delegation policy agreed 2026-10-26: use a subagent only for a narrow, independe
 
 The durable working policy is in `AGENTS.md` under **Subagent budget**. Before spawning, explain the concrete benefit, define completion criteria and assign non-overlapping work; the parent reviews and integrates results. No agents are needed just to plan delegation.
 
-## Approved next networking milestone: room codes and direct-first connections — 2026-10-24
+### Approved next networking milestone: room codes and direct-first connections — 2026-10-24
 
 The user now requests a small, long-term signaling/credential service and room-code joining, preferring minimal server information/load and avoiding TURN gameplay charges whenever a working direct route exists. **This promotes room codes from the deferred backlog into the next networking milestone.** Beta 8 now implements the staged connection coordinator on top of the Beta 6 room service and Beta 7 address discovery. Beta 57 adds bounded automatic renewal to the optional coturn credential service; provider-specific APIs, public deployment and native/physical-network acceptance remain open. Manual TURN settings remain supported.
 
@@ -541,7 +575,7 @@ Reference audit: [FlimLick/flimssite/tools/stun](https://github.com/FlimLick/fli
 
 Implementation order: bounded signaling/room protocol and server with deployment instructions → authenticated room-code host/join adapter → direct-first route coordinator and staged WebRTC/TURN → network timing/bandwidth instrumentation and disposable acceptance. Beta 8 now contains source and local non-GUI checks for the first three steps with manually configured TURN. Beta 37 implements optional coturn credential issuance; provider-specific APIs, measurements and physical gameplay/deployment acceptance remain next. Continue preserving existing multiplayer/save/gameplay gates; no backend deployment, provider account setup or automatic router mappings occurred in this requirements pass. That requirements checkpoint changed documentation only; the subsequent room implementation is Beta 6, recorded below.
 
-## Historical evidence: Beta 95 builds and worker restart — 2026-11-08
+### Historical evidence: Beta 95 builds and worker restart — 2026-11-08
 
 These detailed checkpoints are retained for provenance. The current summary above supersedes their earlier live/pending states, acceptance scopes and continuation instructions. Original failed output is preserved rather than regenerated.
 
@@ -611,7 +645,7 @@ Final worktree calibration `/private/tmp/polycraft-beta95-reuse-final.iwyreuxt` 
 
 <a id="current-source-beta-94-verified-native-world-collision-box-name--2026-11-08"></a>
 
-## Previous source: Beta 94 verified native world collision-box name — 2026-11-08
+### Previous source: Beta 94 verified native world collision-box name — 2026-11-08
 
 Working version is **1.0.0-beta.94**. The private `lc` constructor and **nine bound references** are now `WorldCube`, a descriptive role verified from the actual `ECPhysicsCube.activate()` assignment to `this.worldCube`, its bound native factory construction and original collision/step/extents methods. The same binding creates block collision boxes. This is not a claim to have recovered its lost original spelling. No collision, step, geometry, rendering, progression or public-property implementation changes; no save/asset/network identifiers or execution order changes.
 
@@ -633,7 +667,7 @@ Five new source-only checks use the **actual native camera methods and math** pl
 
 <a id="current-source-beta-93-original-targeted-command-destination-markers--2026-11-08"></a>
 
-## Previous source: Beta 93 original targeted command destination markers — 2026-11-08
+### Previous source: Beta 93 original targeted command destination markers — 2026-11-08
 
 Working version is **1.0.0-beta.93**. Original `HeroControllerAction.drawIssueCommand()` retains its two-layer destination hexagon while hovering a target and, during a targeted hold, draws it at the ground cursor's X/Z and the hero's height minus the native offset. It draws neither layer when there is no movement destination or when holding empty ground. Guest presentation returned immediately after choosing a target pointer and suppressed those markers. `GuestWorld.drawMovementCursor()` now retains the original pointer and draws the shared native **`drawCommandDestination`** helper under the same command conditions. Path destination takes priority over locomotion destination; a targeted hold uses the existing ray/hero-plane cursor, without modifying it. All sprite artwork, size, colors, opacity and blend styles come from the existing native helper.
 
@@ -671,7 +705,7 @@ Ignored `test-results/beta-93-native-return/` retains the original route/557-che
 
 <a id="current-source-beta-92-host-owned-original-target-pointers--2026-11-07"></a>
 
-## Previous source: Beta 92 host-owned original target pointers — 2026-11-07
+### Previous source: Beta 92 host-owned original target pointers — 2026-11-07
 
 Working version is **1.0.0-beta.92**. Guest drawing previously returned as soon as a target was picked, and returned throughout targeted holds, leaving the previous default/move cursor visible over trees, buildings or enemies. `GuestWorld.drawMovementCursor()` now uses the original **attack/interact** textures for hover and targeted holds, retaining the original move pointer for ordinary ground drags. Local GUI/input/placement guards and existing target visibility/eligibility picking remain active. Drawing sends no action and changes no snapshot, resource, combat rule or save. Full target-held sprites/destination feedback and the user's exact mining-popup identity still require comparison; this patch does not claim full UI parity.
 
@@ -693,7 +727,7 @@ Before the fix, the preliminary focused run records **66 passing / three failing
 
 <a id="current-source-beta-91-verified-lightingaudioeffects-names--2026-11-07"></a>
 
-## Previous source: Beta 91 verified lighting/audio/effects names — 2026-11-07
+### Previous source: Beta 91 verified lighting/audio/effects names — 2026-11-07
 
 Working version is **1.0.0-beta.91**. The readable-runtime foundation advances by naming three private constructors from their native factory fields on the actual newly created GameManager: **`Hb` → `GameLighting`** (11 bound references), **`O` → `GameSoundManager`** (137) and **`X` → `EffectFactory`** (96). These are verified **descriptive role names**, not claimed lost-original spellings. No lighting/shadow/audio/effect implementation, gameplay progression, public properties, asset/save/network keys or execution order changes.
 
@@ -711,7 +745,7 @@ The shared canonical inverse proof passes. An independent token audit reverses e
 
 <a id="current-source-beta-90-original-resource-selection-cues--2026-11-07"></a>
 
-## Previous source: Beta 90 original resource selection cues — 2026-11-07
+### Previous source: Beta 90 original resource selection cues — 2026-11-07
 
 Working version is **1.0.0-beta.90**. The known nearby/hover resource-selection cue is restored in guest presentation. This repairs a source-proven original feedback gap; **it does not yet identify or close the user's particular mining-popup report**. No game window was opened. `GuestWorld.drawResourceHighlights()` uses the assigned guest's interpolated position and local hover, the original completed resource/hero archetypes, and the existing snapshot's current mesh path to suppress growing resources. Original enter/leave hysteresis and height rules are retained. War/preparation, unavailable input and building placement suppress resource cues; GUI capture suppresses extra hover emphasis. Hidden, disabled, unknown, removed and growing resources produce no lingering highlight.
 
@@ -729,7 +763,7 @@ Ignored `test-results/beta-90-resource-highlights/` preserves before/after engin
 
 <a id="current-source-beta-89-original-command-movement-marker--2026-11-07"></a>
 
-## Previous source: Beta 89 original command movement marker — 2026-11-07
+### Previous source: Beta 89 original command movement marker — 2026-11-07
 
 Working version is **1.0.0-beta.89**. The user's hexagon/arrow report exposed a source-level mismatch: guest ground movement called the original `drawMove()` renderer, while the native command presentation uses the destination hexagon. The native command's existing two-sprite drawing is now extracted once as `HeroControllerAction.drawCommandDestination()` and called by **both** solo command rendering and the guest ground view. It retains original artwork, size, colors/opacity, blend/depth modes and normal; solo command call order and target/charge/held-building logic stay in place. Guest ground movement now shows the hexagon at the host's final path or locomotion destination, using the assigned hero's interpolated height, and selects the original default/move pointer textures. Idle ground has no destination sprite; a held ground gesture uses the native move pointer without the previous extra arrow. No movement intents, walking thresholds, costs, quest rules, network payloads or saves are changed.
 
@@ -741,7 +775,7 @@ Ignored `test-results/beta-89-command-cursor/` preserves before/after engine and
 
 **Acceptance:** 535 source/unit checks, all eight CI jobs and independent finished-Mac static checks pass. **Beta 89 is the latest complete CI artifact set.** No Beta 89 app was launched; native visual/gameplay acceptance remains open. The auditor's pinned Beta 88 application baseline `637dd25` is preserved; review this later drawing patch as a separate change. **Visual solo/guest parity is still unverified**. Target/charge/held-building feedback and the now-identified tree-mining interaction popup require their own comparison; do not describe this ground-marker repair as complete UI restoration. The earlier combined-quest click timeout, intermittent return walk/pickup, worker progression, native other-platform/mixed-machine, physical-network/provider deployment and endurance gates remain open. Keep the game closed pending a newly authorized visible session. Goal remains active/incomplete; expansion deferred.
 
-### Beta 89 complete CI and independent Mac package checks — 2026-11-07
+#### Beta 89 complete CI and independent Mac package checks — 2026-11-07
 
 [Run 42447700212](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42447700212) is terminal **completed/success** at source **`159872564f3f637cf92301267c3f29af1bc65677`**: **eight successful jobs and eight unexpired tester artifacts**, suffix **115.1**. Logs confirm **535 checks / zero failures**; both Windows workers verify **seven PE files each**, Linux tar workers **six ELF files each**, and AppImages **twelve x64 / six ARM64**, with packaged source/version/original-icon checks. Both Mac workers record **14 native Mach-O files**, signatures, source and hero icons. No duplicate workflow or local fallback was started; the read-only run watcher exited zero.
 
@@ -753,7 +787,7 @@ Ignored `test-results/beta-89-ci-acceptance/` preserves terminal job/artifact me
 
 **UI clarification:** the user says the other missing element was **the popup shown when mining a tree**, and otherwise nothing else. Their arrow concern came from thinking the movement arrow was missing in normal solo play. Narrow the reported UI comparison to that mining interaction popup and ground feedback; do not invent a broader set of missing screens. Exact popup rendering/trigger still needs matching against the original game. The user game stays closed; no personal island changed. Next source investigation is that native mining feedback, while visible solo/guest comparison, worker progression, the resource-click/return-walk/pickup failures, native other-platform/mixed-machine, actual physical networking and endurance remain open. Keep goal active/incomplete and expansion deferred.
 
-### Mining popup investigation: source candidate, not yet matched — 2026-11-07
+#### Mining popup investigation: source candidate, not yet matched — 2026-11-07
 
 The user clarified that the only other reported difference is the thing that appears when mining a tree. An asynchronous follow-up asks whether this is a nearby/hover selection marker or a panel with text/numbers; **its exact identity is not confirmed**. No game was opened.
 
@@ -761,7 +795,7 @@ Source inspection finds that original tree archetypes contain smart `ECSelectabl
 
 Ignored `test-results/beta-89-mining-feedback/` preserves the executed probe, output, original asset alpha inspection and normalized scope with **four checked hashes**. The one-off probe uses the currently verified local renderer bindings; it is not a permanent minified-name-dependent regression. No production/version/save/network change, no new acceptance claim and no extra unit-suite run. These provisional findings are preserved alongside the completed test-diagnostics revision below; the published Beta 89 application build checkpoint stays intact. Next: resolve the prompt identity, then reproduce the appropriate native path before implementing guest feedback. Preserve host authority and per-player proximity/hover semantics; do not replicate the host's local hot/GUI state as every guest's state.
 
-### Resource-click event trace prepared without opening the game — 2026-11-07
+#### Resource-click event trace prepared without opening the game — 2026-11-07
 
 The silent first combined-quest tree click needs state **at the event**, not just a snapshot five seconds afterward. Test-only `tests/coop-input-trace.cjs` now surrounds the original guest `pointer()` and `clickTarget()` calls, retaining the last **24** down/up/target events with before/after native/document focus, availability, GUI capture/hot controls, sequence/selection/drag, quest/menu and input state. Motion events delegate without recording. It does not send actions, change flags, bypass UI guards, retry clicks or adjust timeout limits. Restoration removes its inherited-method shadows, preserves later hooks and clears its trace property.
 
@@ -771,7 +805,7 @@ Ignored `test-results/beta-89-resource-input-trace/` preserves the executed trac
 
 <a id="current-source-beta-88-guarded-desktop-window-notifications--2026-11-07"></a>
 
-## Previous source: Beta 88 guarded desktop window notifications — 2026-11-07
+### Previous source: Beta 88 guarded desktop window notifications — 2026-11-07
 
 Working version is **1.0.0-beta.88**, following the user's policy of incrementing application revisions. The visible Beta 87 wood test logged `Object has been destroyed` at the main-process focus callback during cleanup. Focus/blur and enter/leave-fullscreen callbacks sent directly through `window.webContents`, unlike the already guarded direct/room event sender. They now reuse that existing lifetime check, renamed **`sendWindowEvent`**, so destroyed windows/contents receive no late notifications. Live event channels and true/false payloads remain identical; normal fullscreen quest/input handling, renderer security and save-before-close behavior are unchanged. No new dependency, engine rewrite or save-format change.
 
@@ -781,7 +815,7 @@ The actual-main-code regression registers the native callbacks in the existing E
 
 Wire runtime **coop-39**, world/delta **15/2**, co-op **4**, room **4**, save envelopes through **8** stay unchanged; **Beta 74–88 game peers remain compatible**. Personal saves, original assets, naming manifests, immutable baselines and `dist/beta-1` remain untouched. The initial source/build/native gates are now completed to the scopes recorded below. Keep the distinction between positive current wood cases, the unexplained earlier pickup failure, source/unit proof, finished-artifact verification and native other-platform acceptance. Broader other-platform, physical-network, endurance and later-progression gates remain open; restoration is incomplete.
 
-### Beta 88 complete CI and downloaded Mac artifact acceptance — 2026-11-07
+#### Beta 88 complete CI and downloaded Mac artifact acceptance — 2026-11-07
 
 Source **`637dd2569ff479b0f3495c645c440837962ced6a`** is committed/pushed. [Run 42443177035](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42443177035) is **completed/success**, all **eight jobs** and **eight unexpired artifacts**, suffix **114.1**. The ARM64 Mac runner completed normally; no local fallback or duplicate workflow was started. Beta 88 is the latest complete CI build set. Worker logs confirm **533 passed / zero failed**, two/four-peer native Linux/Electron/coturn loopback with three renewals per guest on unchanged channels/fresh allocations and **8/8 / 24/24 retired credential sets**. Those network worlds remain stubbed. Both Windows targets verify **seven PE files each**; Linux tar targets **six ELF files each**, AppImages **twelve x64 / six ARM64**, with source/version/original-icon checks. Intel Mac detailed worker log/step metadata was incomplete at collection, so its stronger independent finished-artifact verification below is the evidence for those static requirements; do not invent a missing worker verification line.
 
@@ -795,7 +829,7 @@ Ignored `test-results/beta-88-window-lifetime/` preserves exact failing/passing 
 
 **Next at that checkpoint:** continue original stone deposit and paid Stonemill progression using the known disposable natural fixture; the subsequent acceptance section below completes this local case. Retain pickup traces and capture a live failure before changing collection/navigation; three positive wood cases are scoped acceptance, not a reliability proof. Preserve all earlier staged crafting, construction/demolition, combat/PvP/reconnect, save, input/menu, sync/resync and Easter egg checks. Native Intel/Windows/Linux gameplay, actual cross-machine LAN/WAN/forwarding/UPnP/NAT/provider deployment and multi-hour endurance remain open. Keep expansion deferred and goal **active/incomplete**. Personal saves, other projects, immutable baselines and old releases remain untouched.
 
-### Beta 88 original stone deposit and paid Stonemill acceptance — 2026-11-07
+#### Beta 88 original stone deposit and paid Stonemill acceptance — 2026-11-07
 
 The unchanged **GitHub ARM64 artifact 13602990823** (source `637dd25`, run `42443177035`, suffix `114.1`) passes a new announced, visible four-window progression case. `tests/hq-recovery-smoke.cjs --lumbermill --rehost --resources --stonemill` copies the known disposable `polycraft-coop-identities-DIfUpK/host` fixture and its actual backup, recovers through the original launcher, and rejoins all four existing hero identities. The guest claims the Lumbermill reward, depletes the original **50-stone rock through ten five-unit clicks**, collects **10 carried stone**, walks the native route back to HQ, and deposits **exactly 10 once**. The saved shared bank and all three guest HUDs agree; the carrier is empty.
 
@@ -807,7 +841,7 @@ Log `/private/tmp/polycraft-beta88-stonemill.txt`; disposable output `polycraft-
 
 **Next at that checkpoint:** continue the original worker/resource-production progression after Stonemill, keeping native costs, unlocks and solo/co-op save isolation intact; the investigation below records its current incomplete state. The stone deposit/Stonemill gate is now passed for this finished local Apple Silicon case only. Native Intel/Windows/Linux and mixed-machine play, real LAN/WAN/forwarding/UPnP/NAT/relay deployment, endurance and later original progression remain open. Expansion stays deferred; goal stays active/incomplete.
 
-### Beta 88 worker progression investigation — incomplete, 2026-11-07
+#### Beta 88 worker progression investigation — incomplete, 2026-11-07
 
 The worker extension is **prepared, not accepted**. Five announced visible four-window runs used the same unchanged finished GitHub ARM64 Beta 88 application and fresh copies of the disposable Lumbermill fixture. All five exit **one**, and all owned apps/processes are closed. This does not supersede the separately passing Stonemill/reload case or establish a new application release. No shipped code, resources, task flags, personal saves, original baselines or Beta 1 artifacts changed.
 
@@ -829,7 +863,7 @@ Ignored `test-results/beta-88-workers/` preserves all five failed run logs, thei
 
 **Next, after the user finishes playtesting and is ready for visible tests:** diagnose the first combined-quest tree click using the prepared live input/GUI/screenshot capture; do not extend timeouts, force game state or call a target action directly to bypass the real pointer failure. Retain the earlier unexplained return-walk/pickup cases. Complete the normal combined gathering, both worker huts/spawns, guest visibility and save/reload, then native resource production. Native other-platform/mixed-machine, real networking and endurance gates remain open. Keep goal active/incomplete and expansions deferred.
 
-### User playtest: normal save/exit and cursor parity report — 2026-11-07
+#### User playtest: normal save/exit and cursor parity report — 2026-11-07
 
 The user reports the normal game is good and requests save/close. Before any close command was sent, the regular user-data log already recorded `operation-ok/save` at **2026-11-08 04:29:25.575 UTC**, `window-close/checkpointComplete:true` immediately afterward and `app-quit` at **04:29:25.680 UTC**. A process check confirms no normal packaged PolyCraft process remains. No app was reopened, force-quit or automated against the user's island; the existing normal close completed saving. This user session is separate from disposable acceptance runs.
 
@@ -839,7 +873,7 @@ The user tested because UI elements appeared missing in the automated runs and a
 
 Ignored `test-results/beta-88-cursor-parity/` preserves the executed tests/AST reader, 31-check output, original texture hashes, alpha-only inspection copies and normalized limitations with **six verified hashes**. These inspection copies do not change game artwork. The game remains closed; no production/version/save changes and no visual parity fix in this pass. **Next source work:** map guest movement/target feedback to the original command presentation, preserving charge/target/held-building behavior instead of merely deleting arrows; require a visible solo/guest comparison when authorized. Keep the separate resource-click timeout and broader missing-UI report open.
 
-### Auditor handoff and upcoming remote test machines — 2026-11-07
+#### Auditor handoff and upcoming remote test machines — 2026-11-07
 
 The user requested context for an upcoming code audit and plans to provide Windows/Linux test machines accessible through RDP or SSH. [AUDITOR_BRIEF.md](AUDITOR_BRIEF.md) now records the pinned application source `637dd2569ff479b0f3495c645c440837962ced6a`, recovered-runtime origins, code map, Electron/IPC/network/save boundaries, host authority, independent schema versions, persistence/cheat-history invariants, licensing scope, review priorities, exact acceptance limits and useful finding/reproduction details. It is an implementation handoff, not a new security scan or security attestation. The current CI run’s completed/success source was rechecked; no game test, remote connection or deployment occurred in this documentation pass. README links the brief and corrects its stale “latest Beta 86” label to the verified Beta 88 set.
 
@@ -847,7 +881,7 @@ The user requested context for an upcoming code audit and plans to provide Windo
 
 <a id="current-source-beta-87-guest-area-updates-and-hidden-building-targets--2026-11-06"></a>
 
-## Previous source: Beta 87 guest-area updates and hidden building targets — 2026-11-06
+### Previous source: Beta 87 guest-area updates and hidden building targets — 2026-11-06
 
 Working version is **1.0.0-beta.87**. Natural shared-bank/Lumbermill testing exposed two production issues. A capped HQ dispenser hidden by the original zero-scale mesh remained an interactive snapshot target, stealing a guest click from the coincident Lumbermill icon. Separately, ordinary native entities were updated only within the host camera's 30-unit area; a distant guest could reach the village while its building dispenser never refreshed its unlock state. The older test menu preflight called native product evaluation and concealed that stale eligibility.
 
@@ -863,7 +897,7 @@ Wire runtime **coop-39**, world/delta **15/2**, co-op **4**, room **4** and save
 
 **Resume gate:** follow the exact Beta 87 build run recorded with the publication checkpoint, without duplicate queue retries; verify its finished package provenance/source/icons/architecture and repeat this natural flow from that package before claiming packaged acceptance. Keep earlier staged/menu/focus/resync, demolition, crafting, reconnect/PvP and save checks; broader natural progression/recovery, quick-click/latency stress, native Intel/Windows/Linux gameplay, physical networks/deployment and endurance remain open. Expansion remains deferred. The user requested the goal/chat work pause after this bounded checkpoint, not completion of restoration.
 
-### Beta 87 resumed: worker builds and isolated reload — 2026-11-06
+#### Beta 87 resumed: worker builds and isolated reload — 2026-11-06
 
 Source checkpoint **`f95ff1653a73be1d2715b69c27d8c7d3e819023f`** is committed/pushed. [Build run 42236627502](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42236627502) is **completed/failure**, with **seven successful jobs** and **seven unexpired artifacts**, suffix **113.1**. Apple Silicon job **127957097808** terminated cancelled without acquiring a hosted runner; its annotations report ARM64 runner capacity constraints. No compile failure, duplicate rerun or workflow change is inferred. Worker checks confirm **532 passing / zero failed**, native two/four-participant loopback WebRTC/coturn with three renewals per guest on unchanged channels/fresh allocations and **8/8 / 24/24 retired credentials**. These native networking fixtures still use stubbed worlds, not full gameplay/WAN. Windows x64/ARM64 each verify **seven PE files**; Linux tar archives verify **six ELF files each**, AppImages **twelve x64 / six ARM64**. The Intel Mac job separately verifies original icons/source, **14 x64 Mach-O files** and deep/strict signature. These are worker results, not independent local extraction/gameplay acceptance. Beta 86 remains the latest complete CI set; do not relabel its ARM64 build as Beta 87.
 
@@ -873,7 +907,7 @@ The earlier start-screen timeout **does not reproduce in this isolated run**: bo
 
 Ignored `test-results/beta-86-natural-economy/` now preserves resumed worker metadata, partial combined worker logs plus complete Intel Mac log, initial probe setup-race and passing isolated reload, each failed full-run test assumption/screenshot, executed corrected helpers, final full source pass and **resumed checked hashes**. Application/version/protocol bytes remain the published Beta 87 source; only test setup/docs changed in this resumed checkpoint. **Next: build and verify a separate local native ARM64 Beta 87 package, then repeat this same full natural flow from the finished artifact.** Do not retry the terminal CI ARM job just for runner unavailability. Preserve other native-platform, physical-network/deployment and endurance gates.
 
-### Finished local Beta 87 natural paid-building acceptance — 2026-11-06
+#### Finished local Beta 87 natural paid-building acceptance — 2026-11-06
 
 The test/documentation checkpoint **`83867b8800cc46190f71dbbee70e7e2f2900d3dc`** is committed/pushed; application bytes remain the Beta 87 fix from `f95ff16`. A separate local native ARM64 build at `/private/tmp/polycraft-beta87-local-arm64-build.W0LnJUsP` passes finished ZIP integrity, **three tester-file checksums**, exact **Beta 87/source `83867b8`/darwin-arm64/run null** provenance, full packaged source/core metadata/original hero icons, **14 ARM64 Mach-O files** and deep/strict signature. Its bundle is `download/`; the actually executed app is `extracted/PolyCraft Offline.app`. This is a local build, not the missing CI ARM64 artifact. Build/provenance/signature checks are not substituted for gameplay.
 
@@ -883,7 +917,7 @@ All owned windows close. Page/render assertions and external-request assertions 
 
 **Current acceptance:** Beta 87 is now the latest locally verified finished ARM64 package for this scoped original progression flow; Beta 86 remains the latest complete CI set. The existing **532-check CI result** is still for these unchanged application bytes; the resumed test/docs corrections were exercised by the complete source and finished-package runs rather than triggering duplicate CI builds. **Next:** extend natural progression beyond the first Lumbermill and exercise recovery/rehosting of this new world, while retaining staged construction/demolition/crafting/combat/reconnect/PvP checks. Do not claim native Intel/Windows/Linux gameplay, physical LAN/WAN/direct/UPnP/NAT/provider deployment or endurance from this same-Mac evidence. Keep original progression and multiplayer acceptance ahead of expansion; goal remains **active/incomplete**. Personal islands, other projects and immutable baselines/releases remain untouched.
 
-### Beta 87 actual backup recovery and four-player rehosting — 2026-11-06
+#### Beta 87 actual backup recovery and four-player rehosting — 2026-11-06
 
 The verified finished local ARM64 Beta 87 app now passes **actual backup recovery of the completed HQ/Lumbermill world and rehosting all four saved heroes**. `tests/hq-recovery-smoke.cjs --lumbermill --rehost` uses the earlier disposable `polycraft-coop-identities-DIfUpK/host` fixture, whose **existing `.bak`** already contains both buildings, pending Lumbermill reward, four party records and shared economy. It copies that real backup, damages **only a copied primary**, enters through original recovery-card Continue/Play, compares both buildings' IDs/archetypes/positions and the entire saved party/economy/flags/reward/history exactly, repairs the primary and verifies the real recovery bytes remain intact at repair. No backup is synthesized from the primary.
 
@@ -895,7 +929,7 @@ Ignored `test-results/beta-87-recovery-rehost/` preserves both passing logs, exe
 
 **Application bytes/version/protocol/save formats are unchanged**; this is a test/evidence milestone, validated by actual packaged GUI cases and syntax/diff checks without rerunning unrelated unit/CI jobs. The **532-check Beta 87 application CI result** remains applicable. **Next:** continue original progression after the first Lumbermill and preserve all existing staged action/combat, save, input/menu, sync/resync and Easter egg checks. Broader recovery stages, nonzero-upgrade/death/held-object natural-world acceptance, native Intel/Windows/Linux gameplay, physical networks/deployment and endurance remain open. Do not promote this same-Mac recovery/rehost pass to those gates. Goal remains **active/incomplete**; personal islands, other projects, `dist/beta-1` and old release/baseline files are untouched.
 
-### Beta 87 natural stone progression / requested pause — 2026-11-06
+#### Beta 87 natural stone progression / requested pause — 2026-11-06
 
 The same verified finished local ARM64 Beta 87 app passes the original **Lumbermill reward → mineAStone** progression on a copied recovered/rehosted four-player world. The shared resource helper now selects the original tree/wood or rock/stone definitions and resource index; it retains native approach rules, visible/HUD-clear clicks, real scattered-drop collection, original depletion events, per-hero inventory separation, pending reward and clean-history disk assertions. `--resources` on the recovery/rehost harness gathers wood for its HQ-only input or stone for `--lumbermill` input. No application/game rules, version, save schema or protocol changes.
 
@@ -907,7 +941,7 @@ The user requested saving/pausing and then immediate desktop availability. No fu
 
 **Next on explicit resume:** inspect the wood HUD timeout (capture native focus, connection and HUD state before changing assertions), finish its default-branch regression and verify the narrow health comparison; keep the native readiness/identity/resource checks. Then continue stone deposit and original paid **Stonemill** construction; neither is verified by the carried-stone case. Reuse disposable fixtures and announce any visible games. Native other-platform gameplay, real networks/deployment, endurance and other original progression remain open. Pause is user-requested; restoration is **incomplete**, with personal islands, other projects and immutable outputs untouched.
 
-### Wood HUD timeout: code-only investigation — 2026-11-07
+#### Wood HUD timeout: code-only investigation — 2026-11-07
 
 User authorized investigation but **no game windows until explicit readiness**. No game/browser windows or native gameplay tests were opened in this pass. Worktree started clean at `ec3a2fc`; personal saves, old packages and immutable baselines remain untouched. The failed profile `polycraft-hq-recovery-IBTv5G` still saves shared resources **`[0,0]`**, matching the wood wait’s expected zero. Its log records a valid initial snapshot/hero/building check before the HUD wait, but contains **no native-focus, HUD payload or status-query diagnostics**, so it does not prove the timeout’s cause.
 
@@ -919,7 +953,7 @@ A new in-memory regression invokes the **actual `GuestWorld.updateLife()` and `G
 
 Ignored `test-results/beta-87-wood-hud-investigation/` preserves the focused check log, executed unit test, prepared harness and normalized findings with **four checked hashes**. **Pending until user says ready:** one announced visible disposable wood recovery/rehost/resource/reload test from the already verified Beta 87 ARM64 package, collecting the new diagnostics if it fails; the narrow health-rounding comparison still needs native execution in that case. Do not mark wood acceptance complete or change runtime behavior on this hypothesis alone. Continue stone deposit/Stonemill and wider acceptance only after resolving this gate. The goal remains incomplete; its recorded pause is not permission to auto-open anything on a later code-only continuation.
 
-### Visible wood HUD retest: HUD passed, pickup failed — 2026-11-07
+#### Visible wood HUD retest: HUD passed, pickup failed — 2026-11-07
 
 The user said they were ready and explicitly authorized the prepared visible test. One announced run used the verified finished local ARM64 Beta 87 package from source `83867b8`, test source `e474bc1`, and a copy of the earlier HQ-only fixture `polycraft-coop-identities-8bgUyN/host`. Command: `tests/hq-recovery-smoke.cjs --rehost --resources` with the recorded disposable fixture/executable environment. No production bytes, resources, positions, equipment or task flags were changed by the test.
 
@@ -933,7 +967,7 @@ Log: `/private/tmp/polycraft-beta87-wood-hud-visible-retest.txt`; disposable pro
 
 <a id="current-source-beta-86-restore-unlocked-native-starter-weapons--2026-11-06"></a>
 
-## Previous source: Beta 86 restore unlocked native starter weapons — 2026-11-06
+### Previous source: Beta 86 restore unlocked native starter weapons — 2026-11-06
 
 Working version is **1.0.0-beta.86**. A visible probe of the downloaded Beta 85 CI app confirms a starter-equipment mismatch: after real shared weapon pickup, **Host/Two/Three remain unarmed**, although each retains its own cached `wp_h_shotgun_cone01` primary. The original solo hero also returns from co-op empty-handed with `pickupWeapon: true`, but a **normal Continue/Play save reload arms that same hero with its native default shotgun**. The probe fails on this actual return-versus-reload inconsistency; no weapon or task flag is assigned by the test. This establishes original native reload behavior, rather than inferring a transfer of the collecting guest's equipment.
 
@@ -945,7 +979,7 @@ The announced **four visible source games** pass `--natural-spawn --movement-onl
 
 Wire runtime **coop-39**, world/delta **15/2**, co-op **4**, room **4** and save envelopes through **8** stay unchanged. **Beta 74–86 peers remain compatible; the host needs Beta 86 for starter restoration.** The engine bundle/naming manifests, original assets and immutable baselines are unchanged. Later construction/progression, advanced/native multi-hero combat and broader solo continuation/recovery, native other-OS playtesting, physical networks/deployment and endurance remain open. Keep expansion deferred and the restoration goal active/incomplete. Finished local Beta 86 and the completed CI worker checks are recorded below.
 
-### Finished local Beta 86 and CI worker acceptance — 2026-11-06
+#### Finished local Beta 86 and CI worker acceptance — 2026-11-06
 
 Source **13ed7dfc7318fc43df5e941baaf384459eae3a3c** is committed and pushed. The separate **local native Apple Silicon package** passes ZIP integrity, three tester-file checksums, exact version/source/local provenance (`run: null`), full desktop/runtime/core metadata/original icon comparison, **14 ARM64 Mach-O files** and deep/strict signatures. Its four visible disposable games pass the combined `--natural-spawn --movement-only --early-host --natural-weapon --natural-crate --natural-bridge --natural-bandits --natural-gear` case (`/private/tmp/polycraft-beta86-natural-gear-package.txt`, final PASS). Original guest input activates all five bandits with the host **14.31 units** away; native combat records **one guest/four authored turret kills**. All four heroes hold their own starter afterward. Exact guest solo files survive host exit, and the original solo hero retains its gun immediately and after normal Continue/Play reload. Independently read host disk records confirm all four starter inventories and clean cheat history. All four native logs are clean. Earlier sync/interpolation/resync/menu checks pass. Original intro enemy damage remains negligible; full-strength combat/death/balance is not established.
 
@@ -953,7 +987,7 @@ Source **13ed7dfc7318fc43df5e941baaf384459eae3a3c** is committed and pushed. The
 
 Ignored `test-results/beta-86-starter-unlock/` preserves before-fix production code, failing probe, focused/full/source/package/native logs, executed final helpers, build provenance/verification, disk assertions and CI job/artifact metadata with **42 checked hashes**. The initial failing helper was not frozen; final helpers are not represented as its exact bytes. Personal saves, other projects, immutable baselines and old release artifacts remain untouched. Next: natural village/HQ progression and broader solo recovery; native other-OS gameplay, physical LAN/WAN/NAT/UPnP/deployment and endurance remain open. The restoration goal remains active/incomplete.
 
-### Finished local Beta 86 natural village and first HQ — 2026-11-06
+#### Finished local Beta 86 natural village and first HQ — 2026-11-06
 
 The separately verified local Apple Silicon package at **13ed7dfc7318fc43df5e941baaf384459eae3a3c** now passes `--natural-village --natural-hq` after the existing natural bandit flow. The complete announced four-window run (`/private/tmp/polycraft-beta86-natural-hq-complete.txt`, **exit zero**) uses only labelled disposable islands. The guest claims the original bandit reward, queries the original navigation route and follows it with ordinary keyboard input. At village arrival, the guest is **11.17 units** from the workshop and the stationary host **76.29 units** away. Native scripts remove all tutorial barricades/gates/turrets; the guest claims the village reward and unlocks **Build a headquarters**.
 
@@ -963,7 +997,7 @@ Initial harness failures are retained honestly: direct walking stopped against t
 
 Ignored `test-results/beta-86-natural-village/` preserves diagnostic and passing logs, helper snapshots, final executed harness/helpers, four native logs, build provenance/verification and normalized disk assertions with **35 checked hashes**. Application/server/save/package bytes and version remain **Beta 86**. The unchanged production source retains its prior **529-check local/CI** result; that suite is not rerun for this test/documentation-only milestone. Personal saves, other projects, original baselines and release artifacts remain untouched. Next: later natural resource/construction progression and explicit completed-HQ world restoration/recovery; native other-OS gameplay, physical networks/deployment and endurance remain open. The goal remains active/incomplete.
 
-### Beta 86 completed-HQ reload/recovery; staged placement gate — 2026-11-06
+#### Beta 86 completed-HQ reload/recovery; staged placement gate — 2026-11-06
 
 The verified local Apple Silicon app now passes explicit **live-world** equality across co-op exit and normal launcher Continue/Play reload (`/private/tmp/polycraft-beta86-natural-hq-world-restoration.txt`, **exit zero**). The completed HQ's name/archetype/location, village/HQ flags, pending shared reward, **entire four-player co-op record** and clean cheat history match exactly. Original scripts stay enabled. The natural four-player tutorial/construction path and prior movement/interpolation/menu/focus/resync checks pass. This closes the completed-first-HQ native reload check; later story/structures and broad recovery remain open.
 
@@ -975,7 +1009,7 @@ The first natural reload attempt exposed an observation race in the old guest-sa
 
 Ignored `test-results/beta-86-hq-world-restoration/` keeps passing/failing logs, distinct executed/current harness snapshots, recovery helper, five clean native logs, source/repaired disposable saves, actual backup and package provenance with **23 checked hashes**. Runtime/version/save/network schemas and finished packages stay unchanged at **Beta 86**; prior **529-check local/CI** production results are not rerun for test/documentation-only edits. Personal saves, other projects and immutable baselines/releases remain untouched. Native other-OS gameplay, physical LAN/WAN/deployment, endurance and later natural progression remain open. Restoration stays **active/incomplete**.
 
-### Beta 86 full staged co-op regression and placement release readiness — 2026-11-06
+#### Beta 86 full staged co-op regression and placement release readiness — 2026-11-06
 
 The verified local Apple Silicon app passes **three full visible four-player staged runs**: two pointer-traced runs (`/private/tmp/polycraft-beta86-placement-pointer-trace.txt`, `/private/tmp/polycraft-beta86-placement-pointer-repeat.txt`) and a final **unwrapped** run with tightened test input (`/private/tmp/polycraft-beta86-placement-release-ready.txt`), all **exit zero**. Both traces show uncaptured press/release, a valid preview within the original **0.05-unit** alignment limit, exactly one `sendBuild` and the accepted saved result. The earlier intermittent single-click failure is not reproduced in these traces; its exact cause is therefore not conclusively proved.
 
@@ -985,7 +1019,7 @@ All three complete runs pass four-hero keyboard movement/canonical state/interpo
 
 Ignored `test-results/beta-86-placement-trace/` preserves distinct traced/final executed harnesses, all three passing logs, **twelve clean native logs**, package verification/provenance and reviewer scope with **20 checked hashes**. No page errors or external HTTP requests occur. Application/server/save/package bytes and version remain **Beta 86**; prior **529 local/CI unit checks** are not repeated for test/documentation-only edits. Personal saves, other projects and immutable source/release baselines remain untouched. Next: later natural resource/construction progression, quick-click/latency placement stress and broader story/recovery; native other-OS gameplay, physical networking/deployment and endurance remain open. Goal **active/incomplete**.
 
-### Beta 86 natural guest tree depletion and carried wood — 2026-11-06
+#### Beta 86 natural guest tree depletion and carried wood — 2026-11-06
 
 The verified local Apple Silicon app passes `--natural-resources` after `--natural-hq` in the original four-player flow (`/private/tmp/polycraft-beta86-natural-wood-pickup.txt`, **exit zero**). The guest claims the normal HQ reward, follows an original navigation-grid route using keyboard input, and depletes the original **50-unit tree with ten five-unit mouse interactions**. Native `ResourceDispsenserDepletedByHero` records the collecting guest and lumber type; the shared **Chop a tree** quest completes with scripts enabled. The guest then walks over real scattered drops and collects **10 wood** through native automatic pickup. Other heroes' carried inventories remain unchanged at zero; no assignment, teleport or synthetic completion is used.
 
@@ -997,7 +1031,7 @@ Ignored `test-results/beta-86-natural-wood/` preserves earlier helper/failure sn
 
 <a id="current-source-beta-85-shared-scripted-proximity--2026-11-06"></a>
 
-## Previous source: Beta 85 shared scripted proximity — 2026-11-06
+### Previous source: Beta 85 shared scripted proximity — 2026-11-06
 
 Working version is **1.0.0-beta.85**. The finished local Beta 84 natural tutorial run confirms that guest movement cannot start the original bridge encounter: the living guest stands **1.07 units** from `triggerBridge`, within its original **2-unit three-dimensional radius**, while the stationary host remains **11.78 units** away; no tutorial bandits spawn. The native `WaitUntilDistanceBetweenHeroAndFamilyNameLessThan` command consults only `getHero()`, so shared progression waits for the host despite the guest reaching the authored trigger. Earlier wake-up/weapon/shooting tasks still pass.
 
@@ -1011,7 +1045,7 @@ Wire runtime **coop-39**, world/delta **15/2**, co-op **4**, room **4** and save
 
 **Beta 84 CI terminal result:** the exact run **42208426086** is now **completed/failure**, retaining seven successful jobs/artifacts. Apple Silicon job **127861807929** terminated **cancelled without a runner**; its annotation explicitly reports failure to acquire a hosted runner after multiple attempts and ARM64 capacity constraints. It was not restarted or cancelled by this work. This is not an observed compile failure. The verified local Beta 84 package and its scoped gameplay acceptance remain valid; Beta 82 is still the latest complete CI set.
 
-### Finished local Beta 85 guest bridge activation — 2026-11-06
+#### Finished local Beta 85 guest bridge activation — 2026-11-06
 
 Published source **`ec4b9b6e2bb989ac4a62022fddc52916c9d17ab7`** starts [Beta 85 build run 42211933250](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42211933250). Its unit/regression job is successful; other jobs remain running/queued at this checkpoint. **Follow this exact run without duplicate restarts**. Its distinct finished CI artifacts remain unverified; a green unit job does not establish complete packaging or native gameplay.
 
@@ -1023,7 +1057,7 @@ Ignored `test-results/beta-85-shared-proximity/` preserves the failing finished 
 
 **Next acceptance:** follow the Beta 85 CI run to its real terminal state and check distinct artifact provenance. Continue natural **bandit defeat, village/HQ, other scripted markers, and original solo continuation after cooperative tutorial progress**. This proves bridge activation rather than those later paths or full encounter reload/recovery. Native Intel/Windows/Linux gameplay, separate-machine LAN/WAN/forwarding/UPnP/NAT/provider deployment and multi-hour endurance remain open. Preserve the agreed separation of solo/co-op heroes and inventories while investigating these cases; do not transfer guest equipment or change original reward/reset policies to mask a progression issue. Goal stays active/incomplete.
 
-### Finished Beta 85 CI packages and natural bandit encounter — 2026-11-06
+#### Finished Beta 85 CI packages and natural bandit encounter — 2026-11-06
 
 The exact [run 42211933250](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42211933250), application source **`ec4b9b6e2bb989ac4a62022fddc52916c9d17ab7`**, is now **completed/success**, all **eight jobs** and **eight unexpired artifacts**, suffix **111.1**. The existing native ARM64 job acquired a runner and completed; **no workflow/rerun change was made**. Complete worker logs verify **527 passed / zero failed**, native two/four-peer loopback WebRTC/coturn with three renewals per guest on unchanged channels/fresh allocations, committed expiry and **8/8 / 24/24 retired credential sets**. Both Mac ZIPs verify **14 correct-architecture Mach-O files** and deep/strict signatures; Windows x64/ARM64 verify **seven PE files each**; Linux tar archives **six ELF files each** and AppImages **twelve/six**. All package jobs check complete source/core metadata/original icons. The native networking job uses stubbed worlds and does not establish native gameplay/WAN. Ignored `test-results/beta-85-worker-acceptance/` preserves complete terminal metadata/logs and normalized checks with **12 checked hashes**. Beta 85 is now the latest complete CI set.
 
@@ -1039,7 +1073,7 @@ This is a test/documentation milestone: application/server/save/package bytes an
 
 <a id="current-source-beta-84-natural-tutorial-weapon-acquisition--2026-11-06"></a>
 
-## Previous source: Beta 84 natural tutorial weapon acquisition — 2026-11-06
+### Previous source: Beta 84 natural tutorial weapon acquisition — 2026-11-06
 
 Working version is **1.0.0-beta.84**. The finished local Beta 83 app reproduces a second original-tutorial progression bug: new co-op hero archetypes equip the same shotgun as the original floating tutorial pickup, so native `ECInventory.canEquipItem()` rejects it as already equipped. After a real guest wake-up reward click and ordinary keyboard approach to **1.20 units**, within the original **2-unit pickup radius**, `canEquip` is false and the shared **Find a weapon** task never finishes. No native/page exception occurs. An initial harness threshold was too tight for the pickup's collision geometry; the decisive failure uses the actual native radius and observes the rejection directly.
 
@@ -1051,7 +1085,7 @@ Runtime **coop-39**, world/delta **15/2**, co-op **4**, room **4** and save enve
 
 **Beta 83 CI terminal result:** run **42204869507** is now **completed/failure**, with its seven successful jobs/artifacts retained. Apple Silicon job **127849726959** ended **cancelled without an assigned runner** after multiple acquisition attempts. Its authoritative annotation says **The job was not acquired by Runner of type hosted even after multiple attempts**, with macOS ARM64 capacity notices. This is not an observed application compile error. It was not cancelled/restarted by this work. The independently verified local Beta 83 package and its visible acceptance remain valid in their stated local scope. Beta 82 remains the latest complete CI set.
 
-### Finished local Beta 84 natural weapon acceptance — 2026-11-06
+#### Finished local Beta 84 natural weapon acceptance — 2026-11-06
 
 Published application source **`2cd02f735b7fae6513ccd23f0df8efb506fbe9b5`** starts [Beta 84 build run 42208426086](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42208426086). Its unit/regression job is already successful; native networking and platform jobs are still running/queued, with both Mac jobs waiting at the latest observation. This is a new feature build, not a restart of the terminal Beta 83 run. **Follow this exact run**; CI packages are not yet accepted and no duplicate run was started.
 
@@ -1063,7 +1097,7 @@ Ignored `test-results/beta-84-natural-weapon/` preserves exact failing Beta 83 r
 
 **Next acceptance:** follow the Beta 84 CI run and verify its distinct finished artifacts/provenance when terminal. Continue original **shootCrate / early tutorial combat / village and HQ** behavior without staged task events or weapon assignments; those paths are not proved by this weapon pickup. Native Intel/Windows/Linux playtesting, physical network/router/provider deployment and multi-hour endurance still require their own evidence. Keep expansion deferred and the restoration goal active/incomplete.
 
-### Finished local Beta 84 original tutorial shooting — 2026-11-06
+#### Finished local Beta 84 original tutorial shooting — 2026-11-06
 
 The announced **four visible fresh islands** pass the finished local Apple Silicon `--natural-spawn --movement-only --early-host --natural-weapon --natural-crate` run, exit zero (`/private/tmp/polycraft-beta84-natural-crate-final.txt`). After the already tested natural wake-up/pickup, the guest clicks the original weapon-task reward and then the authored **tutorial crate** through normal pointer selection. The hero remains at its natural position, **6.75 units** from the target. The native shotgun creates its actual **`pj_h_shotgun_blast_cone01`** and five cosmetic pellets. A passive observer of the existing `ApplyDamageToEntity` function verifies the collecting guest owns the arc damage that takes the original **one-health crate to nonpositive health**. The native crate disappears, the shared `shootCrate` task completes on the guest and its unclaimed reward is verified in the actual host save. Host disk cheat history stays **clean**.
 
@@ -1071,7 +1105,7 @@ The first test used a pistol-style pellet-impact assertion, even though the game
 
 Ignored `test-results/beta-84-natural-crate/` preserves the observer failure, exact before/after helpers, final executed harness, verified local-package provenance, passing log, four native logs and normalized assertions with **12 checked hashes**. This test-only extension changes no game/server/save/package bytes or version and does not rerun the already passing 524-check suite. **Natural bridge/bandit combat, village/HQ progression, other native OS gameplay, physical networks and endurance remain open.** Next investigate whether guest movement alone advances the original scripted proximity conditions while the host stays behind; the current crate case does not test that behavior.
 
-### Beta 84 current CI worker checkpoint — 2026-11-06
+#### Beta 84 current CI worker checkpoint — 2026-11-06
 
 Fresh job/artifact metadata for [run 42208426086](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42208426086) confirms **seven completed/success jobs** and **seven unexpired artifacts**, suffix **110.1**. Apple Silicon job **127861807929** remains queued; the run is not terminal. Full completed-job logs verify **524 passed / zero failed**, native two/four-peer loopback WebRTC/coturn with **three renewals per guest** on unchanged channels/fresh allocations and **8/8 / 24/24 credential retirement**, Windows x64/ARM64 **seven PE files each**, Linux x64/ARM64 tar **six ELF files each**, AppImages **twelve/six**, and Intel Mac **14 x64 Mach-O files with deep/strict signatures**. All package jobs also verify full desktop source/core metadata/original icons. These worker network cases use stubbed worlds, and worker checks do not prove native gameplay or WAN acceptance. The finished **local** ARM64 gameplay above remains separate from these CI downloads.
 
@@ -1079,7 +1113,7 @@ Ignored `test-results/beta-84-worker-acceptance/` preserves live metadata, seven
 
 <a id="current-source-beta-83-safe-tutorial-hosting--2026-11-06"></a>
 
-## Previous source: Beta 83 safe tutorial hosting — 2026-11-06
+### Previous source: Beta 83 safe tutorial hosting — 2026-11-06
 
 Working version is **1.0.0-beta.83**. An announced visible run of the finished Beta 82 Apple Silicon app reproduced a real new-island crash: hosting while the original hero is asleep replaces that hero, but the running wake-up script later resolves its retained original name and fails with `Cannot read properties of undefined (reading getEC)`, followed by a save-boundary timeout. The previous natural-start acceptance finished waking before hosting and did not cover this case.
 
@@ -1093,7 +1127,7 @@ All four final native logs have no exception/rejection, renderer-error, cleanup 
 
 Published source **`0d1afceb3a066e30fe0a954239d3b6280228a574`** started [Beta 83 build run 42204869507](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42204869507). Its unit/regression job and Windows x64, Linux x64/ARM64 and Intel Mac package jobs have passed; native networking and Windows ARM64 are still running, and Apple Silicon is waiting for a runner at this checkpoint. No duplicate run was started. **Next continuation:** follow this exact run to a terminal result, inspect worker package/native checks and artifact metadata, verify a downloaded finished Apple Silicon app against its `BUILD_INFO.json`, full packaged source/icons/architecture/signature, then repeat the announced visible early-host/wake-up/four-player case with that executable. Source acceptance above is complete; finished Beta 83 acceptance remains open. No personal game or other project was opened.
 
-### Beta 83 worker checks and downloaded Intel package — 2026-11-06
+#### Beta 83 worker checks and downloaded Intel package — 2026-11-06
 
 Live inspection of the same [run 42204869507](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42204869507) now finds **seven completed/success jobs** and **seven unexpired artifacts**, suffix **109.1**. Apple Silicon job **127849726959** remains queued without a runner; the overall run is **not complete**. Complete logs were retrieved for the seven finished jobs, rather than treating the temporarily unavailable whole-run log archive as a failed build.
 
@@ -1101,7 +1135,7 @@ Worker evidence confirms **523 passed / zero failed**. Windows x64/ARM64 verify 
 
 Independently downloaded Intel artifact **13495943131**, `PolyCraft-mac-x64-109.1`, passes outer/inner ZIP integrity, all **three tester-file hashes**, exact Beta 83/source `0d1afce`/run/native-x64 build provenance, complete packaged source/core metadata/original icons, all **14 x64 Mach-O files** and deep/strict signature. It is under `/private/tmp/polycraft-beta83-mac-x64-acceptance.far4oenF`; no Intel/Rosetta game was launched. Ignored `test-results/beta-83-worker-acceptance/` preserves complete completed-job logs, live metadata, normalized renewal/package assertions and downloaded-Intel verification with **11 checked hashes**.
 
-### Finished local Beta 83 Apple Silicon startup acceptance — 2026-11-06
+#### Finished local Beta 83 Apple Silicon startup acceptance — 2026-11-06
 
 Because the CI Apple Silicon job is still queued without a runner, a **separate local native ARM64 package** was built into `/private/tmp/polycraft-beta83-local-arm64-build.q6bdmCwr`, without cancelling/restarting CI or touching existing release folders. Its tester bundle is `download/`, extracted app is `extracted/PolyCraft Offline.app`, and provenance explicitly says source **`b5724579cce65d1ff93db46c55bc264ec7de1f80`**, native `darwin/arm64`, **run null**. That checkpoint adds only documentation to the Beta 83 application source. This is **not a CI-produced artifact** or a claim that the queued job passed.
 
@@ -1113,7 +1147,7 @@ No page errors, external HTTP requests, native exception/rejection, renderer-err
 
 <a id="current-source-beta-82-selectable-campaign-banners--2026-11-06"></a>
 
-## Previous source: Beta 82 selectable campaign banners — 2026-11-06
+### Previous source: Beta 82 selectable campaign banners — 2026-11-06
 
 Working version is **1.0.0-beta.82**. A visible Beta 81 campaign test found that original banners render but cannot be selected: `captureSnapshot()` omitted `ECCampaignStarter` from its `interactive` component list, while original `a_cs_*` archetypes do not borrow resource/combat/building components. Guest `pickTarget()` correctly skips noninteractive records, making the existing campaign UI unreachable through normal clicking. The shared snapshot capture now includes campaign starters. Host campaign eligibility, original panel/confirmation methods and action validation remain unchanged.
 
@@ -1127,7 +1161,7 @@ Only the existing snapshot boolean's value and package version change in product
 
 Published source `760c9000e9c3afad9828d0a15fa3bc518ca12f37` triggered [Beta 82 build run 42182221323](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42182221323). The same run is now **completed/success**, all eight jobs passed and all eight artifacts (suffix **108.1**) are present/unexpired. No duplicate build was started. Finished-app evidence follows.
 
-### Finished Beta 82 packages and Mac campaign acceptance — 2026-11-06
+#### Finished Beta 82 packages and Mac campaign acceptance — 2026-11-06
 
 Complete worker logs confirm **522 passed / zero failed**. Each Mac package verifies all desktop source/core metadata/approved icons, **14** correct-architecture Mach-O files and deep/strict signatures on its native build runner. Windows x64/ARM64 each verify **seven** PE files; Linux x64/ARM64 tar.gz each verify **six** ELF files and extracted AppImages **twelve/six**, respectively, with source/metadata/icon checks. The native worker passes two/four-peer direct/forced-relay cases with ordered **4 host / 2 guest** frames per link, then three automatic service-issued renewals per guest on unchanged channels, fresh allocations, expiry commit and initial credential expiry. The roughly **94-second** room cases retire all **8/8 and 24/24** credential sets about one second after close. They use loopback services and stubbed world behavior; old allocations remain while peers are open, so this does not prove bounded multi-hour retention or full-game/WAN relay acceptance.
 
@@ -1135,7 +1169,7 @@ Artifact `PolyCraft-mac-arm64-108.1` (ID `13485966681`) downloaded once into `/p
 
 Ignored `test-results/beta-82-finished-artifacts/` preserves complete worker logs/metadata and normalized assertions, finished-app verification, exact executed harness/helpers, packaged run log, both screenshots/native logs and SUMMARY.json; all **seventeen** evidence hashes pass. Both owned windows/service close; no personal saves, other projects, baselines or prior releases change. Beta 82 is the latest complete CI artifact set, not a declaration of full stability. Natural progression, campaign victory/rewards/enemy AI/midbattle restoration, remaining held/inventory cases, native Windows/Linux/Intel appearance/gameplay, physical networks and endurance remain open. No further source change or version bump was needed for this finished-package checkpoint.
 
-### Finished Beta 82 native campaign AI during menus — 2026-11-06
+#### Finished Beta 82 native campaign AI during menus — 2026-11-06
 
 The extended announced two-window **finished-app** run passes all **nine flows**, exit zero (`/private/tmp/polycraft-beta82-campaign-ai-ui.txt`), on the same verified `PolyCraft-mac-arm64-108.1` artifact. The campaign fixture additionally calls original `game.enableAttacks()` to lift the tutorial attack lock. It does not create enemies, change their AI, set their destinations, move them, shorten the wave delay or change the preparation timer. The original `campaign_tutorial_01` wave manager generates its first `a_e_thief_level_1` after the authored two-second delay.
 
@@ -1145,7 +1179,7 @@ All previous cases and guest solo bridge/file isolation continue to pass. Final 
 
 Scope: one original tutorial wave and one enemy observed moving/replicating during guest Pause and host Multiplayer menus on one Mac, with campaign prerequisites and attack permission staged. This does not establish every AI/menu combination, natural unlock progression, enemy combat/damage, campaign victory/rewards, midbattle restoration, other native platforms, physical networks or endurance.
 
-### Finished Beta 82 guest projectile against a native wave enemy — 2026-11-06
+#### Finished Beta 82 guest projectile against a native wave enemy — 2026-11-06
 
 The extended announced finished-Mac run passes all **nine flows**, exit zero (`/private/tmp/polycraft-beta82-campaign-combat-ui.txt`). After native wave spawning and both online-menu AI observations, the fixture positions the assigned guest near the same live thief with an unobstructed line and the original pistol. It does not change enemy health, movement, damage, projectile behavior or death state. Target-click coordinates now use the same interpolated display location as guest hit-testing, retaining the existing static-building/banner cases.
 
@@ -1155,7 +1189,7 @@ Ignored `test-results/beta-82-campaign-combat/` preserves the passing run, exact
 
 Scope: one original pistol click/physical projectile impact/critical wave kill and guest state propagation on one Mac with hero position and campaign prerequisites staged. Campaign victory/rewards, kill XP/drop collection, natural acquisition/movement, enemy attacks, all combat/menu/visual/audio cases, midbattle restoration, other platforms, physical networks and endurance remain open. Campaign reward distribution/reset policy is unchanged.
 
-### Finished Beta 82 native kill XP and saved ownership — 2026-11-06
+#### Finished Beta 82 native kill XP and saved ownership — 2026-11-06
 
 The extended announced finished-Mac run passes all **nine flows**, exit zero (`/private/tmp/polycraft-beta82-kill-xp-ui-retry.txt`). The original level-one thief reports **5 XP** through native `ECAgent.getXP()`. Its real guest-click projectile kill produces `a_r_xp5_10501_0_`; the fixture waits for native appearance and positions the guest at the drop, without editing XP, invoking pickup callbacks or manufacturing rewards. Original pickup updates credit the collecting guest **20 → 25 XP**, while the host remains **0**. Both authoritative HUD state and the original visible-XP smoothing reach 25; the inspected screenshot shows **25 XP**.
 
@@ -1165,7 +1199,7 @@ The first attempt stopped before combat/XP because the harness switched to the h
 
 Syntax/diff checks pass; final native logs contain no main exception/rejection, direct-cleanup failure, renderer-error or error-level console event. Owned windows/service close; personal saves, other projects, baselines, packages and production source remain unchanged. Version stays Beta 82; its existing 522 local/CI checks were not rerun for this acceptance-only extension. Remaining gates include broader drop ownership/contention, random non-XP loot, campaign victory/completion rewards, natural acquisition/travel, enemy attacks/all combat, midbattle restoration, other native platforms, physical networks and endurance.
 
-### Finished Beta 82 complete native tutorial victory — 2026-11-06
+#### Finished Beta 82 complete native tutorial victory — 2026-11-06
 
 The announced finished-Mac retry passes all **ten flows**, exit zero (`/private/tmp/polycraft-beta82-campaign-victory-retry.txt`). After preserving the earlier fixed-XP reload case, the new case starts another original `campaign_tutorial_01`. Its authored wave data has **13 waves / 14 thieves / 56 seconds of spawn delays**. The test leaves wave definitions, timers, enemy health/AI, projectile damage and outcome logic unchanged. It stages the prerequisite flags/outpost and repositions the guest near live spawned enemies, then uses actual canvas clicks with the original pistol. A passive `EnemyKilled` observer records **14 unique critical victims**, all attributed to the assigned guest hero.
 
@@ -1177,7 +1211,7 @@ Ignored `test-results/beta-82-campaign-victory/` preserves the failed attempt/so
 
 Scope: one complete native tutorial campaign with staged prerequisites and hero positioning, original timings/combat/scoring, guest result presentation and reward-owner preservation. Host reward claim/once-only/reload recovery, other campaigns/defeat outcomes, natural travel/acquisition, full visual/audio behavior, midbattle restoration, other native platforms, physical networks and endurance remain open.
 
-### Finished Beta 82 host campaign reward recovery — 2026-11-06
+#### Finished Beta 82 host campaign reward recovery — 2026-11-06
 
 The announced visible `tests/campaign-recovery-ui.cjs` run passes on the same verified finished Apple Silicon app, exit zero (`/private/tmp/polycraft-beta82-reward-recovery.txt`). It copies only the earlier disposable victory fixture's saves into a fresh `polycraft-reward-recovery-*` profile. Its fixture guard rejects paths outside the temporary session-test host layout; it never opens the original fixture or personal islands in the game. This is a separate recovery test, not an additional full ten-flow run.
 
@@ -1185,13 +1219,13 @@ After launcher Continue and original Play, solo cannot collect the co-op reward.
 
 The original restored reward screenshot was inspected. Native logs have no main exception/rejection, renderer-error, direct-cleanup failure or error-level event; no page errors occurred. The owned window closes. Ignored `test-results/beta-82-reward-recovery/` preserves the executed helper, passing log, screenshot, native log, normalized actual disk results and checked hashes. Syntax/diff checks pass. Production/version/dependency/package bytes remain unchanged; the existing 522 local/CI checks were not repeated for this acceptance-only checkpoint. This closes one native tutorial host reward restoration/once-only path; interrupted partial awards, backup recovery, other campaigns/defeat, natural progression, other native platforms, physical networks and endurance remain open.
 
-### Finished Beta 82 campaign reward backup recovery — 2026-11-06
+#### Finished Beta 82 campaign reward backup recovery — 2026-11-06
 
 Two announced sequential one-window runs of the finished Apple Silicon package pass: `tests/campaign-recovery-ui.cjs --backup` (`/private/tmp/polycraft-beta82-reward-backup.txt`) and the normal-path regression (`/private/tmp/polycraft-beta82-reward-primary-repeat.txt`), both exit zero. Backup mode copies the disposable victory save into its fresh profile's `.bak` and deliberately corrupts only that profile's primary before launch. The actual launcher reports **Recovery backup available**. Continue/Play restores the exact pending ledger; solo still cannot collect the host reward. Actual hosting restores the original score panel and its native button awards exactly **50 host XP / 250 shared stone** once. Checkpoint/reload/rehost retain **50 XP / [7, 458] resources**, empty pending ledger and the fixture's unchanged cheat-history value; the stale claim callback never runs. The normal path repeats all shared assertions successfully.
 
 Ignored `test-results/beta-82-reward-backup/` preserves the executed helper, both passing/native logs, normalized disk results and six checked evidence hashes. No page errors or native main exception/rejection, renderer-error, direct-cleanup failure or error-level events occur. Both owned windows close; original fixture, personal islands, other projects, production/version/dependency/package bytes and immutable baselines remain unchanged. Syntax/diff checks pass; existing 522 unit/CI checks were not repeated for acceptance-only work. This verifies recovery from one corrupt primary with a valid pending tutorial reward backup, not interrupted partial awards, every history state, other campaign outcomes, other native platforms, physical networks or endurance.
 
-### Finished Beta 82 unfinished battle reload behavior — 2026-11-06
+#### Finished Beta 82 unfinished battle reload behavior — 2026-11-06
 
 The strengthened announced finished-Mac two-window run of `tests/session-ui-smoke.cjs` passes all ten flows (`/private/tmp/polycraft-beta82-live-battle-final.txt`). After the native guest kill/XP case, it waits for another living enemy spawned by the original wave manager before checkpointing. The captured tutorial battle is active at **nextWaveIndex 2**, with one surviving thief. After normal session end, host reload/Continue/Play/rehost/rejoin, the same campaign returns to an available banner, its fresh wave manager is inactive at **index 0**, the old live enemy is absent, native score tracking is inactive and no completion reward is pending. Guest **25 XP / host 0 XP** remain intact. This verifies resetting an unfinished battle to its banner; it does not establish exact continuation or restoration of spent ammunition, damage and other battle costs.
 
@@ -1199,7 +1233,7 @@ The first ten-flow run passed but its checkpoint landed between spawns, leaving 
 
 Ignored `test-results/beta-82-battle-reset/` preserves both logs, final executed harness/helpers, matching-baseline comparison, native logs, normalized assertions and checked hashes. Final native logs have no main exception/rejection, renderer-error, direct-cleanup failure or error-level events. Owned windows/service close and guest solo bridge/file bytes remain exact; personal islands, other projects, immutable baselines, package/version/dependency and game bytes stay untouched. Syntax/diff checks pass; existing 522 local/CI checks were not repeated for test-only work. Other campaigns/defeat, natural progression, remaining inventory/held modes, other native platforms, physical networks and endurance remain open.
 
-### Finished Beta 82 guest final-bomb exhaustion and reload — 2026-11-06
+#### Finished Beta 82 guest final-bomb exhaustion and reload — 2026-11-06
 
 The announced finished-Mac two-window `tests/session-ui-smoke.cjs` run passes all **ten flows**, exit zero (`/private/tmp/polycraft-beta82-bomb-click-retry.txt`). The inventory case now additionally equips one original temporary bomb on the restored guest and creates a disposable native thief target with the original enemy faction. Ordinary canvas clicks create an actual **`pj_h_bomb`**; a passive projectile observer records one bomb followed by a native pistol projectile. Native firing consumes the last temporary round and automatically restores the pistol—this exhaustion check calls neither direct fire nor manual unequip. Host inventory becomes **pistol / main pistol / ammo 1 / temporary ammo 0 / carried [7, 8]**. The guest receives the original `characters/models/hero_gunhand.dae` model. Session end, actual disk checks and another reload/Continue/Play/rehost/rejoin retain that exact inventory; guest solo bridge/file bytes remain unchanged. Campaign start/AI/kill XP/live-battle reset/full victory regressions also repeat successfully.
 
@@ -1207,7 +1241,7 @@ Earlier attempts are preserved honestly: the test-created enemy initially lacked
 
 Ignored `test-results/beta-82-final-bomb/` preserves failure/diagnostic logs/screenshots, final executed harness/helpers, passing log, both native logs, normalized projectile/inventory evidence and checked hashes. Final native logs have no main exception/rejection, renderer-error, direct-cleanup failure or error-level events; owned windows/service close. Syntax/diff checks pass. Personal islands, other projects, immutable baselines, application/version/dependency/package bytes remain untouched; existing 522 unit/CI checks were not repeated for acceptance-only work. Natural weapon acquisition, all temporary weapon types, explosion damage/loot contention, other native platforms, physical networks and endurance remain open.
 
-### Finished Beta 82 four-player full-game TURN relay — 2026-11-06
+#### Finished Beta 82 four-player full-game TURN relay — 2026-11-06
 
 The announced **four visible labelled games** on the verified finished Apple Silicon package pass `tests/coop-identities-smoke.cjs` in its new loopback-relay mode, exit zero (`/private/tmp/polycraft-beta82-four-player-relay.txt`). This runs the original game/world, unlike the earlier native worker's stubbed-world networking cases. Test-only `RTCPeerConnection` configuration forces relay ICE with the owned server; production connection policy remains unchanged. All three initial guest links report **relayed on both host and guest**; both later guest-one joins do too. The helper accepts `POLYCRAFT_TEST_TURN` JSON containing `urls`, `username`, `credential`, requires a `turn:127.0.0.1:PORT?transport=udp` URL and assumes an already running owned relay. Without that variable the existing mode is unchanged. Owned Electron cleanup now also kills only its exact launched processes after exit.
 
@@ -1219,7 +1253,7 @@ Ignored `test-results/beta-82-full-game-relay/` preserves final executed harness
 
 This closes controlled **four-player full-game loopback relay** acceptance only. Next local networking gates are mixed direct/relayed full-game routes and full-game service-issued credential renewal; public room deployment, actual direct-first admission/fallback, STUN/NAT/CGNAT/UPnP/forwarding, separate machines/platforms, relay-to-direct handoff and endurance remain open. The older audit's unavailable local relay statement is superseded by this isolated build, not by a system-wide installation.
 
-### Finished Beta 82 mixed direct and TURN full-game routes — 2026-11-06
+#### Finished Beta 82 mixed direct and TURN full-game routes — 2026-11-06
 
 The announced **four labelled temporary games** pass the finished Apple Silicon `tests/coop-identities-smoke.cjs` run with `POLYCRAFT_TEST_MIXED=1` plus the existing owned-loopback `POLYCRAFT_TEST_TURN` settings, exit zero (`/private/tmp/polycraft-beta82-four-player-mixed.txt`). Both host and guest confirm the required initial paths: **guest one relayed / guest two direct WebRTC / guest three relayed**. Guest one's two later joins also report relayed on both ends. The test configures only future peer connections: guest two and its matching host connection use normal direct ICE with no configured ICE servers; the other links use the controlled relay-only configuration. Existing admitted links are not reconfigured. Production routing, protocols and application bytes remain unchanged.
 
@@ -1227,7 +1261,7 @@ Each guest passes **105 / 106 / 107** canonical same-tick state samples, separat
 
 Ignored `test-results/beta-82-full-game-mixed/` preserves the executed harness/crafting helper, passing log, all four native logs, relay log and normalized assertions with **nine checked hashes**. No page errors, external HTTP requests or native main exception/rejection, renderer-error, direct-cleanup failure or error-level events occur. All game windows close; the owned relay terminates and its listening port is absent. Syntax/diff checks pass; existing 522 unit/CI checks were not repeated for test-only work. Personal islands, other projects, immutable baselines and application/version/dependency/package bytes stay untouched. This closes controlled same-Mac mixed WebRTC paths only; physical LAN/WAN/NAT/STUN/UPnP/TCP forwarding, full-game service-issued renewal, transport switching, native cross-platform play and endurance remain open.
 
-### Finished Beta 82 two-player full-game room credential renewal — 2026-11-06
+#### Finished Beta 82 two-player full-game room credential renewal — 2026-11-06
 
 The announced visible **host/guest** run of `tests/room-game-renewal-smoke.cjs` passes on the same verified finished Apple Silicon app, exit zero (`/private/tmp/polycraft-beta82-live-room-renewal-baseline.txt`). It uses the actual `PlaytestSession`, host world, guest scene, desktop room IPC, local WebSocket room service and `AutoRoomSession`/`RelayRenewals` implementations, not the earlier native worker's stubbed worlds. The owned service issues **60-second** TURN credentials; the same isolated localhost coturn build enforces **30-second** maximum allocation lifetimes with auth-secret authentication. No manual client TURN credentials are supplied. Test-only relay ICE and a suppressed native forwarding endpoint force the STUN stage to fail before the real service-issued TURN route is admitted; routers/public services are not contacted. Connection setup uses the original controller APIs, not pointer onboarding.
 
@@ -1239,7 +1273,7 @@ Ignored `test-results/beta-82-live-room-renewal/` preserves earlier logs/harness
 
 To repeat, start an owned localhost coturn auth-secret fixture and supply `POLYCRAFT_TEST_TURN_RENEWAL` JSON with `urls` (`turn:127.0.0.1:PORT?transport=udp`) and the server-side `secret` (at least 32 characters); optionally select the verified package with `POLYCRAFT_EXECUTABLE`. Test credentials/configuration remain outside the repository and are never included in result summaries.
 
-### Finished Beta 82 two/four-player full-game credential renewal — 2026-11-06
+#### Finished Beta 82 two/four-player full-game credential renewal — 2026-11-06
 
 The generalized `tests/room-game-renewal-smoke.cjs` passes the announced **four visible games** with `--four-players` (`/private/tmp/polycraft-beta82-room-renewal-four-final.txt`) and a separate announced **two-game default-mode regression** (`/private/tmp/polycraft-beta82-room-renewal-two-regression.txt`), both exit zero on the verified finished Apple Silicon package. All three guests complete **three automatic service-issued renewals each**, **nine total**, beyond their initial credential expiry. Both peer/data-channel objects per guest remain identical, relay ports and both ICE generations change each round, room expiry/route acknowledgements commit, native keyboard movement and snapshots progress for the same assigned heroes, exactly four heroes stay active and all three solo bridge/file states remain exact on normal host end. The two-player regression repeats all shared checks with **three renewals**. The real relay log observer verifies **24/24 and 8/8 credential sets allocated then retired with zero active allocations** after closure.
 
@@ -1247,7 +1281,7 @@ The helper now tracks original channels by peer, server expiry commits by the ma
 
 Ignored `test-results/beta-82-room-renewal-four/` preserves the first attempt/harness/relay log, final executed harness/retirement helper, both passing logs, all six native logs, both relay/retirement reports and normalized assertions with checked hashes. No final native main exception/rejection, renderer-error, direct-cleanup failure or error-level events, page errors or external HTTP requests occur. All owned windows, room services/native listeners and relays close; the TURN port is absent. Syntax/diff checks pass. Existing 522 unit/CI checks were not repeated for test-only work; application/version/server/package bytes, personal islands, other projects and immutable baselines remain untouched. This closes controlled same-Mac **two/four-player full-game automatic renewal**. Native positions/tutorial prerequisites remain staged; natural spawn/onboarding, physical LAN/WAN/NAT/STUN/UPnP/forwarding, public deployment, relay-to-direct switching, other native platforms and endurance remain open.
 
-### Finished Beta 82 original wake-up and four-player spawn movement — 2026-11-06
+#### Finished Beta 82 original wake-up and four-player spawn movement — 2026-11-06
 
 The announced **four visible fresh islands** pass the finished Apple Silicon `tests/coop-identities-smoke.cjs --natural-spawn --movement-only` run, exit zero (`/private/tmp/polycraft-beta82-natural-spawn.txt`). Each game opens the actual native wake-up quest button, waits for the original hero interaction, clicks the hero and waits for the original `wakeUp` task flag. All four report **runScripts true / scriptLocked false**, native hero positions near **[-135, 1.883, -12]** and the original respawn marker **[-135, 1, -12]**. The harness does not disable tutorial scripts, synthesize quest events, teleport heroes or change movement/physics flags in this mode. It requires `--movement-only` so later staged construction/combat fixtures cannot be mistaken for natural progression.
 
@@ -1255,7 +1289,7 @@ After actual wake-up, first-time host/guest heroes use the unchanged original co
 
 Ignored `test-results/beta-82-natural-spawn/` preserves the executed harness, passing log, all four native logs and normalized wake-up/position/sync assertions with **seven checked hashes**. No page errors, external HTTP requests or native main exception/rejection, renderer-error, direct-cleanup failure or error-level events occur. Owned windows close; syntax/diff checks pass. Existing 522 unit/CI checks were not repeated for this test-only mode. Application/version/server/package bytes, personal islands, other projects and immutable baselines remain untouched. This closes natural wake-up and first co-op spawn/movement **after wake-up** on this Mac. Hosting midway through unfinished tutorial scripts, natural weapon acquisition/full tutorial, other native platforms, physical networks and endurance remain open.
 
-## Current requirement audit: Beta 81 — 2026-11-06
+### Current requirement audit: Beta 81 — 2026-11-06
 
 This supersedes the **Beta 79 pre-acceptance audit**, not the roadmap. Fresh non-graphical verification passes **521/521 checks**, all **six Beta 1 release hashes**, both **immutable source hashes**, and the finished Beta 81 Apple Silicon app's complete source/core metadata/approved icons, **14 ARM64 Mach-O files** and deep/strict signature. Live GitHub metadata confirms [run 42170012080](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42170012080) is completed/success at source `57d6947e90686fa51ecd4906e23a9a77f22e97bb`, with all **eight artifacts unexpired**. No game window was opened for this audit; prior visible evidence retains its own scope.
 
@@ -1279,7 +1313,7 @@ This supersedes the **Beta 79 pre-acceptance audit**, not the roadmap. Fresh non
 
 Ignored `test-results/beta-81-current-audit/` preserves the fresh full suite, baseline verification, finished-app verification and live workflow/artifact metadata with checked SHA256SUMS. This checkpoint changes documentation only, so Beta 81 application/package bytes remain unchanged. Earlier checkpoint statements about deferred tests or missing implementations are historical and must be read against this table and the dated visible evidence below.
 
-## Current source: Beta 81 original guest message queue — 2026-11-05
+### Current source: Beta 81 original guest message queue — 2026-11-05
 
 Working version is **1.0.0-beta.81**. Guests now run the original GUI manager's `updateGameMessages()` after their menu/life/quest updates. Their `gameMessages` map is isolated alongside existing draw queues and restored by identity on leaving, preserving suspended solo notifications. The knockout message uses a distinct local drawing ID from the revive button, preventing the two original widgets from overwriting the same GUI entry. No engine, save key, packet or simulation rewrite.
 
@@ -1295,7 +1329,7 @@ Ignored `test-results/beta-81-worker-acceptance/` preserves terminal job/artifac
 
 Runtime **coop-39**, world/delta/quest/co-op **15/2/1/4**, room **4**, framing **1** and save envelopes through **8** remain unchanged; Beta 74–81 peers are compatible, with Beta 76+ required on the host for native drag steering. Beta 81 is now the latest completed CI artifact set. Broader finished gameplay, other native platforms, physical networks, remaining held/inventory modes, natural combat death/animation and endurance remain open. The earlier Beta 80 countdown presentation gap is resolved for the scoped source/finished-Mac cases.
 
-### Finished Beta 81 Mac and prepaid held restoration — 2026-11-06
+#### Finished Beta 81 Mac and prepaid held restoration — 2026-11-06
 
 Artifact `PolyCraft-mac-arm64-107.1` (ID `13481175379`) finished downloading into `/private/tmp/polycraft-beta81-mac-acceptance.JDrvkF`. The original transfer was kept and byte progress verified; no duplicate download was started. Exact four-file contents, all three checksums, source `57d6947e90686fa51ecd4906e23a9a77f22e97bb`/version/native-host metadata, inner ZIP integrity, complete packaged source/core metadata/original icons, **14 ARM64 Mach-O files** and deep/strict signatures pass locally. `test-results/beta-81-finished-artifacts/` preserves verification/provenance and the gameplay/worker evidence pointers; all **six** evidence hashes pass.
 
@@ -1307,7 +1341,7 @@ The shared acceptance helper was renamed to `tests/coop-restoration-acceptance.c
 
 Scope: one staged prepaid wall and cancellation/refund path on one Mac. This does not verify normal purchase/unlock acquisition, placement/completion after reload, moving-existing/infinite/thrown held modes, other inventory restoration, physical networks, other native platforms or endurance. The after-reply disk read corroborates existing save-before-result source order; it is not a separate timestamp-order probe. The full unit suite was not repeated for this tests/docs-only extension; unchanged application source has 521 passing local/CI checks.
 
-### Finished Beta 81 existing-building move restoration — 2026-11-06
+#### Finished Beta 81 existing-building move restoration — 2026-11-06
 
 The announced two-window finished Apple Silicon run passes **all seven flows**, exit zero (`/private/tmp/polycraft-beta81-move-ui-final.txt`), using the same verified Beta 81 artifact/source above. The additional fixture creates one native player-owned `a_b_lumberstorage` and enables the original movement feature command, without overriding native eligibility/ownership checks. Actual canvas selection and original Move button pick it up; the accepted reply is observed through the normal construction receiver because subsequent placement previews can replace `lastTargetResult` before a test poll. No action is injected by that observer.
 
@@ -1317,7 +1351,7 @@ Intermediate runs exposed fixture/observation problems: authored storages were i
 
 Ignored `test-results/beta-81-move-ui/` preserves attempts, final executed harness/helpers/log, screenshot, both native logs and SUMMARY.json with SHA256SUMS. Final native logs contain no main exception/rejection, direct-cleanup failure, renderer-error or error-level console event. Syntax and diff checks pass; the unchanged application source retains its 521 passing local/CI checks, not rerun for this tests/docs-only extension. Both owned windows/service close; other projects, personal saves, immutable baselines and release artifacts remain untouched. Application version stays Beta 81 because this checkpoint changes acceptance tests/documentation only.
 
-### Finished Beta 81 move completion and tutorial gate — 2026-11-06
+#### Finished Beta 81 move completion and tutorial gate — 2026-11-06
 
 The extended announced two-window finished-Mac run passes **all seven flows**, exit zero (`/private/tmp/polycraft-beta81-move-placement-intent.txt`), on the same verified Beta 81 artifact/source. It resolves the prior eligibility diagnostic: both healthy, normal, empty-handed heroes are owned; the source passes building/top/radial checks and has no territory restriction, but its original Move button gate is false after reload. Reapplying only the same original `SetGameplayFeatureFlag(..., 'buildingMovementEnabled', true)` fixture command immediately makes native `canMove` true for both heroes. The original `goToCavesStartupScript` disables that flag; this disposable fixture stages buildings without completing the corresponding tutorial unlock. No production eligibility rule changed.
 
@@ -1327,7 +1361,7 @@ Completed `Placeda_b_lumberstorage_10140_0_` moves from **[-124, 1, -95]** to **
 
 Ignored `test-results/beta-81-placement-ui/` preserves diagnostic/attempt logs and sources, final executed harness/helpers, screenshot, both final native logs and SUMMARY.json with checked SHA256SUMS. Final native logs contain no main exception/rejection, direct-cleanup failure, renderer-error or error-level console event. Syntax and diff checks pass; production source matches the verified CI app and its existing 521 checks, not rerun for tests/docs-only work. Version remains Beta 81. All owned windows/service close; personal saves, other projects, immutable baselines and release artifacts remain untouched. This closes one staged moved-storage placement/completion/reload case on Apple Silicon, not natural acquisition/progression, other held modes, all construction/rendering cases, native Windows/Linux/Intel gameplay, physical networks or endurance.
 
-### Finished Beta 81 placement guideline colors — 2026-11-06
+#### Finished Beta 81 placement guideline colors — 2026-11-06
 
 The announced two-window finished-Mac run passes **all seven flows**, exit zero (`/private/tmp/polycraft-beta81-preview-ui.txt`). A passive observer wraps only the test guest's construction update/draw calls, preserving their original arguments, receiver and return values and restoring the sprite method after each update. It checks the actual guideline RGB against the original builder's valid/invalid palette at drawing time, distinguishing current-valid, stale-cursor, host-invalid and pending-action states. **34 valid + 80 stale + 22 invalid + 54 pending = 190 guideline draws, zero color mismatches**. Counts are draw calls (two footprint layers), not frame or latency measurements. After waiting for a current valid draw, the screenshot visibly shows a green outline. The ordinary mouse click, placement/completion and completed-building reload still pass with unchanged parent/health/capacity/funds and exact guest solo bytes.
 
@@ -1335,7 +1369,7 @@ All **11 focused construction checks pass** (`/private/tmp/polycraft-beta81-prev
 
 Ignored `test-results/beta-81-preview-ui/` preserves the focused log, final executed harness/helpers/regression, native pass log, green screenshot, both final native logs and SUMMARY.json with checked SHA256SUMS. Native logs contain no main exception/rejection, direct-cleanup failure, renderer-error or error-level console event; source syntax and diff checks pass. The full unit suite was not repeated for this tests/docs-only change; application source remains the verified Beta 81 CI source with 521 existing passing checks. Both owned windows/service close. No personal saves, other projects, immutable baseline or release artifacts change; version stays Beta 81. Remaining held/inventory modes, natural progression, native Windows/Linux/Intel gameplay, physical networks and endurance remain open.
 
-### Finished Beta 81 guest weapon and carried inventory — 2026-11-06
+#### Finished Beta 81 guest weapon and carried inventory — 2026-11-06
 
 The announced two-window finished-Mac run passes **all eight flows**, exit zero (`/private/tmp/polycraft-beta81-inventory-ui.txt`), using the same verified Beta 81 source/artifact. The additional fixture calls original inventory methods to equip `wp_h_pistol`, then temporary `wp_h_bombs` with **13** shots; it stages a partial bomb clip of **2** and native carrier resources **[7 wood, 8 stone]**. Initial capture independently matches those values, and the equipped permanent list contains the pistol. Host end/save records the exact inventory on disk; actual reload/Continue/Play/rehost/rejoin restores the complete inventory and equipped list, with shared funds/capacity unchanged.
 
@@ -1345,7 +1379,7 @@ This is staged loadout/carrier restoration and explicit native temporary-weapon 
 
 Ignored `test-results/beta-81-inventory-ui/` preserves the final pass log, executed harness/helpers, weapon screenshot, both native logs and SUMMARY.json with checked SHA256SUMS. Native logs contain no main exception/rejection, direct-cleanup failure, renderer-error or error-level console event. Syntax and diff checks pass; no production source or version changes. The unchanged application source retains its 521 existing local/CI checks, not rerun for this acceptance-only extension. Both owned windows/service close; personal saves, other projects, immutable baselines and release artifacts remain untouched. Remaining natural progression, held/inventory modes, native platforms and real-network acceptance stay open.
 
-## Previous checkpoint: Beta 80 late native shutdown callbacks — 2026-11-05
+### Previous checkpoint: Beta 80 late native shutdown callbacks — 2026-11-05
 
 Working version is **1.0.0-beta.80**. The failed Beta 79 HUD-menu test's own `host/logs/game.log` contains `direct-cleanup-failed` and a `main-exception` at `RoomSocket.emit` → `desktop/main.cjs:108`, both reporting `Object has been destroyed` during teardown. The existing callbacks checked `window.webContents.isDestroyed()`, but reading `webContents` itself can throw once its BrowserWindow is gone. Both direct and room callbacks now use one delivery guard that checks `window.isDestroyed()` first, then checks the contents. Live-window event payloads/channels remain unchanged; late events have no live renderer to receive them.
 
@@ -1353,7 +1387,7 @@ The focused regression reproduces the destroyed-window exception before the fix.
 
 Full local regression **520 passed / zero failed** (`/private/tmp/polycraft-beta80-checks.txt`); source syntax and `git diff --check` pass. Ignored `test-results/beta-80-shutdown/` preserves the before/after regression logs, full checks, native pass log, actual failed Beta 79/native Beta 80 diagnostics, executed source/harness/regressions and SUMMARY.json; all **ten** evidence hashes are checked. Fresh CI/finished-Mac evidence is recorded below. Runtime **coop-39**, world/delta/quest/co-op **15/2/1/4**, room **4**, framing **1** and save envelopes through **8** remain unchanged; Beta 74–80 peers remain compatible, with Beta 76+ required on the host for native drag steering. No game-bundle, dependency, persistence or simulation change; previous Beta 79 gameplay evidence keeps its stated scope. Personal saves, other projects, immutable baselines and all previous releases remain untouched.
 
-### Complete Beta 80 worker and finished Mac evidence
+#### Complete Beta 80 worker and finished Mac evidence
 
 [Run 42167104862](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42167104862), exact application source `75f8a83a4c02bb90aa9ff0ad4da87768b596c8ab`, is terminal **success**: all **eight jobs** pass, all **eight artifacts** (suffix **106.1**) are present/unexpired, and worker regression confirms **520 passed / zero failed**. Each Mac ZIP verifies all desktop source/core metadata/original icons, **14** target-architecture Mach-O files and deep/strict signatures on its native Intel/ARM build runner. Windows x64/ARM64 each verify **seven** PE files; Linux x64/ARM64 tar.gz each verify **six** ELF files, and extracted AppImages verify **twelve/six**, respectively, with the same source/metadata/icon guards. Raw job/artifact metadata and complete worker logs are `/private/tmp/polycraft-beta80-ci-{jobs,artifacts}.json` and `/private/tmp/polycraft-beta80-ci.log`.
 
@@ -1363,7 +1397,7 @@ Artifact `PolyCraft-mac-arm64-106.1` (ID `13479426666`) was freshly downloaded i
 
 Ignored `test-results/beta-80-finished-artifacts/` preserves worker logs/metadata, normalized six native-case assertions, BUILD_INFO, local finished-artifact verification, ZIP/signature/source output, exact executed shutdown harness and packaged diagnostics; all **eleven** SHA256SUMS entries pass. A restricted `gh run view --log` attempt could not write its default cache; the complete run logs were instead downloaded directly through the read-only GitHub API into temporary storage. No cache permission change or duplicate build was needed.
 
-### Visible service-free direct-invitation acceptance: Beta 80
+#### Visible service-free direct-invitation acceptance: Beta 80
 
 The extended source `tests/session-ui-smoke.cjs` run passes **all four flows**, exit zero (`/private/tmp/polycraft-beta80-manual-direct-ui-pass.txt`). After the normal manual WebRTC, room/quest reload/rejoin and signaling-outage cases, its room service is gone. Actual UI controls select direct hosting with the known loopback TCP endpoint and UPnP off, create an invitation for the existing saved hero, and join it without a reply. Native connection diagnostics confirm **direct TCP/TLS**; the host reply controls are hidden, the guest outgoing reply is empty, and new world ticks arrive. Cancel selected connection disconnects that guest and clears the invitation/peer while preserving the hero. Host end/save retains exactly two registered heroes and unchanged guest XP; guest solo bridge/file bytes remain unchanged.
 
@@ -1371,7 +1405,7 @@ Two initial attempts exposed test-only assumptions. The first left a real XP dro
 
 Ignored `test-results/beta-80-manual-direct-ui/` preserves both intermediate failure logs/executed sources, the isolated XP-drop screenshot, final passing log/executed scripts, masked direct-invitation and collected-quest screenshots, both native logs and SUMMARY.json; all **fifteen** evidence hashes pass. Final host and guest diagnostics contain no main exception/rejection, direct-cleanup failure or renderer-error event, including teardown. The two test windows and owned service close; other projects and personal islands remain untouched. The full unit suite was not repeated for this tests/docs-only extension; the unchanged application source has 520 passing local/CI checks.
 
-### Visible waiting-hero restoration and paid revive: Beta 80
+#### Visible waiting-hero restoration and paid revive: Beta 80
 
 The extended finished-app connection harness passes **all five flows**, exit zero (`/private/tmp/polycraft-beta80-life-ui-accepted.txt`), adding `tests/coop-life-acceptance.cjs`. Its staged guest has zero health, an explicit respawn location, a native 45-second waiting episode and 20 shared Amber. Host end/save, actual reload/Continue/Play, rehost and the same guest rejoin preserve the offline lifecycle, location, lives and infinite-lives flag. The logged wait changes from **44.7666 to 44.4837 seconds**, within **0.5833 seconds** of resumed host simulation; the elapsed-time lower/upper bounds pass. This observed remaining time also distinguishes restoration from the original shorter default wait.
 
@@ -1381,7 +1415,7 @@ The first attempt used a nonexistent health setter in the test fixture; it now u
 
 **Next actionable UI fix:** the screenshot shows the original paid-revive button, but the knockout/countdown message is absent. Source confirms guest `updateLife()` calls native `addGameMessage`, while `GuestWorld.update()` replaces the solo game update and never calls original `updateGameMessages()`. Fix guest message delivery using the original queue renderer; isolate/restore the guest `gameMessages` map with its existing GUI state so suspended solo messages do not leak or change. Recheck the countdown and guest quest notifications with disposable windows before claiming presentation acceptance. This known Beta 80 gap remains open. Natural combat death/death animation, held-item restoration, other revive options, physical networks, other native platforms and endurance also remain open.
 
-## Previous checkpoint: Beta 79 split Mac build pools — 2026-11-05
+### Previous checkpoint: Beta 79 split Mac build pools — 2026-11-05
 
 Working version is **1.0.0-beta.79**. The Intel Mac package job now uses `macos-15-intel`, with the existing host architecture guard requiring x64. Apple Silicon stays on native ARM `macos-15`. Build arguments, finished-ZIP extraction, complete desktop source/core metadata, original icons, every Mach-O architecture and deep/strict signatures remain mandatory. No game/save/network behavior or dependency changes. Runtime **coop-39**, world/delta/quest/co-op **15/2/1/4**, room **4**, framing **1** and save envelopes through **8** stay unchanged; Beta 74–79 peers remain compatible, with Beta 76+ required on the host for native drag steering.
 
@@ -1397,7 +1431,7 @@ Windows x64/ARM64 jobs `127599570291`/`127599570314` each verify **seven** targe
 
 Native job `127599569988` confirms real direct and forced-relay Electron data channels for two/four participants, plus three scheduled service-issued renewals per guest on the same channels. Initial credentials expire during each roughly **94-second** admitted case, fresh allocations and expiry commit are checked, and all **8/8 and 24/24** credential sets retire about one second after close. Host/guest frame counts remain ordered; world behavior is stubbed. Six direct/relay/renewal cases and eight unexpired artifacts were independently checked from worker logs/API metadata; normalized evidence is `/private/tmp/polycraft-beta79-ci-summary.json`, native log `/private/tmp/polycraft-beta79-native-ci.txt`. These checks do not prove physical networks, full game simulation or multi-hour sessions. No game was launched in this continuation and no personal save or baseline changed.
 
-### Visible packaged acceptance: approved Beta 79 batch
+#### Visible packaged acceptance: approved Beta 79 batch
 
 On 2026-11-05 (America/Chicago), the user explicitly approved resuming the prepared visible tests while other projects continued. Tests used labelled temporary-island windows, separate `POLYCRAFT_TEST_DATA` profiles and only their own processes. The verified CI Apple Silicon artifact `PolyCraft-mac-arm64-105.1` (ID `13462127995`, source `be37e536f2713895239f3ccafeb8077029c38d27`) was freshly downloaded/extracted and again passed all checksums, exact four-file tester contents, ZIP integrity, all 40 desktop files/core metadata/game/icons, **14 ARM64 Mach-O files** and deep/strict signatures before execution. Download/extraction evidence is `/private/tmp/polycraft-beta79-mac-acceptance.1uIU0C`.
 
@@ -1415,7 +1449,7 @@ Durable local evidence is in ignored `test-results/beta-79-acceptance/`: six suc
 
 This closes the listed **same-Mac automated acceptance cases with controlled fixtures**, not every gameplay gate. Co-op fixtures disable tutorial scripts, place/fund structures/heroes and equip a pistol; ordinary unlocks/weapon acquisition, remaining quest/campaign/audio/UI flows and manual connection menus still need acceptance. Separate-machine LAN/WAN/router paths, native Windows/Linux/Intel gameplay, native OS icon/picker appearance and multi-hour play remain open. No automatic host migration or gameplay expansion was added.
 
-### Visible connection-menu acceptance: Beta 79
+#### Visible connection-menu acceptance: Beta 79
 
 `tests/session-ui-smoke.cjs` now exercises the actual header/dialog controls in two labelled disposable games, with the verified Beta 79 package and a temporary local room service. Its final combined run **passes both flows, exit zero**:
 
@@ -1428,7 +1462,7 @@ Ignored `test-results/beta-79-session-ui/` preserves the manual and combined suc
 
 An earlier focused read-only review found two assertion comparisons that could print the disposable invitation/reply on failure. They now compare booleans with generic messages. Both deliberate failure paths pass a VM diagnostic self-check that printed errors omit the tokens, and reversing only those two diagnostic changes restores the exact bytes of the successfully executed UI harness. No further game launch was needed for the diagnostics-only change; all connection-action bytes are unchanged. The reviewer found no other concrete blocker in identity/baseline assertions, owned cleanup, screenshot masking or acceptance scope. The new script stays outside the unit-test glob and app package, so it cannot open games during ordinary CI checks.
 
-### Visible signaling-outage acceptance: Beta 79
+#### Visible signaling-outage acceptance: Beta 79
 
 The connection-menu harness now retains both normal UI flows above and adds a third real-game case. After the normal room session ends cleanly, it rehosts/rejoins the same saved hero through the UI, waits for the host binding to be ready/joined/non-probing and the guest to receive its identity and initial snapshot, then closes **only its own temporary room service**. Both games must display the disconnect notice. The guest must retain the exact same connection object and player ID, with a snapshot tick greater than a host frame sampled **after** the notices plus 30; this excludes merely displaying updates buffered before service loss. The host’s disconnect control remains enabled, then End / leave session must still save/close correctly, with the guest bridge and save-file bytes unchanged and no duplicate saved hero.
 
@@ -1436,7 +1470,7 @@ The extended verified packaged Beta 79 run **passes all three flows, exit zero**
 
 Ignored `test-results/beta-79-session-outage/` preserves the passing log, exact executed harness, screenshot and SUMMARY.json, with all **four** SHA256SUMS entries checked. This verifies a **short same-Mac direct TCP/TLS game during signaling loss**. It does not establish long outages, physical networks, relay credential refresh while signaling is unavailable, or multi-hour play. Previous normal room-cleanup and manual/room UI cases remain in the harness; this new fault case does not replace them.
 
-### Visible shared-quest acceptance: Beta 79
+#### Visible shared-quest acceptance: Beta 79
 
 The connection-menu harness now includes `tests/coop-quest-acceptance.cjs`. In two labelled disposable games using the verified Beta 79 ARM64 package, the guest opens and closes the original wake-up quest description. The fixture emits the original `wakeUpTaskComplete` event, then checkpoints and ends the session without claiming the reward. A real host reload, launcher Continue and original Play restore the completed task flag and exactly one unclaimed reward, with unchanged guest XP/shared Amber.
 
@@ -1450,7 +1484,7 @@ Ignored `test-results/beta-79-quest-ui/` preserves executed harness/helper bytes
 
 This is one staged native quest with two players on one Mac. Tutorial scripts are disabled and the collecting hero is positioned by the fixture; natural tutorial/unlock progression, all other quests, campaign XP policy, crash recovery, cross-platform/physical-network play and endurance remain open. Personal islands, other projects, immutable baselines and previous releases are untouched.
 
-### Earlier completion audit: Beta 79, before visible acceptance
+#### Earlier completion audit: Beta 79, before visible acceptance
 
 This audit uses the current source, finished-package worker evidence and the scope of existing checks; it does **not** mark restoration complete. Beta 78 packaged Node checks remain relevant to the unchanged desktop/game/assets in Beta 79: Git comparison confirms no production byte changes in those paths between local package source `205c5df` and CI source `be37e53` (only version/workflow/documentation differs elsewhere).
 
@@ -1477,7 +1511,7 @@ The next acceptance work requires resuming the user-deferred visible tests, targ
 
 **Resume here:** keep the passed packaged cases above as evidence; continue with remaining original quest/campaign and extended connection/recovery cases using visible disposable games, then native-platform and physical-network playtesters. Keep all verified Beta 78 local Mac and CI Windows/Linux packages intact. Announce each further PolyCraft test and leave other projects alone. Full unassisted gameplay, native platform appearance/gameplay, physical network/WAN, public deployment and multi-hour acceptance remain open; saved operator/gameplay decisions remain pending. The restoration goal is active and incomplete.
 
-## Previous source: Beta 78 room cancel/retry ownership — 2026-11-05
+### Previous source: Beta 78 room cancel/retry ownership — 2026-11-05
 
 Working version is **1.0.0-beta.78**. Cancelling a room connection while its WebSocket was still connecting and immediately retrying on the same desktop bridge could let the old socket's asynchronous error close the replacement. RoomSocket now closes only the connection owned by that callback and ignores obsolete open/message callbacks. Existing per-connection close notifications retain their IDs, so room controllers continue filtering old events. Authentication, deadlines, credential validation, signaling protocol and established gameplay links are unchanged.
 
@@ -1510,7 +1544,7 @@ Outer Mac package SHA-256:
 
 **Resume here:** follow the source-triggered build for the latest completed revision and require full desktop-source/metadata, architecture, icon and Mac signature checks on finished artifacts. Keep graphical testing deferred. Full-game two/four-player, native appearance/gameplay, physical LAN/forward/UPnP/STUN/TURN/WAN, public deployment and multi-hour endurance acceptance remain open. The resumable restoration goal remains active and incomplete.
 
-## Previous source: Beta 77 complete desktop-source package checks — 2026-11-05
+### Previous source: Beta 77 complete desktop-source package checks — 2026-11-05
 
 Working version is **1.0.0-beta.77**. The shared finished-ASAR verifier now compares every desktop source file (currently **40**) rather than only main.cjs and multiplayer.js. It also requires an exact desktop namespace, rejects unsupported source entries and packaged source links, and retains strict game/runtime/window-icon/version checks. App name/product identity, startup entry point and JavaScript module type must also match source. Windows-native ASAR lookup normalization remains in place; Mac, Windows and Linux callers still use the same explicit archive paths and existing binary/icon/signature guards. This is a build-verification revision, with no game/input/save behavior change.
 
@@ -1521,7 +1555,7 @@ Working version is **1.0.0-beta.77**. The shared finished-ASAR verifier now comp
 
 **Resume here:** follow Beta 77's source-triggered build and require the expanded guard on real Windows/Linux packages and both Mac target architectures, retaining all platform/architecture/icon/signature checks. Keep graphical gameplay deferred; do not use package success as a substitute for full-game two/four-player, native-platform appearance/gameplay, physical LAN/forward/UPnP/STUN/TURN/WAN, deployment or multi-hour endurance acceptance. Goal remains active and incomplete. Saved operator/gameplay questions and all prior preservation requirements still apply.
 
-## Previous source: Beta 76 continuous native drag steering — 2026-11-05
+### Previous source: Beta 76 continuous native drag steering — 2026-11-05
 
 Working version is **1.0.0-beta.76**. The host now reapplies the last validated drag intent every simulation tick, preserving the original native held-movement clock and bump-attack eligibility between received packets. Previously drag destination updates ran only when packets arrived. Native ECLocomotion adds twice the simulation step on setDestination and subtracts one step in update, so 20 Hz input at higher host tick rates could prevent timeHeld from reaching ECBumpAttack's 0.25-second threshold. One retained pending-drag assignment fixes the shared input path without changing native movement/attack methods, rates, speed or damage values.
 
@@ -1540,7 +1574,7 @@ Working version is **1.0.0-beta.76**. The host now reapplies the last validated 
 
 **Resume here:** expand finished-package desktop-source coverage with a failing stale-input fixture before changing the verifier. Beta 76's eight verified CI artifacts can be shared for experimental testing; no build handle remains running for that source. Keep graphical testing deferred by the user. When authorized, include sustained ground-drag/bump charge and real impact/cooldown/quest/replicated-effect checks alongside prepared Craft Resource and existing two/four-player tests in visible disposable islands. Native-platform appearance/gameplay, physical LAN/forward/UPnP/STUN/TURN/WAN, deployment and multi-hour endurance gates remain open. Goal stays active and incomplete; baselines, prior artifacts, personal saves and saved operator questions are preserved.
 
-## Previous source: Beta 75 native camera/event/UI role names — 2026-11-05
+### Previous source: Beta 75 native camera/event/UI role names — 2026-11-05
 
 Working version is **1.0.0-beta.75**. Four more native private bindings now use descriptive role names verified from the actual created GameManager: **GameCamera** (`td`, 6 references), **GameEventManager** (`yf`, 4), **GuiManager** (`zf`, 4) and **GameScoresUI** (`Af`, 4). These are verified local role descriptions, not claimed lost-original spellings. GameCamera remains distinct from the previously recovered Turbulenz engine Camera. Public field names, events, GUI artwork/IDs, save keys and behavior remain unchanged.
 
@@ -1551,7 +1585,7 @@ Working version is **1.0.0-beta.75**. Four more native private bindings now use 
 
 **Resume here:** follow Beta 75's source-triggered build, especially hosted Mac runner acquisition and expanded finished-package icon/source checks. Keep graphical acceptance deferred: the prepared visible Craft Resource test is syntax-checked, not executed. Remaining full-game two/four-player, native-platform appearance/gameplay, physical LAN/forward/UPnP/STUN/TURN/WAN, public deployment and multi-hour endurance gates remain open. Continue evidence-backed readability without substituting engine versions or rewriting unchanged systems. Goal stays active and incomplete; prior packages/baselines/personal saves and saved operator/gameplay questions remain preserved.
 
-## Previous source: Beta 74 guest Craft Resources — 2026-11-05
+### Previous source: Beta 74 guest Craft Resources — 2026-11-05
 
 Working version is **1.0.0-beta.74**. Guest heroes now have the original in-game **SHOP → Craft Resource** screen. It reuses the native GamestateShop prototype for pricing, six fixed stone/wood fraction offers, duplicate-price hiding, original artwork/positions, close button and full/no-storage messages. A guest-owned menu/data/input facade never enters the native solo shop state or pauses the online world. Its HUD shows the original resource/Amber bars without rank, health or island overlays. Premium/free-claim tabs remain unavailable to guests even when the host enables cheats.
 
@@ -1581,7 +1615,7 @@ Outer package SHA-256:
 
 **Resume here:** follow the two live Beta 74 hosted Mac jobs with expanded icon/source guards; local verified Mac fallback packages are ready for testers alongside the six Windows/Linux CI artifacts. Graphical testing remains deferred by the user. When authorized, exercise guest Craft Resource close/click/layout, simultaneous spending and saved/reconnected state in visible disposable islands, alongside all existing full-game two/four-player regressions. Native-platform gameplay/appearance, physical LAN/forward/UPnP/STUN/TURN/WAN, public deployment and multi-hour endurance gates stay open. Goal remains active and incomplete; saved operator/gameplay questions remain pending.
 
-## Previous source: Beta 73 Mac packaged icon/source consistency — 2026-11-05
+### Previous source: Beta 73 Mac packaged icon/source consistency — 2026-11-05
 
 Working version is **1.0.0-beta.73**. The Mac ZIP verifier now checks the actual ICNS selected by CFBundleIconFile and the packaged window/Dock PNG against the approved original hero badge, plus selected source/version bytes through the shared ASAR verifier. Existing all-Mach-O architecture and deep/strict signature checks stay mandatory. Shared verification now takes an explicit archive path, retaining the native-path lookup fix for Windows/Linux and supporting Mac's capitalized Resources directory. No new dependency or game behavior changes.
 
@@ -1592,7 +1626,7 @@ Working version is **1.0.0-beta.73**. The Mac ZIP verifier now checks the actual
 
 **Resume here:** verify Beta 73 finished-Mac artifact jobs after publication, including the expanded checks on both target architectures. Keep all original full-game/native appearance/gameplay, physical networking/deployment and endurance acceptance gates open; graphical testing remains deferred. Goal stays active and incomplete; saved operator/gameplay questions remain pending.
 
-## Previous checkpoint: Beta 72 entity/block factory and product role names — 2026-11-05
+### Previous checkpoint: Beta 72 entity/block factory and product role names — 2026-11-05
 
 Working version is **1.0.0-beta.72**. Named four more private roles in the native world/save pipeline: **EntityFactory, BlockFactory, GameEntity and GameBlock**. All names are explicitly descriptive, based on local manager factory fields and native construction/persistence/spatial methods. Four declarations and **3,469 bound references** change; the existing scope-aware reverse rename exactly restores the canonical Beta 71 tree. Thousands of entity archetype definitions now have a readable owner without changing their keys or values.
 
@@ -1603,7 +1637,7 @@ Working version is **1.0.0-beta.72**. Named four more private roles in the nativ
 
 **Resume here:** verify Beta 72 CI after publishing and preserve Beta 71's new cross-platform package evidence. Continue foundational legibility with verified evidence and the original multiplayer acceptance roadmap. Native desktop appearance/gameplay, full-game two/four-player, physical networking/deployment and endurance gates remain open. Graphical tests remain deferred; saved operator/gameplay questions remain pending. Goal stays active and incomplete.
 
-## Previous checkpoint: Beta 71 native ASAR lookup in Windows verification — 2026-11-05
+### Previous checkpoint: Beta 71 native ASAR lookup in Windows verification — 2026-11-05
 
 Working version is **1.0.0-beta.71**. Beta 70's actual Windows checks exposed a verifier portability bug: the ASAR library splits nested directory names with the host separator, while the verifier passed slash-delimited nested paths. Root and one-directory lookups succeeded, but the deep packaged PNG lookup falsely reported missing. The shared source verifier now normalizes lookup paths with Node's host-native path function. Byte/architecture/icon checks stay strict; no game or package asset is removed or substituted.
 
@@ -1615,7 +1649,7 @@ Working version is **1.0.0-beta.71**. Beta 70's actual Windows checks exposed a 
 
 **Resume here:** follow Beta 71's Windows finished-package verification to prove the native-path correction on both architectures; do not infer acceptance from the local POSIX fixture alone. Preserve the already verified Linux/native network evidence and remaining original acceptance scope. Goal stays active and incomplete.
 
-## Previous checkpoint: Beta 70 Windows/Linux finished-package verification — 2026-11-05
+### Previous checkpoint: Beta 70 Windows/Linux finished-package verification — 2026-11-05
 
 Working version is **1.0.0-beta.70**. Finished Windows ZIPs and Linux tar.gz/AppImages now have CI verification before artifact collection. The new read-only verifier checks every regular bundled PE/ELF binary against x64/ARM64, requires the primary executable, validates the actual Windows primary icon resource against the approved ICO, checks AppImage desktop association/launcher/icon bytes, and compares selected packaged source/version/window-icon bytes with the checkout. Mac ZIP architecture/deep-signature checks remain in place. No native game or AppRun is launched; AppImage invocation is extraction only.
 
@@ -1627,7 +1661,7 @@ Working version is **1.0.0-beta.70**. Finished Windows ZIPs and Linux tar.gz/App
 
 **Resume here:** inspect Beta 70 finished-artifact CI results after publication, especially native Windows resource/line-ending checks and AppImage extraction/desktop layout. Hosted/native Intel Mac, Windows/Linux gameplay/icon appearance, full-game two/four-player, physical networking/deployment and endurance acceptance remain open. Graphical testing remains deferred. Goal is active and incomplete; saved operator/gameplay decisions remain pending.
 
-## Previous checkpoint: Beta 69 world/save/simulation role names — 2026-11-04
+### Previous checkpoint: Beta 69 world/save/simulation role names — 2026-11-04
 
 Working version is **1.0.0-beta.69**. Recovered four descriptive private names around the original island/save/simulation boundary: **GameManager, GameSpace, GameClock and LevelPersistence**. The names follow verified local factory/save roles and are explicitly marked descriptive rather than lost-original spelling. Four declarations and **139 bound references** change; scope-aware inverse renaming exactly restores the canonical Beta 68 input tree.
 
@@ -1638,7 +1672,7 @@ Working version is **1.0.0-beta.69**. Recovered four descriptive private names a
 
 **Resume here:** verify Beta 69 CI after publication, then continue evidence-backed foundational legibility and the original multiplayer acceptance roadmap. Full-game two/four-player, native OS gameplay/icons, physical LAN/forwarding/UPnP/STUN/TURN/WAN, deployment and endurance gates remain open. Graphical testing remains deferred; saved operator/gameplay decisions remain pending. Goal remains active and incomplete.
 
-## Previous checkpoint: Beta 68 current multiplayer joining guide — 2026-11-04
+### Previous checkpoint: Beta 68 current multiplayer joining guide — 2026-11-04
 
 Working version is **1.0.0-beta.68**. The README now describes current room-name/password joining, manual WebRTC exchange and direct TCP/TLS invitations in separate player flows. Removed obsolete Beta 3 console instructions/expired-era build guidance and stale Beta 5/10 requirements from the current guide; Git history and the checkpoints retain those earlier details. Corrected the in-game help to explain existing room-service-issued temporary TURN credentials as well as manual relay settings. No transport, simulation, save or progression logic changed.
 
@@ -1649,7 +1683,7 @@ Working version is **1.0.0-beta.68**. The README now describes current room-name
 
 **Resume here:** verify Beta 68 CI after publishing. Original full-game two/four-player, native-platform gameplay, physical-network/deployment and endurance acceptance remain open. Graphical tests remain deferred; operator and gameplay questions remain saved for later. Goal stays active and incomplete.
 
-## Previous checkpoint: Beta 67 bounded connection diagnostics — 2026-11-04
+### Previous checkpoint: Beta 67 bounded connection diagnostics — 2026-11-04
 
 Working version is **1.0.0-beta.67**. A stalled browser statistics request can no longer leave an open WebRTC data channel indefinitely waiting for its connected notification, or hold the connection report/polling UI pending forever. The shared PeerLink diagnostics path now falls back after two seconds and cancels on peer closure. Repeated callers share the outstanding browser query; successful/rejected queries clear it for future reads. Returned unknown path/null RTT remain honest. Direct TCP/TLS diagnostics are unchanged.
 
@@ -1670,7 +1704,7 @@ Beta 67 [run 41877909246](https://github.com/VeeShep/PolyCraft-Revival/actions/r
 
 **Resume here:** follow the Beta 67 native/package jobs; the local Mac bundles can be handed to testers. Full-game two/four-player, native Intel Mac/Windows/Linux gameplay, physical LAN/forwarding/UPnP/STUN/TURN/WAN and long-session gates remain open. Graphical tests remain deferred. Continue independent source work only with evidence and preserved baselines; the goal remains active and incomplete.
 
-## Previous checkpoint: Beta 66 verified Camera naming — 2026-11-04
+### Previous checkpoint: Beta 66 verified Camera naming — 2026-11-04
 
 Working version is **1.0.0-beta.66**. Recovered the private camera constructor name from pinned upstream evidence while preserving the game's implementation. Runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4**, manual framing and save formats remain unchanged. Beta 51–66 manual peers remain compatible; room play still requires Beta 57+ and protocol 4. Public release remains Beta 2.
 
@@ -1678,7 +1712,7 @@ Working version is **1.0.0-beta.66**. Recovered the private camera constructor n
 - Six focused Camera/SceneNode naming checks pass (`/private/tmp/polycraft-beta66-naming-focused.txt`). Full suite: **475 passed, zero failed** (`/private/tmp/polycraft-beta66-checks.txt`); `git diff --check` passed. Focused review caught constructor shadowing in the factory proof; the selector now checks binding identity before normalization, and the refusal regression covers it. Follow-up review found no remaining must-fix. The final selector reproduces the recorded runtime output, input/output/canonical hashes and name evidence exactly from committed Beta 65 source. No game has been launched; graphical tests remain deferred, and native-platform/physical-network/gameplay acceptance stays open. Prior artifacts, immutable baselines and personal saves remain untouched.
 - Beta 65 [CI run 41875857353](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/41875857353) has successful unit job `126734929545` and native job `126736176745`. Native worker logs (`/private/tmp/polycraft-beta65-native-ci.txt`) prove three automatic renewals per guest in both room sizes, unchanged channels, fresh allocations and complete 8/8 and 24/24 credential-set teardown about one second after closing peers. All six Windows/Linux artifacts (suffix 91.1) are present/unexpired at this observation; hosted Mac jobs `126736176950`/`126736177972` remain queued. These loopback/stubbed-world tests do not establish full-game, long-session or physical-network acceptance. Continue the exact handles rather than restarting from delayed summaries. No Beta 66 packages verified yet.
 
-## Previous checkpoint: Beta 65 consistent save migration snapshots — 2026-11-04
+### Previous checkpoint: Beta 65 consistent save migration snapshots — 2026-11-04
 
 Working version is **1.0.0-beta.65**. Import and managed-save migrations now preserve the exact byte snapshot that was validated, rather than rereading a path that a sync tool or another process could replace or remove. Primary and recovery migrations share this behavior. The captured bytes are also checked against the 32 MB limit after reading, protecting against a stale earlier size check. Public load/import results, sticky cheat history, save formats, runtime coop-38 and room protocol 4 are unchanged. Beta 51–65 manual peers remain compatible.
 
@@ -1686,7 +1720,7 @@ Working version is **1.0.0-beta.65**. Import and managed-save migrations now pre
 - Raw source bytes remain internal to persistence and are not returned through renderer load/import results. Existing exclusive migration backups, rollback on failed import, future-format refusal and history merging remain in place. This does not add multi-process write arbitration.
 - Prior Beta 64 packages remain unchanged and do not contain this fix. No game was launched and no personal save was opened. Full-game, native-platform gameplay and physical-network acceptance remain open; graphical tests remain deferred at the user's request.
 
-## Previous checkpoint: Beta 64 native allocation lifecycle verification — 2026-11-04
+### Previous checkpoint: Beta 64 native allocation lifecycle verification — 2026-11-04
 
 Working version is **1.0.0-beta.64**. Runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4**, manual framing and save formats are unchanged. Beta 51–64 manual peers remain compatible; room play requires Beta 57+ and the protocol-4 service. No production gameplay/network code changes. Public release remains Beta 2; baselines, prior artifacts and personal saves remain untouched.
 
@@ -1720,7 +1754,7 @@ Updated `server/README.md` to distinguish timestamp expiry from cached active-se
 
 **Resume here:** isolated short-lifetime renewal/teardown is now verified. Continue the original acceptance roadmap: hosted Mac runner acquisition, full-game/visible two/four-player save/reconnect/host-exit/menu/quest/combat progression checks once authorized, native Intel Mac/Windows/Linux gameplay, and physical LAN/forward/UPnP/STUN/TURN/WAN with the operator's deployment choices. Local verified Mac packages can be shared for testing; public release stays Beta 2. Foundations/readability can continue only with verified naming evidence and preserved behavior/baselines. Saved operator/gameplay questions are unchanged; graphical game testing stays deferred. Goal remains active and incomplete.
 
-## Previous source: Beta 63 Mac runner fallback and retirement diagnostics — 2026-11-04
+### Previous source: Beta 63 Mac runner fallback and retirement diagnostics — 2026-11-04
 
 Working version is **1.0.0-beta.63**. Runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4**, manual framing and island formats are unchanged. Beta 51–63 manual peers remain compatible; room play requires Beta 57+ and the protocol-4 service. No production gameplay/network code changed. Public release remains Beta 2; prior artifacts/baselines/personal saves remain untouched.
 
@@ -1733,7 +1767,7 @@ Working version is **1.0.0-beta.63**. Runtime **coop-38**, world/delta/quest/co-
 
 **Resume here:** inspect exact Beta 63 native retirement diagnostics and both ARM-hosted Mac package verifiers. Resolve the retirement evidence before closing that gate; keep actual short-lifetime timer behavior distinct from six-hour/full-engine/separate-machine/WAN endurance. Verify all package artifacts. Graphical/native-platform gameplay, deployment hostname/TLS/operator setup and physical LAN/forward/UPnP/STUN/TURN gates remain open. Goal remains active and incomplete; saved operator/gameplay questions are unchanged.
 
-## Previous source: Beta 62 scheduled short-lifetime renewal endurance — 2026-11-04
+### Previous source: Beta 62 scheduled short-lifetime renewal endurance — 2026-11-04
 
 Working version is **1.0.0-beta.62**. Runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4**, manual framing and save formats are unchanged. Beta 51–62 manual peers remain compatible; room play requires Beta 57+ and the protocol-4 service. No production game/network code changes in this milestone. Public release remains Beta 2; prior artifacts, baselines and personal saves remain untouched.
 
@@ -1744,7 +1778,7 @@ Working version is **1.0.0-beta.62**. Runtime **coop-38**, world/delta/quest/co-
 
 **Resume here:** inspect exact Beta 62 native CI. Keep the ten-minute CI job ceiling; each room's real-time observation is around 95 seconds and bounded locally. Verify package jobs/artifacts, especially pending Mac runner allocation. Beta 61's primitive and combined-room native checks plus 468 unit checks passed; its four Windows/Linux package jobs succeeded and all six artifacts (suffix 87.1) were verified present/unexpired November 4; both Mac jobs remain queued for a runner. Saved deployment/gameplay questions and native-platform/full-game/physical-network gates remain open. Goal stays active and incomplete.
 
-## Previous source: Beta 61 native room-coordinated relay acceptance — 2026-11-04
+### Previous source: Beta 61 native room-coordinated relay acceptance — 2026-11-04
 
 Working version is **1.0.0-beta.61**. Runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4** and save formats are unchanged. Beta 51–61 manual peers remain compatible; room play requires Beta 57+ clients and the protocol-4 service. No production gameplay/network code changes in this milestone; public release remains Beta 2. Prior artifacts, immutable baselines and personal saves remain untouched.
 
@@ -1759,7 +1793,7 @@ Working version is **1.0.0-beta.61**. Runtime **coop-38**, world/delta/quest/co-
 
 **Resume here:** verify Beta 61 package jobs/artifacts, particularly Mac runner allocation. Next native-network acceptance should use real short credential lifetimes and the automatic scheduling timer across successive renewals, without manipulating eligibility timestamps; then verify traffic beyond old-credential/allocation expiry. Keep those claims distinct from six-hour production endurance. Separate-machine/full-game room coordination, physical LAN/manual-forward/UPnP/STUN/TURN/internet, deployed hostname/TLS/operator setup and native-platform/visible gameplay acceptance remain open. Saved gameplay/operator questions are unchanged. Goal remains active and incomplete; graphical game tests stay deferred.
 
-## Previous source: Beta 60 relay resync before guest confirmation — 2026-11-04
+### Previous source: Beta 60 relay resync before guest confirmation — 2026-11-04
 
 Working version is **1.0.0-beta.60**. Game runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4**, manual framing and save formats remain unchanged. Beta 51–60 manual peers remain compatible; room play requires Beta 57+ clients and the protocol-4 service. Public release remains Beta 2. Prior artifacts, immutable baselines and personal saves are untouched.
 
@@ -1772,7 +1806,7 @@ Working version is **1.0.0-beta.60**. Game runtime **coop-38**, world/delta/ques
 
 **Resume here:** verify the remaining Beta 60 package jobs/artifacts; the native relay blocker is fixed at the isolated transport level. Prior [Beta 59 run 41830448018](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/41830448018) completed: all six platform packaging jobs and 467 unit checks passed, but native relay renewal failed. Package availability does not override that failure. No graphical game testing is authorized in this pass. Real room-coordinated native renewal, expiry endurance, physical LAN/NAT/internet/TURN and native-platform gameplay acceptance remain open. Saved operator/gameplay questions are unchanged. Goal is active and incomplete.
 
-## Previous source: Beta 59 — paused at native relay-renewal blocker — 2026-11-04
+### Previous source: Beta 59 — paused at native relay-renewal blocker — 2026-11-04
 
 Working version is **1.0.0-beta.59**, not a newly accepted stable release. Runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4** and island formats are unchanged. Beta 51–59 manual peers remain compatible; room play requires Beta 57+ and the protocol-4 service. Immutable baselines, personal islands and older artifacts remain untouched. Public release remains Beta 2.
 
@@ -1796,7 +1830,7 @@ Candidate SDP lines in this browser omit explicit per-candidate ufrags; zero exp
 
 No new user question is required to understand this blocker. Saved questions remain deployment hostname/TLS/hosting, exact mid-battle continuation versus original reset, and full-versus-split campaign XP. Graphical tests remain deferred by the user. Separate-machine/physical LAN/manual-forward/UPnP/STUN/TURN, public deployment, billing/load/setup timing, long-session recovery and all native-platform/visible-game acceptance remain open. The goal is **paused and incomplete** under the user's explicit pause-if-stuck direction; no unattended watcher is created.
 
-## Previous source: Beta 58 isolated native network acceptance — 2026-11-04
+### Previous source: Beta 58 isolated native network acceptance — 2026-11-04
 
 Working version is **1.0.0-beta.58**. This milestone adds a dedicated Linux GitHub Actions check for actual Electron WebRTC and coturn; game runtime **coop-38**, world/delta/quest/co-op **15/2/1/4**, room protocol **4** and save formats remain unchanged. Beta 51–58 manual peers remain compatible; room play requires Beta 57+ clients and the protocol-4 service. No gameplay source or personal saves changed.
 
@@ -1807,7 +1841,7 @@ Working version is **1.0.0-beta.58**. This milestone adds a dedicated Linux GitH
 
 **Resume here:** inspect the exact Beta 58 CI head, especially the native-network job, and resolve observed native failures before claiming renewal acceptance. Beta 57 [CI run 41826333462](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/41826333462), exact head `d658bd1e9104837f89e877b91bf2837ceec6ff92`, passed all seven jobs; all eight platform artifacts (suffix 80.1) were verified present and unexpired November 4. Public release remains Beta 2. Six-hour credential expiry, room-service end-to-end renewal, real separate-machine LAN/internet/NAT/relay/load/setup-time, long-session failure/recovery and all native-platform/visible-game acceptance remain open. Saved deployment and gameplay questions are unchanged; continue independent work and pause only if genuinely stuck. The goal remains active and incomplete.
 
-## Previous source: Beta 57 automatic service-issued relay renewal — 2026-11-04
+### Previous source: Beta 57 automatic service-issued relay renewal — 2026-11-04
 
 Working version is **1.0.0-beta.57**. Room signaling is now **protocol 4**: update room-code clients and the room service together. Older room services/clients are incompatible with room-code play. Game runtime **`polycraft-1.0.0.25-coop-38`**, world/delta/quest/co-op **15/2/1/4**, manual invitation framing and tracked-campaign save envelope **8** remain unchanged; Beta 51–57 manual-invitation game peers remain compatible. Format-8 islands require Beta 54 or newer. Immutable Beta 1, earlier release artifacts and personal saves remain untouched.
 
@@ -1824,7 +1858,7 @@ Working version is **1.0.0-beta.57**. Room signaling is now **protocol 4**: upda
 
 **Resume here:** verify Beta 57 CI, then prepare isolated native WebRTC/coturn renewal acceptance so the selected-generation statistics and actual allocations are tested, preserving disposable profiles and the user's deferred graphical-game testing. Do not deploy a public service or alter real routers while operator hostname/TLS choices are unanswered. Continue independent source work where useful; pause if genuinely stuck. Preserve original unfinished-battle reset and current host-only XP while the saved exact-combat-resume and XP-sharing decisions wait. Visible original game/input/audio/graphics/score-screen and two/four-player acceptance remain deferred. Goal stays active and incomplete.
 
-## Previous source: Beta 56 transient connection recovery — 2026-11-04
+### Previous source: Beta 56 transient connection recovery — 2026-11-04
 
 Working version is **1.0.0-beta.56**. Runtime **`polycraft-1.0.0.25-coop-38`**, world/delta/room/quest/co-op **15/2/3/1/4** and tracked-campaign save envelope **8** are unchanged. Beta 51–56 game peers remain compatible; format-8 islands require Beta 54 or newer to reopen. Immutable Beta 1, prior packages and personal saves remain untouched.
 
@@ -1840,7 +1874,7 @@ Working version is **1.0.0-beta.56**. Runtime **`polycraft-1.0.0.25-coop-38`**, 
 
 **Resume here:** verify Beta 56 CI, then implement bounded service-issued TURN credential renewal with authenticated coordinated ICE restart and deterministic lifecycle checks before native/real-network acceptance. Preserve direct-first issuance and live framing/hero ownership. Saved operator decisions remain room/TURN hosting and TLS setup; saved gameplay decisions remain exact combat continuation versus original battle reset and full-versus-split campaign XP. Do not guess those choices. Graphical testing stays deferred. Native-platform gameplay, visible two/four-player/recovery/score-screen behavior, audio/rendering/input/icons, public deployment and physical LAN/manual-forward/UPnP/STUN/TURN/provider/setup-time/load acceptance remain open. Save questions and continue independent work; pause if genuinely stuck. Goal remains active and incomplete.
 
-## Previous source: Beta 55 upstream-verified SceneNode name — 2026-11-04
+### Previous source: Beta 55 upstream-verified SceneNode name — 2026-11-04
 
 Working version is **1.0.0-beta.55**. Runtime **`polycraft-1.0.0.25-coop-38`**, world/delta/room/quest/co-op **15/2/3/1/4** and save envelope **8** for campaign reward tracking are unchanged. Beta 51–55 game peers remain compatible; format-8 islands still require Beta 54 or newer to reopen. Gameplay, progression, asset/save identifiers and execution order remain unchanged. Immutable Beta 1, prior packages and personal saves remain untouched.
 
@@ -1856,7 +1890,7 @@ Working version is **1.0.0-beta.55**. Runtime **`polycraft-1.0.0.25-coop-38`**, 
 
 **Resume here:** verify Beta 55 CI. Continue bounded evidence-based runtime readability or remaining original guest feedback/connection lifecycle work. Exact midbattle continuation and full-versus-split campaign XP are saved user decisions; preserve original battle resets and current host-only XP while waiting. Guest result history/reconnect, native restored score-screen behavior and visible two/four-player regression remain open. Graphical testing stays deferred. Native-platform gameplay, audio/rendering/input/icons and physical LAN/manual-forward/UPnP/STUN/TURN/provider/setup-time/load acceptance remain open. Save operator questions and continue independent work; pause if genuinely stuck. Goal remains active and incomplete.
 
-## Previous source: Beta 54 durable pending campaign rewards — 2026-11-04
+### Previous source: Beta 54 durable pending campaign rewards — 2026-11-04
 
 Working version is **1.0.0-beta.54**. Runtime **`polycraft-1.0.0.25-coop-38`**, world/delta/room/quest/co-op **15/2/3/1/4** remain unchanged; Beta 51–54 game peers remain compatible. Saves containing campaign reward tracking now use **envelope 8**, requiring Beta 54 or newer. Quest-only tracking remains envelope 7, and untracked solo saves remain 2. Immutable Beta 1, prior packages and personal saves remain untouched.
 
@@ -1871,7 +1905,7 @@ Working version is **1.0.0-beta.54**. Runtime **`polycraft-1.0.0.25-coop-38`**, 
 
 **Resume here:** verify Beta 54 CI, then audit active/mid-campaign score tracking across save/reload and remaining original guest feedback. Completed pending rewards are implemented; mid-campaign tracking and guest result history across reconnect remain separate acceptance gaps. Saved question: full-per-participant or split campaign XP? Current host-only grant remains unchanged while waiting. Visible tests remain deferred. Native-platform gameplay, actual restored score-screen behavior, audio/rendering/input, four-player pressure and real LAN/manual-forward/UPnP/STUN/TURN/provider acceptance remain open. Save operator questions and continue independent work; pause if genuinely stuck. Goal stays active and incomplete.
 
-## Previous source: Beta 53 readable persistence and score models — 2026-11-04
+### Previous source: Beta 53 readable persistence and score models — 2026-11-04
 
 Working version is **1.0.0-beta.53**. Runtime **`polycraft-1.0.0.25-coop-38`**, world/delta/room/save/quest/co-op **15/2/3/7/1/4** are unchanged: Beta 51–53 peers remain compatible. No gameplay, progression, asset identifiers, public/save keys or save migrations change. Immutable Beta 1 and personal saves remain untouched.
 
@@ -1884,7 +1918,7 @@ Working version is **1.0.0-beta.53**. Runtime **`polycraft-1.0.0.25-coop-38`**, 
 
 **Resume here:** verify Beta 53 CI. Prioritize durable pending campaign rewards with pre-migration preservation/older-reader refusal, host-versus-solo owner identity, dismissal dedup and partial-award save protection; keep the existing host-only XP grant policy until the user decides full-per-participant versus split. Do not pay shared resources once per guest. Guest result history across reconnect/reload remains open. Visible tests remain deferred; native-platform gameplay, audible/rendered feedback, four-player pressure and real LAN/manual-forward/UPnP/STUN/TURN/provider acceptance remain open. Save operator questions and continue independent work; pause if genuinely stuck. Goal stays active and incomplete.
 
-## Previous source: Beta 52 verified private play-state names — 2026-11-04
+### Previous source: Beta 52 verified private play-state names — 2026-11-04
 
 Working version is **1.0.0-beta.52**. Runtime **`polycraft-1.0.0.25-coop-38`**, world/delta/room/save/quest/co-op **15/2/3/7/1/4** are unchanged: Beta 51 and Beta 52 peers remain compatible. No gameplay, progression, asset identifiers or save migrations change in this milestone. Immutable Beta 1 and personal saves remain untouched.
 
@@ -1897,7 +1931,7 @@ Working version is **1.0.0-beta.52**. Runtime **`polycraft-1.0.0.25-coop-38`**, 
 
 **Resume here:** verify Beta 52 CI after publication, then continue bounded original-runtime naming or guest feedback parity. Saved question: should campaign XP be granted in full to every participant or split? Do not alter reward ownership or duplicate shared resources while awaiting that decision. Result history across reconnect/reload and durable unclaimed rewards remain unverified. Visible testing remains deferred by the user. Public service deployment and real LAN/manual-forward/UPnP/STUN/TURN testing remain open. The resumable goal remains active and incomplete; save questions, continue independent work and pause if genuinely stuck, as requested.
 
-## Previous source: Beta 51 original guest campaign results — 2026-11-04
+### Previous source: Beta 51 original guest campaign results — 2026-11-04
 
 Working version is **1.0.0-beta.51**, runtime **`polycraft-1.0.0.25-coop-38`**, world snapshot **15**. Matching Beta 51 game peers are required. Delta/room/save/quest/co-op remain **2/3/7/1/4**. Room services, island formats, immutable Beta 1 and previous public releases are unchanged.
 
@@ -1911,7 +1945,7 @@ Working version is **1.0.0-beta.51**, runtime **`polycraft-1.0.0.25-coop-38`**, 
 
 **Resume here:** verify Beta 51 CI. Campaign result presentation is implemented for the current session's latest completed score; native host reward collection is unchanged. Saved question remains whether campaign XP should go in full to each participant or be split; do not duplicate shared resources or change reward policy before that decision. Guest result history across reconnect/reload and durable unclaimed campaign rewards remain unverified. Independent foundation work is available while that question waits: recover further verified runtime names from original playStateName definitions (Battle/Normal/PrepareForBattle), using scope-aware renaming and an inverse AST proof, preserving public/save/asset keys and execution order. Continue original guest feedback/menu parity audits without activating dormant expansions. Visible/audio/native input/icons/rendering, four-player pressure/fades/disconnect, physical LAN/forward/UPnP/STUN/TURN/provider, real traffic/load/setup timing and public operator acceptance remain open. Graphical tests stay deferred by user instruction. No deployment/router changes performed; operator questions stay saved. The resumable goal remains active and incomplete; pause if genuinely stuck as requested.
 
-## Previous source: Beta 50 original preparation skipping — 2026-11-04
+### Previous source: Beta 50 original preparation skipping — 2026-11-04
 
 Working version is **1.0.0-beta.50**, runtime **`polycraft-1.0.0.25-coop-37`**, world snapshot **15**. Matching Beta 50 game peers are required. Delta/room/save/quest/co-op remain **2/3/7/1/4**. Room services, island formats, immutable Beta 1 and previous public releases are unchanged.
 
@@ -1927,7 +1961,7 @@ Working version is **1.0.0-beta.50**, runtime **`polycraft-1.0.0.25-coop-37`**, 
 
 **Saved question for the user:** campaign reward XP distribution is unspecified. The original result collector grants XP to the host hero and shared resources once. Before changing reward policy, confirm whether each participant should get full XP or a split; a guest-local result viewer can be implemented independently. Keep current rewards unchanged until resolved. Public room/TURN deployment choices and real-device/network testing also remain operator questions/gates for later.
 
-## Previous source: Beta 49 guest campaign previews and authoritative start — 2026-11-04
+### Previous source: Beta 49 guest campaign previews and authoritative start — 2026-11-04
 
 Working version is **1.0.0-beta.49**, runtime **`polycraft-1.0.0.25-coop-36`**, world snapshot **15**. Matching Beta 49 game peers are required. Delta/room/save/quest/co-op remain **2/3/7/1/4**. Room services, island formats, immutable Beta 1 and previous public releases are unchanged.
 
@@ -1941,7 +1975,7 @@ Working version is **1.0.0-beta.49**, runtime **`polycraft-1.0.0.25-coop-36`**, 
 
 **Resume here:** verify Beta 49 CI, then finish original guest campaign results and between-wave presentation/controls. Audit original result collection and shared-economy/individual XP award ownership before changing it: native GamestateCampaignScore.giveRewards currently addresses the host hero; shared resources must not be duplicated by per-guest dismissal. Preserve campaign replacement/score lifecycle and original campaign start/menu flows. Guest-local feedback and preparation skip/fight controls still need parity. Visible/audio/native input/icons/rendering, four-player pressure/fades/disconnect, physical LAN/forward/UPnP/STUN/TURN/provider, real traffic/load/setup timing and public operator acceptance remain open. Graphical tests remain deferred by user instruction. Public deployment choices/questions remain saved; no deployment or router changes performed. Independent implementation remains available, so the resumable goal stays active and incomplete; pause if genuinely stuck as requested.
 
-## Previous source: Beta 48 original battle notices and interface isolation — 2026-11-04
+### Previous source: Beta 48 original battle notices and interface isolation — 2026-11-04
 
 Working version is **1.0.0-beta.48**, runtime **`polycraft-1.0.0.25-coop-35`**, world snapshot **15**. Matching Beta 48 game peers are required. Delta/room/save/quest/co-op remain **2/3/7/1/4**. Island formats, room services, immutable Beta 1 and previous public releases remain unchanged.
 
@@ -1955,7 +1989,7 @@ Working version is **1.0.0-beta.48**, runtime **`polycraft-1.0.0.25-coop-35`**, 
 
 **Resume here:** verify Beta 48 CI, then continue original guest campaign/menu parity. This milestone covers shared notices and interface ownership; it does not implement campaign preparation/results screens or all local feedback. Audit original campaign-starter interactions and host/global menu transitions before introducing guest campaign controls; preserve shared authority and the no-online-pause rule. Native UI/audio/FX need visible/audible acceptance, including four-player pressure, menu fades and disconnect with pending effects. Physical LAN/forward/UPnP/STUN/TURN/provider, real traffic/load/setup timing and native OS/icons/input/rendering gates remain open. Public deployment choices and questions remain saved for the user. Graphical tests remain deferred by the user's instruction; public deployment and router changes were not performed. Independent code work remains available, so the resumable goal remains active and incomplete; pause if genuinely stuck as requested.
 
-## Previous source: Beta 47 event journal delta compression — 2026-11-04
+### Previous source: Beta 47 event journal delta compression — 2026-11-04
 
 Working version is **1.0.0-beta.47**, runtime **`polycraft-1.0.0.25-coop-34`**, world snapshot **14**, delta **2**. Matching Beta 47 game peers are required; room/save/quest/co-op remain **3/7/1/4**. Room services, island formats, immutable Beta 1 and previous public releases are unchanged.
 
@@ -1969,7 +2003,7 @@ Working version is **1.0.0-beta.47**, runtime **`polycraft-1.0.0.25-coop-34`**, 
 
 **Resume here:** verify Beta 47 CI; continue guest-local UI/campaign/menu parity and original input/feedback audit. Real-session audio/visual traffic, audible four-player channel pressure and stream transitions, visible lifecycle/render/depth/opacity/frame pacing, screen-shake preferences, unresolved original sound references (including aud_amb_scenery_waterfall), native OS/icons/input and physical LAN/forward/UPnP/STUN/TURN/provider/operator acceptance remain open. Public room/TURN deployment decisions and any questions remain saved for the user; no deployment is performed while they are away. Graphical game tests stay deferred by the user's instruction. Independent code work remains available, so the resumable goal stays active and incomplete; pause if genuinely blocked as requested.
 
-## Previous source: Beta 46 preview music controls and promotion — 2026-11-04
+### Previous source: Beta 46 preview music controls and promotion — 2026-11-04
 
 Working version is **1.0.0-beta.46**. Runtime/world/delta/room/save/quest/co-op stay **coop-33/13/1/3/7/1/4**, compatible with Beta 45 peers. Each client needs Beta 46 for this local preview fix. Native source changes preserve the immutable baseline; Beta 1, previous public releases and save formats remain unchanged.
 
@@ -1982,7 +2016,7 @@ Working version is **1.0.0-beta.46**. Runtime/world/delta/room/save/quest/co-op 
 
 **Resume here:** measure audio/visual journal traffic and reduce repeated delta payloads while preserving exact reconstructed state, bounded retention, scope resets, full resync repair and effect deduplication. Recent event journals currently repeat in every delta header; retain complete journals in full snapshots and reconstruct cached state rather than dropping history or treating effects as video. Continue guest-local UI/campaign/menu parity and trace unresolved original sound references (including aud_amb_scenery_waterfall) before assigning assets. Audible four-player channel pressure and stream transitions, visible lifecycle/render/depth/opacity/frame pacing, screen-shake preferences, native OS/icons/input and physical LAN/forward/UPnP/STUN/TURN/provider/operator acceptance remain open. Independent work remains available; the resumable goal stays active and incomplete.
 
-## Previous source: Beta 45 legacy world audio and native channel fixes — 2026-11-04
+### Previous source: Beta 45 legacy world audio and native channel fixes — 2026-11-04
 
 Working version is **1.0.0-beta.45**, runtime **`polycraft-1.0.0.25-coop-33`**, world snapshot **13**. Matching Beta 45 game peers are required. Delta/room/save/quest/co-op stay **1/3/7/1/4**; room services, island formats, Beta 1 and previous public releases are unchanged.
 
@@ -1996,7 +2030,7 @@ Working version is **1.0.0-beta.45**, runtime **`polycraft-1.0.0.25-coop-33`**, 
 
 **Resume here:** add direct native regressions for preview parent/child volume, mute and stop behavior across promotion to the full track: current stop/volume matching uses soundName while previews also carry parentSoundName. The capacity fixes above do not establish that separate lineage behavior. Then measure new audio/visual journal traffic and reduce repeated delta payloads while retaining exact reconstructed state, bounded history, full resync repair and no duplicate effects. Continue guest-local UI/campaign/menu parity and original sound-reference auditing. One unresolved native special-effect definition references aud_amb_scenery_waterfall without a matching sound archetype; trace live asset/call use before inventing any mapping (the inspected code only shows its definition/reference). Audible four-player channel pressure, visible lifecycle/depth/opacity/frame-pacing, screen-shake preferences, native icons/OS/input and physical LAN/forward/UPnP/STUN/TURN/provider/operator acceptance remain open. Independent implementation is available; the resumable goal remains active and incomplete.
 
-## Previous source: Beta 44 pre-host visual history — 2026-11-04
+### Previous source: Beta 44 pre-host visual history — 2026-11-04
 
 Working version is **1.0.0-beta.44**. Runtime/world/delta/room/save/quest/co-op stay **coop-32/12/1/3/7/1/4**, compatible with Beta 43 peers; the host needs Beta 44 for this history fix. Save formats, Beta 1 and previous public releases remain unchanged.
 
@@ -2010,7 +2044,7 @@ Working version is **1.0.0-beta.44**. Runtime/world/delta/room/save/quest/co-op 
 
 **Resume here:** continue original audio call coverage and guest-local UI/campaign/menu parity, retaining world/screen-local boundaries and separate presentation schedulers. The pre-host-history source gap is addressed, but visible solo→host→guest-return/reset/teardown, shader depth/opacity/frame-pacing, screen-shake preferences and audible two/four-player behavior remain unaccepted. Native icons/OS/input/rendering, physical LAN/forward/UPnP/STUN/TURN and real-provider/operator acceptance remain open. No dormant gameplay expansion is activated. Independent code work remains available; the resumable goal stays active and incomplete.
 
-## Previous source: Beta 43 expanded original world visuals — 2026-11-04
+### Previous source: Beta 43 expanded original world visuals — 2026-11-04
 
 Working version is **1.0.0-beta.43**, runtime **`polycraft-1.0.0.25-coop-32`**, world snapshot **12**. Matching Beta 43 game peers are required. Delta/room/save/quest/co-op remain **1/3/7/1/4**; room services and island formats are unchanged. Beta 1 and previous public releases remain untouched.
 
@@ -2023,7 +2057,7 @@ Working version is **1.0.0-beta.43**, runtime **`polycraft-1.0.0.25-coop-32`**, 
 
 **Resume here:** close the pre-host visual-history gap without reconstructing anonymous native tweens or running suspended solo callbacks; audit island-load/time-reset ownership before retaining application-level effect history. Continue guest-local UI/campaign/menu parity and any missing original audio call coverage; host-local task arrows and menu feedback must not leak to unrelated guests. Original screen shake preferences and exact visible render/depth/frame-pacing acceptance remain open. Do not enable dormant gameplay features as a rendering shortcut. Visible/audible two/four-player, native icons/OS/input/rendering, physical LAN/forward/UPnP/STUN/TURN and real-provider/operator gates remain open; independent code work is available, so the resumable goal stays active and incomplete.
 
-## Previous source: Beta 42 original guest world visuals — 2026-11-04
+### Previous source: Beta 42 original guest world visuals — 2026-11-04
 
 Working version is **1.0.0-beta.42**, runtime **`polycraft-1.0.0.25-coop-31`**, world snapshot **11**. Matching Beta 42 game peers are required. Delta/room/save/quest/co-op stay **1/3/7/1/4**; room services and island formats are unchanged. Preserve Beta 1 and prior public release artifacts.
 
@@ -2037,7 +2071,7 @@ Working version is **1.0.0-beta.42**, runtime **`polycraft-1.0.0.25-coop-31`**, 
 
 **Resume here:** finish original effect coverage: inventory the remaining world VFX (mushrooms, projectiles, explosions/fire/resource effects and environmental/campaign effects), preserve world/screen-local boundaries, avoid replaying audio/shake and retain the same bounded native scheduler. Do not call the engine's global tween update/removeAll as a shortcut. Original pre-host effects and full campaign/menu parity remain open, alongside visible/audible two/four-player, native icons/OS/input/rendering, LAN/forward/UPnP/STUN/TURN and real-provider/operator acceptance. This is an implemented visual subset, not full original-game acceptance. Independent work remains available, so the resumable goal stays active and incomplete.
 
-## Previous source: Beta 41 shared battle cues and existing fades — 2026-11-04
+### Previous source: Beta 41 shared battle cues and existing fades — 2026-11-04
 
 Working version is **1.0.0-beta.41**, runtime **`polycraft-1.0.0.25-coop-30`**, world snapshot **10**. Matching Beta 41 game peers are required. Delta/room/save/quest/co-op stay **1/3/7/1/4**; room services and island formats are unchanged. Beta 1 and the published Beta 2 release remain untouched.
 
@@ -2051,7 +2085,7 @@ Working version is **1.0.0-beta.41**, runtime **`polycraft-1.0.0.25-coop-30`**, 
 
 **Resume here:** continue original visual-effect/action replication and campaign/menu parity. Native audit found `createVisualEffectInstance` and `createEffectInstance` create original sprite effects; the latter also starts audio and camera/UI shake. Reuse the visual-only path to avoid duplicate replicated audio. Original visual instances construct chained tweens in one global scheduler shared with gameplay/GUI; guest `draw2D` advances only its draw list, while solo `updateGame` normally advances the main list. A guest must own/advance/clean its presentation tweens without running suspended solo gameplay tweens, clearing the user's original scheduler, or shifting its saved time on return. Preserve original following/direction/scale/dilation, bound effect names/vectors/count/lifetime, separate screen-local GUI effects and world effects, and use a deduplicated history without replaying stale hits at join. These are findings, not an implemented effect system. Remaining native/visible/audible and real-network/operator gates remain as before; independent code work is available, so the resumable goal remains active and incomplete.
 
-## Previous source: Beta 40 spatial world sounds and loop recovery — 2026-11-04
+### Previous source: Beta 40 spatial world sounds and loop recovery — 2026-11-04
 
 Working version is **1.0.0-beta.40**, runtime **`polycraft-1.0.0.25-coop-29`**, world snapshot **9**. Matching Beta 40 game peers are required. Delta/room/save/quest/co-op stay **1/3/7/1/4**; protocol-3 room services and island formats are unchanged. Original Beta 1 and published Beta 2 remain untouched.
 
@@ -2065,7 +2099,7 @@ Working version is **1.0.0-beta.40**, runtime **`polycraft-1.0.0.25-coop-29`**, 
 
 **Resume here:** verify Beta 40 CI after publication; continue original visual-effect/action replication and remaining menus/campaign parity. This milestone covers original spatial world sounds, not all global campaign stings, preexisting fading sources at host start, arbitrary sound-volume automation or complete audio/visual parity. Visible/audible two/four-player playback, native OS/input/rendering/icons and physical LAN/forward/UPnP/STUN/TURN remain deferred acceptance gates. No local coturn/container runtime is available; public hosting/DNS/TLS decisions and real-provider/load/long-session measurements remain operator questions saved for later. Independent implementation remains available, so the resumable goal is active and incomplete.
 
-## Previous source: Beta 39 guest audio isolation — 2026-11-04
+### Previous source: Beta 39 guest audio isolation — 2026-11-04
 
 Working version is **1.0.0-beta.39**. Runtime/world/delta/room/save/quest/co-op stay **coop-28/8/1/3/7/1/4**, compatible with Beta 38 peers; guests need Beta 39 for this isolation fix. Personal islands, immutable Beta 1 and published Beta 2 are unchanged.
 
@@ -2078,7 +2112,7 @@ Working version is **1.0.0-beta.39**. Runtime/world/delta/room/save/quest/co-op 
 
 **Resume here:** continue bounded original world-SFX replication. A read-only native audit traced entity/action/special-effect audio to `playInternal`/`stopInternal`: capture outermost host intent there, independently of host mute or asset availability, whitelist original spatial world effects, retain ordered instance identity, deduplicate one-shots across resync, and reconcile active loops without replaying old one-shots on join. Do not infer spatial scope from the unused archetype `camera` flag; global campaign stings need a separate explicit scope. Keep public properties and native stop ordering. Audible two/four-player playback, mute/settings/return-to-solo and device behavior remain deferred along with native-platform/physical-network/provider acceptance. No local coturn/container runtime is available; hosting/DNS/TLS decisions remain saved operator questions. Independent code work is available, so the goal remains active and incomplete under the user's pause-if-stuck instruction.
 
-## Previous source: Beta 38 guest music and listener maintenance — 2026-11-03
+### Previous source: Beta 38 guest music and listener maintenance — 2026-11-03
 
 Working version is **1.0.0-beta.38**, runtime **`polycraft-1.0.0.25-coop-28`**, world snapshot **8**. Matching Beta 38 game peers are required; room service protocol 3 remains compatible with the Beta 37 service. Delta/save/quest/co-op remain 1/7/1/4; island formats are unchanged.
 
@@ -2092,7 +2126,7 @@ Working version is **1.0.0-beta.38**, runtime **`polycraft-1.0.0.25-coop-28`**, 
 
 **Resume here:** verify Beta 38 CI artifacts after publication. Continue original sound/effect/action replication, stale local-source isolation, menus/campaign and remaining gameplay parity. Visible/audible two/four-player music/fades/settings/return-to-solo acceptance remains deferred, as do native OS and physical-network/provider tests. No local `turnserver`, Docker or Podman executable was found in PATH, so actual coturn acceptance was not attempted; hosting/DNS/TLS choices are still saved operator decisions. Independent code work remains available, so the goal stays active and incomplete under the user's pause-if-stuck instruction.
 
-## Previous source: Beta 37 optional temporary coturn credentials — 2026-11-03
+### Previous source: Beta 37 optional temporary coturn credentials — 2026-11-03
 
 Working version is **1.0.0-beta.37**. Game runtime/world/delta/save/quest/co-op stay coop-27/7/1/7/1/4, compatible with Beta 36 manual invitations. **Room signaling is now protocol 3:** update both room-name clients and service. Islands and Beta 1/Beta 2 releases are unchanged.
 
@@ -2106,7 +2140,7 @@ Working version is **1.0.0-beta.37**. Game runtime/world/delta/save/quest/co-op 
 
 **Historical next action (now verified):** Beta 37 CI artifacts. Continue original gameplay/menu/campaign/effects/audio parity and local non-graphical checks while visible testing remains deferred. Real coturn deployment, two/four-player relay/expiry/reconnect, native platforms, physical forwarding/UPnP/STUN, bandwidth/cost/load and full gameplay acceptance remain open. Operator decisions saved for later: choose the room/TURN hostname and hosting setup, configure DNS/TLS/firewall/quotas and decide when to resume visible disposable tests. These choices do not block independent source work; pause only if truly stuck as requested. Goal remains active and incomplete.
 
-## Previous source: Beta 36 original held-target facing and cleanup — 2026-11-03
+### Previous source: Beta 36 original held-target facing and cleanup — 2026-11-03
 
 Working version is **1.0.0-beta.36**, runtime **`polycraft-1.0.0.25-coop-27`**. Matching Beta 36 peers are required for gesture cleanup semantics. World/delta/signaling/save/quest/co-op remain 7/1/2/7/1/4; target packet shape and island formats are unchanged.
 
@@ -2120,7 +2154,7 @@ Working version is **1.0.0-beta.36**, runtime **`polycraft-1.0.0.25-coop-27`**. 
 
 **Historical next action (now verified):** Beta 36 build artifacts. Continue full original target interaction/menus/campaign/effects/audio parity and service/provider preparation that can be completed independently. Visible two/four-player gestures/facing/cursor/terrain, native OS, physical LAN/forwarding/UPnP/STUN/TURN and provider deployment remain open. Movement-required resource approach and live interaction-type changes between target messages remain known details for further work; this facing change does not claim those are complete. User questions, if needed, must be recorded while other useful work continues; pause only if truly stuck as requested. No question currently blocks this checkpoint. Goal remains active and incomplete.
 
-## Previous source: Beta 35 original guest movement feedback — 2026-11-03
+### Previous source: Beta 35 original guest movement feedback — 2026-11-03
 
 Working version is **1.0.0-beta.35**, runtime **`polycraft-1.0.0.25-coop-26`**, world snapshot **7**. Matching Beta 35 peers are required. Delta/signaling/save/quest/co-op remain 1/2/7/1/4; the network snapshot change does not migrate islands.
 
@@ -2136,7 +2170,7 @@ Working version is **1.0.0-beta.35**, runtime **`polycraft-1.0.0.25-coop-26`**, 
 
 **User continuation instruction, 2026-11-03:** continue independent work while the user is away. Save questions in this file and switch to another useful task instead of waiting. If truly stuck with no independent progress available, pause the goal and leave a handoff. No unanswered user question currently blocks this checkpoint; do not infer renewed graphical-test permission from this instruction.
 
-## Previous source: Beta 34 target press/hold/release timing — 2026-11-03
+### Previous source: Beta 34 target press/hold/release timing — 2026-11-03
 
 Working version is **1.0.0-beta.34**, runtime **`polycraft-1.0.0.25-coop-25`**. Matching Beta 34 peers are required: `target` intents now require a bounded `press` / `update` / `clear` / `release` phase. Target result shape is unchanged. World/delta/signaling/save/quest/co-op remain 6/1/2/7/1/4; no island migration occurs.
 
@@ -2149,7 +2183,7 @@ Working version is **1.0.0-beta.34**, runtime **`polycraft-1.0.0.25-coop-25`**. 
 
 **Historical next action (now verified):** Beta 34 GitHub build artifacts. When graphical tests resume, test quick resource releases, long targeted holds, ranged/type changes, disappearing targets, pointer capture and UI boundaries with two/four disposable players. Held cursor/facing visuals and complete original menu/campaign/combat/effects/audio parity remain open; host-live eligibility changes between target messages and the existing movement-required resource manual-approach fallback still need broader original-gameplay acceptance. Native-platform gameplay, real LAN/forwarding/UPnP/STUN/TURN, public room-service deployment and provider credential issuance remain open. No graphical game, personal save or external networking service was opened. Goal remains active and incomplete.
 
-## Resume evidence: Beta 33 build acceptance and target-gesture audit — 2026-11-03
+### Resume evidence: Beta 33 build acceptance and target-gesture audit — 2026-11-03
 
 Previous goal turn made progress: committed Beta 33 as `a4c0f6fb7459b9b3e39175894669a7c531716dfb`. Fresh GitHub evidence confirms [build 40637191942](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40637191942) completed successfully at that exact source: regression checks and all six platform package jobs passed. All eight platform/format artifacts are present and unexpired on November 3; their reported expiry is November 4, 2026 UTC. README now links this matching Beta 33 build. No public release or replacement of Beta 1/Beta 2 artifacts occurred.
 
@@ -2161,7 +2195,7 @@ Next implementation must reach guest target picking/presentation, gesture cancel
 
 No graphical game, personal save, router, STUN/TURN provider or public room service was opened/contacted. Visible/native/physical-network acceptance stays open and graphical testing remains deferred. Resume from this bounded target-gesture implementation, then broader original controls/menu/campaign/effects/audio parity; the full restoration goal remains active and incomplete.
 
-## Previous source: Beta 33 guest held/drag ground movement — 2026-10-28
+### Previous source: Beta 33 guest held/drag ground movement — 2026-10-28
 
 Working version is **1.0.0-beta.33**, runtime **`polycraft-1.0.0.25-coop-24`**. Use matching Beta 33 peers: walking now includes a required click/drag/release mode. World/delta/signaling/save/quest/co-op remain 6/1/2/7/1/4; island formats are unchanged.
 
@@ -2175,7 +2209,7 @@ Working version is **1.0.0-beta.33**, runtime **`polycraft-1.0.0.25-coop-24`**. 
 
 **Beta 32 CI succeeded:** [run 40635429089](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40635429089), source `fc76b750426dd85e178fdf97ffa3a79fe08f5cba`. Checks and all six platform package jobs passed; all eight platform/format artifacts verified present and non-expired during this revision. Packaging is not native gameplay acceptance. Beta 32 peers cannot join Beta 33.
 
-## Previous source: Beta 32 verified input-controller readability — 2026-10-27
+### Previous source: Beta 32 verified input-controller readability — 2026-10-27
 
 Working version is **1.0.0-beta.32**. Two private input constructors now have descriptive role names: `oa` → `GameInputController` (gameController factory) and `Yd` → `HeroControllerAction` (shared controllerActionA/B factories). These labels are supported by local definitions; their lost original names remain unknown. The 70 references plus declarations changed through scope-aware AST binding selection and source spans, preserving surrounding formatting.
 
@@ -2186,7 +2220,7 @@ Working version is **1.0.0-beta.32**. Two private input constructors now have de
 
 **Beta 31 CI succeeded:** [run 40633949905](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40633949905), source `5927e2dd675cb9c61bf6c665cd4186b95991b8db`. Checks and all six platform package jobs passed; all eight platform/format artifacts verified present and non-expired on 2026-10-27. Packaging is not native gameplay acceptance.
 
-## Previous source: Beta 31 guest ground movement and input routing — 2026-10-27
+### Previous source: Beta 31 guest ground movement and input routing — 2026-10-27
 
 Working version is **1.0.0-beta.31**, runtime **`polycraft-1.0.0.25-coop-23`**. All peers need matching Beta 31 builds for the new movement command. World/delta/signaling/save/quest/co-op remain 6/1/2/7/1/4; save formats are unchanged.
 
@@ -2199,7 +2233,7 @@ Working version is **1.0.0-beta.31**, runtime **`polycraft-1.0.0.25-coop-23`**. 
 
 **Beta 30 CI succeeded:** [run 40632177160](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40632177160), source `a9469fe396a6602d0e684830a2dfe9b581d747ab`. Checks and all six platform package jobs passed; all eight platform/format artifacts verified present and non-expired on 2026-10-27. Packaging does not establish native gameplay acceptance.
 
-## Previous source: Beta 30 original guest resource-click rules — 2026-10-27
+### Previous source: Beta 30 original guest resource-click rules — 2026-10-27
 
 Working version is **1.0.0-beta.30**. Guest clicks on normal trees, rocks and planted seed resources now follow the original direct interaction behavior. Earlier checkpoints incorrectly treated all resource interactions as requiring a walk into reach. The original controller calls `ECInteractable.shouldApproachOnUp`; all nine interactable resource archetypes explicitly set `requiresMovement: false`. The tenth resource definition is a scenery-test object without that interaction. No automatic chopping or new approach behavior is introduced.
 
@@ -2211,7 +2245,7 @@ Working version is **1.0.0-beta.30**. Guest clicks on normal trees, rocks and pl
 
 **Beta 29 CI succeeded:** [run 40631520660](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40631520660), source `b2561d32e809fdc2a3d3de07fb90047892f84492`. Checks and all six platform package jobs passed; all eight platform/format artifacts verified present and non-expired on 2026-10-27. Packaging is not native gameplay acceptance.
 
-## Previous source: Beta 29 original guest combat target marker — 2026-10-27
+### Previous source: Beta 29 original guest combat target marker — 2026-10-27
 
 Working version is **1.0.0-beta.29**, runtime **`polycraft-1.0.0.25-coop-22`**, world snapshot **6**. All peers require matching Beta 29 builds. Delta/signaling/save/quest/co-op formats remain 1/2/7/1/4; island save formats are unchanged.
 
@@ -2223,7 +2257,7 @@ Working version is **1.0.0-beta.29**, runtime **`polycraft-1.0.0.25-coop-22`**, 
 
 **Beta 28 CI succeeded:** [run 40630936604](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40630936604), source `80f34702d1243864ae3b49d68a98d38185d111da`. Checks and all six platform package jobs passed. All eight platform/format artifacts verified present and non-expired on 2026-10-27. Packaging is not native gameplay acceptance.
 
-## Previous source: Beta 28 original guest automatic fire — 2026-10-27
+### Previous source: Beta 28 original guest automatic fire — 2026-10-27
 
 Working version is **1.0.0-beta.28**. Clicking an eligible combat target now assigns the guest hero's original `ECAutoFire` component, allowing subsequent host simulation ticks to continue shooting through native weapon cooldown/reload rules. Target selection also works during reload. The original hero's trigger/retention range of 25 is preserved separately from projectile damage range; no new weapon balance, charge/rage ability or client-selected damage is introduced.
 
@@ -2235,7 +2269,7 @@ Working version is **1.0.0-beta.28**. Clicking an eligible combat target now ass
 
 **Beta 27 CI succeeded:** [run 40399648846](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40399648846), source `0657b8f430a2a6ef863271a10c1f67de73280701`. Checks and all six platform package jobs passed; all eight platform/format artifacts verified present and non-expired on 2026-10-27. This proves packaging, not native gameplay acceptance.
 
-## Previous source: Beta 27 original guest pause settings — 2026-10-26
+### Previous source: Beta 27 original guest pause settings — 2026-10-26
 
 Working version is **1.0.0-beta.27**. Original Shadows, Music and Sound controls are available from the guest pause menu, alongside Resume. The original settings renderer is shared with solo, retaining its artwork, localized labels, enable/disable behavior and positions. Resume now occupies the original left column. No tutorial, credits or premium shop transition is exposed through the guest menu yet.
 
@@ -2247,7 +2281,7 @@ Working version is **1.0.0-beta.27**. Original Shadows, Music and Sound controls
 
 **Beta 26 CI succeeded:** [run 40398866516](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40398866516), source `7fae5c830d0b2e58d13e5b3715f3d96d04e97b21`. Checks and all six platform package jobs passed. All eight platform/format artifacts are present and non-expired, verified 2026-10-26. Packaging is not native gameplay acceptance.
 
-## Previous source: Beta 26 guest pause/fullscreen quest events — 2026-10-26
+### Previous source: Beta 26 guest pause/fullscreen quest events — 2026-10-26
 
 Working version is **1.0.0-beta.26**, runtime **`polycraft-1.0.0.25-coop-21`**. All players need matching Beta 26 builds. World/delta/signaling/save/quest/co-op formats remain 5/1/2/7/1/4.
 
@@ -2260,7 +2294,7 @@ Working version is **1.0.0-beta.26**, runtime **`polycraft-1.0.0.25-coop-21`**. 
 
 **Beta 25 CI succeeded:** [run 40395523503](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40395523503), source `094889705e8fda093ea0e4aadd3e9bfe766568d5`. All eight platform/format artifacts are present and non-expired as verified 2026-10-26. Native gameplay acceptance remains open.
 
-## Previous source: Beta 25 guest camera rotation and quest event — 2026-10-26
+### Previous source: Beta 25 guest camera rotation and quest event — 2026-10-26
 
 Working version is **1.0.0-beta.25**. Guest left/right arrows now rotate the original camera instead of acting as horizontal movement aliases, matching native controls and the README. WASD and the existing guest up/down movement aliases remain. Runtime is **`polycraft-1.0.0.25-coop-20`**: all players need matching Beta 25 builds for the new interaction type. World snapshot/delta/signaling remain 5/1/2 and save/quest/co-op remain 7/1/4.
 
@@ -2273,7 +2307,7 @@ Working version is **1.0.0-beta.25**. Guest left/right arrows now rotate the ori
 
 **Beta 24 CI succeeded:** [run 40391842003](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40391842003), source `58568bfeb23459f293747cb6d45d368aa66a4015`, passed all 288 checks and all six package jobs. All eight platform/format artifacts were verified present and non-expired on 2026-10-26. Mac ARM64 is an Intel-hosted cross-build with finished-ZIP checks; native gameplay acceptance remains open.
 
-## Previous source: Beta 24 assigned-hero torch lighting — 2026-10-26
+### Previous source: Beta 24 assigned-hero torch lighting — 2026-10-26
 
 Working version is **1.0.0-beta.24**. Torch snapshots now follow the assigned guest hero rather than copying the host's personal light. Native host lighting also targets its selected hero instead of the first torch-bearing entity in the global list. Runtime remains **`polycraft-1.0.0.25-coop-19`**, world snapshot 5, delta/signaling 1/2 and save/quest/co-op 7/1/4. Beta 23/24 wires are compatible; use Beta 24 on host and guests for the complete lighting fix. No new save fields, dependencies or player actions were introduced.
 
@@ -2285,7 +2319,7 @@ Working version is **1.0.0-beta.24**. Torch snapshots now follow the assigned gu
 
 **Beta 23 CI succeeded:** [run 40389973602](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40389973602), source `e72c8e25a04764c3cce11e228457be799a7cbdee`, passed all 284 checks and all six package jobs. All eight platform/format artifacts were verified present and non-expired on 2026-10-26. Mac ARM64 remains an Intel-hosted cross-build with finished-ZIP architecture/signature checks; native gameplay acceptance stays open.
 
-## Previous source: Beta 23 original guest camera framing — 2026-10-26
+### Previous source: Beta 23 original guest camera framing — 2026-10-26
 
 Working version is **1.0.0-beta.23**. Guest camera framing now uses the original native camera methods with a read-only view of the assigned hero and replicated island. It replaces the fixed offset inherited from the suspended solo island. Runtime is **`polycraft-1.0.0.25-coop-19`**, full world snapshot format **5**; all players need matching Beta 23 game builds. Delta/signaling remain 1/2 and save/quest/co-op remain 7/1/4. No personal island, original distribution or game progression data changed.
 
@@ -2298,7 +2332,7 @@ Working version is **1.0.0-beta.23**. Guest camera framing now uses the original
 
 **Beta 22 CI succeeded:** [run 40386758195](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40386758195), source `9e34903de56110c6a7c5bebded6c0c938c7acff4`, passed all 280 checks and six package jobs. All eight platform/format artifacts were verified present and non-expired on 2026-10-26. [Mac ARM64 job 121797434690](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40386758195/job/121797434690) successfully built on the Intel runner and logged verification of the finished ZIP's 14 ARM64 Mach-O files and signature. This closes that cross-build gate, not native gameplay acceptance.
 
-## Previous source: Beta 22 Mac ARM64 packaging recovery — 2026-10-26
+### Previous source: Beta 22 Mac ARM64 packaging recovery — 2026-10-26
 
 Working version is **1.0.0-beta.22**. This checkpoint fixes a confirmed CI infrastructure problem: Beta 21's Mac ARM64 job never acquired a hosted runner and ended cancelled, with capacity annotations, making the overall run fail despite successful checks and the other five packages. It did not reach a game build step. The game runtime remains **`polycraft-1.0.0.25-coop-18`**, world snapshots 4, delta/signaling 1/2 and save/quest/co-op versions 7/1/4. Beta 21 and Beta 22 game wires are compatible; current builds are recommended. No game logic or personal saves changed.
 
@@ -2310,7 +2344,7 @@ Working version is **1.0.0-beta.22**. This checkpoint fixes a confirmed CI infra
 
 **Beta 21 CI ended with infrastructure failure:** [run 40363304333](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40363304333), source `e46cf71302a0d0b6698a4c5b739783c148f4258e`. All 278 checks and five platform package jobs passed. [Mac ARM64 job 121714752428](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40363304333/job/121714752428) had no executed steps or assigned runner; its annotations identify hosted-runner acquisition failure and macOS ARM64 capacity constraints. Do not report the overall run as passed. Local ARM64 package evidence is retained below.
 
-## Previous source: Beta 21 guest health bars and damage arrows — 2026-10-26
+### Previous source: Beta 21 guest health bars and damage arrows — 2026-10-26
 
 Working version is **1.0.0-beta.21**. Guest worlds draw original in-world health bars and timed building-damage arrows. Game runtime is **`polycraft-1.0.0.25-coop-18`** and full world snapshot format is **4**: all players need matching Beta 21 builds. Delta envelope remains 1, signaling remains 2, and save envelope/quest ledger/co-op hero schema remain 7/1/4. Personal saves and original distributions are unchanged.
 
@@ -2324,7 +2358,7 @@ Working version is **1.0.0-beta.21**. Guest worlds draw original in-world health
 
 **Beta 20 CI checkpoint:** [run 40361277363](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40361277363), source `e53f4ca0dc276aa2b993cb14e0d30dcf2fa9ccde`, passed all 275 checks and five platform package jobs. Seven non-expired artifacts were verified present on 2026-10-26. At this check Mac ARM64 remained queued, so the whole run was not accepted as passed. A newer source push can supersede its remaining job; use the live run for current status. The local Mac ARM64 package evidence remains in the historical section.
 
-## Previous source: Beta 20 guest HQ and invasion displays — 2026-10-26
+### Previous source: Beta 20 guest HQ and invasion displays — 2026-10-26
 
 Working version is **1.0.0-beta.20**. Guest HUD updates now include the assigned faction's HQ health and the host's preparation/invasion status. Game runtime is **`polycraft-1.0.0.25-coop-17`**: all players need matching Beta 20 builds. Signaling remains protocol 2; save envelope/quest ledger/co-op hero schema remain 7/1/4. Untracked solo saves remain format 2.
 
@@ -2337,7 +2371,7 @@ Working version is **1.0.0-beta.20**. Guest HUD updates now include the assigned
 
 **Beta 19 CI checkpoint:** [run 40358804869](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40358804869), source `f1ea4c89a5006c3843e2c01b0aa2938693801209`, has passed its unit job and five platform package jobs. The queued Mac ARM64 job was subsequently cancelled when the newer Beta 20 push superseded this run. The five successful package jobs remain successful; do not report the entire run as passed. Seven non-expired artifacts from the completed platforms were verified present on 2026-10-26. Local Mac ARM64 package evidence is recorded in the Beta 19 section. Native gameplay remains unverified.
 
-## Previous source: Beta 19 guest quest cards and reward controls — 2026-10-26
+### Previous source: Beta 19 guest quest cards and reward controls — 2026-10-26
 
 Working version is **1.0.0-beta.19**. Guests now see the shared original task cards, descriptions and pending reward card, using original renderer/artwork/localized text. Game runtime is **`polycraft-1.0.0.25-coop-16`**: all players need matching Beta 19 builds. Signaling stays protocol 2. Save envelope 7, quest ledger 1 and co-op hero schema 4 remain unchanged; ordinary untracked solo saves stay format 2.
 
@@ -2351,7 +2385,7 @@ Working version is **1.0.0-beta.19**. Guests now see the shared original task ca
 
 **Beta 18 CI succeeded:** [run 40336546735](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40336546735), source `bc0af7e61bca09be00fe1988afae59f791c4730b`, passed checks and all six native package jobs. All eight platform/format artifacts were verified present and non-expired on 2026-10-26. This is packaging evidence, not native gameplay acceptance.
 
-## Previous source: Beta 18 durable pending quest rewards — 2026-10-26
+### Previous source: Beta 18 durable pending quest rewards — 2026-10-26
 
 Working version is **1.0.0-beta.18**. The original task manager keeps a completed quest's final reward in memory until accepted, even though its completion flag is already saved. Tracked islands now persist that pending reward. **Quest ledger schema 1 uses save envelope 7**; co-op hero schema stays 4. Islands with co-op metadata initialize tracking when loaded or hosted, including later solo play. Untracked solo saves remain format 2. Game runtime remains **`polycraft-1.0.0.25-coop-15`** (Beta 17 wire-compatible) and signaling stays protocol 2; use current host builds for this persistence fix. The restoration goal remains active.
 
@@ -2363,7 +2397,7 @@ Working version is **1.0.0-beta.18**. The original task manager keeps a complete
 - **261 unit/regression checks pass.** Actual original task-manager methods/factory cover pending/reload/original acceptance, multi-task automatic awards, repeated claims, known live legacy/debug cards, no inference from historical flags, canonical validation and partial-reward save refusal. Migration checks cover exact format-6/import/recovery source bytes, sticky cheat history, rename/export/import, failed backup/primary retries, older-reader refusal and immutable hashes. The factory fixture resolves private names through public roles so readability renames do not couple it to minified spelling. Existing save/death/repair/move/upgrade/HUD/network checks pass. The visible co-op-player fixture expects envelope 7/ledger 1 and was syntax-checked only. No game window, personal island, public service or router was opened.
 - A local Mac ARM64 directory package at `/private/tmp/polycraft-beta18-package.NvFOOK` passed deep/strict ad-hoc signature verification. All seven affected runtime/entry files match source and embedded version is Beta 18. Packaged Node 24.22.0 compiled the bundle, loaded the host modules and performed format-7 migration with exact pre-v7 preservation in disposable `POLYCRAFT_TEST_DATA`, without opening a game or network. The existing macOS `task_name_for_pid` diagnostic appeared with successful helper exit. This is build evidence, not gameplay acceptance. Next: host-authoritative guest quest descriptions/reward acceptance with coherent saving and duplicate/reconnect handling, then visible disposable task completion/pending acceptance/auto-award/pickup/save/reload/host-exit acceptance. This fix protects **rewards awaiting acceptance**; accepted drops keep original pickup/lifetime rules, whose live save behavior remains unverified. Earlier native/physical-network, provider/temporary TURN credential, world-health/HQ/invasion/quest/camera, combat/progression and remaining construction gates stay open. Do not mark the goal complete.
 
-## Previous source: Beta 17 guest resource/progression HUD — 2026-10-25
+### Previous source: Beta 17 guest resource/progression HUD — 2026-10-25
 
 **Beta 17 CI succeeded:** [run 40242157704](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40242157704), source `f757038432c238e7948d446cc38fe4770fc85073`, passed all checks and six platform package jobs. All eight platform/format artifacts were verified present and non-expired. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2376,7 +2410,7 @@ Working version is **1.0.0-beta.17**. Guests receive the host-owned shared resou
 - **249 unit/regression checks pass.** Actual original player-data/HUD methods cover shared balances versus individual XP/points, own-query refusal, original bars/full/max-rank/totem-note behavior, number-animation continuity, unchanged-packet behavior, downward XP corrections, stale/unsolicited status, copied arrays, host flags/resync and malformed bounds/flags. The actual guest result parser accepts the paired response, rejects incomplete/invalid HUD and preserves action feedback. Existing cheat-history/save/death/repair/move/upgrade/network checks pass. No graphical game, personal island, public service or router was opened.
 - A local Mac ARM64 directory package at `/private/tmp/polycraft-beta17-package.66iJWQ` passed deep/strict ad-hoc signature verification. All seven affected runtime/entry files match source and embedded version is Beta 17. Packaged Node 24.22.0 compiled the bundle, loaded guest modules and captured the paired life/HUD reply through actual packaged HostActions without opening a game, network or save. The existing macOS `task_name_for_pid` diagnostic appeared with successful helper exit. This is build evidence, not gameplay acceptance. Next: visible disposable resource/amber/rank/point updates, shared spending, capacity changes, totem purchases, death/reconnect/resync, menu layering and solo restoration. This is the resource/progression HUD portion; guest world health bars, HQ/invasion/quest displays and broader original camera/combat/progression parity remain unfinished, as do batch upgrades/speedups/completion interactions, group repairers and other special dispensers. Public room/provider deployment, temporary authenticated TURN credentials, physical network/load/billing measurements and all native gameplay/foundation acceptance remain open. Do not mark the goal complete.
 
-## Previous source: Beta 16 guest building upgrades — 2026-10-25
+### Previous source: Beta 16 guest building upgrades — 2026-10-25
 
 **Beta 16 CI succeeded:** [run 40241033783](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40241033783), source `684fa4136f38e2edfcb32550deab423696f39781`, passed all checks and six platform package jobs. All eight platform/format artifacts were verified present and non-expired. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2390,7 +2424,7 @@ Working version is **1.0.0-beta.16**. Guests can inspect and purchase individual
 - **244 unit/regression checks pass.** Actual original payment/start/cancel/radial/serialization methods verify costs, worker assignment, cap registration, fractional progress, half refund, duplicate queues, stale targets/cancellation episodes, prerequisites/funds/cap/flag/research/script/actor/claim rejection and native claim guards. The actual original information-panel method is exercised with presentation inputs, host resource display, close/confirm/invalid/stale/replaced-source behavior; guest result parsing and one-request fencing are tested. Existing save/history/death/repair/move/network checks pass. No game window, personal island, public service or router was opened.
 - A local Mac ARM64 directory package at `/private/tmp/polycraft-beta16-package.HtLbfg` passed deep/strict ad-hoc signature verification. All eight affected runtime files match source and embedded version is Beta 16. Packaged Node 24.22.0 compiled the bundle, loaded host/guest modules and accepted bounded upgrade/cancel/episode messages without opening a game, network or save. The existing macOS `task_name_for_pid` diagnostic appeared with successful helper exit. This is build evidence, not gameplay acceptance. Next: visible disposable upgrade panel/worker/timer/completion/cancel/contents/cap/save/reload/reconnect/host-exit acceptance, alongside earlier move/repair/death/PvP gates. Guest batch upgrades, speedups/completion interactions, group repairers, other special dispensers and broader original combat/progression/HUD/camera parity remain unfinished. Public room/provider deployment and temporary authenticated relay credentials, physical-network/load/billing measurements and all native gameplay/foundation gates remain open. Do not mark the goal complete.
 
-## Previous source: Beta 15 guest building repairs — 2026-10-25
+### Previous source: Beta 15 guest building repairs — 2026-10-25
 
 **Beta 15 CI succeeded:** [run 40239919464](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40239919464), source `21f7c0e0fac7e7efa5a658accfc0b541b251e29b`, passed all checks and six platform package jobs. All eight platform/format artifacts were verified present and non-expired. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2403,7 +2437,7 @@ Working version is **1.0.0-beta.15**. Guests can repair damaged/broken buildings
 - **236 unit/regression checks pass.** Actual original repair/radial methods are tested for damage-derived/fractional costs, shared funds, broken behavior, duplicate/two-guest spending, quote changes, insufficient funds, ownership/flag/script/held/dead/claim refusal and original-host claim guarding. Guest tests cover original affordable/unavailable artwork, quote transmission, one pending request and real result parsing, malformed metadata and retained demolition confirmation. Existing save/history/death/move/network regressions pass. No graphical game, personal save, public service or router was opened.
 - A local Mac ARM64 directory package at `/private/tmp/polycraft-beta15-package.vIxPLQ` passed deep/strict ad-hoc signature verification. All seven affected runtime files match source; embedded metadata is Beta 15. The packaged Node 24.22.0 runtime compiled the bundle, loaded repair/guest modules and accepted the new bounded fractional-quote action without opening a game, network or save. The existing macOS `task_name_for_pid` diagnostic appeared with successful helper exit. This is packaging evidence, not gameplay acceptance. Next: visible disposable repair/health/broken visual/contents/save/reload/concurrent-spending acceptance alongside prior move/death/PvP gates. Guest building upgrades, group repairers, other special dispensers, broader original combat/progression/HUD/camera parity remain unfinished. Physical LAN/internet/UPnP/STUN/TURN, temporary authenticated relay credentials/provider deployment and all native gameplay/foundation acceptance stay open. Do not mark the goal complete.
 
-## Previous source: Beta 14 guest building moves — 2026-10-25
+### Previous source: Beta 14 guest building moves — 2026-10-25
 
 **Beta 14 CI succeeded:** [run 40239369671](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40239369671), source `228c9f783d31c791aaffb9942e91d6b7eecd86c2`, passed all checks and six platform package jobs. All eight platform/format artifacts were verified present and non-expired. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2416,7 +2450,7 @@ Working version is **1.0.0-beta.14**. Guests can pick up eligible buildings usin
 - **229 unit/regression checks pass.** New checks exercise actual original pickup and radial methods, assigned-hero isolation, serializable held references, active/offline/in-flight reservations, original host callback protection, original artwork in both guest menus, product indices, held acknowledgement/stale results, unsupported allied-faction pickup, and capture cleanup of lost sources. No graphical game, personal save or public service was opened. A local Mac ARM64 directory package at `/private/tmp/polycraft-beta14-package.oSVsvA` passed deep/strict ad-hoc signature verification. All nine affected runtime files match source and embedded metadata is Beta 14. Its actual Node 24.22.0 runtime compiled the original bundle, loaded host/guest modules and accepted the new move action without opening a game, network or save; the existing macOS `task_name_for_pid` diagnostic appeared with successful exit. This is build evidence, not graphical/native acceptance.
 - Next: visible disposable move/place/cancel/reconnect/host-exit and enemy destruction during pickup/throw; simultaneous build/move/demolition, territory/capacity and retained contents. Existing revive/death/concurrent spending/PvP, broader construction/combat/progression/HUD/camera, physical LAN/internet/UPnP/STUN/TURN, public room/provider deployment/temporary credentials and all native gameplay gates remain open. Do not mark the goal complete.
 
-## Previous source: Beta 13 guest countdown and paid revive — 2026-10-25
+### Previous source: Beta 13 guest countdown and paid revive — 2026-10-25
 
 **Beta 13 CI succeeded:** [run 40237751204](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40237751204), source `77be034ee4d1a31ede14955fccb4dce0ce236779`, passed checks and all six native package jobs. All eight platform/format artifacts were verified present and non-expired. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2431,7 +2465,7 @@ Working version is **1.0.0-beta.13**. Guests receive their own host-owned death 
 - A local Mac ARM64 directory package built and passed deep/strict ad-hoc signature verification. All six affected runtime/entry files match source; embedded version is Beta 13. The actual packaged Node 24.22.0 runtime compiles the bundle, loads guest revive modules and accepts the new bounded action shapes with coop-11. No game, network or save was opened by that check; the existing macOS `task_name_for_pid` diagnostic appeared with successful helper exit. Visual/native acceptance remains open.
 - Next: visible disposable death/revive/concurrent-spending/save/reconnect/host-exit/PvP acceptance when graphical tests resume. Original move pickup, broader construction/combat/progression, full HUD/camera and death presentation parity remain open, alongside provider deployment/temporary credentials, physical network/load/cost and native-platform/foundation acceptance. Do not mark the goal complete.
 
-## Previous source: Beta 12 co-op death timing persistence — 2026-10-25
+### Previous source: Beta 12 co-op death timing persistence — 2026-10-25
 
 **Beta 12 CI succeeded:** [run 40228844291](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40228844291), source `984083116d518d05905fb73eda39209f9c436f20`, passed checks and all six native package/upload jobs; all eight platform/format artifacts are present and non-expired. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2447,7 +2481,7 @@ Working version is **1.0.0-beta.12**. Co-op schema **4**, save envelope **6**, a
 - A local Mac ARM64 directory package built and passed deep/strict ad-hoc signature verification. All five affected runtime files match source; embedded version is Beta 12. The actual packaged Node 24.22.0 runtime loads the schema/persistence modules, creates schema-4 records and resolves lifecycle restoration. No game, network or save directory was opened by that dependency check; the existing macOS `task_name_for_pid` diagnostic appeared with successful helper exit. This is build evidence, not graphical/native acceptance.
 - Next: visible disposable save/reconnect/host-exit/respawn acceptance once graphical tests resume; guest countdown and paid revive, death visuals/input/PvP consequences, move pickup and remaining original gameplay/HUD/camera parity. Public room/provider deployment and temporary TURN credentials, physical network/load/cost and native-platform/foundation acceptance remain open. Do not mark the goal complete.
 
-## Previous source: Beta 11 death/respawn isolation fixes — 2026-10-25
+### Previous source: Beta 11 death/respawn isolation fixes — 2026-10-25
 
 **Beta 11 CI succeeded:** [run 40227948255](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40227948255), source `b82adc4337bb7435db1d1015c5e74a60ea5ead81`, passed checks and all six native package/upload jobs; all eight platform/format artifacts are present and non-expired. This is packaging evidence, not native gameplay or real-network acceptance.
 
@@ -2462,7 +2496,7 @@ Working version is **1.0.0-beta.11**. Fixes identified death-path crashes and cr
 - **Audit finding still open:** `CoopPlayers.captureHero` stores health and inventory but no remaining death-animation/respawn timer. `restoreHero` currently schedules a zero-delay respawn for saved zero health. Reconnect/reload can therefore bypass the remaining wait, and a death captured with positive health can lose its lifecycle state. A versioned co-op/save migration with original backups and coherent timer restoration is required before closing death persistence acceptance. Do not silently infer full completion from the new crash fixes.
 - Next: persist and restore death lifecycle/timing and assess guest revive choices, then explicitly visible disposable deaths/reconnects/host exit/PvP acceptance when graphical tests resume. Original move pickup/construction parity, full HUD/camera/combat/progression, public room/provider deployment and temporary credentials, physical network/load/cost, native-platform and foundation acceptance remain open. Do not mark the goal complete.
 
-## Previous source: Beta 10 restored held-building controls — 2026-10-25
+### Previous source: Beta 10 restored held-building controls — 2026-10-25
 
 [Beta 10 CI run 40227518080](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40227518080), source `e9e8baedc6fb072cca220cab8b31c961a9c3ec89`, is complete and successful: checks and all six native package/upload jobs passed, with all eight non-expired platform/format artifacts present. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2477,7 +2511,7 @@ Working version is **1.0.0-beta.10**. Guests can resume placement or eligible ca
 - A local Mac ARM64 directory package built and passed deep/strict ad-hoc signature verification. All nine affected runtime/entry files match source and the embedded version is Beta 10. The actual packaged Node 24.22.0 runtime compiles the whole game bundle and loads the held-action/UI modules with the coop-10 compatibility tag. It opens no game/network connection; the existing macOS `task_name_for_pid` diagnostic appeared but the helper exited successfully. Native gameplay and visual held-building acceptance remain open.
 - Next gameplay work: visible disposable held-building acceptance when the user resumes graphical tests; original move pickup and broader construction parity; death/respawn and full HUD/camera/combat/progression. Network/provider deployment, temporary TURN credentials, physical router/internet/load/cost measurements and native-platform acceptance also remain open. Do not mark the goal complete.
 
-## Previous source: Beta 9 connection reports and traffic measurements — 2026-10-25
+### Previous source: Beta 9 connection reports and traffic measurements — 2026-10-25
 
 **Beta 9 CI succeeded:** [run 40226219669](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40226219669), source `e773ee298be33a759e6a659da265aa4c80aae0bc`, passed checks and all six native package/upload jobs; all eight platform/format artifacts are present and non-expired. This is packaging evidence, not native gameplay or physical-network acceptance.
 
@@ -2492,7 +2526,7 @@ Working version is **1.0.0-beta.9**. This adds local diagnostic evidence for the
 - Local Mac ARM64 directory packaging and deep/strict ad-hoc signature verification passed. Five affected runtime/entry files match source and the embedded version is Beta 9. The packaged Node 24.22.0 runtime passed the empty game/signaling counter and connection-report self-check, opening no game or network connection. The existing macOS `task_name_for_pid` diagnostic appeared but the helper exited successfully. This is build evidence, not visual/native gameplay acceptance.
 - Remaining gates: public room/provider hosting configuration and authenticated temporary TURN credentials; measured physical-network stage tuning, relay egress and load/cost accounting; visible disposable two/four-player and native-platform acceptance. Original held-building controls, death/respawn, full HUD/camera/combat/progression, foundations/native icon acceptance and broader restoration gates remain open. Do not mark the goal complete.
 
-## Previous source: Beta 8 direct-first room connections — 2026-10-25
+### Previous source: Beta 8 direct-first room connections — 2026-10-25
 
 Working version is **1.0.0-beta.8**. Room-name/password joining now checks native forwarded TCP/TLS, optional UPnP, direct WebRTC with STUN and finally manually configured TURN. The full restoration goal remains active; this is an implementation checkpoint with physical acceptance still open. Beta 1/Beta 2 distributions, save schemas and personal islands stay unchanged.
 
@@ -2508,7 +2542,7 @@ Working version is **1.0.0-beta.8**. Room-name/password joining now checks nativ
 - A local Mac ARM64 directory package built and passed deep/strict ad-hoc signature verification. All 11 affected runtime/entry files match source; embedded version is Beta 8. Both new modules load in the packaged Node 24.22.0 runtime and the STUN-only configuration self-check passes. This opened no game/network connection; the helper emitted the existing macOS `task_name_for_pid` diagnostic but exited successfully. This is packaging evidence, not native gameplay acceptance.
 - Next: automatic bounded temporary TURN credentials after hosting/provider details are supplied; setup/traffic instrumentation; then explicit visible disposable two/four-player, physical forwarding/UPnP/STUN/TURN, public TLS service, real-network tuning and native-platform gameplay acceptance. Held-building controls, death/respawn, complete HUD/camera/combat/progression and the original restoration acceptance gates below remain open. Do not mark the goal complete.
 
-## Previous source: Beta 7 native STUN address discovery — 2026-10-25
+### Previous source: Beta 7 native STUN address discovery — 2026-10-25
 
 **Beta 7 CI is complete:** [run 40211130879](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40211130879), source `af505957320f1404f28b1dd519693d4c338f0550`, passed checks and all six native package/upload jobs, with all eight non-expired platform/format artifacts present. This is packaging evidence, not graphical or physical-network acceptance.
 
@@ -2521,7 +2555,7 @@ Working version is **1.0.0-beta.7**. Adds the public-IP discovery step needed by
 - **186 unit/regression checks pass.** Includes the independent RFC 5769 IPv4/fingerprint vector, malformed/truncated/error/non-IPv4 responses, stale transactions, valid-token packets from an incorrect source port, a real loopback UDP responder, bounded loss/retry/timeout, abort/shutdown and overlap refusal. Mock DOM checks exercise the actual button, custom endpoint and unchanged TCP port. Public STUN, real routers, visual menu and physical-network acceptance remain open; no game windows, personal islands or outside STUN services were used. A local Mac ARM64 directory package built, passed deep/strict ad-hoc signature verification and decoded the RFC vector in its actual packaged Node runtime (Node 24.22.0). All four affected runtime files match working source and embedded version is Beta 7. The helper emitted the existing macOS `task_name_for_pid` diagnostic but exited successfully. No network/game window was opened by that dependency check; this is build evidence, not public-network/native gameplay acceptance.
 - Next networking implementation remains the automatic room route coordinator: known/forwarded native endpoint → opt-in UPnP → direct STUN/ICE → authenticated temporary-credential TURN, with bounded attempts, correct per-hero handoff and setup/bandwidth measurements. Native IP discovery is available for that coordinator; it is not wired into room admission automatically yet. No hosting details/domain have been supplied, so the public room/relay deployment remains unconfigured.
 
-## Previous source: Beta 6 room-name/password joining — 2026-10-25
+### Previous source: Beta 6 room-name/password joining — 2026-10-25
 
 **Beta 6 CI is complete:** [run 40210304990](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40210304990), source `f85a7d8cc8733b18f0e6a5ce07d2cd1894bbaef2`, passed checks and all six native package/upload jobs. All eight expected non-expired platform/format artifacts are present. README links these room-test packages. This is native build/artifact availability evidence; it does not replace public TLS deployment, physical room gameplay or platform acceptance.
 
@@ -2533,7 +2567,7 @@ Working version is **1.0.0-beta.6**. The explicit request for room name `poopedp
 - Signaling loss cancels unfinished attempts but preserves established gameplay links. The host can still disconnect an established guest after signaling loss. Normal host end retains coherent saving; pending guest joins can be cancelled without creating a guest world. No save schema/progression/game authority changed. Native TCP public-IP discovery is not yet wired: STUN can supply an address candidate, but the separately forwarded TCP port and actual reachability must be checked.
 - Added [deployment/player instructions](server/README.md) and a Caddy example. No host/domain was provided, so no public service, DNS, proxy, account, relay or router was provisioned. Code-only local loopback tests use no personal saves or game windows; graphical tests stay deferred at the user's request. **181 unit/regression checks pass**: real local signaling/native-client tests authenticate spaced passwords, isolate rooms, forward approved offers/replies/candidates, reject wrong/missing/duplicate/full/incompatible rooms and unauthorized pre-approval replies, preserve saved-hero assignment, handle decline/expiry, cancel pending attempts on signaling loss while preserving established links, and reject an untrusted TLS certificate before sending credentials. Mock DOM tests cover real panel consent/cancel, the Google default/custom STUN override and pending-join cancellation; transport tests cover trickle gathering/queue bounds alongside existing manual invites. A local Mac ARM64 directory package built, passed deep/strict ad-hoc signature verification and loaded the packaged room socket/controller/protocol in Electron Node mode. All eight affected runtime/entry files match working source and embedded version is Beta 6. The helper emitted the existing macOS `task_name_for_pid` diagnostic but exited successfully; no network or game window was opened. This is dependency/build evidence, not a public release or gameplay acceptance. Physical two/four-player room joining, public TLS deployment, all native gameplay, real network fallback and service load/bandwidth acceptance remain open.
 
-## Current packaged checkpoint: Beta 2 — 2026-10-24
+### Current packaged checkpoint: Beta 2 — 2026-10-24
 
 **[1.0.0-beta.2 GitHub prerelease](https://github.com/VeeShep/PolyCraft-Revival/releases/tag/v1.0.0-beta.2)** packages source `3c19e657225f7a0ae85dbc6fe4df84f8ffbac0f6` from successful [build run 39895412306](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39895412306). Six playable archives cover Mac arm64/x64, Windows x64/ARM64 and Linux x64 AppImage/tar.gz. The release includes `START_HERE.txt`, aggregate `BUILD_INFO.json` and `SHA256SUMS.txt`. The same nine files are preserved locally in ignored `dist/beta-2-release/`. Publication is verified: all nine uploaded asset sizes and GitHub SHA256 digests match local files, and the public prerelease tag resolves to the exact source commit above. Beta 1 distribution files, checksums and its existing GitHub release remain unchanged. Release tags stay pinned to their package source; subsequent documentation commits do not change them.
 
@@ -2541,7 +2575,7 @@ Working version is **1.0.0-beta.6**. The explicit request for room name `poopedp
 - Source acceptance: 137 passing unit/regression checks, visible disposable Mac solo save/reload acceptance and same-Mac four-player development checks, including movement, state recovery and original totem purchases. These are source/runtime checks; this publishing pass launched no game tests and changed no personal islands.
 - This is the current offline solo beta. Co-op remains development-only with no public Host/Join screen. Native Intel Mac, Windows x64/ARM64, complete Linux gameplay, native icon appearance, cross-platform multiplayer and real-network acceptance remain open. Mac packages are unnotarized; Windows unsigned. The Nvidia tester's successful Beta 2 Z-fighting report does not close broader graphics or gameplay gates.
 
-### Previous source: Beta 5 direct TCP/TLS hosting — 2026-10-24
+#### Previous source: Beta 5 direct TCP/TLS hosting — 2026-10-24
 
 Working version is **1.0.0-beta.5**. Beta 4 evidence below is historical; published Beta 2 and immutable Beta 1 stay unchanged. Beta 5 packages have not yet been published as a release.
 
@@ -2552,7 +2586,7 @@ Working version is **1.0.0-beta.5**. Beta 4 evidence below is historical; publis
 - **172 unit/regression checks pass.** Real loopback TLS checks cover encrypted Unicode/chunked transfer, initial receive gating, certificate pinning before token disclosure, incorrect/reused tokens, invalid authoritative guest frames, bounds, slot limits, cancellation/expiry and cleanup; mocked UPnP covers opt-in TCP-only mapping, manual fallback and stop. Trusted-frame IPC and menu lifecycle checks pass. JavaScript syntax and whitespace checks pass. A local Mac ARM64 directory package built and passed deep/strict ad-hoc signature verification; its embedded dependencies generate a TLS certificate and load the UPnP module in Electron Node mode without a game window. That check emitted a macOS `task_name_for_pid` diagnostic but exited successfully. It is dependency/build evidence, not gameplay or a published deliverable. Direct transport tests use real loopback TLS sockets and mocked UPnP only; no game windows or real router mappings were opened. Physical forwarding/UPnP, internet/TURN, native cross-platform gameplay and visible menu acceptance remain open. IPv6 and comparative TCP/WebRTC internet performance are not implemented/verified. All prior held-item/death/HUD/gameplay gates remain open.
 - Cloudflare Realtime TURN researched as a possible hosted fallback: official pricing currently includes 1,000 GB/month shared SFU/TURN egress, then $0.05/GB; free STUN and TLS TURN on 443. README links official credential/pricing documentation. No Cloudflare account, credentials, billing or relay service was configured. MQTT signaling remains an option, not a TURN substitute or implemented transport.
 
-### Previous source: Beta 4 experimental multiplayer menu — 2026-10-24
+#### Previous source: Beta 4 experimental multiplayer menu — 2026-10-24
 
 Working version is now **1.0.0-beta.4**, incremented in package and lock metadata and displayed in the header from the installed application version. Each subsequent packaged update must increment the beta number; Beta 1/Beta 2 distributions and tags remain unchanged. No Beta 4 release has been published yet.
 
@@ -2563,12 +2597,12 @@ Working version is now **1.0.0-beta.4**, incremented in package and lock metadat
 - Peer diagnostics show direct/relayed/unknown routing, actual selected-pair RTT or unavailable, and buffered bytes. They never expose candidate addresses or credentials. The host's PvP choice remains fixed; only the host may change island cheats. Guest saving/cheat buttons are hidden/disabled, and slot switching is disabled while connected. Menus block local input without pausing an online host. Session stop uses existing coherent saving/solo-restoration paths; failed host saves retain a retryable session.
 - **166 unit/regression checks pass**, including real-panel event flow with fake DOM consent/cancel, guest menu-pause restoration after disconnect/leave (including leaving while the dialog remains open), saved-identity selection, failed setup/stop cleanup and retry, ICE validation, credential-free routing/RTT diagnostics and version IPC. JavaScript syntax and whitespace checks pass. No game windows were launched under the user's test-later instruction. The menu is explicitly an incomplete preview: held-item controls, death/respawn, full HUD/camera and broader progression/combat still need work. Physical LAN, internet, relay, all native gameplay and visible menu acceptance remain open. Existing developer-console instructions remain as a fallback; the new menu is the intended Beta 4 test entry point.
 
-### Experimental manual joining guide — 2026-10-24
+#### Experimental manual joining guide — 2026-10-24
 
 - README now includes a two-player, same-LAN developer-console quick start using the current `HostSession`, `startHostingWorld`, `enablePlayers`, saved guest identity, invitation/reply and `GuestWorld` APIs. It includes graceful host shutdown, reconnecting the same identity within the session and version/network failure guidance.
 - This is not a public Host/Join screen or evidence of completed co-op. It requires matching current development builds and fresh disposable islands; Beta 2 lacks the complete flow. Commands were checked against existing co-op fixtures and their JavaScript syntax checked. No game was launched; manual cross-computer joining and native/platform/network acceptance remain open.
 
-### Package size and Intel Mac upload diagnosis — 2026-10-24
+#### Package size and Intel Mac upload diagnosis — 2026-10-24
 
 - Measured published Beta 2 Intel Mac ZIP compressed streams: Electron 119.67 MiB, game/app archive 33.04 MiB and other shell files 1.51 MiB. Original static asset JSON is already minified; recompressing at ZIP level 9 yielded little extra saving. No game assets were removed or rewritten.
 - Packaging now retains English Electron UI locales and excludes duplicate `.icns`, `.ico` and unused PNG sizes from the internal app archive. Native icon generation/embedding still reads the source icons; the runtime 512px PNG stays packaged. Other Electron libraries, codecs, ICU and GPU fallbacks remain intact. The game retains all original language/content assets.
@@ -2576,17 +2610,17 @@ Working version is now **1.0.0-beta.4**, incremented in package and lock metadat
 - Intel Mac in [run 40151490850](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40151490850) successfully built, signed and collected its package, then failed the artifact upload with `Failed to CreateArtifact ... ENOTFOUND`. This is a GitHub upload DNS/network failure, not an observed compilation/signing failure. The retry at source `c65f067` passed all six native package jobs and uploads in [run 40152131783](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40152131783), including Intel Mac and both split Linux formats. Native Intel gameplay remains unverified. All other package jobs passed in that run, including the split Linux uploads.
 - Substantially shrinking the browser engine would require a separately maintained Electron/Chromium build or a different desktop wrapper; neither has been implemented. Those options require fresh WebGL, audio, input, save, networking and platform acceptance before adoption. The main restoration roadmap remains in effect.
 
-### Linux downloads split by format — 2026-10-24
+#### Linux downloads split by format — 2026-10-24
 
 - Future CI runs upload separate `.AppImage.zip` and `.tar.gz.zip` artifacts for both Linux x64 and ARM64. Each ZIP contains just its selected package plus launch instructions, source/build metadata and matching SHA256 checksums. Mac/Windows artifact layouts and published Beta 1/Beta 2 files remain unchanged.
 - Collector validation/checksum checks now cover all eight independent platform/format bundles, including exclusion of unrelated packages, saves and logs. **158 unit/regression checks pass**; workflow YAML and whitespace checks pass. No game tests were launched for this packaging-only change. Split uploads await the next CI run. Native gameplay acceptance remains open.
 
-### Project identity and joining guidance — 2026-10-24
+#### Project identity and joining guidance — 2026-10-24
 
 - README now identifies the project as **PolyCraft Revival** and explains its preservation, independent offline play, optional cheats, player-owned saves, co-op and later expansion goals. Packaged app names, save paths, release assets and metadata remain PolyCraft Offline; this is a documentation update, not an application/save-folder rename.
 - Added a clear player-facing joining-status section: published Beta 2 is solo, development builds do not yet expose Host/Join, and the disposable co-op fixtures are not a supported player joining workflow. Condensed development details and corrected the obsolete blanket held-item shutdown restriction for schema 3. Existing acceptance limits and original notices remain.
 
-### Current source: pause menus, protected buildings and Linux ARM64 — 2026-10-24
+#### Current source: pause menus, protected buildings and Linux ARM64 — 2026-10-24
 
 - Guest presentation now draws the original Pause icon and a local Resume menu using original background/logo/button artwork. P opens/toggles it; Escape closes it. Movement stops while open; snapshots and shared host simulation continue. The guest menu currently provides Resume only; the complete solo settings menu is not exposed to guests. Solo/host pause transitions now follow the active menu state rather than a clock flag, so an already-paused simulation does not turn a Pause click into Play.
 - The shared demolition gate now protects Workshop and HQ archetype families at every tier, critical structures and territory anchors. This applies both to radial visibility and execution, including host validation of guest actions. Archetype identity provides a fallback when building metadata has been overridden. It does not prevent legitimate enemy combat or moving buildings.
@@ -2594,7 +2628,7 @@ Working version is now **1.0.0-beta.4**, incremented in package and lock metadat
 - Added Linux ARM64 AppImage/tar.gz as a development build target on a native `ubuntu-24.04-arm` CI runner, with architecture assertion, explicit target archives, instructions, provenance and checksums. Local Linux build command targets both architectures. Beta 2 assets and Beta 1 baseline remain unchanged. All six native package jobs, including Linux ARM64, passed for source `e23d622` in [run 40151117153](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40151117153). This verifies package production; native gameplay acceptance remains open.
 - **158 unit/regression checks pass**, including pause-state selection, guest Pause/Resume artwork and local input blocking, render throttling/online exemptions, HQ/workshop tier protection and ARM64 archive collection. Syntax and whitespace checks pass. GUI tests remain deferred by the user's keep-coding/test-later instruction; no personal islands were opened. The held-construction, death/respawn, guest HUD/camera and Host/Join work below remains next after these requested fixes.
 
-### Current source: held-building persistence — 2026-10-24
+#### Current source: held-building persistence — 2026-10-24
 
 Working package version is **1.0.0-beta.3 (development)** so future CI archives are distinct from published Beta 2. No Beta 3 release has been published.
 
@@ -2605,7 +2639,7 @@ Working package version is **1.0.0-beta.3 (development)** so future CI archives 
 - **154 unit/regression checks pass**, including actual extracted original builder methods for prepaid/repeat/move round trips, guest capture/removal/reattachment, held-item session close/solo restoration, original host-only queue callback, invalid reference refusal, exact original migration/import bytes, older-reader refusal, recovery, export/import, failed-write retry and unchanged history. The new reader baseline hashes pass; source and revised visible fixture syntax checks pass. Visible data/live-hero fixtures now expect format 5 and held reconnection, but **were not run**: the user's keep-coding/test-later instruction remains in force. No personal islands, release archives or Beta 1 baseline were changed.
 - **Current next action:** implement host-validated guest controls for restored held-item placement/cancellation and audit death/respawn handling. Then finish guest HUD/camera and Host/Join. Resume visible held-item/queue/save/reload/exit, all-totem and four-player regression only when the user resumes graphical testing. Native-platform and real-network acceptance remain open. This code checkpoint does not establish playable public co-op; published Beta 2 remains unchanged at source `3c19e65` and cannot open format-5 saves.
 
-### Post-release source: original totem corrections — 2026-10-24
+#### Post-release source: original totem corrections — 2026-10-24
 
 - Auditing the original paid-upgrade path found it retained the pre-level-up hero after rank replacement. It now reacquires the current solo/host hero before applying the upgrade, so the live components receive the purchased effect immediately. The guest adapter already reacquired its assigned hero separately and remains unchanged.
 - Removed an invalid `{ levelText: "Base Level" }` item from Protection's prerequisite list. The actual requirement remains Health tier 1 and hero level 5; the malformed item previously made resistance permanently unavailable to the validated guest path and ordinary point-purchase menu. No original tier values, costs or save formats changed.
@@ -2614,7 +2648,7 @@ Working package version is **1.0.0-beta.3 (development)** so future CI archives 
 - **Current four-player regression remains incomplete.** Disposable `polycraft-coop-identities-JUxvLz` stopped on the host start screen before peers joined (`readyToPlay` timeout). Retries `polycraft-coop-identities-OhRUO9` and `polycraft-coop-identities-vdLzbi` passed four-player movement/whole-world hashes and periodic/requested full recovery, then timed out waiting for the first guest totem purchase. Diagnostics show a valid host menu result, unchanged tier 0/one point, a connected peer, native focus false and the local menu cancelled; no renderer or transport errors were recorded. The final retry restored/checked focus immediately before clicking but still lost it afterward. Do not count either as full acceptance. The fixture retains native-focus checks and adds Play/canvas diagnostics; investigate focus delivery/click timing in the next visible run without weakening cancellation or synchronization assertions.
 - Published Beta 2/tag/archives remain pinned to `3c19e65` and do not contain these later source corrections. A future packaged revision must use a new version/folder. Personal islands and the immutable Beta 1 distribution were not changed. Remaining live tests of the other guest totem effects, full progression, combat, construction/death/exit, Host/Join, native platforms and real networks remain open.
 
-### Post-release source: paid-boost guards and focus evidence — 2026-10-24
+#### Post-release source: paid-boost guards and focus evidence — 2026-10-24
 
 - Confirmed a second original solo/host totem defect with a failing runtime-method regression: an Amber button could charge 75 and grant an upgrade despite unmet prerequisites, insufficient minimum level after the boost, or no next XP tier. The menu now checks those gates before allowing a paid purchase, displays the reason for locked upgrades and preserves the original 75-Amber cost, artwork, button IDs, point purchases and shop fallback. A boost may reach the minimum level; it cannot replace another required upgrade. The callback uses descriptive local names; public properties, save fields and asset identifiers remain unchanged.
 - **141 unit/regression checks pass**, including rejected prerequisite/minimum/final-tier purchases without spending, a boost that reaches the required level, an eligible but unaffordable offer opening the original shop without spending, level-zero granted-point spending, and the fresh-hero handoff. Runtime and test syntax/diff checks pass. These menu guard changes have not yet passed a new visible gameplay run.
@@ -2622,7 +2656,7 @@ Working package version is **1.0.0-beta.3 (development)** so future CI archives 
 - The test now waits for actual Electron window focus at startup and for the original button's hover state before a guest totem click. Native focus checks, local menu cancellation and same-tick/world-hash assertions remain intact. Focus histories are bounded to 80 events per disposable process. The enhanced fixture still needs an uninterrupted visible acceptance run; the hover readiness change is not yet verified live at the totem stage. Code-only work can continue while this gate remains open.
 - Prior source `c526ba41ba2425cff020d25824ebaf09dcf49e6e` passed checks and all five native package jobs in [run 40104081417](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40104081417). This is build evidence for the preceding hero-handoff/Protection correction, not native gameplay or acceptance of these later guards. Published Beta 2 stays pinned to `3c19e65`; no release assets, personal saves or Beta 1 files changed.
 
-### Prior save-safety checkpoint (superseded above): held construction — 2026-10-24
+#### Prior save-safety checkpoint (superseded above): held construction — 2026-10-24
 
 - The user chose **keep coding; test later**. Continue code-only checks; defer further graphical game tests until the user resumes them. The restoration goal remains active.
 - Auditing `ECPlayerBuilder` confirmed that held buildings have no original save serialization, and current co-op hero records omit them. Hero removal/exit already refused busy builders, but checkpoint capture did not. `CoopPlayers.capture()` now preflights every active hero with the same idle/pending-purchase guard before capturing any hero or persisting the registry. Saving reports that placement must finish; a retry after placement succeeds. This is an explicit temporary safety restriction, not held-building persistence. Accepted guest one-shot throws retain the existing settle-before-capture path.
@@ -2630,7 +2664,7 @@ Working package version is **1.0.0-beta.3 (development)** so future CI archives 
 - **Next implementation:** versioned held-building save/restore, including quantity/payment mode, original placement flags and parent/move/line references; validate installed definitions/references before replacing heroes and avoid replaying purchases or `EmptyHanded` callbacks. See [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md#held-construction-save-boundary--2026-10-24). Keep graphical totem/co-op regression, full progression/death/exit, Host/Join, native-platform and real-network acceptance open.
 - Previous paid-boost guard source `6fdcc9cc090796492968a7e68418ae5649f590ed` passed checks and all five native package jobs in [run 40106542543](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40106542543). This is build evidence only. Published Beta 2, immutable Beta 1 archives/baselines and all personal islands remain unchanged.
 
-## Previous packaged checkpoint: Beta 1
+### Previous packaged checkpoint: Beta 1
 
 Implemented: offline play without accounts/payment services; named islands, autosave, exit saving, backup recovery, import/export and diagnostics; hidden cheats for health, resources, level, XP, hero points and all eight original totem upgrades; original-style in-game demolition; fullscreen quest, WASD, mouse focus and achievement persistence fixes; original-style launcher/header and background option 3. Normal Craft Resource exchanges and building costs remain. Free premium claims require cheats.
 
@@ -2643,7 +2677,7 @@ Version **1.0.0-beta.1** packages exist for Apple Silicon Mac, Intel Mac, Window
 
 Recorded verification: 28 passing unit checks; Apple Silicon packaged gameplay, save/reload, exit saving and backup workflows passed; package contents, architectures, integrity and Mac ad-hoc signatures checked. Native Intel Mac and Windows gameplay remain **unverified**. A Linux Beta 1 tester reached gameplay but reported major graphics defects on October 22; Linux acceptance is **not passed** (details below). Rosetta was exceptionally slow and stopped before acceptance. Mac builds are not notarized; Windows builds are unsigned. The earlier unexpected closure's cause remains unknown.
 
-### Linux graphics report and retest candidate — 2026-10-22
+#### Linux graphics report and retest candidate — 2026-10-22
 
 - User-provided native Beta 1 report: RTX 2080 Super, proprietary Nvidia driver, AppImage, kernel string `7.1.13+deb13-amd64`. Surface textures, decals and shadows exhibit major Z-fighting; moving the camera jitters. Surface artifacts remain with shadows off. Screenshot also shows repeated passive-listener `preventDefault` warnings. Exact driver version/backend and the native root cause are still unknown. This establishes a native Linux rendering failure, not accepted Linux gameplay.
 - Fixed the shared engine DOM input registration to specify `passive: false` while preserving handler binding, deduplication and removal. Added capability-gated promotion of default shader float precision to `highp` in both stages; original shader assets stay unchanged, as do clip distances, depth formats and bias. Medium-precision world/shadow calculations are a plausible source of driver-dependent quantization, not a proven diagnosis of this tester's artifacts.
@@ -2654,14 +2688,14 @@ Recorded verification: 28 passing unit checks; Apple Silicon packaged gameplay, 
 - **Linux retest packages built** in ignored `dist/beta-2-linux-graphics/`: `PolyCraft-Offline-1.0.0-beta.2-linux-x86_64.AppImage`, `PolyCraft-Offline-1.0.0-beta.2-linux-x64.tar.gz`, retest guide, `BUILD_INFO.json` and `SHA256SUMS.txt`. Gameplay source is commit `669c0dd5b22620c743c08ed1b91788132df67304`; build metadata records its app.asar hash. Stage: `/private/tmp/polycraft-linux-graphics-beta2.Uiw8WS`. All 1,855 packaged source/asset files match the worktree (package metadata separately verifies beta.2/main entry); tests, reference baseline, scripts and development dependencies are excluded. Linux executable is ELF x86-64. AppImage SquashFS integrity passes (expected trailing embedded block map); tar integrity/path checks pass, and both archives contain the identical verified app.asar. Initial build failed on a protected default Electron cache path; using the explicit existing cached Linux Electron ZIP succeeded. Archive/source evidence does not replace native Nvidia retesting. Packages have not been uploaded as a GitHub Release.
 - **Native tester update:** the user reports Beta 2 fixes the Z-fighting on the reported Linux/Nvidia setup. Record this as a successful tester report for that defect, not a Mac-derived result or complete Linux acceptance. Camera jitter, exact driver/backend and broader gameplay/save checks remain separately open. Preserve the previously shared local candidate archives and checksums; revised source retest notes do not replace those files.
 
-### GitHub build automation — 2026-10-22
+#### GitHub build automation — 2026-10-22
 
 - User requested GitHub-hosted builds. `.github/workflows/build.yml` adds checks on pull requests, automatic packages for relevant `main` pushes, and manual workflow dispatch. Four native targets: `macos-15`/arm64, `macos-15-intel`/x64, `windows-2025`/x64 and `ubuntu-24.04`/x64. Each package job asserts its actual Node host platform/architecture before building; Mac ad-hoc signatures are verified. Actions are pinned to verified release commit SHAs; workflow contents permission is read-only and publishing is disabled.
 - `scripts/collect-build.cjs` selects only expected platform archives and adds source/run provenance, current-version tester instructions and SHA256 checksums. Existing download bundles cannot be overwritten; incomplete builds cannot produce a bundle. Artifact names distinguish run/attempt; retention is seven days. CI launches no GUI games, uses no personal data and does not modify the immutable local Beta 1 distribution. Signing/notarization and manual gameplay acceptance remain unchanged.
 - **57 local unit/regression checks pass**, including expected package selection, provenance/hashes, incomplete-build rejection and preservation of existing bundles. Workflow YAML parses; four targets, immutable action pins and read-only contents permission verified. Build/download instructions are in README. Packages are Actions artifacts (sign-in required), not automatically published GitHub Releases. Native gameplay and multiplayer gates remain open regardless of build success.
 - **First full GitHub run passed:** [39731086422](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39731086422), source `b6a77dda9d6b4768f70abc93acf11a13f7ee87eb`. Ubuntu checks report 57 passed, 0 failed. All four native architecture assertions, package jobs and artifact uploads passed; both Mac deep/strict ad-hoc signature checks passed. Artifacts: `PolyCraft-mac-arm64-1.1`, `PolyCraft-mac-x64-1.1`, `PolyCraft-win-x64-1.1`, `PolyCraft-linux-x64-1.1`. Downloaded to `/private/tmp/polycraft-ci-39731086422.qJywEm` for independent checks: every bundle's SHA256 manifest and source/build-host provenance passes; all Mac/Windows ZIP CRCs pass; actual executables are Mach-O arm64, Mach-O x86-64 and PE x86-64 respectively. Linux AppImage SquashFS integrity passes with its expected trailing embedded block map, tar integrity/path checks pass, and both Linux executable headers identify ELF x86-64. No GUI game tests ran in CI or during this automation milestone. The GitHub CLI's cached log view initially hit a protected local cache path; streaming the job log through the API confirmed the test totals without modifying that cache. These are native build/integrity results, not native gameplay or multiplayer acceptance.
 
-### Pause checkpoint — 2026-10-22
+#### Pause checkpoint — 2026-10-22
 
 **Resumed 2026-10-22:** finished the CI archive source audit. Linux has 1,855 exact source/asset matches. Windows has 1,855 matches after normalizing CRLF only in known text extensions and the five extensionless `PLACEHOLDER` text files; 1,250 text files differ only by line endings, with no remaining content differences. Package version/main metadata was checked separately. The paused observations below remain historical evidence.
 
@@ -2670,14 +2704,14 @@ Recorded verification: 28 passing unit checks; Apple Silicon packaged gameplay, 
 - Resume by inspecting that Windows placeholder difference and completing the Linux source comparison. Then continue guest world rendering, snapshot/update delivery, validated guest actions and island-owned co-op progression. Transport and host snapshots are implemented; playable multiplayer is not.
 - Linux Beta 2 Z-fighting is resolved according to the tester. Camera jitter, broader native gameplay, cross-platform multiplayer and real-network acceptance remain open. No additional game tests were launched for this pause; personal saves and immutable Beta 1 packages remain untouched.
 
-### Windows ARM64 output — 2026-10-22
+#### Windows ARM64 output — 2026-10-22
 
 - User requested a Windows on Arm package. Added a fifth native build job using GitHub's `windows-11-arm` runner, with `win32`/`arm64` host assertions and explicit `--win zip --arm64` targeting. The collector includes a separate `win-arm64` artifact, package instructions, provenance and checksums. Local `npm run build:win` now produces both x64 and ARM64 ZIPs; existing x64 output names remain unchanged.
 - Package-selection/hash tests cover the new ARM64 bundle and architecture guidance. At the build-system checkpoint, all 60 local checks passed (57 committed checks plus three then-uncommitted guest-renderer checks); workflow YAML parsed with five targets and verified ARM64 host/target settings. Guest rendering was excluded from that build-system commit. Native ARM64 gameplay remains unverified; Mac signing and unsigned Windows policy remain unchanged.
 - **Native build passed:** source `a271afd9896faf9ade94ff9c0a3089f50766d98c`, [run 39789896519](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39789896519). All five native package jobs and 57 CI checks passed. Downloaded `PolyCraft-win-arm64-2.1`; SHA256 manifest, native `win32`/`arm64` provenance, ZIP CRCs and actual executable PE machine `0xaa64` (ARM64) pass. All seven original hero-badge ICO payloads are embedded in the executable. A preserved local tester bundle is in ignored `dist/beta-2-windows-arm64/`, including `PolyCraft-Offline-1.0.0-beta.2-win-arm64.zip`, instructions, build provenance and checksums. This package predates the guest-rendering/input changes below; it is unsigned, and native Windows ARM64 gameplay remains unverified.
 - The subsequent guest-rendering checkpoint `abf9fc0bd5061ab8a486d3cfcae44d6aa13d383c` also passed checks and all five native package jobs in [run 39793109326](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39793109326). That is build evidence, not native gameplay acceptance; the preserved local ARM64 ZIP above was not replaced.
 
-## Milestone 1: foundations — implementation checkpoint
+### Milestone 1: foundations — implementation checkpoint
 
 **Foundation implementation checkpoint (historical evidence; current packaged release is documented above): 1.0.0-beta.2.** Cheat history and platform icon wiring are implemented. The complete runtime has its initial formatting and verified naming pass; save/network boundary extraction remains next. Personal saves and the personal game session were not opened or changed by automated work. `dist/beta-1` was rechecked against its original manifest: all six entries pass.
 
@@ -2692,24 +2726,24 @@ Current evidence:
 
 **Next action:** complete the foundation save/network boundary audit and implement the new host-authoritative multiplayer path. See [MULTIPLAYER_AUDIT.md](MULTIPLAYER_AUDIT.md) and [RUNTIME_READABILITY.md](RUNTIME_READABILITY.md). Do not enable legacy multiplayer merely by increasing its player limit.
 
-### Permanent cheat history
+#### Permanent cheat history
 
 - Add `cheats.everEnabled`: `false` for tracked clean saves, `true` for known use, `null` for unknown history. New islands start clean. Enabling cheats itself permanently records use.
 - Legacy saves with enabled cheats or saved cheat effects become Cheats used; otherwise Unknown. Do not infer use from wealth or hero level.
 - Enforce sticky history in persistence across save, recovery, rename, import/export and hosting. Show **Clean / Cheats used / Unknown history** on save selection.
 - Use a versioned migration and preserve an untouched pre-migration backup. Older applications must reject newer formats rather than fall back and overwrite them. This is useful history, not tamper-proof protection.
 
-### Original application icon
+#### Original application icon
 
 Reuse the approved original hero badge (`128.png`). Generate platform formats and configure the window, Dock/taskbar, executable and Linux desktop entry. Retain unsigned Windows builds while permitting executable icon/resource editing.
 
-### Readable runtime
+#### Readable runtime
 
 Preserve an immutable Beta 1 source baseline before transforming the bundle. Format the entire running bundle; recover verified names from component definitions and matching upstream code with scope-aware syntax tools. Preserve public properties, save keys, assets and execution order. Extract only save/multiplayer systems initially; no complete engine rewrite or upstream engine replacement. Replace tests coupled to minified spelling with structural/behavioral checks. Record unresolved names honestly.
 
 Use the [benchmark repository](https://github.com/turbulenz/webgl_benchmark) and readable Turbulenz libraries as references, retaining applicable [license notices](https://github.com/turbulenz/webgl_benchmark/blob/master/LICENSE). The benchmark is a graphics reference, not proof of a complete game-source release.
 
-## Milestone 2: multiplayer — in progress
+### Milestone 2: multiplayer — in progress
 
 Implementation checkpoint (2026-10-21):
 
@@ -2727,21 +2761,21 @@ Implementation checkpoint (2026-10-21):
 - **Focused-canvas mouse listener correction:** a new unit test reproduced the missing root mouse-down listener after blur/refocus; the shared listener registration now always uses its existing deduplicating helper, including when focus already returned. Guest/solo test startup uses actual mouse events, not direct Play-state injection. Physical cross-platform Alt-Tab acceptance remains open.
 - **64 unit/regression checks pass**, including guest node reconciliation, rejected assets/stale snapshots, bounded skin/light validation, local save/simulation isolation, cleanup and stream backpressure/cancellation. All six immutable Beta 1 checksum entries pass. **Post-change visible solo regression passed** on disposable `polycraft-game-M7IdEI`: original Play, Craft Resource close in both cheat modes, cheat controls, coordinated checkpoint, 30-second autosave, independent named islands and saved reload without external requests. Guest-close restoration was subsequently strengthened to restore the prior camera vectors/FOV and light transforms immediately, including originally paused solo islands (covered by the unit check). The final visible guest repeat, `polycraft-guest-world-KtaApU`, passed the complete two-game rendering/streaming/save-isolation/host-exit check after that correction. All automated game windows used disposable profiles and closed at test completion; no personal islands were used.
 
-### Co-op player-data and save checkpoint — 2026-10-22
+#### Co-op player-data and save checkpoint — 2026-10-22
 
 - `desktop/coop-data.js` introduces a validated host-owned record for one host plus at most three saved guest heroes. Each has a stable ID, name, independent XP/upgrades/statistics and inventory/position/health fields. Resources/currency and premium inventory have a separate co-op pool. The adapter reuses the original player-data prototype; separate models share that co-op economy and island quest flags/settings, while their personal progression stays separate from each other and from solo data. Premium bridge ownership and live entity inventories are not yet bound to these records.
 - Co-op records are stored under `userData.desktopCoop` with their own schema version. The first checkpoint containing them promotes only that slot to outer save format 3 and preserves untouched `.pre-v3` bytes. Ordinary solo saves remain format 2; direct Beta 1 → co-op migration preserves both original `.pre-v2` and `.pre-v3` copies. Recovery/export/import retain format 3 even if the recovered checkpoint predates co-op data. Newer co-op schemas raise `UNSUPPORTED_SAVE` and cannot silently fall back/overwrite. Explicit saved co-op point-edit markers also mark permanent cheat use; wealth/XP alone do not.
 - Preserved the actual pre-change Beta 2 save reader from `abf9fc0` in `reference/beta-2-save-reader/`, with hash `add08cc206f5aacbb46493829c217069dc92afd7d16e5665c3738cf2ffdc2c50`. Checks execute that reader to verify it rejects newer primary and recovery files. It and the immutable Beta 1 baseline are excluded from application packages.
 - **73 unit/regression checks pass.** New checks cover four saved identities, malformed/future data, actual original player-data methods, independent XP/upgrades/stats, shared co-op economy, unchanged solo amounts, co-op cheat history, exact migration backups, failed-write retry, recovery, rename/import/export and newer-format refusal. Visible source data/reload acceptance passed on disposable `polycraft-coop-data-MMqGfO`; the same check passed against the temporary packaged Apple Silicon app on `polycraft-coop-data-J7yvx7`. The package is staged at `/private/tmp/polycraft-coop-data-build.JO07oy/mac-arm64/PolyCraft Offline.app`; deep/strict ad-hoc signature passes and all 1,857 source/asset files match, with the new module present and development tests/references excluded. These checks instantiate real engine player-data models; they do not yet attach independently controlled heroes or establish playable co-op. No personal saves were opened or migrated.
 
-### Co-op inventory migration checkpoint — 2026-10-22
+#### Co-op inventory migration checkpoint — 2026-10-22
 
 - Auditing live inventories found separate clip ammo, temporary-weapon ammo and the underlying permanent weapon. Co-op schema 2 stores all three plus hero rotation. Schema 1 is read on an owned copy and upgraded only when persisted; it defaults rotation to zero, temporary ammo to zero and the permanent weapon to the previously recorded weapon. Details never stored by schema 1 cannot be reconstructed. Live inventories are still not bound to these fields.
 - Current schema-2 co-op checkpoints use outer save format 4. Solo saves stay format 2, and unchanged schema-1 records retain format 3. Migration preserves exact `.pre-v4` bytes, including when recovering from a backup, and never replaces the original migration backup on retry. Recovery/export/import retain format 4. Preserved actual format-3 sources from `f3200e3` in `reference/coop-schema-1/`; tests execute them to verify rejection of newer primary and missing-primary recovery files.
 - **75 unit/regression checks pass.** New checks cover schema-1 migration without modifying original data on read, separate weapon/ammo fields, invalid rotations/ammo, exact format-3 backup bytes, refusal by the actual old reader and recovered export/import. Visible source engine data/save/reload acceptance passed on disposable `polycraft-coop-data-7Je2hW`. No personal saves or Beta 1 files changed. A packaged rerun of this schema revision has not been performed; the prior packaged evidence above applies to the preceding checkpoint.
 - Prior source `f3200e381cde7445036e586a0d4fda4f2f851bf2` passed checks and all five native package jobs in [run 39797305630](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39797305630). This is build evidence, not native gameplay acceptance. Shared Beta 2 packages have not been replaced.
 
-### Live co-op hero binding checkpoint — 2026-10-22
+#### Live co-op hero binding checkpoint — 2026-10-22
 
 - `desktop/coop-players.js` binds up to four actual original hero entities to their own saved models. `HostWorld.enablePlayers()` first commits a normal solo checkpoint, then activates the adapter at a simulation boundary. The host model supplies the shared economy while solo progression stays separate. Checkpoints capture active heroes; removal/rejoining restores position, rotation, health fraction, permanent weapon, temporary weapon/ammo, clip ammo and carried resources. Known installed weapon definitions are checked before replacing the solo hero. This is still a development API without Host/Join UI or guest controls.
 - Level-up refresh targets the earning hero and retains its identity/inventory, leaving the host selected when a guest levels. Kill and gathering statistics filter by actor; currency credits the collector once while keeping the original numeric shared event. Solo event behavior is retained. Shared building/campaign participation statistics remain global; guest construction attribution and shared quest/action authority still need the action path.
@@ -2751,7 +2785,7 @@ Implementation checkpoint (2026-10-21):
 - **Open construction gate:** holding/throwing a building defers rank replacement, and removal/session exit refuses to discard held construction or an unsettled shop consume request. Normal level-up resumes when placement clears (verified visibly). Forced quit with held construction, safe cancellation/persistence of that state, dead-hero restoration, full reload into live bindings and host-exit network handling remain unfinished. Resolve these before exposing playable Host/Join.
 - Previous schema checkpoint `fb180d900e7046072589acb92eb96d317afb9071` has [build run 39799705395](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39799705395): checks, Linux, Intel Mac and both Windows jobs passed; the queued Apple Silicon Mac job subsequently ended cancelled. Do not count it as a five-platform pass.
 
-### Assigned peers and moving-player synchronization — 2026-10-22
+#### Assigned peers and moving-player synchronization — 2026-10-22
 
 - Host-selected saved identities are reserved before asynchronous save/invitation work through `HostWorld.createPlayerInvitation(id)`. Reject duplicate reservations, the host ID, unknown records and already-controlled heroes. A connection-object check resolves its current saved hero; guest messages cannot claim another identity or edit state. Guest gameplay actions are explicitly refused until their validated input path exists.
 - Welcome identity and initial snapshot are captured at one simulation boundary. Each stream selects its assigned hero for the guest camera; rank-up can replace that entity while retaining the saved identity. Disconnect stops the stream, captures/removes an idle hero and saves before releasing its slot; held construction retains a detached live hero for a fresh host-issued invitation. Session shutdown refuses new invitations/streams while restoring solo state. Original transport callbacks are restored on close.
@@ -2761,7 +2795,7 @@ Implementation checkpoint (2026-10-21):
 - **83 unit/regression checks pass**, including reservations/refused saves, exact connection authority, stable records on reconnect, welcome validation, rank-up identity, numeric creation angle and both hand preloads. Visible solo regression passed on `polycraft-game-56maPf`: Play, Craft Resource X in both modes, cheats, coordinated save, 30-second autosave, independent named islands and reload without external requests. No personal islands or preserved Beta 1 packages changed. Packaged gameplay for this revision remains unverified.
 - Previous live-binding source `a01a69a517cc0c66456e08adba42b0a3ee624214` has [build run 39802023456](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39802023456): checks, Linux, Intel Mac and both Windows jobs passed; Apple Silicon Mac ended cancelled with no build steps executed. Overall run reports failure; no five-platform success is claimed.
 
-### Independent guest keyboard movement — 2026-10-22
+#### Independent guest keyboard movement — 2026-10-22
 
 - `desktop/coop-input.js` implements camera-relative WASD/arrow movement in a focused guest canvas. Guests send only normalized movement intent, at most 20 Hz while active, with immediate neutral intent on local menu/pause or focus loss. Host binding checks resolve the assigned live hero; exact increasing sequences, bounded unit vectors and a 30-message burst/refill limit reject replay, speed injection, identity claims and authoritative edits. Only the latest intent is retained; after 600 ms without fresh input the host clears its destination. Input is applied through original locomotion at simulation tick start, independent of host local-menu input blocking. Disconnect also clears movement before removal/detachment.
 - The guarded native IPC boundary now exposes read-only window focus plus focus-change subscriptions, with unsubscribe on guest close. Native focus complements document/canvas focus and handles automation's emulated document focus correctly. Unsupported canvas key/pointer input is intercepted to keep it out of the frozen solo world; Tab and normal keyboard use in UI fields remain available. Listeners explicitly use `passive: false` to avoid reintroducing root wheel/touch intervention warnings.
@@ -2770,7 +2804,7 @@ Implementation checkpoint (2026-10-21):
 - Initial keyboard repeats `polycraft-coop-identities-j1059E`, `polycraft-coop-identities-k05xPK` and `polycraft-coop-identities-Kc3qlB` stopped at the focus-loss assertion. Playwright forced all documents to report focus; requesting another native app focus or disabling emulation through a separate CDP session did not invalidate that emulated state. These incomplete runs are not passes. Native-focus signals and an explicit native window blur enabled the successful check. Removed the ineffective separate-CDP override from the test; native focus is its authoritative blur assertion.
 - All six immutable Beta 1 distribution checksums pass again; personal islands were not opened or modified. Previous source `db2703e7e53d124244f88da28563893dda49f203` passed checks and all five native package jobs in [run 39806227771](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39806227771), including Apple Silicon Mac and Windows ARM64. This is prior-checkpoint build evidence; packaged gameplay of the keyboard revision remains unverified.
 
-### Guest resource clicks and initial combat/PvP — 2026-10-22
+#### Guest resource clicks and initial combat/PvP — 2026-10-22
 
 - `desktop/coop-actions.js` accepts only bounded target IDs and exact increasing per-peer action sequences. Each assigned connection has its own four-entry queue and ten-action burst/refill limit. The host resolves live targets at simulation tick start, checks script/death/construction state, and calls original gathering or firearm code. Resource actions recheck active/depleted state, physical reach and obstruction; weapon actions check target eligibility, friendly-fire policy, weapon range, ammo and reload/rechamber state. Guests cannot supply damage, resources, position or another player's identity. Results appear as plain text in the existing header status area.
 - Guest pointer-down selects nearby projected interactive geometry. Using pointer-down matters: preventing its default action suppresses the compatibility mouse-down event, so dispatching from mouse-down alone silently lost real clicks. A regression exercises both events and ensures one action. **Current limit:** gathering requires walking into reach; automatic click-to-approach, continuous/charged attacks, normal weapon acquisition, totem/build/demolish actions and full guest HUD/camera parity remain unfinished.
@@ -2780,7 +2814,7 @@ Implementation checkpoint (2026-10-21):
 - Invitation runtime is `polycraft-1.0.0.25-coop-4`; recreate older development invitations. Save formats are unchanged. All six immutable Beta 1 checksums pass again; no personal islands were opened. Previous keyboard source `932616a7c9a86f274020c1d1798343d1cb40bdfe` passed checks and all five native package jobs in [run 39815829557](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39815829557). That is prior-source build evidence, not packaged gameplay acceptance for this revision.
 - Visible solo regression also passed after the combat/cleanup changes on disposable `polycraft-game-gDYgVB`: original Play, Craft Resource X in both cheat modes, cheat controls, coordinated checkpoint, 30-second autosave, independent named islands and saved reload without external requests. Source tests do not establish packaged or native-platform gameplay acceptance.
 
-### Original-style guest demolition and ordered action saves — 2026-10-22
+#### Original-style guest demolition and ordered action saves — 2026-10-22
 
 - Selecting an owned building now receives bounded host-authored demolition metadata. Eligible buildings display the original Demolish artwork; confirmation shares the same frame, warning, orange button and cancel X as solo. Guest UI uses a presentation-only two-method GUI input adapter, never the frozen solo controller or simulation. Escape cancels; menus stop guest movement, cancel on lost native focus/vanished targets and leave the host simulation running. The original GUI controller is restored on disconnect.
 - `demolish` requests use the assigned connection, existing sequence/rate/queue limits and a fresh host eligibility check at execution. Original map structures, HQ/territory anchors, shrines, scaffolds, enemy buildings and buildings supporting others retain their existing protections. Original cleanup updates capacities; there is no refund. Success is sent only after a fresh disk checkpoint. Fresh requests wait for an older write and capture again; concurrent fresh requests serialize. Save failure fails its peer without sending success. Host exit waits for accepted action saves, then takes a fresh final checkpoint before restoring solo heroes (targeted ordering test).
@@ -2792,7 +2826,7 @@ Implementation checkpoint (2026-10-21):
 - **Final-source co-op repeat passed** on `polycraft-coop-identities-ypMHat`, including the completed host-exit action-save wait/fresh checkpoint: movement 2.68–6.00 world units and 92–95 exact same-tick samples per guest, visible original demolition cancel/confirm, capacity and overlapping-save acknowledgement, gathering, PvP-off/on, forged identity isolation, reconnect and unchanged guest island bytes on exit. No renderer errors or external requests. All six immutable Beta 1 checksum entries pass again; no packages or personal saves changed.
 - **Construction audit for the next step:** original `ECDispenser` caches product validity and uses actor resource models, while `ECPlayerBuilder` holds paid items, throws them through a simulation tween, and creates scaffolds later. Guest purchasing/placement must recheck prerequisites/caps/spending against current host state, reserve in-flight capacity across heroes, and safely cancel/persist held construction before exposing it. Do not bypass normal costs or replace the original placement rules with arbitrary entity creation. Current construction remains unfinished.
 
-### Authoritative construction backend and in-flight save safety — 2026-10-22
+#### Authoritative construction backend and in-flight save safety — 2026-10-22
 
 - `desktop/coop-construction.js` coordinates original builder throws while co-op is active. Each registered hero's in-flight placement reserves global/local building capacity and applicable scaffold capacity until the original scaffold creation takes over. Existing-building moves wait for completion without reserving an extra building; unbound builders retain original behavior. Original manager methods are restored on session close. Original placement rules remain active; no arbitrary client archetype spawning was added.
 - `build` intent carries only source entity ID, product index and a bounded copied location, sharing existing sequence/rate/queue/assigned-connection checks. The host resolves attached icons' actual live owning building, rejects enemy/destroyed owners, recomputes original prerequisites/caps/affordability, validates original snapped placement/footprint/build zones, pays original costs through the assigned shared model, and uses the real toolbox throw/scaffold path. Rejected placement clears its temporary in-hand preview without charging; post-payment rejection refunds exact raw currency so Crown bonuses cannot multiply a refund. All shipped dispenser purchase quantities are one; self-consuming special dispensers remain unsupported by this new path.
@@ -2803,7 +2837,7 @@ Implementation checkpoint (2026-10-21):
 - Invitations require `polycraft-1.0.0.25-coop-6`; save versions remain unchanged. Previous demolition source `e2ff4d260df624c2c12fc78abe5c87aff33b6e2e` passed checks and all five native package jobs in [run 39823026639](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39823026639). This is prior-source build evidence, not packaged gameplay acceptance for the construction revision.
 - All six immutable Beta 1 distribution checksums pass again. No personal saves or shared release packages changed.
 
-### Original-style guest build menu and confirmed placement — 2026-10-22
+#### Original-style guest build menu and confirmed placement — 2026-10-22
 
 - Added `desktop/guest-construction.js`: original radial build artwork, costs/time, host-authored product availability, red/green ground guidelines, click placement, repeat blueprints and original Cancel/Escape. Source removal and focus loss cancel local selection. Late replies cannot reopen cancelled menus or place at stale cursor locations. Online menus block only local input; host simulation continues.
 - Preview queries share assigned-connection sequencing/rate/queue validation. A shadow of original builder placement fields runs the original snap/footprint/build-zone/cap rules without creating held entities, spending or reserving capacity. The actual build revalidates and retains the original payment/throw/scaffold/fresh-save path. Guest unprojection explicitly divides homogeneous coordinates and uses the replicated hero height plane; the frozen solo world and solo camera helper are unchanged.
@@ -2813,7 +2847,7 @@ Implementation checkpoint (2026-10-21):
 - User reports guest stutter. The implementation still directly applies full host snapshots, waiting at least 100 ms after each transfer; same-tick synchronization proves consistency, not smooth motion. **Next priority: interpolate guest presentation without changing authoritative records or weakening sync tests**, then address transfer cost and real-network performance. Line placement, special dispensers/upgrades, totems, charged combat, full HUD/camera and the playable Host/Join flow remain unfinished.
 - **Visible solo regression passed** on disposable `polycraft-game-eYTk78`: original Play, Craft Resource X in both cheat modes, cheat controls, coordinated checkpoint, 30-second autosave, independent named islands and saved reload without external requests. All six immutable Beta 1 checksum entries pass. No personal saves or shared release archives changed. Previous movement-test source `05d5b9e9ffabdd8480db3c421fdaba6d4281d359` passed checks and all five native package jobs in GitHub [run 39836571289](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39836571289); this is prior-source build evidence, not packaged/native gameplay acceptance for this interface.
 
-### Original-style guest totem upgrades — 2026-10-22
+#### Original-style guest totem upgrades — 2026-10-22
 
 - Guests can select active original totems, inspect their own upgrade levels/locks and buy upgrades through the existing purple radial artwork, icons, text and Amber variant. The adapter reads all eight original definitions across the four totems; no expansion upgrades or balance values were added. Escape, blur, local pause, vanished targets and resync cancel the local menu. Menus stop that guest's movement while the shared world continues. A small guest-only lower bound reserves room for the two-line label; the final screenshot was reviewed with both labels fully visible.
 - `desktop/totems.js` evaluates the assigned hero's actual progression and prerequisites instead of reusing shrine caches populated from the host hero. The host rechecks active targets, readiness, original maximum/minimum levels, prerequisites, earned/host-granted points, next XP tier and shared Amber. An eligible boost charges exactly 75 Amber, levels the guest through the original code, reacquires the replacement hero, and applies the upgrade through the original shrine method with a private cache. Hero level zero still accepts already granted points where original prerequisites permit; without points it stays locked. Boosts may meet a minimum level through the purchased level, but cannot bypass other prerequisites or the final XP tier.
@@ -2825,7 +2859,7 @@ Implementation checkpoint (2026-10-21):
 - Collision source `4c147b703a023e828863b64d005c06eb66e532b2` passed GitHub [run 39892115549](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39892115549). This is prior-source build evidence, not native acceptance of the current totem adapter.
 - **Remaining:** live acceptance here covers Agility speed and paid boost. Verify the other original upgrade types/effects and the complete normal progression/quest/unlock loop; audit the original host/solo paid-boost handoff across hero replacement. Full HUD/camera, special dispensers/building upgrades, charged/area combat, held construction/death/exit, native OS gameplay and real-network acceptance remain open. Keep the restoration goal active and expansions deferred.
 
-### Projectile intersections and PvP regression — 2026-10-22
+#### Projectile intersections and PvP regression — 2026-10-22
 
 - Investigated the prior untraced pistol timeout. The shared legacy sphere/capsule helpers returned perpendicular separation from the shot instead of the first contact distance along its finite segment. The caller treated zero as a miss and compared those incompatible distances with terrain hits, allowing exact-center misses and incorrect hit ordering. Two new geometry tests failed against the original helpers (zero returned where the correct entry distance was four).
 - Both helpers now calculate finite-segment entry distances through sphere surfaces, capsule sides and end caps. Queries accept zero-distance hits, choose the nearest contact before terrain, and return the actual contact position/normal. Projectile owner exclusion now reaches both cube and sphere queries, preventing a shooter collision from discarding the rest of a fast projectile's segment. Existing friendly/PvP damage protections remain intact. These are shared solo/co-op collision corrections; weapon damage, costs, progression and save formats are unchanged. Runtime invitation tag stays `polycraft-1.0.0.25-coop-8` because the wire format is unchanged.
@@ -2835,7 +2869,7 @@ Implementation checkpoint (2026-10-21):
 - Resync source `8698227aaa10bfd7c655ab8866c8e12972128793` passed checks and all five package jobs in [GitHub run 39891113836](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39891113836). This is prior-source build evidence, not native gameplay acceptance for the collision correction.
 - **Remaining:** the original timeout itself had no collision trace; confirmed legacy geometry defects explain possible intermittent misses but do not reconstruct that exact shot. The focused regression now passes; broad enemy/charged/area/PvP, projectile behavior around groups of protected friends, native gameplay and real-network acceptance remain open. Correct contact ordering can change combat outcomes in solo and co-op; additional playtesting remains necessary.
 
-### World deltas and automatic full resync — 2026-10-22
+#### World deltas and automatic full resync — 2026-10-22
 
 - The user requested a major resync to limit accumulated guest desynchronization. Streams now start with a complete snapshot, send changed entity/mesh fields and explicit additions/removals between full refreshes, and send another complete snapshot after five seconds since the previous full transfer completed. Space-count changes also force a complete baseline. Terrain/asset metadata is sent again only when changed or during a full refresh. Entity ordering, cross-space moves and changing hero identities are retained exactly.
 - Each delta declares its exact base tick. On a valid base mismatch, the guest retains its last valid world, cancels local menus, sends neutral movement, blocks local input and requests one fresh full snapshot. Pending deltas remain validated but are ignored until recovery; successful replacement restores input without restarting/rejoining or changing progression/saves. A 15-second unanswered request fails that connection with a clear rejoin error. Malformed data still fails validation. Host requests are connection-bound and accepted at most once per second; they cannot alter world state or target another stream.
@@ -2846,7 +2880,7 @@ Implementation checkpoint (2026-10-21):
 - Prior source `6b4ce17ba89f8e3cfefbc09d23d439d90950f9c7` passed GitHub CI [run 39887913351](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/39887913351). This is prior-source build evidence, not native gameplay acceptance for resync. Personal saves and `dist/beta-1` were not modified.
 - **Remaining:** no local movement prediction or authoritative host-bug repair; periodic refresh replaces only state already replicated. Shader/particle/decal/point-light parity, CPU/congestion, subjective animation review, native gameplay and real-network acceptance remain open. Slow transfers can delay full refreshes. The subsequent projectile checkpoint above records the investigation and passing focused regression; broader combat acceptance remains open.
 
-### Guest movement and pose smoothing — 2026-10-22
+#### Guest movement and pose smoothing — 2026-10-22
 
 - `GuestScene` now keeps exact authoritative snapshots/records separate from display locations, transforms and skin buffers. Each update transitions from the current visible pose over its preceding arrival interval, bounded to 100–250 ms. Early arrivals continue from the current display; endpoints settle exactly and do not extrapolate. Original math-device quaternion interpolation preserves scale/reflection and takes the short rotation path across yaw wrap.
 - New/replaced/hidden models, degenerate/sheared transforms, reflection sign changes, corrections over eight units and gaps over one second snap. Received skin poses and torch transforms also interpolate; GPU skin controllers/buffers are reused and hierarchy binding occurs only when controllers change. Skin matrix blending is approximate: fast joint turns still need visual acceptance and may ultimately need local bone-pose replication.
@@ -2866,19 +2900,19 @@ Use Electron's built-in WebRTC data channels. The host owns AI, combat, resource
 
 Current builds join through per-guest manual invitations (WebRTC requires a reply; native direct TCP/TLS does not). The approved next milestone above adds a small signaling/credential service, room codes and the ordered manual-forward → opt-in UPnP → direct STUN/ICE → TURN fallback policy. Keep manual invitations and service-free LAN/direct operation. Show the actual selected route and useful errors. No relay/provider service is provisioned yet; see the [WebRTC connection model](https://webrtc.org/getting-started/peer-connections) and the current reference review in MULTIPLAYER_AUDIT.md. Room codes are now required work, superseding their earlier deferral.
 
-### Dedicated moving-player synchronization check — 2026-10-22
+#### Dedicated moving-player synchronization check — 2026-10-22
 
 - `npm run test:coop-movement` runs the existing visible four-player fixture through keyboard movement and orderly host exit, without running construction/combat checks. The full co-op suite retains these strengthened movement assertions. Each guest must observe every hero actually moving, agree with authoritative positions/rotations at matching ticks, and render the received mesh poses. Retained samples cover the entire movement sequence instead of only its tail.
 - **Visible movement acceptance passed** on disposable `polycraft-coop-identities-yCOea1`: four heroes moved 2.10–5.21 world units; guests matched 95, 96 and 96 same-tick snapshots. Guest menu/native blur stops, movement while host input is paused, unchanged guest save bytes/bridge state on host exit, no renderer/host errors and no external HTTP(S) requests passed. All test-owned windows closed. The current working-tree unit suite reports **115 passing checks**.
 - This run used the current working source, which also contains unfinished guest construction UI changes. Those unrelated changes are excluded from the movement-test checkpoint. This is same-Mac movement evidence; construction UI, physical LAN, latency/smoothing and native cross-platform gameplay remain open. Personal islands and Beta 1 distributions were not used or modified.
 
-## Milestone 3: later gameplay expansion — deferred
+### Milestone 3: later gameplay expansion — deferred
 
 Begin only after original gameplay and multiplayer pass acceptance. Inventory existing assets/mechanics first. Concept artwork is inspiration, not evidence of finished features. Keep balance/unlock values in a separate expansion plan.
 
 Backlog: late-game resource abundance/regrowth and environment upgrades; larger carrying capacity; stronger shots and improved rage/charged attacks; upgradeable sprint/stamina; health/armor progression; concept-inspired buildings and creatures.
 
-## Acceptance and continuation gates
+### Acceptance and continuation gates
 
 - Preserve existing gameplay, saves, achievements, fullscreen, input, demolition and Easter egg checks. Test only disposable islands; preserve personal saves.
 - Test cheat-history migration, permanent marking, unknown legacy history, recovery and export/import; verify original backups and newer-format rejection.
@@ -2889,19 +2923,19 @@ Backlog: late-game resource abundance/regrowth and environment upgrades; larger 
 
 ---
 
-## Historical appendix: superseded checkpoints
+### Historical appendix: superseded checkpoints
 
 The following text is retained verbatim as historical evidence. References to a paused/missing goal, stale packages, old next steps, and multiplayer not being requested describe earlier checkpoints and are superseded above. Recorded personal-session observations are historical, not a current live-state check.
 
-# PolyCraft restoration checkpoint
+## PolyCraft restoration checkpoint
 
 Updated 2026-10-21. Execution is enabled. The goal tool still reported paused on resume; the user explicitly requested resumption. Do not mark complete while acceptance gates remain.
 
-## Current user activity
+### Current user activity
 
 **Latest checkpoint (supersedes older activity below):** User requested a quick shareable beta for Windows/macOS, then Linux. Beta1 packages are in `dist/beta-1/`; see current beta validation below. All final SHA256 checks pass; release folder opened in Finder and source launcher restored through macOS `open`. Personal VeeTest1 was last saved at8:54:59 PM America/Chicago and was not changed by package testing. Leave the launcher/user session alone. Automated checks never target the personal save.
 
-## Shareable Beta 1 — October 21, 2026
+### Shareable Beta 1 — October 21, 2026
 
 - Version **1.0.0-beta.1** in package.json/package-lock. Added consistent artifact filenames and `build:linux` (AppImage + tar.gz, x64). Product/app identity and save locations retained. Includes all latest UI, shop lock, hidden/header Cheats, demolition, persistence/input/fullscreen fixes and **moretips**.
 - Deliverables: `dist/beta-1/PolyCraft-Offline-1.0.0-beta.1-mac-arm64.zip`, `...-mac-x64.zip`, `...-win-x64.zip`, `...-linux-x86_64.AppImage`, `...-linux-x64.tar.gz`, `START HERE - BETA.txt`, `SHA256SUMS.txt`. Approx143/150/174/150/148 MiB. Both Mac architectures included; Windows/Linux are x64 only. ZIPs/tar also contain the guide; AppImage has the guide alongside it in release folder. No personal saves, test islands, logs or developer dependencies ship.
@@ -2912,20 +2946,20 @@ Updated 2026-10-21. Execution is enabled. The goal tool still reported paused on
 - **Windows and Linux runtime UNVERIFIED** on their operating systems. User accepted beta sharing scope; guides clearly state tester gates, signing limitations, backup/export instructions and secret codes. No claim of notarization or Windows publisher signing. Need reports from friends on native systems.
 - Original restoration goal remains unfinished beyond beta packaging. Next iteration should be beta2 with a new output folder, retaining beta1 checksums and user save compatibility. Do not overwrite shared beta1 silently.
 
-## Hidden loading-tip viewer
+### Hidden loading-tip viewer
 
 - User requested Easter egg **`moretips`** on loading screen. Type it on save selection or while the island loads, outside editable fields, to view all15 original `textures/loading-*.jpg` images. Original local mapping table supplies filenames; no copies, generated images or network services. Reuses the existing secret-code matcher with a code argument.
 - Previous/Next buttons and left/right arrows wrap through images. Close and Escape return. Viewer does not enable cheats or edit saves. If island loading finishes while open, Controls pauses until close and restores prior pause state. Existing modal/bitmap lettering styles retained; image uses contain to keep its embedded instructions visible.
 - `tests/tips-smoke.cjs` PASSED on disposable `polycraft-tips-zu1fIu`: code ignored in name field, actual launcher and loading reveal, all15 unique images decode, navigation/wrap, Escape/button close, ready-while-open pause and restore, cheats remain disabled, no renderer errors. `test-results/loading-tips.png` visually checked. All28 unit checks and syntax/whitespace checks pass. README documents both secret codes. Packages remain stale.
 
-## Selected background and Craft Resource close fix
+### Selected background and Craft Resource close fix
 
 - User selected preview **#3**, the subdued original PolyCraft splash artwork. Applied its exact tinted background in `desktop/style.css`, replacing the marketplace loading-tip card.
 - With cheats disabled, only Craft Resource remains in the shop tab list. Original tab placement divided by `(count - 1)`, yielding NaN for a single tab. This invalid hit area could catch clicks and replace the close action with the tab action, producing repeated menu sounds. Fixed the shared layout to center a single tab at x=0, retaining original multiple-tab placement.
 - Extended existing regression to reject non-finite tab/button coordinates and exercise the close callback. It failed before the change and passes after it. All28 unit checks and syntax/whitespace checks pass.
 - Extended live game acceptance to click the original X with cheats disabled and enabled and verify return to `GamestatePlaying`; both passed. Full acceptance also checks hidden-code/shop lock, resources/cheats, free claims, save/reload and slot independence. Audio itself has not been listened to; the erroneous tab interception is fixed. Packages remain stale.
 
-## Demolition modal and conditional header follow-up
+### Demolition modal and conditional header follow-up
 
 - User requested demolition match the original **Not enough resources** screen. Now uses `modalMessageFrame` directly and a clone of the original wide orange `modalMessageBuy` button with DEMOLISH text. X at original shop-close position and Escape cancel. Removed the earlier custom frame and detached white buttons. The orange button's hit rectangle matches its existing SVG geometry.
 - User approved the screen, then reported warning overflow. Shortened warning to **No refund. Capacity may drop.**, retaining original type size. Title and warning stay in the frame's original two-line text slot.
@@ -2933,7 +2967,7 @@ Updated 2026-10-21. Execution is enabled. The goal tool still reported paused on
 - README updated for conditional header and original orange demolition action. All28 unit tests and syntax/whitespace checks pass. Final demolition test passed on `polycraft-demolition-JIo6E4`: original X/Confirm, capacity cleanup and immediate saved reload. Screenshot visually confirms warning fits. Full game smoke passed on `polycraft-game-NUHIFA`, including hidden header by default, visible after code, hidden on disabling, header-click reopening and visibility restored after reload, plus prior save/progression/shop checks. Packages remain stale.
 - Personal VeeTest1 saved through CUA and normal close verified at8:48:52 PM America/Chicago. No personal building or stat edits. Resume it after disposable checks.
 
-## Original-style UI, hidden Cheats and shop lock
+### Original-style UI, hidden Cheats and shop lock
 
 - Launcher and top bar now reuse the original PolyCraft logo and bitmap lettering, turquoise/white palette and original loading artwork. `desktop/retro-ui.js` draws the existing font atlas onto accessible labels; real text remains available to assistive technology. Only the actual engine canvas receives game sizing/input rules. Fixed missing logo by serving SVGs with `image/svg+xml` in the local protocol.
 - **Secret code: `moreamberplease`**, exactly lowercase while the game canvas is focused. Maximum three-second gap between letters. Typing in input fields does not reveal Cheats. No visible Cheats toolbar button. Matching letters consume game shortcuts so P/WASD do not interfere. Opening enables cheat mode and checkpoints before showing its dialog.
@@ -2943,7 +2977,7 @@ Updated 2026-10-21. Execution is enabled. The goal tool still reported paused on
 - **Live demolition test PASSED:** original radial clicks, native Cancel/Confirm, storage capacity cleanup, immediate save and reload without resurrection. Disposable data `polycraft-demolition-6sah5W` under system temp. Visually checked warning text and original menu art in `test-results/demolition-confirmation.png`.
 - **Full source game smoke PASSED:** logo loads, original font renders, secret code ignored in name field, default Craft Resource/premium lock, secret reveal from Shop, master disable/re-enable, original Play, healing/resources/invincibility/build cheats, free claims, coordinated checkpoint,30-second autosave, slot independence and reload without external requests. Disposable data `polycraft-game-QXy4Im` under system temp. Launcher screenshot `test-results/launcher.png` visually checked. Packages remain stale and Windows runtime untested.
 
-## Earlier activity
+### Earlier activity
 
 User reported WASD did not work, requested editable hero points/level/XP, and said the game closed suddenly while sending chat. The old terminal launch 25911 no longer exists. Their `VeeTest1` save was verified readable, with timestamp **2026-10-21 5:30:18 PM America/Chicago** (22:30:18 UTC), progress XP 3663. No new macOS crash report was found; the earlier Electron report at 15:35 predates this closure. Cause of sudden closure is **unknown**.
 
@@ -2951,7 +2985,7 @@ User’s game has been reopened using macOS `open -n -a /Users/vee/Documents/Pol
 
 Original game had WASD disabled. Desktop now supports WASD, click-to-move and left/right arrow camera rotation. Returning from Cheats needed canvas focus/blur hooks in the original input layer, also fixed.
 
-## Implemented
+### Implemented
 
 - Electron host in `desktop/`, retaining the original game engine/assets and service bridge protocol. Local assets only; external requests/navigation blocked; no login/payment dependencies loaded.
 - Free premium shop, repeatable Amber packs, unique Crown/Well ownership, consumable rewards and deferred Well delivery when the hero's hands become free.
@@ -2959,7 +2993,7 @@ Original game had WASD disabled. Desktop now supports WASD, click-to-move and le
 - Named save slots, coordinated 30-second autosave, Save Now, save before switching and normal exit, native import/export dialogs, rename/delete. Atomic file replacement, last valid recovery backup, strict import shape/version checks and write-error handling.
 - Save files live under Electron's user-data directory in `saves/`; original Chrome App data is untouched. Mac packages use ad-hoc signing, without notarization or paid certificates.
 
-## Evidence
+### Evidence
 
 - `npm test`: 24 passing unit tests for saves, corrupt/missing primary recovery, failed replacement, interrupted temporary files, backup round trip, invalid imports, independent slots, premium inventory and resource limits.
 - `node tests/game-smoke.cjs` passed against development Electron: Create island, original Play screen, cheats UI/heal/resources, actual invincibility check, original scaffold timing with/without instant construction, repeated free packs, Crown/Well ownership, coordinated island/player checkpoint, resource-depletion restoration, 30-second autosave, independent slot switching, reload with no external HTTP(S) requests.
@@ -2970,7 +3004,7 @@ Original game had WASD disabled. Desktop now supports WASD, click-to-move and le
 - `tests/save-lifecycle.cjs` passed on the rebuilt Apple Silicon package: rename, export/import through renderer and IPC, normal-close saves latest changes, reload, active-slot deletion and independent remaining slot. Native dialog results were predetermined in this isolated test; OS dialog interaction itself was not tested. Temp data `/var/folders/rc/kvswdcx12wd0_10snqlnhy5c0000gn/T/polycraft-lifecycle-XpDDk4`.
 - Screenshots are in ignored `test-results/`. Unit tests exercise disk failures through injected filesystem errors; no physical power-loss test performed.
 
-## Latest requested changes (2026-10-21)
+### Latest requested changes (2026-10-21)
 
 - Cheats now has Hero level (original range 0–40), XP in this level and Unspent hero points. Uses original XP table via Controls attachment, not a duplicate curve. Editable points are a signed offset `progress.desktopUpgradePoints`; original total spent upgrades is preserved. Normal level gains still grant points, and original totem purchases consume one each. HUD and totem eligibility share `getUpgradePoints()`. Lowering levels retains purchased upgrades; other quests/prerequisites remain.
 - Progress imports/saves validate integer XP and signed point offset, retaining compatibility with old progress without offset.
@@ -2981,7 +3015,7 @@ Original game had WASD disabled. Desktop now supports WASD, click-to-move and le
 - Fullscreen regression passed after canvas focus fix: original icon, fullscreen quest, native toolbar, F and Escape. Test now waits for the macOS fullscreen animation before Escape. Temp data `/var/folders/rc/kvswdcx12wd0_10snqlnhy5c0000gn/T/polycraft-fullscreen-0o4Lq2`.
 - Full source `tests/game-smoke.cjs` passed after all latest changes: original Play, cheats, invincibility/construction, free rewards, coordinated checkpoint, 30-second autosave, slot independence and reload without external requests. Temp data `/var/folders/rc/kvswdcx12wd0_10snqlnhy5c0000gn/T/polycraft-game-HyeyVf`.
 
-## Direct totem stats follow-up
+### Direct totem stats follow-up
 
 - User requested editing totem stats directly in Cheats. Added expandable **Totem stats** with the eight original upgrade types, names and level limits derived from live shrine definitions. Fields currently range0–5. Apply validates the whole form before mutation, calls the original player upgrade setter and hero stat refresh, refreshes shrine menus, preserves unspent points via the existing progress offset, fires the original HeroUpgraded event and immediately checkpoints to disk. Zero removes an upgrade. These cheats bypass level/prerequisite/visit gates intentionally.
 - No game engine edits required for this feature. Source files: `desktop/controls.js`, `desktop/host.js`, `desktop/index.html`, `desktop/style.css`.
@@ -2989,21 +3023,21 @@ Original game had WASD disabled. Desktop now supports WASD, click-to-move and le
 - Extended `tests/progression-smoke.cjs` to use the real totem form, apply all-max/reset/max, check actual health scaling, preserve points and verify saved reload. **Extended live test passed** on disposable island `/var/folders/rc/kvswdcx12wd0_10snqlnhy5c0000gn/T/polycraft-progression-v4CWos`: all8 fields max/reset/max, actual health scaling, points unchanged, saved reload and existing progression/WASD/log checks. User explicitly authorized save/restart; CUA saved VeeTest1, and normal-close logs confirm a final save and clean app-quit at2026-10-21 5:57:13 PM America/Chicago. Current source was reopened using macOS open, Continue on VeeTest1 was clicked via CUA, and Island ready / Autosave on was verified. Cheats → Totem stats is open and the game is paused for the user; all8 actual fields were verified visible. No stats were changed on the user’s island. Leave their window alone for further playtesting.
 - README updated. Restart was authorized and performed for the source version; packages are still stale.
 
-## Achievement replay fix
+### Achievement replay fix
 
 - User reported achievements awarded repeatedly. Read-only inspection of VeeTest1 confirmed badges ARE persisted (e.g. hero-level-5=5, win-a-campaign=1, walls-built-10=10). No user save mutation needed.
 - Root cause: `badge.read` returned `key`, but original `Ta.onListUserBadgesSuccess` reads `badge_key`, so awarded flags and partial scores restored under undefined. Bridge now returns both names plus the original `total` (including null for binary badges). Original `Ta.setAwarded` now ignores repeated award callbacks.
 - `tests/achievements.test.cjs` reproduces the old failure using the real original badge manager and disk save/reload. After the fix it confirms earned and partial badges restore, no reaward requests/notifications occur for existing achievements, new awards fire once, duplicate callbacks do not replay and a second disk reload stays quiet. All22 unit tests pass; whitespace checks passed.
 - User’s running session was left untouched. **The subsequent focus-fix restart loads this achievement fix too.** No GUI gameplay window was opened for the achievement check. Packages remain stale.
 
-## App-switch input focus follow-up
+### App-switch input focus follow-up
 
 - User reported cursor input stops working after switching away and back. Reproduced in the original input-handler regression test: window blur removes mouse/key listeners, `onWindowFocus` only reinstalls a mouse listener when stale hover AND active canvas match, and canvas mousedown does nothing when hover is already true.
 - Fixed `fa.onWindowFocus` to call the original focus restoration when the canvas is the active DOM element, without stealing focus from cheat fields. Fixed `canvasOnMouseDown` to always deliver the actual canvas click after establishing hover if needed. Original stopPropagation prevents duplicate window click handling.
 - All23 unit tests pass; new regression fails before the fix and covers stale hover true/false, immediate keyboard restoration and preserving text-field focus. Syntax/whitespace checks pass.
 - User’s island was saved through CUA and closed cleanly with final save/app-quit confirmed at2026-10-21 7:22:39 PM America/Chicago. This restart also loads the prior achievement fix. Live focus-event recovery integration PASSED on disposable island `/var/folders/rc/kvswdcx12wd0_10snqlnhy5c0000gn/T/polycraft-progression-h1FZds`: three blur/focus cycles, exactly one delivered canvas click, real W movement, totem stats and reload. User session reopened independently of the terminal, Continue on VeeTest1 selected through CUA, and Island ready / Autosave on verified. Both achievement restore and app-return input fixes are loaded. Leave their window alone for playtesting; no tests target the user save. Attempts to use BrowserWindow hide/show or a second native window did not cause Chromium blur notifications under this automation setup, so physical Alt-Tab remains a manual acceptance check. The live check replays browser blur/focus events, then uses real mouse/keyboard input.
 
-## In-game building demolition
+### In-game building demolition
 
 - User clarified demolition must be **in the game**, not a separate list. Removed the Buildings toolbar button and list dialog. Final implementation adds **Demolish** directly to the original building action wheel alongside Move/Upgrade, using the existing radial graphics with a cross icon and label.
 - The engine radial menu calls Controls.canDemolish for eligibility and Controls.requestDemolition to open a pausing confirmation. Existing cleanup `setToBeDestroyed` and `destroyDeadEntities` removes the object, updates caps/counts/children and checkpoints immediately. No refund. Protected: map structures, HQ/territory anchors, scaffolds/moves and buildings with structures above. Final helper is `demolitionInfo(entity)`; the obsolete buildingList method is removed.
@@ -3011,7 +3045,7 @@ Original game had WASD disabled. Desktop now supports WASD, click-to-move and le
 - VeeTest1 saved through CUA at8:09:13 PM and closed for the final radial version. No user buildings were removed. The final action-wheel test passed. Game reopened independently of the terminal, Continue on VeeTest1 selected using CUA, and Island ready / Autosave on verified. No separate Buildings toolbar/list exists in the final version. Leave the user’s window alone for playtesting.
 - README now documents the original in-game action wheel, not a list. Packages remain stale; rebuild after playtest changes settle.
 
-## Packaging status
+### Packaging status
 
 - Current build command: `ELECTRON_BUILDER_CACHE=/private/tmp/polycraft-builder-cache npm run build:mac -- --config.electronDownload.cache=/private/tmp/polycraft-electron-cache --config.directories.output=/private/tmp/polycraft-release.sQVhpr`
 - **These staged packages predate the hero/WASD/logging changes above.** Latest Mac rebuild terminal session 93589 completed successfully: ad-hoc signed Intel and Apple Silicon ZIPs containing fullscreen and shop fixes are present under `/private/tmp/polycraft-release.sQVhpr`. Deep/strict signature verification passed both. Apple Silicon save lifecycle passed; full gameplay acceptance on both architectures remains outstanding.
@@ -3021,7 +3055,7 @@ Original game had WASD disabled. Desktop now supports WASD, click-to-move and le
 - Apple Silicon and Intel ZIPs are required. Rosetta is available (`arch -x86_64 uname -m` returned x86_64). Test both packaged apps using `POLYCRAFT_EXECUTABLE` with the acceptance script after the user finishes manual play. `POLYCRAFT_TEST_DATA` isolates both development and packaged tests.
 - Windows x64 rebuild terminal session 46003 was still archiving at the last check. The extracted executable was verified PE32+ x86-64. Windows runtime has not been tested. UTM is installed, but `utmctl list` failed with macOS automation error -1743. Do not claim Windows runtime acceptance.
 
-## Next work
+### Next work
 
 1. Source checks passed and normal user game is reopened on VeeTest1. Wait for their next playtest findings; do not open automated test windows while they play.
 2. Prior Windows build session46003 may no longer be available; inspect staged artifacts. Rebuild all platforms after current playtest fixes settle. Rebuilt archives are staged in `/private/tmp/polycraft-release.sQVhpr`; repo `dist/` still contains stale ZIPs. Replace exact archives only after build completion and final acceptance.
@@ -3031,11 +3065,11 @@ Original game had WASD disabled. Desktop now supports WASD, click-to-move and le
 
 No commits have been created. Preserve existing files and user progress; all changes are in the working tree.
 
-## Demolish label spacing
+### Demolish label spacing
 
 User approved the in-game action and requested more padding around DEMOLISH. Widened only its label rectangle from0.7 to0.95 (retaining the original radial width adjustment) and increased height from0.7 to0.8. Text/icon unchanged. Syntax/whitespace checks passed; no gameplay test needed for this visual-only tweak. The running user game was left untouched; new spacing takes effect on next restart.
 
-### Historical usage-limit continuation checkpoint — 2026-10-26
+#### Historical usage-limit continuation checkpoint — 2026-10-26
 
 The user requested wrapping up soon as usage limits approach. Beta 27 is committed/pushed at `0657b8f430a2a6ef863271a10c1f67de73280701`; 298 checks and the local ARM64 ZIP verification passed. Its GitHub [run 40399648846](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/40399648846) is still **in progress**: checks, Mac ARM64 and Windows x64 have succeeded; Mac x64, Linux x64/ARM64 and Windows ARM64 were running when checked. Recheck that exact run on resume; do not restart it merely because observation ends.
 
@@ -3045,7 +3079,7 @@ No Beta 28 or combat implementation has begun. The next concrete task is restori
 
 **Beta103 publication — 2026-11-10:** reviewed12-file source milestone [7a80b389919434c8909cb38069420794cce29029](https://github.com/VeeShep/PolyCraft-Revival/commit/7a80b389919434c8909cb38069420794cce29029) pushed to origin/main after final703/0/native57444 and all preservation/preflight checks above. Exact automatic [CI42809683731](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42809683731) is in progress for this source; follow it without duplicate dispatch. Package outcomes pending; local native Mac results remain separate. No new public release. Older dd1771bCI42804136604attempt1 passed7jobs/699checks but MacARM never acquired hosted capacity. Its one-job retry129800987986 was cancelled while queued by the higher-priority new main build, not by source/test failure. Both annotations/metadata and7successful decoded logs are preserved; do not report all8jobs/eight artifacts for that source. Previous full complete package set remains d97af3a/CI42801268613/698checks/141.1. Current source/native ranged and worker/save checks pass; natural melee/campaign/four-player encounters, physical network/other-platform/mixed-machine/WAN/endurance remain open. Goalactive/incomplete; all local commands terminal and owned game apps closed.
 
-## Current test-only work: original four-player melee — 2026-11-10
+### Current test-only work: original four-player melee — 2026-11-10
 
 Shared original combat helper and driver flags as described above; unchanged finished Beta103ARM64 source/icons/14MachO/signature verify, app.asar7240e215unchanged. Original basicmelee100HP/12damage/defaultNone and native ECAutoFire second shot after original pistol reload verified in source by bounded independent read-only review. Enemy spawn/faction/count and guest pistol only are staged; target/AI/HP/damage/lives/timers/collisions/rewards run normally.29focused/3prelaunch refusal/3syntax checks pass. Announced visible79021 running,18executed helper sources and eight fixture/app input hashes pinned before launch. Earlier ranged57444 and full703 remain separate; no claim of passed melee until this handle exits successfully and evidence verifies. CI42809683731unit job129807683872 now passes; all7remaining jobs, including MacARM129810118859, are running. No duplicate dispatch or new public release; personal saves/Beta1/prior evidence protected.
 
@@ -3059,7 +3093,7 @@ Shared original combat helper and driver flags as described above; unchanged fin
 
 **Four-player melee milestone published — 2026-11-10:** reviewed6-file test/documentation revision [5f1677f003361ac84726ad9320b1bf974cd9310b](https://github.com/VeeShep/PolyCraft-Revival/commit/5f1677f003361ac84726ad9320b1bf974cd9310b) pushed to origin/main after full703/0, focused29/0,3guard refusals, both announced native79021/14054exit0 and preservation/preflight checks. Complete8job/703check/143.1 CI7a80b38 remains the last accepted package set; exact new automatic [run42812449239](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42812449239) is in progress for the test milestone. Follow it without duplicate dispatch; current package outcomes pending, and no new public release. App/runtime/engine/version remains Beta103 with verified local native payload unchanged.118-file ignored evidence root sealed before publication; adding publication metadata reseals it. Current commands terminal/owned game apps closed, source tree clean after checkpoint. Next repeat original campaign combat/reward/restoration with current lifecycle guards; staged prerequisite setup must remain explicitly separate from natural unlock acceptance. Natural progression/broader combat/DYING interruption/native otherOS/mixed-machine/physical LAN+WAN/provider deployment/endurance gates remain open. Goalactive/incomplete, personal saves/Beta1/prior evidence protected.
 
-## Current test work: campaign/native reward safety repeat — 2026-11-10
+### Current test work: campaign/native reward safety repeat — 2026-11-10
 
 Read-only review of old campaign helpers found sampled enemy disappearing before the queued staging boundary, current hero replacement after kill XP invalidating entity-name lookup, and unfinished prior rewards changing retained actor/XP baseline. Three actual-callback regressions reproduce16pass/3fail on original helpers. Minimal test-only corrections: atRewardBoundary for acceptance/victory staging; recheck live target in victory staging; resolve current hero by persistent player ID after shots, retaining old actor only for kill-event identity; avoid destroyed-enemy EC lookup in diagnostics. Corrected focused33/0,3syntax checks and finishedBeta103ARM64 package source/icons/14MachO/signature pass. Original renderer/gameplay/runtime/package/version/engine/dependencies/save/network unchanged. Full95745running. No new native app launched yet;9driver/helper/server sources and unchanged apphash pinned in ignored native-attempt-1, with separate screenshot cwd. Planned existing full session-UI/campaign driver uses newly generated labelled disposable host/guest islands and owned loopback service; it stages prerequisites/hero positions and must not be called natural unlock acceptance. Original13waves/14thieves/56seconds/native damages/scoring/reward owner and normal save/reset behavior remain unchanged. Previous5f1677fCI42812449239unit703passed/remaining7jobsrunning; exact source distinct from localnew706expected checks. Goalactive.
 
@@ -3071,7 +3105,7 @@ Read-only review of old campaign helpers found sampled enemy disappearing before
 
 **Campaign checkpoint published — 2026-11-10:** reviewed6-file test/documentation milestone [f711b3272b9aa2055a7ab57fb309b7b7058f6f26](https://github.com/VeeShep/PolyCraft-Revival/commit/f711b3272b9aa2055a7ab57fb309b7b7058f6f26) pushed to origin/main after full706/0/focused33/0/native62303/all10flows,45native files/9source+app hash preservation,71-file root evidence seal and complete intended diff/73suite/151localtargets/whitespace/main-origin3512d69 comparison. Exact automatic [run42815456410](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/42815456410) is in progress for this source; follow it without duplicate dispatch. Previous5f1677fCI42812449239/703checks/all8jobs/eight144.1artifacts remains last complete CI; local706/native62303 distinct. No new publicrelease/app/version/runtime change. Goalactive/incomplete; all local commands terminal/owned apps/service closed. Next original host-owned completion reward claim/once-only/reload recovery, then broader campaigns/natural unlocks/DYING interruption; native otherOS/mixedmachine/physical network/WAN/provider deployment/endurance remain open. Source tree clean after checkpoint; personal islands/Beta1/prior evidence protected.
 
-## Current test work: saved host campaign claim and recovery — 2026-11-10
+### Current test work: saved host campaign claim and recovery — 2026-11-10
 
 New standalone visible two-role test reuses a completed disposable campaign fixture instead of replaying waves. It copies all source files into a new temporary profile, checks owner-bound reward hidden in solo, rejoins through real direct UI, requires native host reward button and grant50XP/[0,250] once, online ticks while menu stays open/shared guestHUD/unchanged guestXP+Amber, old-panel/reloaded-ID refusal, normal two-game restart/rehost, then actual copied-primary corruption/backup-recovery/rehost with consumed reward and progress retained. Original source8files/pre-migration bytes stay immutable; no resource/XP/reward/stat assignments.14focused/2invalid source refusals/syntax/verified native package/read-only review pass. First wrapper incorrectly expected ENOENT for empty path; actual driver correctly refuses cwd. Second pinning expected4files but found8includingpre-v5/v6/v7/v8; corrected to protect all8. Both failures were before native launch and are retained in ignored evidence. Driver/eight sourcefixture/app hashes pinned; no native game launched yet. Runtime/engine/app/schema/version unchanged; goalactive.
 
