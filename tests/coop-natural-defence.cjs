@@ -33,7 +33,7 @@ module.exports = async function naturalDefence(context) {
   });
   assert.equal(observation, true);
   try {
-    const tasks = context.moveOutpost ? [['moveBuilding', { move: true }]] : context.speedupOnly ? [] : context.outpostOnly ? [['buildOutpost', { outpost: true }]] : [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }], ['goToCaves', null], ['buildOutpost', { outpost: true }]];
+    const tasks = context.barricadeOnly ? [['buildBarricade', { barricade: true }]] : context.moveOutpost ? [['moveBuilding', { move: true }]] : context.speedupOnly ? [] : context.outpostOnly ? [['buildOutpost', { outpost: true }]] : [['buildDefenceFactory', { defenceFactory: true }], ['buildDefendlingHut', { worker: 'war' }], ['goToCaves', null], ['buildOutpost', { outpost: true }]];
     if (context.speedupOutpost) tasks.push(['speedUpOutpost', { speedup: true }]);
     for (const [task, options] of tasks) {
       await guest.waitForFunction(task => window.guestWorld.quests.state?.tasks.some(row => row.task === task), task);

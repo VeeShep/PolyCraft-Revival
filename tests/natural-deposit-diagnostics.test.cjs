@@ -3,6 +3,24 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
 const { parse } = require('@babel/parser'), traverse = require('@babel/traverse').default, generate = require('@babel/generator').default;
 
+test('Barricade diagnostics run before owned observer cleanup and retain the original error when observation fails', async () => {
+  const ast = parse(fs.readFileSync(path.join(__dirname, 'coop-natural-building.cjs'), 'utf8')); let handler, finalizer;
+  traverse(ast, { CatchClause(p) { if (generate(p.node.body).code.includes('Host Barricade failure diagnostics:')) { handler = p.node.body; finalizer = p.parentPath.node.finalizer; } } });
+  assert.ok(handler && finalizer);
+  for (const failed of [false, true]) for (const inputObserved of [false, true]) {
+    const original = new Error('Native placement failed'), events = [], reads = [];
+    const context = { error: original, barricade: true, inputObserved, directory: 'temporary', require, console: { log() {} },
+      nativeFocus: async () => { events.push('native'); if (failed) throw new Error('Native read failed'); return []; },
+      host: { async evaluate(read) { const cleanup = read.toString().includes('restoreNativeBuildingIncome'); events.push(cleanup ? 'host-cleanup' : 'host-read'); if (failed) throw new Error('Host read failed'); return { resourceEvents: [] }; } },
+      guest: { async evaluate(read) { const cleanup = read.toString().includes('resourceInputTrace?.restore'); events.push(cleanup ? 'guest-cleanup' : 'guest-read'); if (failed) throw new Error('Guest read failed'); return {}; },
+        async screenshot(options) { events.push('screenshot'); reads.push(options); if (failed) throw new Error('Screenshot failed'); } } };
+    const code = '(async()=>{try ' + generate(handler).code + ' finally ' + generate(finalizer).code + '})()';
+    await assert.rejects(vm.runInNewContext(code, context), error => error === original);
+    assert.deepEqual(events, ['native', 'host-read', 'guest-read', 'screenshot', 'host-cleanup', ...(inputObserved ? ['guest-cleanup'] : [])]);
+    assert.equal(reads[0].timeout, 5000); assert.equal(reads[0].path, path.join('temporary', 'guest-barricade-failure.png'));
+  }
+});
+
 test('incoming observer cleanup preserves the primary failure and continues other observer restoration', async () => {
   const ast = parse(fs.readFileSync(path.join(__dirname, 'coop-natural-resources.cjs'), 'utf8'));
   let finalizer;
