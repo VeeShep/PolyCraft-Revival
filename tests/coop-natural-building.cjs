@@ -2,10 +2,11 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, directory, nativeFocus, lumbermill = false, stonemill = false, worker = null, defenceFactory = false, outpost = false, barricade = false }) {
+module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, directory, nativeFocus, lumbermill = false, stonemill = false, worker = null, defenceFactory = false, outpost = false, barricade = false, gate = false }) {
   assert.ok(worker === null || worker === 'lumber' || worker === 'stone' || worker === 'war');
-  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) + Number(defenceFactory) + Number(outpost) + Number(barricade) <= 1);
-  const definition = barricade ? { family: 'barricadeworkshop', type: 'Barricade', archetype: 'a_d_barricade', task: 'buildBarricade', costs: [25, 0, 0] } : outpost ? { family: 'outpostworkshop', type: 'Outpost', archetype: 'a_b_outpost', task: 'buildOutpost', costs: [100, 0, 0] } : worker === 'war' ? { family: 'defendlinghutworkshop', type: 'Defendling Hut', archetype: 'a_b_wildlinghouse_war', task: 'buildDefendlingHut', costs: [10, 0, 0] } : defenceFactory ? { family: 'defencefactoryworkshop', type: 'Defence Factory', archetype: 'a_b_defencefactory', task: 'buildDefenceFactory', costs: [10, 0, 0] } : worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
+  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) + Number(defenceFactory) + Number(outpost) + Number(barricade) + Number(gate) <= 1);
+  const fortification = barricade || gate;
+  const definition = gate ? { family: 'barricadeworkshop', type: 'Barricade Gate', archetype: 'a_d_barricadegate', task: 'buildGate', costs: [50, 0, 0] } : barricade ? { family: 'barricadeworkshop', type: 'Barricade', archetype: 'a_d_barricade', task: 'buildBarricade', costs: [25, 0, 0] } : outpost ? { family: 'outpostworkshop', type: 'Outpost', archetype: 'a_b_outpost', task: 'buildOutpost', costs: [100, 0, 0] } : worker === 'war' ? { family: 'defendlinghutworkshop', type: 'Defendling Hut', archetype: 'a_b_wildlinghouse_war', task: 'buildDefendlingHut', costs: [10, 0, 0] } : defenceFactory ? { family: 'defencefactoryworkshop', type: 'Defence Factory', archetype: 'a_b_defencefactory', task: 'buildDefenceFactory', costs: [10, 0, 0] } : worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
     { family: 'hqworkshop', type: 'HQ', archetype: 'a_b_hq', task: 'buildHq', costs: [0, 0, 0] };
   if (!outpost) await host.waitForFunction(family => window.hostWorld.game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(family)).some(entity => entity.getEC('ECSelectable')?.permanentValid === true), definition.family, { timeout: 10000 });
   const source = await host.evaluate(({ hero, definition }) => {
@@ -44,8 +45,8 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     source.menu = await host.evaluate(({ hero, id }) => { const w = window.hostWorld; return w.construction.menu(w.players.active.get(hero).hero, w.game.getGameEntityByName(id), w.controls); }, { hero, id: source.id });
   }
   const product = source.menu.products.find(product => product.archetype === definition.archetype);
-  assert.ok(product?.valid && product.affordable); assert.deepEqual(product.costs, definition.costs); assert.equal(product.time, barricade ? 5 : outpost ? 1800 : 2);
-  if (barricade) assert.equal(product.repeat, true);
+  assert.ok(product?.valid && product.affordable); assert.deepEqual(product.costs, definition.costs); assert.equal(product.time, gate ? 10 : barricade ? 5 : outpost ? 1800 : 2);
+  if (fortification) assert.equal(product.repeat, true);
   await guest.waitForFunction(id => {
     const w = window.guestWorld, entry = w.scene.entities.get(id), point = w.controls.app.globals.camera.worldToScreen(entry.displayLocation || entry.record.location);
     const previous = window.hqProjection;
@@ -53,7 +54,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     window.hqProjection = { id, point: Array.from(point), stable };
     return stable >= 3;
   }, source.id, { polling: 100, timeout: 10000 });
-  const before = barricade ? await host.evaluate(require('./coop-building-ledger.cjs')) : await host.evaluate(() => {
+  const before = fortification ? await host.evaluate(require('./coop-building-ledger.cjs')) : await host.evaluate(() => {
     const game = window.hostWorld.game;
     window.nativeBuildingIncome = { wood: 0, stone: 0, amber: 0 };
     const deposit = event => { window.nativeBuildingIncome[event.type === 0 ? 'wood' : 'stone'] += event.amount; };
@@ -64,7 +65,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
   });
   let inputObserved = false;
   try {
-    if (barricade) { await guest.evaluate(require('./coop-input-trace.cjs')); inputObserved = true; }
+    if (fortification) { await guest.evaluate(require('./coop-input-trace.cjs')); inputObserved = true; }
     const point = await guest.evaluate(id => {
       const world = window.guestWorld, entry = world.scene.entities.get(id), globals = world.controls.app.globals;
       const projected = globals.camera.worldToScreen(entry.displayLocation || entry.record.location), b = world.movement.canvas.getBoundingClientRect();
@@ -92,16 +93,16 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
       console.log('Authored Outpost placement journey:', JSON.stringify(marker));
       await approach(marker);
     }
-    const locations = await host.evaluate(({ hero, source, index, paid, marker, barricade }) => {
+    const locations = await host.evaluate(({ hero, source, index, paid, marker, nearCreator }) => {
       const world = window.hostWorld, game = world.game, actor = world.players.active.get(hero).hero, entity = game.getGameEntityByName(source);
       const suggestion = game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(paid ? 'hq' : 'suggestHq'))[0];
-      const center = marker || (barricade ? entity.getv3Location() : suggestion ? suggestion.getv3Location() : entity.getv3Location()), locations = [];
+      const center = marker || (nearCreator ? entity.getv3Location() : suggestion ? suggestion.getv3Location() : entity.getv3Location()), locations = [];
       for (let x = -10; x <= 10; x += 2) for (let z = -10; z <= 10; z += 2) {
         const location = [center[0] + x, actor.getv3Location()[1], center[2] + z];
         if (world.construction.preview(actor, entity, index, location).preview?.valid) locations.push(location);
       }
       return locations;
-    }, { hero, source: source.id, index: product.index, paid: lumbermill || stonemill || worker !== null || defenceFactory || outpost || barricade, marker: marker?.location, barricade });
+    }, { hero, source: source.id, index: product.index, paid: lumbermill || stonemill || worker !== null || defenceFactory || outpost || fortification, marker: marker?.location, nearCreator: fortification });
     const placement = await guest.evaluate(locations => {
       const world = window.guestWorld, globals = world.controls.app.globals, b = world.movement.canvas.getBoundingClientRect();
       return locations.map(location => {
@@ -115,7 +116,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     await guest.waitForFunction(() => { const ui = window.guestWorld.construction; return ui.preview?.valid && ui.matches(ui.preview.location); });
     const preview = await host.evaluate(() => ({ amounts: window.polycraft.controls.amounts(), income: { ...window.nativeBuildingIncome }, resourceEvents: window.nativeBuildingResourceEvents }));
     console.log('Native credits during building menu/preview:', JSON.stringify(preview.income));
-    if (barricade) assert.equal(preview.resourceEvents.some(row => row.amount < 0), false, 'The infinite blueprint must not charge before placement.');
+    if (fortification) assert.equal(preview.resourceEvents.some(row => row.amount < 0), false, 'The infinite blueprint must not charge before placement.');
     assert.deepEqual(preview.amounts, { ...before, wood: before.wood + preview.income.wood, stone: before.stone + preview.income.stone, amber: before.amber + preview.income.amber }, 'Menu and placement preview spend nothing; native deposits/pickups remain credited.');
     await guest.waitForFunction(() => !window.guestWorld.game.getIMGui().hasCapturedInput());
     await guest.mouse.down();
@@ -123,7 +124,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     finally { await guest.mouse.up(); }
     await guest.waitForFunction(() => window.guestWorld.construction.lastBuildResult);
     assert.equal(await guest.evaluate(() => window.guestWorld.construction.lastBuildResult.message), 'Building placed and saved.');
-    if (barricade) { await button('guest-build-cancel'); await guest.waitForFunction(() => !window.guestWorld.construction.placement); }
+    if (fortification) { await button('guest-build-cancel'); await guest.waitForFunction(() => !window.guestWorld.construction.placement); }
     await host.waitForFunction(task => window.hostWorld.game.getPlayerData().getTaskFlags()[task] === true, definition.task, { timeout: 20000 });
     if (outpost) {
       await host.waitForFunction(amber => window.polycraft.controls.amounts().amber >= amber + 80, before.amber, { timeout: 10000 });
@@ -150,7 +151,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     }, { type: definition.type, hero, outpost });
     console.log('Original guest ' + definition.type + ' construction:', JSON.stringify({ placement, result }));
     assert.equal(result.buildings.length, 1); assert.equal(result.pending, 0); assert.equal(result.scripts, true);
-    if (barricade) {
+    if (fortification) {
       const bank = [before.wood, before.stone], entries = result.resourceEvents;
       assert.ok(Array.isArray(entries) && entries.length > 0);
       for (const row of entries) {
@@ -160,8 +161,8 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
         assert.equal(row.after, row.amount ? Math.round(Math.max(0, Math.min(row.before + row.amount, row.cap))) : row.before);
         bank[row.type] = row.after;
       }
-      assert.deepEqual(entries.filter(row => row.amount < 0).map(row => [row.type, row.amount]), [[0, -25]]);
-      assert.equal(entries.filter(row => row.type === 0 && row.amount === 200).length, 1);
+      assert.deepEqual(entries.filter(row => row.amount < 0).map(row => [row.type, row.amount]), [[0, -product.costs[0]]]);
+      assert.equal(entries.filter(row => row.type === 0 && row.amount === (gate ? 400 : 200)).length, 1);
       assert.deepEqual([result.amounts.wood, result.amounts.stone], bank);
       assert.equal(result.amounts.amber, before.amber);
     } else for (const [resource, cost] of [['wood', product.costs[0]], ['stone', product.costs[1]], ['amber', product.costs[2]]]) assert.equal(result.amounts[resource], before[resource] + result.income[resource] - cost + (outpost ? resource === 'wood' ? 250 : resource === 'amber' ? 80 : 0 : 0));
@@ -175,7 +176,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state;
     assert.equal(state.cheats.everEnabled, false); assert.equal(JSON.parse(state.userData.taskFlags)[definition.task], true);
     assert.ok(JSON.parse(state.userData.desktopQuests).pending.some(task => task.task === definition.task));
-    if (lumbermill || stonemill || worker || defenceFactory || outpost || barricade) {
+    if (lumbermill || stonemill || worker || defenceFactory || outpost || fortification) {
       for (let index = 0; index < guests.length; index++) {
         await focusGuest(index);
         await guests[index].waitForFunction(amounts => window.guestWorld.hud.state?.resources[0] === amounts.wood && window.guestWorld.hud.state?.resources[1] === amounts.stone, result.amounts);
@@ -183,16 +184,16 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
       await focus();
     }
     console.log('First ' + definition.type + ' built through original guest menu/preview and native construction; native cost, shared reward and clean history saved.');
-    if (barricade && directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-barricade-built.png'), timeout: 5000 }).catch(error => console.log('Barricade screenshot unavailable:', error.message));
+    if (fortification && directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-' + (gate ? 'gate' : 'barricade') + '-built.png'), timeout: 5000 }).catch(error => console.log('Barricade screenshot unavailable:', error.message));
   } catch (error) {
-    if (barricade) {
+    if (fortification) {
       if (nativeFocus) console.log('Native Barricade focus trace:', JSON.stringify(await nativeFocus().catch(e => ({ unavailable: String(e?.message ?? e) }))));
       console.log('Host Barricade failure diagnostics:', JSON.stringify(await host.evaluate(() => ({ amounts: window.polycraft.controls.amounts(), resourceEvents: window.nativeBuildingResourceEvents, pending: window.hostWorld.construction.pending.size, errors: window.workerConnectionErrors })).catch(e => ({ unavailable: String(e?.message ?? e) }))));
       console.log('Guest Barricade failure diagnostics:', JSON.stringify(await guest.evaluate(async () => {
         const w = window.guestWorld, ui = w.construction;
         return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), captured: w.game.getIMGui().hasCapturedInput(), placement: ui.placement, pending: ui.pending, preview: ui.preview, result: ui.lastBuildResult, inputTrace: w.resourceInputTrace?.events, closed: w.connection.closed };
       }).catch(e => ({ unavailable: String(e?.message ?? e) }))));
-      if (directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-barricade-failure.png'), timeout: 5000 }).catch(() => {});
+      if (directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-' + (gate ? 'gate' : 'barricade') + '-failure.png'), timeout: 5000 }).catch(() => {});
     }
     throw error;
   } finally {

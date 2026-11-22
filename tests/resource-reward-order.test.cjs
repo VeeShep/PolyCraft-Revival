@@ -172,9 +172,9 @@ test('Outpost move continuation admits only earned330XP and one completed origin
   }
 });
 test('Barricade continuation requires the earned clean350XP stage with no pending reward, held claim or earlier fortification', async () => {
-  const code = block('worker-reload-smoke.cjs', node => node.name === 'barricadeContinuation');
+  const code = block('worker-reload-smoke.cjs', node => node.type === 'LogicalExpression' && node.left.name === 'barricadeContinuation');
   const flags = { goToCaves: true, buildOutpost: true, speedUpOutpost: true, moveBuilding: true };
-  const valid = { state: { userData: { taskFlags: JSON.stringify(flags) } }, pending: [], party: JSON.stringify({ players: [0, 350, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
+  const valid = { state: { userData: { taskFlags: JSON.stringify(flags) } }, gateContinuation: false, pending: [], party: JSON.stringify({ players: [0, 350, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
     buildings: ['a_b_defencefactory', 'a_b_wildlinghouse_war', 'a_b_outpost'].map(archetypeName => ({ archetypeName })) };
   await vm.runInNewContext(code, { ...structuredClone(valid), assert });
   for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, moveBuilding: false }); }, f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildBarricade: true }); },
@@ -187,7 +187,7 @@ test('Barricade continuation requires the earned clean350XP stage with no pendin
 test('Barricade phase refuses incompatible arguments before reading a fixture or launching Electron', () => {
   const { spawnSync } = require('node:child_process');
   for (const [flags, message] of [[['--natural-barricade'], /requires the visible co-op/], [['--coop', '--natural-barricade', '--natural-outpost'], /Choose one special phase/],
-    ...['--focus-diagnostic', '--outpost-speedup', '--save-timing', '--move-outpost'].map(flag => [['--coop', '--natural-barricade', flag], /earned Barricade phase alone/])]) {
+    ...['--focus-diagnostic', '--outpost-speedup', '--save-timing', '--move-outpost'].map(flag => [['--coop', '--natural-barricade', flag], /earned Barricade or Gate phase alone/])]) {
     const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-barricade-test-fixture' } });
     assert.equal(result.status, 1); assert.match(result.stderr, message); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
   }
@@ -211,9 +211,35 @@ test('Barricade placement searches near its creator while earlier buildings reta
   const world = { game: { getGameEntityByName: () => source, getGameSpaceList: () => [{ getEntitiesWithFamilyName: () => [hq] }] },
     players: { active: new Map([['guest', { hero: actor }]]) }, construction: { preview(a, s, index, location) { assert.equal(a, actor); assert.equal(s, source); attempts.push(location); return { preview: { valid: Math.hypot(location[0] + 62, location[2] + 92.5) <= 8 } }; } } };
   const select = vm.runInNewContext('(' + evaluatedCallback('coop-natural-building.cjs', 'locations') + ')', { window: { hostWorld: world } });
-  assert.ok(select({ hero: 'guest', source: 'creator', index: 5, paid: true, barricade: true }).length);
+  assert.ok(select({ hero: 'guest', source: 'creator', index: 5, paid: true, nearCreator: true }).length);
   attempts.length = 0; select({ hero: 'guest', source: 'creator', index: 5, paid: true }); assert.deepEqual(Array.from(attempts[0]), [90, 1, 90]);
   attempts.length = 0; select({ hero: 'guest', source: 'creator', index: 5, paid: true, marker: [50, 1, 50] }); assert.deepEqual(Array.from(attempts[0]), [40, 1, 40]);
+});
+test('Wooden Gate continuation requires earned370XP, a finished Barricade, no prior gate, pending rewards or held claims', async () => {
+  const code = block('worker-reload-smoke.cjs', node => node.type === 'LogicalExpression' && node.left.name === 'barricadeContinuation');
+  const flags = { goToCaves: true, buildOutpost: true, speedUpOutpost: true, moveBuilding: true, buildBarricade: true };
+  const valid = { gateContinuation: true, state: { userData: { taskFlags: JSON.stringify(flags) } }, pending: [], party: JSON.stringify({ players: [0, 370, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
+    buildings: ['a_b_defencefactory', 'a_b_wildlinghouse_war', 'a_b_outpost', 'a_d_barricade'].map(archetypeName => ({ archetypeName })) };
+  await vm.runInNewContext(code, { ...structuredClone(valid), assert });
+  for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildBarricade: false }); }, f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildGate: true }); },
+    f => { const p = JSON.parse(f.party); p.players[1].progress.xp = 350; f.party = JSON.stringify(p); }, f => { const p = JSON.parse(f.party); p.players[3].construction = {}; f.party = JSON.stringify(p); },
+    f => f.buildings.pop(), f => f.buildings.push({ archetypeName: 'a_d_barricade' }), f => f.buildings.push({ archetypeName: 'a_d_barricadegate' }),
+    f => f.buildings.push({ archetypeName: 'a_b_scaffold', ecData: { ECScaffold: { plannedObject: 'a_d_barricadegate' } } })]) {
+    const value = structuredClone(valid); change(value); await assert.rejects(vm.runInNewContext(code, { ...value, assert }), assert.AssertionError);
+  }
+});
+test('Wooden Gate phase rejects mixed modes before missing fixture reads and retains the original recipe', async () => {
+  const { spawnSync } = require('node:child_process'), native = require('./runtime-ast.cjs'), build = require('./coop-natural-building.cjs'), stop = new Error('Before UI');
+  for (const flags of [['--natural-gate'], ['--coop', '--natural-gate', '--natural-barricade'], ...['--natural-outpost', '--move-outpost', '--focus-diagnostic', '--outpost-speedup', '--save-timing'].map(flag => ['--coop', '--natural-gate', flag])]) {
+    const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-gate-test-fixture' } });
+    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned Barricade or Gate phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
+  }
+  const balance = native.assignedObject('balanceBarricades').a_d_barricadegate;
+  assert.equal(balance.resourceCost, 50); assert.equal(balance.buildTime, 10); assert.equal(balance.health, 100);
+  for (const property of ['usesInfiniteBuildMode', 'mustPlaceNearCreator']) assert.equal(native.archetypeComponent('a_d_barricadegate', 'ECBuilding', property), true);
+  const host = { async waitForFunction() {}, async evaluate(_read, { definition }) { assert.deepEqual(definition, { family: 'barricadeworkshop', type: 'Barricade Gate', archetype: 'a_d_barricadegate', task: 'buildGate', costs: [50, 0, 0] }); throw stop; } };
+  await assert.rejects(build({ gate: true, host }), error => error === stop);
+  for (const other of [{ barricade: true }, { outpost: true }, { worker: 'war' }]) await assert.rejects(build({ gate: true, ...other, host }), assert.AssertionError);
 });
 test('Barricade accounting checks actual capped changes, ordered income and one original cost/grant without editing balances', async () => {
   const prototype = require('./runtime-ast.cjs').prototypeWith('saveResource');
@@ -222,11 +248,26 @@ test('Barricade accounting checks actual capped changes, ordered income and one 
   const before = require('./coop-building-ledger.cjs')(root);
   data.adjustResource(0, 1); data.adjustResource(0, -25); data.adjustResource(0, 200); data.adjustResource(1, 1); data.adjustResource(0, 1);
   const result = { amounts: root.polycraft.controls.amounts(), resourceEvents: root.nativeBuildingResourceEvents };
-  const code = block('coop-natural-building.cjs', (node, body) => node.name === 'barricade' && body.body?.some(statement => statement.type === 'ForOfStatement'));
-  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';' + code, { assert });
+  const code = block('coop-natural-building.cjs', (node, body) => node.name === 'fortification' && body.body?.some(statement => statement.type === 'ForOfStatement'));
+  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';const gate=false,product={costs:[25,0,0]};' + code, { assert });
   await check(result); assert.equal(result.amounts.wood, 500);
   for (const change of [r => { r.resourceEvents[2].after = 501; }, r => { r.resourceEvents[2].amount = 201; }, r => r.resourceEvents.splice(0, 1),
     r => { r.amounts.wood--; }, r => { r.resourceEvents[0].error = 'Read failed'; }, r => r.resourceEvents.push({ overflow: true })]) {
+    const value = structuredClone(result); change(value); await assert.rejects(check(value), assert.AssertionError);
+  }
+  root.restoreNativeBuildingIncome();
+});
+test('Wooden Gate accounting retains native50wood cost and the capped400wood completion grant', async () => {
+  const prototype = require('./runtime-ast.cjs').prototypeWith('saveResource');
+  const data = Object.assign(Object.create(prototype), { resource: [500, 133], resourceCap: [500, 500], softCurrency: 83, globals: { cheats: { grindless: false } }, saveResource() {} });
+  const root = { hostWorld: { game: { getPlayerData: () => data } }, polycraft: { controls: { amounts: () => ({ wood: data.getResource(0), stone: data.getResource(1), amber: 83 }) } } };
+  const before = require('./coop-building-ledger.cjs')(root);
+  data.adjustResource(0, -50); data.adjustResource(0, 400); data.adjustResource(1, 1);
+  const result = { amounts: root.polycraft.controls.amounts(), resourceEvents: root.nativeBuildingResourceEvents };
+  const code = block('coop-natural-building.cjs', (node, body) => node.name === 'fortification' && body.body?.some(statement => statement.type === 'ForOfStatement'));
+  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';const gate=true,product={costs:[50,0,0]};' + code, { assert });
+  await check(result); assert.equal(result.amounts.wood, 500); assert.deepEqual(result.resourceEvents.map(r => [r.type, r.amount, r.before, r.after]), [[0, -50, 500, 450], [0, 400, 450, 500], [1, 1, 133, 134]]);
+  for (const change of [r => { r.resourceEvents[0].amount = -25; }, r => { r.resourceEvents[1].amount = 200; }, r => r.resourceEvents.push(r.resourceEvents[1])]) {
     const value = structuredClone(result); change(value); await assert.rejects(check(value), assert.AssertionError);
   }
   root.restoreNativeBuildingIncome();

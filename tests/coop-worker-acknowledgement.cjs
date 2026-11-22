@@ -43,7 +43,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     try {
       await waitForGuestReady(page, phase, () => focus(index));
     } catch (error) {
-      if (process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost') || process.argv.includes('--natural-barricade')) console.log('Native focus trace:', JSON.stringify(await guests[index].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace)));
+      if (process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost') || (process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate'))) console.log('Native focus trace:', JSON.stringify(await guests[index].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace)));
       console.log('Worker guest readiness diagnostics:', JSON.stringify(await page.evaluate(async () => {
         const w = window.guestWorld;
         return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, activeElement: document.activeElement?.id,
@@ -79,7 +79,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
         for (const event of ['focus', 'blur']) window.on(event, () => { if (window.isDestroyed()) return; window.focusTrace.push({ event, time: Date.now(), focused: window.isFocused() }); if (window.focusTrace.length > 50) window.focusTrace.shift(); });
       }
       window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — worker guest ' + (index + 1)); app.focus({ steal: true }); window.moveTop(); window.focus();
-    }, { index, trace: process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost') || process.argv.includes('--natural-barricade') });
+    }, { index, trace: process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost') || (process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate')) });
     await page.bringToFront();
     await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
     await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
@@ -234,7 +234,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await require('./coop-natural-resources.cjs')({ ...context, stone: true, gatherOnly: true, checkHighlights: true });
       await require('./coop-natural-deposit.cjs')({ ...context, resource: 1 });
     }
-    if (!process.argv.includes('--speedup-only') && !process.argv.includes('--move-outpost') && !process.argv.includes('--natural-barricade')) {
+    if (!process.argv.includes('--speedup-only') && !process.argv.includes('--move-outpost') && !(process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate'))) {
       await acknowledge(huts[0], 'lumber');
       if (process.argv.includes('--pve-combat')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory });
       await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4); await acknowledge(huts[1], 'stone');
@@ -245,7 +245,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4);
       if (process.argv.includes('--save-timing')) { await focusHost(); await require('./save-timing.cjs')({ page: host, directory, activeHost: true }); }
     }
-    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost') || process.argv.includes('--natural-barricade')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost'), speedupOutpost: process.argv.includes('--outpost-speedup'), speedupOnly: process.argv.includes('--speedup-only'), moveOutpost: process.argv.includes('--move-outpost'), barricadeOnly: process.argv.includes('--natural-barricade'), nativeFocus: () => guests[0].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace) });
+    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost') || (process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate'))) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost'), speedupOutpost: process.argv.includes('--outpost-speedup'), speedupOnly: process.argv.includes('--speedup-only'), moveOutpost: process.argv.includes('--move-outpost'), barricadeOnly: process.argv.includes('--natural-barricade'), gateOnly: process.argv.includes('--natural-gate'), nativeFocus: () => guests[0].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace) });
     if (process.argv.includes('--pve-melee')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory, melee: true });
     if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
       attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });
@@ -276,8 +276,8 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     const restored = await reopened.evaluate(() => ({ party: JSON.parse(window.polycraft.bridge.state.userData.desktopCoop), history: window.polycraft.bridge.state.cheats.everEnabled }));
     assert.equal(restored.history, false);
     assert.deepEqual(restored.party, persisted);
-    if (process.argv.includes('--move-outpost') || process.argv.includes('--natural-barricade')) {
-      const type = process.argv.includes('--move-outpost') ? 'Outpost' : 'Barricade', archetype = type === 'Outpost' ? 'a_b_outpost' : 'a_d_barricade';
+    if (process.argv.includes('--move-outpost') || (process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate'))) {
+      const type = process.argv.includes('--move-outpost') ? 'Outpost' : process.argv.includes('--natural-gate') ? 'Barricade Gate' : 'Barricade', archetype = type === 'Outpost' ? 'a_b_outpost' : type === 'Barricade Gate' ? 'a_d_barricadegate' : 'a_d_barricade';
       const expected = JSON.parse(saved.userData.AdventureIncGameState).gameSpaceList.flatMap(space => space.entityList).filter(e => e.archetypeName === archetype);
       assert.equal(expected.length, 1);
       const actual = await reopened.evaluate(type => window.polycraft.controls.manager().getBuildingManager().getBuildingsAtMinLevel(type, 1, false).map(e => ({ id: e.getName(), location: Array.from(e.getv3Location()), health: e.getEC('ECHealth').getHealth() })), type);
@@ -286,7 +286,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     for (const resource of [0, 1]) assert.ok(restored.party.economy.resource[resource] >= earned.economy.resource[resource]);
     assert.deepEqual(errors, []); assert.equal(requests.filter(url => /^https?:/i.test(url)).length, 0);
     await closeHost();
-    console.log(process.argv.includes('--speedup-only') || process.argv.includes('--move-outpost') || process.argv.includes('--natural-barricade') ? 'PASS: focused four-player original construction continuation, normal host save/reopen and isolated guest solo restoration.' : 'PASS: two/four-player native guest worker acknowledgement, shared fresh income/all guest HUDs, non-pausing menus, normal host save/reopen and isolated guest solo restoration.');
+    console.log(process.argv.includes('--speedup-only') || process.argv.includes('--move-outpost') || (process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate')) ? 'PASS: focused four-player original construction continuation, normal host save/reopen and isolated guest solo restoration.' : 'PASS: two/four-player native guest worker acknowledgement, shared fresh income/all guest HUDs, non-pausing menus, normal host save/reopen and isolated guest solo restoration.');
   } catch (error) {
     console.log('Worker reward readiness diagnostics:', JSON.stringify(await host.evaluate(() => {
       const game = window.polycraft.controls.manager(), hero = game.getHero();
