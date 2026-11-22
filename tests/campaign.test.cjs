@@ -4,6 +4,22 @@ const assert = require('node:assert/strict');
 const ast = require('./runtime-ast.cjs');
 const { campaignContext, validateCampaign, GuestCampaign } = require('../desktop/campaign.js');
 const { HostActions } = require('../desktop/coop-actions.js');
+for (const [commandName, eventName] of [['WaitUntilCampaignBeginsCommand', 'CampaignStarted'], ['WaitUntilCampaignEndsCommand', 'CampaignScoreScreenExited']]) {
+  test('original ' + commandName + ' waits for its exact native event and releases pending subscriptions', () => {
+    const methods = ast.campaignWaitMethods(commandName), listeners = new Map(); let subscriptions = 0;
+    const eventManager = { subscribe(name, callback) { assert.equal(name, eventName); subscriptions++; listeners.set(name, callback); }, unsubscribe(name, callback) { if (listeners.get(name) === callback) listeners.delete(name); } };
+    const command = { scope: { globals: { gameManager: { eventManager } } }, state: { triggered: false } };
+    assert.equal(methods.update.call(command), false); assert.equal(methods.update.call(command), false); assert.equal(subscriptions, 1);
+    for (const unrelated of ['CampaignPrepareScreenExited', 'CampaignVictory', 'CampaignStarted', 'CampaignScoreScreenExited'].filter(name => name !== eventName)) {
+      listeners.get(unrelated)?.(); assert.equal(methods.update.call(command), false);
+    }
+    listeners.get(eventName)(); assert.equal(methods.update.call(command), true); assert.equal(listeners.size, 0); assert.equal(subscriptions, 1);
+    methods.terminate.call(command); assert.equal(listeners.size, 0);
+    const interrupted = { scope: command.scope, state: { triggered: false } };
+    assert.equal(methods.update.call(interrupted), false); methods.terminate.call(interrupted);
+    assert.equal(listeners.size, 0); assert.equal(interrupted.state.triggered, false);
+  });
+}
 function fixture() {
   const events = [], state = { enabled: true, banner: true, interactable: true, outpost: true, script: false, health: 50, building: false, active: null, phase: 'PlayStateNormal', screen: 'GamestatePlaying' };
   const game = { globals: { metricsManager: { sendGameMetric: (...args) => events.push(['metric', ...args]) } }, eventManager: { notify: (...args) => events.push(args) } };

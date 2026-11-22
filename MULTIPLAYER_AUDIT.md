@@ -2,6 +2,28 @@
 
 The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sections below preserve earlier audits/checkpoints; their old incomplete-feature statements are historical, not a substitute for current source evidence. Restoration and full co-op acceptance remain incomplete.
 
+## Natural campaign continuation audit — 2026-11-22
+
+Scope: current Beta105 runtime (`coop-43`), following accepted natural Gatling/speedup. This is source/native-method evidence and fixture preparation, not natural campaign gameplay acceptance. Current source, save and build status remain in [RESTORATION_STATUS.md](RESTORATION_STATUS.md).
+
+The earned temporary checkpoint has party XP `[0,430,120,0]`, shared bank300wood/133stone/61Amber, no pending quest/campaign rewards or held claims, and clean cheat history. Guest One retains the original `wp_h_shotgun_cone01`, two rounds and50/50health. Eight save/backup files are copied byte-identically from sealed Gatling attempt2 into a separate recovery-test fixture. The ignored `test-results/beta-105-natural-campaign/prepared-stage.json` records source/copy hashes and inventory; never replace these with assigned progress, a pistol, teleports or easier enemy values.
+
+Verified original rules:
+
+- `startCampaign` pays20XP/1Amber. Its visible script enables campaigns through the original script queue, then `WaitUntilCampaignBeginsCommand` waits for `CampaignStarted`; closing a preview cannot satisfy it.
+- `winCampaign` pays300XP/1Amber. `WaitUntilCampaignEndsCommand` waits for `CampaignScoreScreenExited`, not a victory predicate. Assert native `score.wasVictory === true` independently before calling a run a victory.
+- The native host score panel's `exitState` emits `CampaignScoreScreenExited`. Guest `GuestCampaign.dismissResult()` only dismisses the local copy; it neither collects the host-owned score reward nor advances that native exit event.
+- `campaignContext` requires original campaign eligibility, an enabled/active native starter, an existing Outpost, no active campaign and normal play. Serialized saved entity archetype text does not locate the runtime banner; query eligible `ECCampaignStarter` entities in the loaded game and use the native navigation route.
+- The shared natural quest helper currently asserts20XP. Supporting the300XP quest requires explicit original reward handling and resolving the current assigned hero after any earned rank-up.
+
+The old `coop-campaign-acceptance.cjs` and `coop-campaign-victory.cjs` remain useful staged coverage. They explicitly enable campaign flags, create a temporary Outpost if missing, teleport actors and equip a pistol. Do not run them unchanged and call that natural progression from the earned save.
+
+Next implementation must use normal banner navigation/selection, original preview close/confirm controls and original countdown. Observe host-authoritative waves/combat, actual outcome and menu continuity; retain original AI, health, weapon, timers and costs. After a real victory, use the native host-owned score claim, then collect the guest's original winCampaign reward and verify party/save/reload/once-only behavior. Preserve normal interrupted-battle reset separately; neither a reset nor a task flag proves victory.
+
+Checks: `node --test tests/campaign.test.cjs tests/resource-reward-order.test.cjs` passes69/0(session96496). Two new contracts execute the original begin/end wait methods, resolving their owners through public factory role names rather than private variable spelling. They verify exact-event gating, once-only subscription and pending cancellation cleanup. No game window, progression mutation, package rebuild or broad-suite repeat in this audit. These are source-contract checks, and do not exercise natural navigation, campaign UI or victory. Prior exact-source CI does not cover the two new cases.
+
+The following older checkpoints retain their historical scope.
+
 ## Current source checkpoint — Beta 88, 2026-11-07
 
 Desktop focus/blur/fullscreen notifications now reuse the existing window/contents lifetime guard; live channel names/payloads remain unchanged. The exact destroyed-object exception reproduces in actual-main-code regression before the fix; nine focused checks and all 533 in-memory checks pass afterward. All eight CI jobs/artifacts now pass. Two visible source runs and the independently verified CI ARM64 app pass the complete recovered-party/wood/native-reload flow with 12 clean native logs; both downloaded Mac artifacts pass source/icon/architecture/signature checks, with Intel never launched. Earlier pickup failure remains unexplained: steering/resource rules are unchanged and diagnostics remain for recurrence. Other-platform/WAN/endurance gates stay open. [Current evidence](RESTORATION_STATUS.md#current-source-beta-88-guarded-desktop-window-notifications--2026-11-07).
