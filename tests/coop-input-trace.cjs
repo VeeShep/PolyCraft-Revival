@@ -11,7 +11,7 @@ module.exports = function traceResourceInput(world = globalThis.guestWorld) {
         highlights.push({ id, near: view.smartValid, hot: view.hot });
         if (highlights.length === 8) break;
       }
-      return { time: performance.now(), focused: globalThis.document?.hasFocus() ?? null,
+      return { time: performance.now(), wallTime: Date.now(), focused: globalThis.document?.hasFocus() ?? null,
         tick: world.scene?.tick ?? null, cursor: world.movement.canvas?.style?.cursor ?? null,
         highlightCount: world.resourceHighlights?.size ?? 0, highlights,
         available: world.movement.available(), nativeFocused: world.movement.nativeFocused, paused: world.controls.paused,
@@ -20,7 +20,9 @@ module.exports = function traceResourceInput(world = globalThis.guestWorld) {
         sequence: world.targetSequence, selection: world.selectionRequest, drag: world.groundDrag?.target ?? null,
         down: world.guiInput.down, pendingDown: world.guiInput.pendingDown, description: world.quests?.description?.taskId,
         questPending: world.quests?.pending, questOpenRequest: world.quests?.openRequest,
-        menu: !!world.construction.menu, placement: !!world.construction.placement };
+        menu: !!world.construction.menu, placement: !!world.construction.placement,
+        building: { click: !!world.construction.click, pending: world.construction.pending ?? null,
+          preview: world.construction.preview ? { valid: world.construction.preview.valid, location: [...world.construction.preview.location], matches: world.construction.matches(world.construction.preview.location) } : null } };
     } catch (error) { return { traceError: String(error?.message ?? error) }; }
   };
   for (const name of ['pointer', 'clickTarget']) {

@@ -43,7 +43,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
     try {
       await waitForGuestReady(page, phase, () => focus(index));
     } catch (error) {
-      if (process.argv.includes('--focus-diagnostic')) console.log('Native focus trace:', JSON.stringify(await guests[index].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace)));
+      if (process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost')) console.log('Native focus trace:', JSON.stringify(await guests[index].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace)));
       console.log('Worker guest readiness diagnostics:', JSON.stringify(await page.evaluate(async () => {
         const w = window.guestWorld;
         return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, activeElement: document.activeElement?.id,
@@ -76,10 +76,10 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       if (!window.webContents.isAudioMuted()) throw new Error('Temporary test windows must be muted. Use the verified muted test build.');
       if (trace) {
         window.focusTrace = [];
-        for (const event of ['focus', 'blur']) window.on(event, () => { window.focusTrace.push({ event, time: Date.now(), focused: window.isFocused() }); if (window.focusTrace.length > 50) window.focusTrace.shift(); });
+        for (const event of ['focus', 'blur']) window.on(event, () => { if (window.isDestroyed()) return; window.focusTrace.push({ event, time: Date.now(), focused: window.isFocused() }); if (window.focusTrace.length > 50) window.focusTrace.shift(); });
       }
       window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — worker guest ' + (index + 1)); app.focus({ steal: true }); window.moveTop(); window.focus();
-    }, { index, trace: process.argv.includes('--focus-diagnostic') });
+    }, { index, trace: process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost') });
     await page.bringToFront();
     await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
     await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
@@ -245,7 +245,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       await join(1); await join(2); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 4);
       if (process.argv.includes('--save-timing')) { await focusHost(); await require('./save-timing.cjs')({ page: host, directory, activeHost: true }); }
     }
-    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost'), speedupOutpost: process.argv.includes('--outpost-speedup'), speedupOnly: process.argv.includes('--speedup-only'), moveOutpost: process.argv.includes('--move-outpost') });
+    if (process.argv.includes('--natural-defence') || process.argv.includes('--natural-outpost')) await require('./coop-natural-defence.cjs')({ host, guest: guests[0].page, guests: guests.map(row => row.page), focusGuest: focus, focus: () => focus(0), hero: party.players[1].id, hostFile: file, directory, outpostOnly: process.argv.includes('--natural-outpost'), speedupOutpost: process.argv.includes('--outpost-speedup'), speedupOnly: process.argv.includes('--speedup-only'), moveOutpost: process.argv.includes('--move-outpost'), nativeFocus: () => guests[0].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace) });
     if (process.argv.includes('--pve-melee')) await require('./coop-enemy-combat.cjs')({ host, guest: guests[0].page, hero: party.players[1].id, focus: () => focus(0), hostFile: file, directory, melee: true });
     if (pvpLife) await pvpLife({ host, attackerPage: guests[0].page, victimPage: host, focusAttacker: () => focus(0), focusVictim: focusHost,
       attackerId: party.players[1].id, victimId: party.host, paid: false, hostFile: file, directory, huts });

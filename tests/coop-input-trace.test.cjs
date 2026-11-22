@@ -19,6 +19,7 @@ test('resource input trace delegates once with the same receiver/arguments/resul
   assert.equal(f.world.pointer('pointerdown', f.event), f.token);
   assert.deepEqual(f.calls, [[f.world, 'pointerdown', f.event]]);
   const [row] = f.world.resourceInputTrace.events;
+  assert.ok(Number.isFinite(row.before.wallTime) && row.after.wallTime >= row.before.wallTime);
   assert.equal(row.before.sequence, 0); assert.equal(row.after.sequence, 1);
   assert.equal(row.before.available, false); assert.equal(row.before.captured, true);
   assert.deepEqual(row.before.hot, ['guest-pause']); assert.equal(row.before.description, 'taskIdcrit_10');
@@ -57,20 +58,48 @@ test('resource input trace passively captures canvas cursor setting and bounded 
   f.world.scene = { tick: 100 };
   f.world.movement.canvas = { style: { cursor: 'url(original-interact.png), auto' } };
   f.world.resourceHighlights = new Map(Array.from({ length: 12 }, (_, index) => ['tree-' + index, { smartValid: true, hot: index === 0 }]));
+  f.world.construction = { click: true, pending: null, preview: { valid: true, location: [1, 2, 3] }, matches: () => true };
   trace(f.world); assert.equal(f.world.pointer('pointerdown', f.event), f.token);
   const first = f.world.resourceInputTrace.events[0];
   assert.equal(first.before.tick, 100); assert.equal(first.before.cursor, 'url(original-interact.png), auto');
   assert.equal(first.before.highlightCount, 12); assert.equal(first.before.highlights.length, 8);
+  assert.deepEqual(first.before.building, { click: true, pending: null, preview: { valid: true, location: [1, 2, 3], matches: true } });
   assert.deepEqual(first.before.highlights[0], { id: 'tree-0', near: true, hot: true });
   assert.equal(first.before.highlights.at(-1).id, 'tree-7');
   f.world.scene.tick++; f.world.movement.canvas.style.cursor = 'url(original-move.png), auto';
   f.world.resourceHighlights.get('tree-0').hot = false;
+  f.world.construction.preview.location[0] = 9; f.world.construction.matches = () => false;
   f.world.pointer('pointerup', f.event);
   assert.equal(f.calls.length, 2); assert.equal(first.after.tick, 100);
   assert.equal(first.after.cursor, 'url(original-interact.png), auto'); assert.equal(first.after.highlights[0].hot, true);
+  assert.equal(first.after.building.preview.location[0], 1); assert.equal(first.after.building.preview.matches, true);
   const second = f.world.resourceInputTrace.events[1];
   assert.equal(second.before.tick, 101); assert.equal(second.before.highlights[0].hot, false);
   assert.equal(second.before.cursor, 'url(original-move.png), auto');
+  assert.equal(second.before.building.preview.location[0], 9); assert.equal(second.before.building.preview.matches, false);
   assert.doesNotThrow(() => JSON.stringify(f.world.resourceInputTrace.events));
   f.world.resourceInputTrace.restore();
+});
+
+test('Outpost move failure retains input/native focus evidence, restores its observer and leaves a foreign observer alone', async t => {
+  const f = fixture(), logs = [], nativeTrace = [{ event: 'blur', time: Date.now(), focused: false }];
+  t.mock.method(console, 'log', (...args) => logs.push(args));
+  const context = { guestWorld: f.world, window: { guestWorld: f.world, desktop: { windowFocused: async () => false } }, document: { hasFocus: () => true }, performance };
+  const guest = { evaluate: async fn => require('node:vm').runInNewContext('(' + fn.toString() + ')()', context) };
+  const setup = { id: 'outpost', location: [0, 0, 0], health: 250, xp: 330, amber: 81, canMove: true };
+  let nativeReads = 0;
+  const options = { host: { evaluate: async () => setup }, guest, hero: 'guest',
+    focus: async () => { f.world.pointer('pointerdown', f.event); throw f.failure; },
+    nativeFocus: async () => { nativeReads++; return nativeTrace; } };
+  const move = require('./coop-natural-move.cjs');
+  await assert.rejects(move(options), error => error === f.failure);
+  const diagnostic = JSON.parse(logs.find(([label]) => label === 'Guest move failure diagnostics:')[1]);
+  assert.equal(diagnostic.nativeWindowFocused, false); assert.equal(diagnostic.inputTrace.length, 1);
+  assert.equal(diagnostic.inputTrace[0].event, 'pointerdown'); assert.equal(diagnostic.inputTrace[0].before.sequence, 0); assert.equal(diagnostic.inputTrace[0].after.sequence, 1);
+  assert.ok(Number.isFinite(diagnostic.inputTrace[0].before.wallTime));
+  assert.deepEqual(JSON.parse(logs.find(([label]) => label === 'Native move focus trace:')[1]), nativeTrace); assert.equal(nativeReads, 1);
+  assert.equal(f.calls.length, 1); assert.equal(f.world.pointer, f.prototype.pointer); assert.equal(f.world.resourceInputTrace, undefined);
+  trace(f.world); const foreign = f.world.resourceInputTrace;
+  await assert.rejects(move(options), /already active/); assert.equal(f.world.resourceInputTrace, foreign); assert.equal(nativeReads, 1);
+  foreign.restore();
 });

@@ -86,6 +86,21 @@ test('native Outpost move recognizes the existing standalone protected-building 
   assert.equal(ready('Outpost'), true); assert.equal(ready('Other'), false); world.selectedBuilding.movable = false; assert.equal(ready('Outpost'), false);
   world.selectedBuilding = null; world.construction.menu = { source: 'Outpost', move: true }; assert.equal(ready('Outpost'), true); world.construction.menu.move = false; assert.equal(ready('Outpost'), false);
 });
+test('Outpost pickup waits for its move acknowledgement even when held-state polling arrives first', () => {
+  const callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-natural-move.cjs'), 'utf8')), { CallExpression(p) {
+    const read = p.node.arguments[0];
+    if (p.node.callee.property?.name === 'waitForFunction' && read?.type === 'ArrowFunctionExpression' && generate(read).code.includes('construction.placement')) callbacks.push(read);
+  } });
+  assert.equal(callbacks.length, 1);
+  const world = { construction: { placement: { held: true } }, moveRequest: 7, lastTargetResult: { type: 'target', message: 'HQ, workshop or territory anchor' } };
+  const ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { guestWorld: world } });
+  assert.equal(!!ready(), false);
+  world.lastTargetResult = { type: 'move', message: 'Building picked up and saved. Choose a placement.' }; assert.equal(!!ready(), false);
+  world.moveRequest = null; assert.equal(!!ready(), true);
+  world.lastTargetResult.type = 'preview'; assert.equal(!!ready(), false);
+  world.lastTargetResult.type = 'move'; world.construction.placement = null; assert.equal(!!ready(), false);
+});
 test('native Outpost move waits for the real held-building placement acknowledgement', () => {
   const { HostConstruction } = require('../desktop/coop-construction.js'), callbacks = [];
   traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-natural-move.cjs'), 'utf8')), { CallExpression(p) {
@@ -97,6 +112,54 @@ test('native Outpost move waits for the real held-building placement acknowledge
   const result = HostConstruction.prototype.placeHeld.call({ heldStatus: () => null }, { getEC: () => builder }, [4, 1, 4]);
   const world = { construction: { lastBuildResult: result } }, ready = vm.runInNewContext('(' + generate(callbacks[0]).code + ')', { window: { guestWorld: world } });
   assert.equal(ready(), true); world.construction.lastBuildResult = { message: 'That held building cannot be placed here.' }; assert.equal(ready(), false);
+});
+test('Outpost placement readiness uses the actual native ground preview instead of a projected planning point', () => {
+  const { GuestConstruction } = require('../desktop/guest-construction.js'), callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-natural-move.cjs'), 'utf8')), { CallExpression(p) {
+    const read = p.node.arguments[0];
+    if (p.node.callee.property?.name === 'waitForFunction' && read?.type === 'ArrowFunctionExpression' && generate(read).code.includes('ui.matches')) callbacks.push(read);
+  } });
+  assert.ok(callbacks.length);
+  let cursor = [4, 1, 4];
+  const ui = { preview: { valid: true, location: [...cursor] }, cursor: () => cursor, matches: GuestConstruction.prototype.matches, click: true };
+  const world = { construction: ui, game: { getIMGui: () => ({ hasCapturedInput: () => false }) } };
+  for (const callback of callbacks) {
+    const ready = vm.runInNewContext('(' + generate(callback).code + ')', { window: { guestWorld: world } });
+    assert.equal(!!ready([4, 0, 4]), true);
+    ui.preview.valid = false; assert.equal(!!ready([4, 0, 4]), false); ui.preview.valid = true;
+    cursor = [5, 1, 4]; assert.equal(!!ready([4, 0, 4]), false); cursor = [4, 1, 4];
+  }
+});
+test('completed Outpost move observation takes a fresh native checkpoint after the short original scaffold finishes', async () => {
+  let callback;
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-natural-move.cjs'), 'utf8')), { VariableDeclarator(p) {
+    if (p.node.id.name === 'after') callback = p.node.init.argument.arguments[0];
+  } });
+  assert.ok(callback);
+  const calls = []; let saved = false;
+  const data = { getXP: () => 330, getSoftCurrency: () => 81 };
+  const world = { players: { active: new Map([['guest', { hero: { getEC: () => data } }]]) }, game: { getBuildingManager: () => ({ getBuildingsAtMinLevel: () => [] }) },
+    atRewardBoundary: async read => { assert.equal(saved, true); calls.push('capture'); return read(); } };
+  const read = vm.runInNewContext('(' + generate(callback).code + ')', { window: { hostWorld: world, polycraft: { checkpoint: async fresh => { assert.equal(fresh, true); saved = true; calls.push('checkpoint'); } } } });
+  assert.equal((await read('guest')).xp, 330); assert.deepEqual(calls, ['checkpoint', 'capture']);
+});
+test('native test focus history stays bounded and never queries a destroyed window on late blur', () => {
+  const callbacks = [];
+  traverse(parse(fs.readFileSync(path.join(__dirname, 'coop-worker-acknowledgement.cjs'), 'utf8')), { CallExpression(p) {
+    const fn = p.node.arguments[0];
+    if (p.node.callee.property?.name === 'evaluate' && fn?.type === 'ArrowFunctionExpression' && generate(fn).code.includes('window.focusTrace = []')) callbacks.push(fn);
+  } });
+  assert.equal(callbacks.length, 1);
+  const handlers = new Map(); let destroyed = false, focused = true;
+  const window = { isVisible: () => true, webContents: { isAudioMuted: () => true }, isDestroyed: () => destroyed,
+    isFocused() { if (destroyed) throw new Error('Object has been destroyed'); return focused; }, on: (event, fn) => handlers.set(event, fn), setTitle() {}, moveTop() {}, focus() {} };
+  const install = vm.runInNewContext('(' + generate(callbacks[0]).code + ')');
+  install({ app: { focus() {} }, BrowserWindow: { getAllWindows: () => [window] } }, { index: 0, trace: true });
+  for (let i = 0; i < 55; i++) handlers.get('focus')();
+  assert.equal(window.focusTrace.length, 50); assert.equal(window.focusTrace.at(-1).focused, true);
+  focused = false; handlers.get('blur')(); assert.equal(window.focusTrace.at(-1).focused, false);
+  const previous = JSON.stringify(window.focusTrace); destroyed = true;
+  assert.doesNotThrow(() => handlers.get('blur')()); assert.equal(JSON.stringify(window.focusTrace), previous);
 });
 test('Outpost move continuation admits only earned330XP and one completed original building', async () => {
   const code = block('worker-reload-smoke.cjs', node => node.name === 'outpostContinuation');
