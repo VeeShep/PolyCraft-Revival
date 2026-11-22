@@ -2,11 +2,11 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, directory, nativeFocus, lumbermill = false, stonemill = false, worker = null, defenceFactory = false, outpost = false, barricade = false, gate = false }) {
+module.exports = async function naturalBuilding({ host, guest, guests, focusGuest, focus, button, hero, hostFile, directory, nativeFocus, lumbermill = false, stonemill = false, worker = null, defenceFactory = false, outpost = false, barricade = false, gate = false, gatling = false }) {
   assert.ok(worker === null || worker === 'lumber' || worker === 'stone' || worker === 'war');
-  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) + Number(defenceFactory) + Number(outpost) + Number(barricade) + Number(gate) <= 1);
-  const fortification = barricade || gate;
-  const definition = gate ? { family: 'barricadeworkshop', type: 'Barricade Gate', archetype: 'a_d_barricadegate', task: 'buildGate', costs: [50, 0, 0] } : barricade ? { family: 'barricadeworkshop', type: 'Barricade', archetype: 'a_d_barricade', task: 'buildBarricade', costs: [25, 0, 0] } : outpost ? { family: 'outpostworkshop', type: 'Outpost', archetype: 'a_b_outpost', task: 'buildOutpost', costs: [100, 0, 0] } : worker === 'war' ? { family: 'defendlinghutworkshop', type: 'Defendling Hut', archetype: 'a_b_wildlinghouse_war', task: 'buildDefendlingHut', costs: [10, 0, 0] } : defenceFactory ? { family: 'defencefactoryworkshop', type: 'Defence Factory', archetype: 'a_b_defencefactory', task: 'buildDefenceFactory', costs: [10, 0, 0] } : worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
+  assert.ok(Number(lumbermill) + Number(stonemill) + Number(worker !== null) + Number(defenceFactory) + Number(outpost) + Number(barricade) + Number(gate) + Number(gatling) <= 1);
+  const fortification = barricade || gate || gatling;
+  const definition = gatling ? { family: 'turretworkshop', type: 'Turret', archetype: 'a_d_turret_level_1', task: 'buildGatling', costs: [200, 0, 0] } : gate ? { family: 'barricadeworkshop', type: 'Barricade Gate', archetype: 'a_d_barricadegate', task: 'buildGate', costs: [50, 0, 0] } : barricade ? { family: 'barricadeworkshop', type: 'Barricade', archetype: 'a_d_barricade', task: 'buildBarricade', costs: [25, 0, 0] } : outpost ? { family: 'outpostworkshop', type: 'Outpost', archetype: 'a_b_outpost', task: 'buildOutpost', costs: [100, 0, 0] } : worker === 'war' ? { family: 'defendlinghutworkshop', type: 'Defendling Hut', archetype: 'a_b_wildlinghouse_war', task: 'buildDefendlingHut', costs: [10, 0, 0] } : defenceFactory ? { family: 'defencefactoryworkshop', type: 'Defence Factory', archetype: 'a_b_defencefactory', task: 'buildDefenceFactory', costs: [10, 0, 0] } : worker ? { family: worker === 'lumber' ? 'lumberlinghutworkshop' : 'stonelinghutworkshop', type: worker === 'lumber' ? 'Lumberling Hut' : 'Stoneling Hut', archetype: 'a_b_wildlinghouse_' + worker, task: worker === 'lumber' ? 'buildLumberlingHut' : 'buildStonelingHut', costs: worker === 'lumber' ? [10, 0, 0] : [0, 10, 0] } : stonemill ? { family: 'stonemillworkshop', type: 'Stonemill', archetype: 'a_b_stonemill', task: 'buildStonemill', costs: [0, 10, 0] } : lumbermill ? { family: 'lumbermillworkshop', type: 'Lumbermill', archetype: 'a_b_lumbermill', task: 'buildLumbermill', costs: [10, 0, 0] } :
     { family: 'hqworkshop', type: 'HQ', archetype: 'a_b_hq', task: 'buildHq', costs: [0, 0, 0] };
   if (!outpost) await host.waitForFunction(family => window.hostWorld.game.getGameSpaceList().flatMap(space => space.getEntitiesWithFamilyName(family)).some(entity => entity.getEC('ECSelectable')?.permanentValid === true), definition.family, { timeout: 10000 });
   const source = await host.evaluate(({ hero, definition }) => {
@@ -45,7 +45,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     source.menu = await host.evaluate(({ hero, id }) => { const w = window.hostWorld; return w.construction.menu(w.players.active.get(hero).hero, w.game.getGameEntityByName(id), w.controls); }, { hero, id: source.id });
   }
   const product = source.menu.products.find(product => product.archetype === definition.archetype);
-  assert.ok(product?.valid && product.affordable); assert.deepEqual(product.costs, definition.costs); assert.equal(product.time, gate ? 10 : barricade ? 5 : outpost ? 1800 : 2);
+  assert.ok(product?.valid && product.affordable); assert.deepEqual(product.costs, definition.costs); assert.equal(product.time, gatling ? 900 : gate ? 10 : barricade ? 5 : outpost ? 1800 : 2);
   if (fortification) assert.equal(product.repeat, true);
   await guest.waitForFunction(id => {
     const w = window.guestWorld, entry = w.scene.entities.get(id), point = w.controls.app.globals.camera.worldToScreen(entry.displayLocation || entry.record.location);
@@ -76,7 +76,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     assert.equal(point.selected, source.id, 'The original building icon must be selectable at its visible location.');
     await guest.mouse.move(point.x, point.y); await guest.waitForTimeout(150);
     assert.equal(await guest.evaluate(point => window.PolycraftCoopActions.pickTarget(window.guestWorld, { clientX: point.x, clientY: point.y }), point), source.id);
-    await guest.mouse.click(point.x, point.y, { delay: 100 });
+    await guest.mouse.click(point.x, point.y);
     await guest.waitForFunction(id => window.guestWorld.construction.menu?.source === id, source.id, { timeout: 10000 });
     await button('guest-build-' + source.id + '-' + product.index);
     await guest.waitForFunction(() => window.guestWorld.construction.placement);
@@ -128,7 +128,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
     await host.waitForFunction(task => window.hostWorld.game.getPlayerData().getTaskFlags()[task] === true, definition.task, { timeout: 20000 });
     if (outpost) {
       await host.waitForFunction(amber => window.polycraft.controls.amounts().amber >= amber + 80, before.amber, { timeout: 10000 });
-    } else try {
+    } else if (!gatling) try {
       await host.waitForFunction(type => window.hostWorld.game.getBuildingManager().getBuildingsAtMinLevel(type, 1, false).some(entity => !entity.getEC('ECScaffold')), definition.type, { timeout: 20000 });
     } catch (error) {
       console.log('Native construction state:', await host.evaluate(() => {
@@ -139,16 +139,16 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
       }));
       throw error;
     }
-    const result = await host.evaluate(async ({ type, hero, outpost }) => {
+    const result = await host.evaluate(async ({ type, hero, outpost, gatling }) => {
       const world = window.hostWorld, game = world.game;
       await window.polycraft.checkpoint(true);
-      return { buildings: game.getBuildingManager().getBuildingsAtMinLevel(type, 1, outpost).map(entity => entity.getName()),
-        scaffolds: game.getBuildingManager().getBuildingsAtMinLevel(type, 1, outpost).flatMap(entity => {
+      return { buildings: game.getBuildingManager().getBuildingsAtMinLevel(type, 1, outpost || gatling).map(entity => entity.getName()),
+        scaffolds: game.getBuildingManager().getBuildingsAtMinLevel(type, 1, outpost || gatling).flatMap(entity => {
           const scaffold = entity.getEC('ECScaffold');
           return scaffold ? [{ id: entity.getName(), planned: scaffold.getPlannedObject(), time: scaffold.buildTime, remaining: scaffold.getBuildTimeRemaining(), cost: scaffold.getCostToInstantlyBuild(), affordable: scaffold.canEntityAffordInstantBuild(world.players.active.get(hero).hero), menu: world.construction.menu(world.players.active.get(hero).hero, entity, world.controls) }] : [];
         }),
         scripts: game.runScripts, amounts: window.polycraft.controls.amounts(), pending: world.construction.pending.size, income: { ...window.nativeBuildingIncome }, resourceEvents: window.nativeBuildingResourceEvents };
-    }, { type: definition.type, hero, outpost });
+    }, { type: definition.type, hero, outpost, gatling });
     console.log('Original guest ' + definition.type + ' construction:', JSON.stringify({ placement, result }));
     assert.equal(result.buildings.length, 1); assert.equal(result.pending, 0); assert.equal(result.scripts, true);
     if (fortification) {
@@ -162,15 +162,15 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
         bank[row.type] = row.after;
       }
       assert.deepEqual(entries.filter(row => row.amount < 0).map(row => [row.type, row.amount]), [[0, -product.costs[0]]]);
-      assert.equal(entries.filter(row => row.type === 0 && row.amount === (gate ? 400 : 200)).length, 1);
+      if (!gatling) assert.equal(entries.filter(row => row.type === 0 && row.amount === (gate ? 400 : 200)).length, 1);
       assert.deepEqual([result.amounts.wood, result.amounts.stone], bank);
       assert.equal(result.amounts.amber, before.amber);
     } else for (const [resource, cost] of [['wood', product.costs[0]], ['stone', product.costs[1]], ['amber', product.costs[2]]]) assert.equal(result.amounts[resource], before[resource] + result.income[resource] - cost + (outpost ? resource === 'wood' ? 250 : resource === 'amber' ? 80 : 0 : 0));
-    if (outpost) {
+    if (outpost || gatling) {
       assert.equal(result.scaffolds.length, 1); assert.equal(result.scaffolds[0].planned, definition.archetype);
-      assert.equal(result.scaffolds[0].time, 1800); assert.ok(result.scaffolds[0].remaining > 1700);
+      assert.equal(result.scaffolds[0].time, gatling ? 900 : 1800); assert.ok(result.scaffolds[0].remaining > (gatling ? 800 : 1700));
       assert.equal(result.scaffolds[0].affordable, true);
-      console.log('Original Outpost placement grants250wood/80Amber before its unchanged30minute build finishes; guest speedup menu observation:', JSON.stringify(result.scaffolds));
+      console.log(gatling ? 'Original Gatling scaffold retains its unchanged15minute build; guest speedup menu observation:' : 'Original Outpost placement grants250wood/80Amber before its unchanged30minute build finishes; guest speedup menu observation:', JSON.stringify(result.scaffolds));
     } else assert.equal(result.scaffolds.length, 0);
     await guest.waitForFunction(task => window.guestWorld.quests.state?.completed?.task === task, definition.task);
     const state = JSON.parse(fs.readFileSync(hostFile, 'utf8')).state;
@@ -184,7 +184,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
       await focus();
     }
     console.log('First ' + definition.type + ' built through original guest menu/preview and native construction; native cost, shared reward and clean history saved.');
-    if (fortification && directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-' + (gate ? 'gate' : 'barricade') + '-built.png'), timeout: 5000 }).catch(error => console.log('Barricade screenshot unavailable:', error.message));
+    if (fortification && directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-' + (gatling ? 'gatling' : gate ? 'gate' : 'barricade') + '-built.png'), timeout: 5000 }).catch(error => console.log('Barricade screenshot unavailable:', error.message));
   } catch (error) {
     if (fortification) {
       if (nativeFocus) console.log('Native Barricade focus trace:', JSON.stringify(await nativeFocus().catch(e => ({ unavailable: String(e?.message ?? e) }))));
@@ -193,7 +193,7 @@ module.exports = async function naturalBuilding({ host, guest, guests, focusGues
         const w = window.guestWorld, ui = w.construction;
         return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, available: w.movement.available(), captured: w.game.getIMGui().hasCapturedInput(), placement: ui.placement, pending: ui.pending, preview: ui.preview, result: ui.lastBuildResult, inputTrace: w.resourceInputTrace?.events, closed: w.connection.closed };
       }).catch(e => ({ unavailable: String(e?.message ?? e) }))));
-      if (directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-' + (gate ? 'gate' : 'barricade') + '-failure.png'), timeout: 5000 }).catch(() => {});
+      if (directory) await guest.screenshot({ path: require('node:path').join(directory, 'guest-' + (gatling ? 'gatling' : gate ? 'gate' : 'barricade') + '-failure.png'), timeout: 5000 }).catch(() => {});
     }
     throw error;
   } finally {

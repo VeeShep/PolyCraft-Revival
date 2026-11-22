@@ -40,15 +40,15 @@ test('save timing observes original sync/async calls without changing results or
   window.saveTiming.restore(); assert.equal(disconnected, true); assert.equal(window.saveTiming, undefined); assert.equal(Object.hasOwn(controls, 'checkpoint'), false); assert.equal(controls.checkpoint, original); assert.equal(controls.writeCheckpoint, before);
 });
 test('native speedup observer forwards payment receiver/arguments/result and restores own or inherited methods', async () => {
-  for (const own of [true, false]) {
+  for (const type of ['Outpost', 'Turret']) for (const own of [true, false]) {
     let funds = 96, complete = .001; const actor = { getName: () => 'assigned', getEC: () => ({ getSoftCurrency: () => funds, getXP: () => 310 }) };
     const calls = [], original = function (...args) { assert.equal(this, scaffold); assert.equal(args[0], actor); calls.push(args); funds -= 50; complete = 1; return 'native-result'; };
     const scaffold = Object.assign(Object.create({ instantlyBuild: original }), { getCostToInstantlyBuild: () => 50, canEntityAffordInstantBuild: () => true, getBuildCompleteFraction: () => complete });
     if (own) scaffold.instantlyBuild = original;
     const entity = { getName: () => 'scaffold', getEC: () => scaffold }, world = { players: { active: new Map([['guest', { hero: actor }]]) }, atRewardBoundary: read => read(),
-      game: { getBuildingManager: () => ({ getBuildingsAtMinLevel: () => [entity] }), getPlayerData: () => ({ getXP: () => 0 }) } };
+      game: { getBuildingManager: () => ({ getBuildingsAtMinLevel: (actual, level, scaffolds) => { assert.equal(actual, type); assert.equal(level, 1); assert.equal(scaffolds, true); return [entity]; } }), getPlayerData: () => ({ getXP: () => 0 }) } };
     const window = { hostWorld: world }, observe = vm.runInNewContext('(' + evaluatedCallback('coop-natural-speedup.cjs', 'setup') + ')', { window });
-    const before = await observe('guest'); assert.equal(before.amber, 96); assert.equal(funds, 96); assert.equal(complete, .001);
+    const before = await observe({ hero: 'guest', type }); assert.equal(before.amber, 96); assert.equal(funds, 96); assert.equal(complete, .001);
     assert.equal(scaffold.instantlyBuild(actor, 'forwarded'), 'native-result'); assert.deepEqual(calls, [[actor, 'forwarded']]);
     assert.deepEqual(Array.from(window.naturalSpeedupPayments, row => [row.actor, row.cost, row.before, row.after, row.complete]), [['assigned', 50, 96, 46, 1]]);
     window.restoreNaturalSpeedup(); assert.equal(scaffold.instantlyBuild, original); assert.equal(Object.hasOwn(scaffold, 'instantlyBuild'), own); assert.equal(window.naturalSpeedupPayments, undefined);
@@ -172,9 +172,9 @@ test('Outpost move continuation admits only earned330XP and one completed origin
   }
 });
 test('Barricade continuation requires the earned clean350XP stage with no pending reward, held claim or earlier fortification', async () => {
-  const code = block('worker-reload-smoke.cjs', node => node.type === 'LogicalExpression' && node.left.name === 'barricadeContinuation');
+  const code = block('worker-reload-smoke.cjs', node => node.type === 'LogicalExpression' && node.right.name === 'gatlingContinuation');
   const flags = { goToCaves: true, buildOutpost: true, speedUpOutpost: true, moveBuilding: true };
-  const valid = { state: { userData: { taskFlags: JSON.stringify(flags) } }, gateContinuation: false, pending: [], party: JSON.stringify({ players: [0, 350, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
+  const valid = { state: { userData: { taskFlags: JSON.stringify(flags) } }, gateContinuation: false, gatlingContinuation: false, pending: [], party: JSON.stringify({ players: [0, 350, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
     buildings: ['a_b_defencefactory', 'a_b_wildlinghouse_war', 'a_b_outpost'].map(archetypeName => ({ archetypeName })) };
   await vm.runInNewContext(code, { ...structuredClone(valid), assert });
   for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, moveBuilding: false }); }, f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildBarricade: true }); },
@@ -187,7 +187,7 @@ test('Barricade continuation requires the earned clean350XP stage with no pendin
 test('Barricade phase refuses incompatible arguments before reading a fixture or launching Electron', () => {
   const { spawnSync } = require('node:child_process');
   for (const [flags, message] of [[['--natural-barricade'], /requires the visible co-op/], [['--coop', '--natural-barricade', '--natural-outpost'], /Choose one special phase/],
-    ...['--focus-diagnostic', '--outpost-speedup', '--save-timing', '--move-outpost'].map(flag => [['--coop', '--natural-barricade', flag], /earned Barricade or Gate phase alone/])]) {
+    ...['--focus-diagnostic', '--outpost-speedup', '--save-timing', '--move-outpost'].map(flag => [['--coop', '--natural-barricade', flag], /earned Barricade, Gate or Gatling phase alone/])]) {
     const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-barricade-test-fixture' } });
     assert.equal(result.status, 1); assert.match(result.stderr, message); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
   }
@@ -216,9 +216,9 @@ test('Barricade placement searches near its creator while earlier buildings reta
   attempts.length = 0; select({ hero: 'guest', source: 'creator', index: 5, paid: true, marker: [50, 1, 50] }); assert.deepEqual(Array.from(attempts[0]), [40, 1, 40]);
 });
 test('Wooden Gate continuation requires earned370XP, a finished Barricade, no prior gate, pending rewards or held claims', async () => {
-  const code = block('worker-reload-smoke.cjs', node => node.type === 'LogicalExpression' && node.left.name === 'barricadeContinuation');
+  const code = block('worker-reload-smoke.cjs', node => node.type === 'LogicalExpression' && node.right.name === 'gatlingContinuation');
   const flags = { goToCaves: true, buildOutpost: true, speedUpOutpost: true, moveBuilding: true, buildBarricade: true };
-  const valid = { gateContinuation: true, state: { userData: { taskFlags: JSON.stringify(flags) } }, pending: [], party: JSON.stringify({ players: [0, 370, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
+  const valid = { gateContinuation: true, gatlingContinuation: false, state: { userData: { taskFlags: JSON.stringify(flags) } }, pending: [], party: JSON.stringify({ players: [0, 370, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
     buildings: ['a_b_defencefactory', 'a_b_wildlinghouse_war', 'a_b_outpost', 'a_d_barricade'].map(archetypeName => ({ archetypeName })) };
   await vm.runInNewContext(code, { ...structuredClone(valid), assert });
   for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildBarricade: false }); }, f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildGate: true }); },
@@ -232,7 +232,7 @@ test('Wooden Gate phase rejects mixed modes before missing fixture reads and ret
   const { spawnSync } = require('node:child_process'), native = require('./runtime-ast.cjs'), build = require('./coop-natural-building.cjs'), stop = new Error('Before UI');
   for (const flags of [['--natural-gate'], ['--coop', '--natural-gate', '--natural-barricade'], ...['--natural-outpost', '--move-outpost', '--focus-diagnostic', '--outpost-speedup', '--save-timing'].map(flag => ['--coop', '--natural-gate', flag])]) {
     const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-gate-test-fixture' } });
-    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned Barricade or Gate phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
+    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned Barricade, Gate or Gatling phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
   }
   const balance = native.assignedObject('balanceBarricades').a_d_barricadegate;
   assert.equal(balance.resourceCost, 50); assert.equal(balance.buildTime, 10); assert.equal(balance.health, 100);
@@ -249,7 +249,7 @@ test('Barricade accounting checks actual capped changes, ordered income and one 
   data.adjustResource(0, 1); data.adjustResource(0, -25); data.adjustResource(0, 200); data.adjustResource(1, 1); data.adjustResource(0, 1);
   const result = { amounts: root.polycraft.controls.amounts(), resourceEvents: root.nativeBuildingResourceEvents };
   const code = block('coop-natural-building.cjs', (node, body) => node.name === 'fortification' && body.body?.some(statement => statement.type === 'ForOfStatement'));
-  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';const gate=false,product={costs:[25,0,0]};' + code, { assert });
+  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';const gate=false,gatling=false,product={costs:[25,0,0]};' + code, { assert });
   await check(result); assert.equal(result.amounts.wood, 500);
   for (const change of [r => { r.resourceEvents[2].after = 501; }, r => { r.resourceEvents[2].amount = 201; }, r => r.resourceEvents.splice(0, 1),
     r => { r.amounts.wood--; }, r => { r.resourceEvents[0].error = 'Read failed'; }, r => r.resourceEvents.push({ overflow: true })]) {
@@ -265,9 +265,48 @@ test('Wooden Gate accounting retains native50wood cost and the capped400wood com
   data.adjustResource(0, -50); data.adjustResource(0, 400); data.adjustResource(1, 1);
   const result = { amounts: root.polycraft.controls.amounts(), resourceEvents: root.nativeBuildingResourceEvents };
   const code = block('coop-natural-building.cjs', (node, body) => node.name === 'fortification' && body.body?.some(statement => statement.type === 'ForOfStatement'));
-  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';const gate=true,product={costs:[50,0,0]};' + code, { assert });
+  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';const gate=true,gatling=false,product={costs:[50,0,0]};' + code, { assert });
   await check(result); assert.equal(result.amounts.wood, 500); assert.deepEqual(result.resourceEvents.map(r => [r.type, r.amount, r.before, r.after]), [[0, -50, 500, 450], [0, 400, 450, 500], [1, 1, 133, 134]]);
   for (const change of [r => { r.resourceEvents[0].amount = -25; }, r => { r.resourceEvents[1].amount = 200; }, r => r.resourceEvents.push(r.resourceEvents[1])]) {
+    const value = structuredClone(result); change(value); await assert.rejects(check(value), assert.AssertionError);
+  }
+  root.restoreNativeBuildingIncome();
+});
+test('Gatling continuation requires earned390XP, completed wall/gate and no existing turret or unfinished fortification', async () => {
+  const code = block('worker-reload-smoke.cjs', node => node.type === 'LogicalExpression' && node.right.name === 'gatlingContinuation');
+  const flags = { goToCaves: true, buildOutpost: true, speedUpOutpost: true, moveBuilding: true, buildBarricade: true, buildGate: true };
+  const valid = { gatlingContinuation: true, gateContinuation: false, state: { userData: { taskFlags: JSON.stringify(flags) } }, pending: [], party: JSON.stringify({ players: [0, 390, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
+    buildings: ['a_b_defencefactory', 'a_b_wildlinghouse_war', 'a_b_outpost', 'a_d_barricade', 'a_d_barricadegate'].map(archetypeName => ({ archetypeName })) };
+  await vm.runInNewContext(code, { ...structuredClone(valid), assert });
+  for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildGate: false }); }, f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, buildGatling: true }); },
+    f => { const p = JSON.parse(f.party); p.players[1].progress.xp = 370; f.party = JSON.stringify(p); }, f => { const p = JSON.parse(f.party); p.players[3].construction = {}; f.party = JSON.stringify(p); },
+    f => f.buildings.pop(), f => f.buildings.push({ archetypeName: 'a_d_turret_level_1' }), f => f.buildings.push({ archetypeName: 'a_b_scaffold', ecData: { ECScaffold: { plannedObject: 'a_d_turret_level_1' } } })]) {
+    const value = structuredClone(valid); change(value); await assert.rejects(vm.runInNewContext(code, { ...value, assert }), assert.AssertionError);
+  }
+});
+test('Gatling mode refuses mixed arguments before launch and retains the original200wood/900second/200health recipe', async () => {
+  const { spawnSync } = require('node:child_process'), native = require('./runtime-ast.cjs'), build = require('./coop-natural-building.cjs'), stop = new Error('Before UI');
+  for (const flags of [['--natural-gatling'], ...['--natural-gate', '--natural-barricade', '--natural-outpost', '--move-outpost', '--focus-diagnostic', '--outpost-speedup', '--save-timing'].map(flag => ['--coop', '--natural-gatling', flag])]) {
+    const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-gatling-test-fixture' } });
+    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned Barricade, Gate or Gatling phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
+  }
+  const balance = native.assignedObject('balanceTurrets').a_d_turret_level_1;
+  assert.equal(balance.resourceCost, 200); assert.equal(balance.buildTime, 900); assert.equal(balance.health, 200);
+  for (const property of ['usesInfiniteBuildMode', 'mustPlaceNearCreator']) assert.equal(native.archetypeComponent('a_d_turret_level_1', 'ECBuilding', property), true);
+  const host = { async waitForFunction() {}, async evaluate(_read, { definition }) { assert.deepEqual(definition, { family: 'turretworkshop', type: 'Turret', archetype: 'a_d_turret_level_1', task: 'buildGatling', costs: [200, 0, 0] }); throw stop; } };
+  await assert.rejects(build({ gatling: true, host }), error => error === stop);
+  for (const other of [{ gate: true }, { barricade: true }, { outpost: true }]) await assert.rejects(build({ gatling: true, ...other, host }), assert.AssertionError);
+});
+test('Gatling construction accounts for the native200wood debit without requiring an unrelated wall grant', async () => {
+  const prototype = require('./runtime-ast.cjs').prototypeWith('saveResource');
+  const data = Object.assign(Object.create(prototype), { resource: [500, 133], resourceCap: [500, 500], softCurrency: 84, globals: { cheats: { grindless: false } }, saveResource() {} });
+  const root = { hostWorld: { game: { getPlayerData: () => data } }, polycraft: { controls: { amounts: () => ({ wood: data.getResource(0), stone: data.getResource(1), amber: 84 }) } } };
+  const before = require('./coop-building-ledger.cjs')(root); data.adjustResource(0, -200); data.adjustResource(1, 1);
+  const result = { amounts: root.polycraft.controls.amounts(), resourceEvents: root.nativeBuildingResourceEvents };
+  const code = block('coop-natural-building.cjs', (node, body) => node.name === 'fortification' && body.body?.some(statement => statement.type === 'ForOfStatement'));
+  const check = value => vm.runInNewContext('const before=' + JSON.stringify(before) + ';const result=' + JSON.stringify(value) + ';const gate=false,gatling=true,product={costs:[200,0,0]};' + code, { assert });
+  await check(result); assert.equal(result.amounts.wood, 300);
+  for (const change of [r => { r.resourceEvents[0].amount = -50; }, r => r.resourceEvents.push(r.resourceEvents[0]), r => { r.amounts.wood = 500; }]) {
     const value = structuredClone(result); change(value); await assert.rejects(check(value), assert.AssertionError);
   }
   root.restoreNativeBuildingIncome();

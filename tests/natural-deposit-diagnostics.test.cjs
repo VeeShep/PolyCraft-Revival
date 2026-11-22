@@ -9,7 +9,7 @@ test('Barricade diagnostics run before owned observer cleanup and retain the ori
   assert.ok(handler && finalizer);
   for (const failed of [false, true]) for (const inputObserved of [false, true]) {
     const original = new Error('Native placement failed'), events = [], reads = [];
-    const context = { error: original, fortification: true, gate: false, inputObserved, directory: 'temporary', require, console: { log() {} },
+    const context = { error: original, fortification: true, gate: false, gatling: false, inputObserved, directory: 'temporary', require, console: { log() {} },
       nativeFocus: async () => { events.push('native'); if (failed) throw new Error('Native read failed'); return []; },
       host: { async evaluate(read) { const cleanup = read.toString().includes('restoreNativeBuildingIncome'); events.push(cleanup ? 'host-cleanup' : 'host-read'); if (failed) throw new Error('Host read failed'); return { resourceEvents: [] }; } },
       guest: { async evaluate(read) { const cleanup = read.toString().includes('resourceInputTrace?.restore'); events.push(cleanup ? 'guest-cleanup' : 'guest-read'); if (failed) throw new Error('Guest read failed'); return {}; },

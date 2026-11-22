@@ -18,6 +18,8 @@ module.exports = function traceResourceInput(world = globalThis.guestWorld) {
         resyncing: world.resyncing, closed: world.connection.closed, captured: gui.hasCapturedInput(),
         hot: ['guest-shop', 'guest-pause', 'guest-fullscreen', 'guest-skip-prepare'].filter(id => gui.isHot(id)),
         sequence: world.targetSequence, selection: world.selectionRequest, drag: world.groundDrag?.target ?? null,
+        gesture: world.groundDrag ? { targeted: !!world.groundDrag.targeted, held: world.groundDrag.hasHeld?.() ?? null,
+          duration: world.groundDrag.getHeldDuration?.() ?? null, threshold: world.groundDrag.HELD_THRESHOLD ?? null } : null,
         down: world.guiInput.down, pendingDown: world.guiInput.pendingDown, description: world.quests?.description?.taskId,
         questPending: world.quests?.pending, questOpenRequest: world.quests?.openRequest,
         menu: !!world.construction.menu, placement: !!world.construction.placement,

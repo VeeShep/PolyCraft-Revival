@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
-  assert.ok(!['--natural-barricade', '--natural-gate'].some(flag => process.argv.includes(flag)) || !['--move-outpost', '--outpost-speedup', '--save-timing', '--focus-diagnostic'].some(flag => process.argv.includes(flag)), 'Choose the earned Barricade or Gate phase alone.');
+  assert.ok(!['--natural-barricade', '--natural-gate', '--natural-gatling'].some(flag => process.argv.includes(flag)) || !['--move-outpost', '--outpost-speedup', '--save-timing', '--focus-diagnostic'].some(flag => process.argv.includes(flag)), 'Choose the earned Barricade, Gate or Gatling phase alone.');
   assert.ok(!process.argv.includes('--move-outpost') || process.argv.includes('--natural-outpost') && !['--outpost-speedup', '--save-timing', '--focus-diagnostic'].some(flag => process.argv.includes(flag)), 'Choose the earned Outpost move phase alone.');
   assert.ok(!process.argv.includes('--save-timing') || process.argv.includes('--natural-outpost'), 'Save timing requires the disposable earned Outpost fixture.');
   assert.ok(!process.argv.includes('--speedup-only') || process.argv.includes('--outpost-speedup'), 'Speedup-only requires the Outpost speedup phase.');
@@ -15,9 +15,9 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
   assert.ok(!process.argv.includes('--pvp-rejoin') || process.argv.includes('--pvp-death'), 'Death rejoin requires the PvP death phase.');
   assert.ok(!process.argv.includes('--pvp-dying') || process.argv.includes('--pvp-rejoin'), 'Dying departure requires death rejoin.');
   assert.ok(!(process.argv.includes('--pvp-rejoin') && process.argv.includes('--pvp-lumber')), 'Choose either death rejoin or paid lumber revival.');
-  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost', '--natural-barricade', '--natural-gate']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
-  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost', '--natural-barricade', '--natural-gate'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
-  const outpostContinuation = process.argv.includes('--natural-outpost'), speedupOnly = process.argv.includes('--speedup-only'), moveOutpost = process.argv.includes('--move-outpost'), barricadeContinuation = process.argv.includes('--natural-barricade'), gateContinuation = process.argv.includes('--natural-gate');
+  for (const flag of ['--save-in-flight', '--disconnect-in-flight', '--resource-highlights', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost', '--natural-barricade', '--natural-gate', '--natural-gatling']) assert.ok(!process.argv.includes(flag) || process.argv.includes('--coop'), 'This phase requires the visible co-op case.');
+  assert.ok(['--save-in-flight', '--disconnect-in-flight', '--disconnect-incoming', '--xp-batch', '--reward-transitions', '--health-item-transitions', '--pvp-death', '--pve-combat', '--pve-melee', '--natural-defence', '--natural-outpost', '--natural-barricade', '--natural-gate', '--natural-gatling'].filter(flag => process.argv.includes(flag)).length <= 1, 'Choose one special phase per visible run.');
+  const outpostContinuation = process.argv.includes('--natural-outpost'), speedupOnly = process.argv.includes('--speedup-only'), moveOutpost = process.argv.includes('--move-outpost'), barricadeContinuation = process.argv.includes('--natural-barricade'), gateContinuation = process.argv.includes('--natural-gate'), gatlingContinuation = process.argv.includes('--natural-gatling');
   const fixture = fs.realpathSync(process.env.POLYCRAFT_WORKER_FIXTURE || '');
   assert.ok(fixture.startsWith(fs.realpathSync(os.tmpdir()) + path.sep) && path.basename(fixture).startsWith('polycraft-hq-recovery-'), 'Use only an existing disposable recovery-test checkpoint.');
   const source = path.join(fixture, 'saves'), names = fs.readdirSync(source), originals = new Map(names.map(name => [name, fs.readFileSync(path.join(source, name))]));
@@ -45,16 +45,18 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
       assert.notEqual(flags.buildOutpost, true); assert.equal(JSON.parse(party).players[1].progress.xp, 290);
     }
     for (const type of ['a_b_defencefactory', 'a_b_wildlinghouse_war']) assert.equal(buildings.filter(entity => entity.archetypeName === type).length, 1);
-  } else if (barricadeContinuation || gateContinuation) {
+  } else if (barricadeContinuation || gateContinuation || gatlingContinuation) {
     assert.equal(pending.length, 0);
     const flags = JSON.parse(state.userData.taskFlags), players = JSON.parse(party).players;
     for (const flag of ['goToCaves', 'buildOutpost', 'speedUpOutpost', 'moveBuilding']) assert.equal(flags[flag], true);
-    if (gateContinuation) { assert.equal(flags.buildBarricade, true); assert.notEqual(flags.buildGate, true); assert.equal(players[1].progress.xp, 370); }
+    if (gatlingContinuation) { assert.equal(flags.buildBarricade, true); assert.equal(flags.buildGate, true); assert.notEqual(flags.buildGatling, true); assert.equal(players[1].progress.xp, 390); }
+    else if (gateContinuation) { assert.equal(flags.buildBarricade, true); assert.notEqual(flags.buildGate, true); assert.equal(players[1].progress.xp, 370); }
     else { assert.notEqual(flags.buildBarricade, true); assert.equal(players[1].progress.xp, 350); }
     assert.ok(players.every(player => player.construction === null));
     assert.equal(buildings.filter(entity => entity.archetypeName === 'a_b_outpost').length, 1);
-    assert.equal(buildings.filter(entity => entity.archetypeName === 'a_d_barricade').length, gateContinuation ? 1 : 0);
-    assert.equal(buildings.some(entity => (gateContinuation ? entity.archetypeName === 'a_d_barricadegate' : /^a_d_barricade/.test(entity.archetypeName)) || entity.archetypeName === 'a_b_scaffold' && /^(a_b_outpost|a_d_barricade)/.test(entity.ecData?.ECScaffold?.plannedObject || '')), false);
+    assert.equal(buildings.filter(entity => entity.archetypeName === 'a_d_barricade').length, gateContinuation || gatlingContinuation ? 1 : 0);
+    assert.equal(buildings.filter(entity => entity.archetypeName === 'a_d_barricadegate').length, gatlingContinuation ? 1 : 0);
+    assert.equal(buildings.some(entity => (gatlingContinuation ? /^a_d_turret/.test(entity.archetypeName) : gateContinuation ? entity.archetypeName === 'a_d_barricadegate' : /^a_d_barricade/.test(entity.archetypeName)) || entity.archetypeName === 'a_b_scaffold' && /^(a_b_outpost|a_d_barricade|a_d_turret)/.test(entity.ecData?.ECScaffold?.plannedObject || '')), false);
     for (const type of ['a_b_defencefactory', 'a_b_wildlinghouse_war']) assert.equal(buildings.filter(entity => entity.archetypeName === type).length, 1);
   } else { assert.equal(pending.length, 1); assert.equal(pending[0].task, 'buildStonelingHut'); }
   const huts = ['a_b_wildlinghouse_lumber', 'a_b_wildlinghouse_stone'].map(type => {
@@ -99,7 +101,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
     console.log('Disposable solo worker profile:', directory);
     const page = await open();
     if (process.argv.includes('--save-timing') && !speedupOnly) { await require('./save-timing.cjs')({ page, directory }); await close(); return; }
-    if (!outpostContinuation && !barricadeContinuation && !gateContinuation) {
+    if (!outpostContinuation && !barricadeContinuation && !gateContinuation && !gatlingContinuation) {
       const reward = 'idAcceptTaskRewardButton' + pending[0].id;
       await focus();
       await page.waitForFunction(id => window.polycraft.controls.manager().getGuiManager().prevDrawGuiMap[id]?.scale > 0.95, reward);

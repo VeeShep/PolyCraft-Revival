@@ -28,6 +28,19 @@ test('resource input trace delegates once with the same receiver/arguments/resul
   assert.equal(Object.hasOwn(f.world, 'pointer'), false); assert.equal(f.world.pointer, f.prototype.pointer);
   assert.equal(f.world.resourceInputTrace, undefined);
 });
+test('input trace records original gesture timing passively and distinguishes a quick click from native held movement', () => {
+  const f = fixture(), native = require('./runtime-ast.cjs');
+  const globals = { appCurrentTime: .1 }, gesture = { globals, downTime: 0, prevDown: true, HELD_THRESHOLD: .5, target: 'workshop', targeted: true,
+    hasHeld: native.method('hasHeld'), getHeldDuration: native.method('getHeldDuration') };
+  f.world.groundDrag = gesture; trace(f.world); f.world.pointer('pointerdown', f.event);
+  const first = f.world.resourceInputTrace.events[0];
+  assert.deepEqual(first.before.gesture, { targeted: true, held: false, duration: .1, threshold: .5 });
+  globals.appCurrentTime = .784; gesture.targeted = false;
+  f.world.pointer('pointerup', f.event);
+  assert.deepEqual(f.world.resourceInputTrace.events[1].before.gesture, { targeted: false, held: true, duration: .784, threshold: .5 });
+  assert.equal(first.after.gesture.duration, .1); assert.equal(gesture.downTime, 0); assert.equal(f.world.groundDrag, gesture);
+  f.world.resourceInputTrace.restore();
+});
 test('resource input trace preserves native exceptions even when state capture fails', () => {
   const f = fixture(); f.world.game.getIMGui = () => { throw new Error('GUI unavailable'); }; trace(f.world);
   assert.throws(() => f.world.clickTarget(f.event), error => error === f.failure);
