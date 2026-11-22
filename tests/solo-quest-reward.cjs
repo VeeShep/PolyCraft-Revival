@@ -1,4 +1,5 @@
 'use strict';
+const waitForAsyncCondition = require('./wait-for-async-condition.cjs');
 const assert = require('node:assert/strict');
 
 module.exports = async function collectSoloQuestReward({ page, focus }) {
@@ -26,7 +27,7 @@ module.exports = async function collectSoloQuestReward({ page, focus }) {
     if (state.waiting) { await page.waitForTimeout(100); continue; }
     assert.ok(state.distance <= 10, 'The retained solo reward must be nearby before this bounded approach: ' + JSON.stringify(state));
     if (step % 10 === 0) console.log('Ordinary solo quest reward approach:', JSON.stringify({ step, ...state }));
-    await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && window.polycraft.controls.manager().getGameController().isActive() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
+    await waitForAsyncCondition(page, async () => document.hasFocus() && await window.desktop.windowFocused() && window.polycraft.controls.manager().getGameController().isActive() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
     const held = [];
     try { for (const key of state.keys) { await page.keyboard.down(key); held.push(key); } await page.waitForTimeout(100); }
     finally { for (const key of held) await page.keyboard.up(key); }

@@ -1,4 +1,5 @@
 'use strict';
+const waitForAsyncCondition = require('./wait-for-async-condition.cjs');
 const { _electron: electron } = require('playwright-core');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path');
@@ -16,13 +17,15 @@ async function waitForGuestReady(page, phase, focus) {
 
 module.exports = async function workerAcknowledgement({ host, fixture, directory, file, huts, errors, requests, closeHost, openHost, focusHost }) {
   const originals = new Map(), guests = [], applications = [];
+  let roomFlow;
   const party = JSON.parse(JSON.parse(fs.readFileSync(file)).state.userData.desktopCoop);
   const focus = async index => {
     const { page, app } = guests[index];
     await page.bringToFront(); await page.locator('#turbulenz_game_engine_canvas').focus();
-    await app.evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
+    if (roomFlow) await app.evaluate(require('./coop-room-code.cjs').focusWindow);
+    else await app.evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
     await page.waitForTimeout(150);
-    await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && window.guestWorld.movement.nativeFocused, null, { timeout: 5000 });
+    await waitForAsyncCondition(page, async () => document.hasFocus() && await window.desktop.windowFocused() && window.guestWorld.movement.nativeFocused, null, { timeout: 5000 });
   };
   const workerState = hut => host.evaluate(hut => {
     const entity = window.hostWorld.game.getGameEntityByName(hut).getEC('ECWildlingHouse').getWildling(), agent = entity.getEC('ECWildlingAgent');
@@ -30,20 +33,23 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
   }, hut);
   const connect = async (index, phase = 'normal') => {
     const { page } = guests[index];
-    const offer = await host.evaluate(id => window.hostWorld.createPlayerInvitation(id), party.players[index + 1].id);
-    const reply = await page.evaluate(async invitation => {
-      const joined = await window.PolycraftMultiplayer.PeerLink.join(invitation); window.connection = joined.connection;
-      window.guestWorld = new window.PolycraftGuestWorld.GuestWorld(window.polycraft.controls, joined.connection);
-      return joined.reply;
-    }, offer.invitation);
-    await host.evaluate(reply => window.hostSession.acceptReply(reply), reply);
-    await page.waitForFunction(() => window.guestWorld.scene.snapshot || window.connection.closed, null, { timeout: 45000 });
-    assert.equal(await page.evaluate(() => window.connection.closed), false);
+    if (roomFlow) await roomFlow.join({ page, app: guests[index].app, hero: party.players[index + 1].id, index });
+    else {
+      const offer = await host.evaluate(id => window.hostWorld.createPlayerInvitation(id), party.players[index + 1].id);
+      const reply = await page.evaluate(async invitation => {
+        const joined = await window.PolycraftMultiplayer.PeerLink.join(invitation); window.connection = joined.connection;
+        window.guestWorld = new window.PolycraftGuestWorld.GuestWorld(window.polycraft.controls, joined.connection);
+        return joined.reply;
+      }, offer.invitation);
+      await host.evaluate(reply => window.hostSession.acceptReply(reply), reply);
+      await page.waitForFunction(() => window.guestWorld.scene.snapshot || window.connection.closed, null, { timeout: 45000 });
+      assert.equal(await page.evaluate(() => window.connection.closed), false);
+    }
     await focus(index);
     try {
       await waitForGuestReady(page, phase, () => focus(index));
     } catch (error) {
-      if (process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost') || (process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate') || process.argv.includes('--natural-gatling') || process.argv.includes('--natural-campaign'))) console.log('Native focus trace:', JSON.stringify(await guests[index].app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focusTrace)));
+      if (process.argv.includes('--focus-diagnostic') || process.argv.includes('--move-outpost') || (process.argv.includes('--natural-barricade') || process.argv.includes('--natural-gate') || process.argv.includes('--natural-gatling') || process.argv.includes('--natural-campaign'))) console.log('Native focus trace:', JSON.stringify(await guests[index].app.evaluate(({ BrowserWindow }) => ({ events: BrowserWindow.getAllWindows()[0].focusTrace, roomAttempts: BrowserWindow.getAllWindows()[0].roomFocusAttempts }))));
       console.log('Worker guest readiness diagnostics:', JSON.stringify(await page.evaluate(async () => {
         const w = window.guestWorld;
         return { focused: document.hasFocus(), nativeWindowFocused: await window.desktop.windowFocused(), nativeFocused: w.movement.nativeFocused, activeElement: document.activeElement?.id,
@@ -179,14 +185,17 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       }, null, { timeout: 10000 });
       console.log('Original worker quest XP settled on the solo model before reward-sensitive hosting:', await host.evaluate(() => window.polycraft.controls.manager().getPlayerData().getXP()));
     }
-    await host.evaluate(async pvp => {
-      window.workerConnectionErrors = [];
-      window.hostSession = new window.PolycraftMultiplayer.HostSession({ pvp, onError: (_peer, error) => window.workerConnectionErrors.push(error.message) });
-      window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
-    }, process.argv.includes('--pvp-death'));
+    if (process.argv.includes('--room-code')) roomFlow = await require('./coop-room-code.cjs')({ host, focusHost, directory });
+    else {
+      await host.evaluate(async pvp => {
+        window.workerConnectionErrors = [];
+        window.hostSession = new window.PolycraftMultiplayer.HostSession({ pvp, onError: (_peer, error) => window.workerConnectionErrors.push(error.message) });
+        window.hostWorld = await window.PolycraftOnlineWorld.startHostingWorld(window.polycraft.controls, window.hostSession);
+      }, process.argv.includes('--pvp-death'));
+    }
     const rewards = process.argv.includes('--reward-transitions') ? require('./coop-reward-transitions.cjs') : null;
     if (rewards) await rewards.stageSolo(host);
-    await host.evaluate(() => window.hostWorld.enablePlayers(window.polycraft.bridge));
+    if (!roomFlow) await host.evaluate(() => window.hostWorld.enablePlayers(window.polycraft.bridge));
     if (rewards) await rewards.checkSolo(host);
     await join(0); assert.equal(await host.evaluate(() => window.hostWorld.players.active.size), 2);
     if (process.argv.includes('--focus-diagnostic')) {
@@ -259,7 +268,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
       departure: process.argv.includes('--final-save-departure'), hero: party.players[1].id, reconnect }) : null;
     const saved = JSON.parse(fs.readFileSync(file)).state, earned = JSON.parse(saved.userData.desktopCoop);
     assert.equal(saved.cheats.everEnabled, false); assert.equal(earned.players.length, 4);
-    await host.evaluate(() => window.hostWorld.close());
+    if (roomFlow) await roomFlow.end(); else await host.evaluate(() => window.hostWorld.close());
     if (rewards) rewards.checkFinalDisk(file, finalReward);
     for (const row of guests) {
       await row.page.waitForFunction(() => window.connection.closed && !window.polycraft.controls.guestWorld);
@@ -304,6 +313,7 @@ module.exports = async function workerAcknowledgement({ host, fixture, directory
   } finally {
     await host.evaluate(() => window.hostWorld?.close()).catch(() => {});
     for (const app of applications) { const child = app.process(); await app.evaluate(({ app }) => app.exit()).catch(() => {}); if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); }
+    await roomFlow?.close();
     for (const [name, bytes] of originals) assert.deepEqual(fs.readFileSync(name), bytes);
     console.log('Source guest fixture files unchanged:', originals.size);
   }

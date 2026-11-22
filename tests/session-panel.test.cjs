@@ -98,7 +98,7 @@ test('menu cannot start a session from an original game menu or an existing exte
     const f = fixture(); setup(f); await assert.rejects(f.session.connect('host', { iceServers: [] }, '', true)); assert.deepEqual(f.calls, []);
   }
 });
-test('the real panel waits for the development disclaimer, supports cancellation and restores solo input on close', async () => {
+test('the real panel waits for the development disclaimer, supports cancellation and restores solo input on close', async t => {
   class Element {
     constructor() { this.listeners = new Map(); this.value = ''; this.children = []; this.open = false; }
     addEventListener(name, callback, options) { const entries = this.listeners.get(name) || []; entries.push({ callback, once: options?.once }); this.listeners.set(name, entries); }
@@ -144,8 +144,9 @@ test('the real panel waits for the development disclaimer, supports cancellation
   get('stun-urls').value = '';
   context.PolycraftRoomProtocol = require('../desktop/room-protocol.js');
   context.PolycraftAutoTransport = { AutoHostSession: class extends f.runtime.PolycraftMultiplayer.HostSession { async listen(options) { f.calls.push(['auto-listen', options]); } } };
+  let mountedRoom;
   context.PolycraftAutoRooms = { AutoRoomSession: class {
-    constructor(session) { this.session = session; this.requests = new Map(); }
+    constructor(session) { mountedRoom = this; this.session = session; this.requests = new Map(); }
     async open(role, settings) { this.role = role; this.connected = true; f.calls.push(['room-open', role, settings, this.options]); }
     close() { f.calls.push(['room-close']); }
   } };
@@ -157,6 +158,18 @@ test('the real panel waits for the development disclaimer, supports cancellation
   const transportOptions = f.calls.filter(call => call[0] === 'transport').at(-1)[1];
   assert.equal(transportOptions.iceServers[0].urls[0], 'stun:stun.l.google.com:19302'); assert.equal(transportOptions.trickle, true);
   assert.equal(get('room-password').value, ''); assert.equal(get('manual-invite-tools').hidden, true);
+  await t.test('changing the room request updates approval while retaining approved, pending and disconnected guards', async () => {
+    mountedRoom.requests.set('approved', { id: 'approved', name: 'Already joined', peer: 'peer-one' });
+    const waiting = { id: 'waiting', name: 'Second guest' }; mountedRoom.requests.set(waiting.id, waiting);
+    get('room-request').value = 'approved'; mountedRoom.session.notify('Second guest wants to join.');
+    assert.equal(get('approve-room-guest').disabled, true);
+    get('room-request').value = waiting.id; await get('room-request').fire('change');
+    assert.equal(get('approve-room-guest').disabled, false, 'Selecting the next waiting guest must enable approval immediately.');
+    assert.equal(get('room-request').value, waiting.id);
+    waiting.approving = true; await get('room-request').fire('change'); assert.equal(get('approve-room-guest').disabled, true);
+    waiting.approving = false; mountedRoom.connected = false; await get('room-request').fire('change'); assert.equal(get('approve-room-guest').disabled, true);
+    mountedRoom.connected = true; get('room-request').value = 'approved'; await get('room-request').fire('change'); assert.equal(get('approve-room-guest').disabled, true);
+  });
   await get('end-session').fire('click'); assert.deepEqual(f.calls.at(-1), ['room-close']);
   get('room-password').value = 'giggle shits'; get('stun-urls').value = 'stun:custom.example:3478';
   attempt = get('join-room').fire('click'); await Promise.resolve(); await get('multiplayer-warning').close('continue'); await attempt;

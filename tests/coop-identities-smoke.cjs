@@ -1,4 +1,5 @@
 'use strict';
+const waitForAsyncCondition = require('./wait-for-async-condition.cjs');
 const { _electron: electron } = require('playwright-core');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -101,7 +102,7 @@ const assert = require('node:assert/strict');
         });
         await page.bringToFront(); await page.locator('#turbulenz_game_engine_canvas').focus();
         try {
-          await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && (!window.guestWorld || window.guestWorld.movement.nativeFocused), null, { timeout: 5000 });
+          await waitForAsyncCondition(page, async () => document.hasFocus() && await window.desktop.windowFocused() && (!window.guestWorld || window.guestWorld.movement.nativeFocused), null, { timeout: 5000 });
           return;
         } catch (error) { if (attempt) throw error; }
       }

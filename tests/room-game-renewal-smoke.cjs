@@ -1,4 +1,5 @@
 'use strict';
+const waitForAsyncCondition = require('./wait-for-async-condition.cjs');
 const { _electron: electron } = require('playwright-core');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
@@ -20,7 +21,7 @@ const { createRoomServer } = require('../server/rooms.cjs');
   async function focus(index) {
     await applications[index].evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); const window = BrowserWindow.getAllWindows()[0]; window.moveTop(); window.focus(); });
     await pages[index].bringToFront(); await pages[index].locator('#turbulenz_game_engine_canvas').focus();
-    await pages[index].waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && (!window.polycraft.controls.guestWorld || window.polycraft.controls.guestWorld.movement.available()));
+    await waitForAsyncCondition(pages[index], async () => document.hasFocus() && await window.desktop.windowFocused() && (!window.polycraft.controls.guestWorld || window.polycraft.controls.guestWorld.movement.available()));
   }
   try {
     service.server.listen(0, '127.0.0.1'); await once(service.server, 'listening');

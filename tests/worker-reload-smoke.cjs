@@ -1,10 +1,12 @@
 'use strict';
+const waitForAsyncCondition = require('./wait-for-async-condition.cjs');
 const { _electron: electron } = require('playwright-core');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 
 (async () => {
   assert.ok(!['--natural-barricade', '--natural-gate', '--natural-gatling', '--natural-campaign'].some(flag => process.argv.includes(flag)) || !['--move-outpost', '--outpost-speedup', '--save-timing', '--focus-diagnostic'].some(flag => process.argv.includes(flag)), 'Choose the earned construction or campaign phase alone.');
+  assert.ok(!process.argv.includes('--room-code') || ['--coop', '--natural-campaign', '--autosave-motion'].every(flag => process.argv.includes(flag)), 'Room-code acceptance requires the earned four-player moving-autosave phase.');
   assert.ok(!process.argv.includes('--autosave-motion') || process.argv.includes('--coop') && process.argv.includes('--natural-campaign'), 'Autosave motion requires the earned visible co-op campaign fixture.');
   assert.ok(!process.argv.includes('--move-outpost') || process.argv.includes('--natural-outpost') && !['--outpost-speedup', '--save-timing', '--focus-diagnostic'].some(flag => process.argv.includes(flag)), 'Choose the earned Outpost move phase alone.');
   assert.ok(!process.argv.includes('--save-timing') || process.argv.includes('--natural-outpost'), 'Save timing requires the disposable earned Outpost fixture.');
@@ -88,7 +90,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
       const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Worker restart test must be visible.');
       if (!window.webContents.isAudioMuted()) throw new Error('Temporary test windows must be muted. Use the verified muted test build.');
       window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — ' + label);
-    }, process.argv.includes('--autosave-motion') ? 'four-player moving autosave test' : process.argv.includes('--natural-campaign') ? 'four-player natural campaign test' : process.argv.includes('--pvp-death') ? 'co-op PvP lifecycle and worker save test' : process.argv.includes('--coop') ? 'co-op worker save test' : 'solo worker restart');
+    }, process.argv.includes('--room-code') ? 'four-player room-code UI test' : process.argv.includes('--autosave-motion') ? 'four-player moving autosave test' : process.argv.includes('--natural-campaign') ? 'four-player natural campaign test' : process.argv.includes('--pvp-death') ? 'co-op PvP lifecycle and worker save test' : process.argv.includes('--coop') ? 'co-op worker save test' : 'solo worker restart');
     await focus();
     await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
     await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });
@@ -159,7 +161,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
           if (next.ready) { nearby = true; break; }
           if (step % 25 === 0) console.log('Normal worker approach:', JSON.stringify({ step, waypoint, ...next }));
           if (next.distance < .65 && waypoint < route.length - 1) { waypoint++; continue; }
-          await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
+          await waitForAsyncCondition(page, async () => document.hasFocus() && await window.desktop.windowFocused() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
           for (const key of next.keys) await page.keyboard.down(key);
           try { await page.waitForTimeout(100); } finally { for (const key of next.keys) await page.keyboard.up(key); }
           await page.waitForTimeout(100);
@@ -181,16 +183,16 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
         return { x: b.left + x, y: b.top + y, clear: x > 20 && x < b.width - 20 && y > 20 && y < b.height - 20, bounds: { width: b.width, height: b.height }, location: Array.from(entity.getv3Location()), hero: Array.from(game.getHero().getv3Location()) };
         }, worker.id);
         if (point.clear || turns === 4) break;
-        await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && window.polycraft.controls.manager().getGameController().isActive() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
+        await waitForAsyncCondition(page, async () => document.hasFocus() && await window.desktop.windowFocused() && window.polycraft.controls.manager().getGameController().isActive() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
         await page.keyboard.down('ArrowLeft');
         try { await page.waitForTimeout(500); } finally { await page.keyboard.up('ArrowLeft'); }
       }
       assert.ok(point.clear, 'The waiting worker must be visible before its normal activation click: ' + JSON.stringify(point));
       await focus();
-      await page.waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused() && window.polycraft.controls.manager().getGameController().isActive() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
+      await waitForAsyncCondition(page, async () => document.hasFocus() && await window.desktop.windowFocused() && window.polycraft.controls.manager().getGameController().isActive() && !window.polycraft.controls.manager().getIMGui().hasCapturedInput(), null, { timeout: 5000 });
       await page.mouse.move(point.x, point.y);
       console.log('Native worker click projection:', JSON.stringify(point));
-      await page.waitForFunction(async id => { const game = window.polycraft.controls.manager(), input = game.getGameController(), controller = input.controllerActionA; return document.hasFocus() && await window.desktop.windowFocused() && input.isActive() && !game.getIMGui().hasCapturedInput() && !controller.isIMGuiHot && controller.getNearestTarget(controller.getSelectionRadius())?.getName() === id; }, worker.id, { timeout: 5000 });
+      await waitForAsyncCondition(page, async id => { const game = window.polycraft.controls.manager(), input = game.getGameController(), controller = input.controllerActionA; return document.hasFocus() && await window.desktop.windowFocused() && input.isActive() && !game.getIMGui().hasCapturedInput() && !controller.isIMGuiHot && controller.getNearestTarget(controller.getSelectionRadius())?.getName() === id; }, worker.id, { timeout: 5000 });
       await page.mouse.click(point.x, point.y, { delay: 100 });
       await page.waitForFunction(id => { const agent = window.polycraft.controls.manager().getGameEntityByName(id).getEC('ECWildlingAgent'); return !agent.isSleeping() && !agent.isWaitingForClick(); }, worker.id, { timeout: 5000 });
       console.log('Original worker resumed through its ordinary interaction click:', worker.id);

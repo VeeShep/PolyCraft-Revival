@@ -1,4 +1,5 @@
 'use strict';
+const waitForAsyncCondition = require('./wait-for-async-condition.cjs');
 const { _electron: electron } = require('playwright-core');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), net = require('node:net');
@@ -30,7 +31,7 @@ const { once } = require('node:events');
   async function focus(index) {
     await applications[index].evaluate(({ app, BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; app.focus({ steal: true }); window.moveTop(); window.focus(); });
     await pages[index].bringToFront();
-    await pages[index].waitForFunction(async () => document.hasFocus() && await window.desktop.windowFocused(), null, { timeout: 5000 });
+    await waitForAsyncCondition(pages[index], async () => document.hasFocus() && await window.desktop.windowFocused(), null, { timeout: 5000 });
   }
   async function click(index, selector) { await focus(index); await pages[index].locator(selector).click(); }
   async function connection(index, selector) {

@@ -221,6 +221,7 @@
     $('join-island').addEventListener('click', () => run(() => connect('guest')));
     $('host-room').addEventListener('click', () => run(() => connectRoom('host')));
     $('join-room').addEventListener('click', () => run(() => connectRoom('guest')));
+    $('room-request').addEventListener('change', render);
     $('approve-room-guest').addEventListener('click', () => run(() => session.room.approve($('room-request').value, $('room-hero').value)));
     $('reject-room-guest').addEventListener('click', () => run(() => session.room.reject($('room-request').value)));
     $('add-guest').addEventListener('click', () => run(() => { $('guest-hero').value = session.addGuest($('guest-name').value); session.selectGuest($('guest-hero').value); $('guest-name').value = ''; }));
