@@ -4,7 +4,7 @@ Updated 2026-11-22. **The resumable restoration goal is active and incomplete.**
 
 ## Current roadmap and acceptance — 2026-11-22
 
-The working application is **1.0.0-beta.106** with the room-selection fix below under verification. The last published application is Beta105, baseline [83efcc0](https://github.com/VeeShep/PolyCraft-Revival/commit/83efcc04ad48e07b21a9434708d94ee8b22f3c22). Later revisions through [298dbef](https://github.com/VeeShep/PolyCraft-Revival/commit/298dbef3271cac556b05755f0f53627cc581df64) change tests/documentation only. The public offline prerelease remains **Beta 2**; temporary CI artifacts are separate tester builds. No new public release is claimed.
+The application is **1.0.0-beta.106**, published source [8baca11](https://github.com/VeeShep/PolyCraft-Revival/commit/8baca11c69ddc2f3db1e0cb49a70c79e7a88539b). Its only application-behavior change from Beta105 is the room-request selection redraw; package versions increment, while the engine, assets, dependencies and save/network formats remain unchanged. The same checkpoint corrects test-only async focus waits. Exact [CI45084008242](https://github.com/VeeShep/PolyCraft-Revival/actions/runs/45084008242) is live; its final checks/packages are not yet accepted. The public offline prerelease remains **Beta2**, and original Beta1 files/checksums stay immutable.
 
 Work order remains **finish foundations → accept original co-op → expand gameplay**. Later approved requirements extend the original copy/paste design with room codes and direct-first routing. Keep every gate below open to its actual verification scope.
 
@@ -33,6 +33,10 @@ Work order remains **finish foundations → accept original co-op → expand gam
 
 The current roadmap, README and auditor brief now distinguish application source, test source, local native acceptance, CI artifacts and public release. Earlier summaries/ledger text are preserved as history, with existing anchors retained and one missing readability alias added. A deterministic inverse restores the previous ledger exactly after undoing historical heading depth. Local file/fragment and version/schema/source-range checks are recorded in [TESTING.md](TESTING.md); source/package/saves/Beta1/baselines are unchanged. No game windows were opened in this documentation pass. Next work remains the open acceptance gates above; the persistent goal is not complete.
 
+### Published Beta106 checkpoint — 2026-11-22
+
+Reviewed21-file milestone [8baca11c69ddc2f3db1e0cb49a70c79e7a88539b](https://github.com/VeeShep/PolyCraft-Revival/commit/8baca11c69ddc2f3db1e0cb49a70c79e7a88539b) is on origin/main after full787/0 on the application fix, final114focused/0 on the finished harness, fresh ARM64 source/icons/14MachO/signature and one-line inverse proof, all native evidence/pins and258local file/fragment checks. Native second-request approval succeeds on106; the full4player room flow remains open after native focus refusal. Three106failure capsules retain53/51/56files, and the105disabled-button capsule retains54; no game windows remain. Subsequent six test-only cases have focused coverage and await exact newCI45084008242; do not substitute old782CI or claim an unperformed local793full run. No duplicate dispatch or public release. Next inspect this exact CI, then continue headless work or establish genuine per-instance foreground focus before a bounded visible retry. Goalactive/incomplete; otherOS/WAN/endurance/save-hitch cause remain open.
+
 ### Beta106 verified fix and final local boundary — 2026-11-22
 
 **Application fix:** the actual room-request dropdown now re-renders approval state on change. The old packaged105panel and a real mounted-panel regression reproduce the disabled second-guest button; the single added listener retains approved/approving/disconnected guards. Package/lock increment to1.0.0-beta.106, dependencies/engine/assets/save/room/runtime formats unchanged. Full787/0/0 passes on this application source; finished local ARM64 source/version/original icons/14MachO/deep signature and one-line packaged inverse all verify. Native106attempts1/2 each admit the second saved hero through the previously failing actual UI control and direct TCP/TLS. This verifies that bug fix, not complete four-player acceptance.
@@ -43,33 +47,37 @@ The current roadmap, README and auditor brief now distinguish application source
 
 **Continuation gate:** observe genuine foreground/window/content focus for each instance before another long four-player room UI run. Full room admission/movement/autosave/normal End session/reopen/solo restoration on106 remains open, as do otherOS/physical-network/WAN/endurance and reported save-hitch cause. Keep headless/source work available while that graphical prerequisite is unavailable. The goal stays active/incomplete. No public release; prepare the reviewed source checkpoint and inspect its exact future CI independently of the previous782-check run.
 
-### Beta106 room admission/focus evidence — 2026-11-22
+## Historical appendix: dated implementation and test evidence
+
+The remaining records preserve their original chronology, source hashes, test scopes, failed attempts and observations. Their headings may say “current,” “running,” “pending,” “next” or “paused”; those statements apply to the dated checkpoint only. The current roadmap above and later terminal evidence take precedence. Existing heading text and link anchors are preserved; heading depth is adjusted to place the records in this appendix. Ignored evidence paths require the retained local capsule and are not included in a Git clone.
+
+### Beta106 development attempts — 2026-11-22
+
+These same-day records preserve their original pending/running/failure states. The published checkpoint and final local boundary above take precedence; no previous failed attempt is reclassified as full acceptance.
+
+#### Beta106 room admission/focus evidence — 2026-11-22
 
 Corrected native73030/attempt1 exits1 after **two actual saved-hero room admissions** through direct TCP/TLS, including the exact second-request approval that failed on105. It then stops at guest2 input/HUD readiness: live connection/host slot ready, browser document focused but nativeWindowFocused=false/nativeFocused=false and no initial life query. One ordinary refocus retry also fails; native focus trace is empty. This confirms the approval fix in the native app, not full4player or movement/reload acceptance. All53pins match,53failed evidence files sealed and owned apps closed.
 
 One test-only bounded retry now calls real app/window show/focus plus WebContents focus, records native/content/window state in a bounded10-entry observation list and still requires actual native focus before input. It never assigns movement.nativeFocused or relaxes readiness. A serialized-callback test proves native refusal remains false and later observations stay bounded; focused109/0 passes. Production app/engine remain the already verified106build; the full787 result precedes this extra test-only case, not an unperformed788claim. Announced muted native51285/attempt2 is live with53frozen inputs and the unchanged earned source/app. No further production focus change or public release is claimed.
 
-### Beta106 full checks and corrected native retry — 2026-11-22
+#### Beta106 full checks and corrected native retry — 2026-11-22
 
 Full session17915 exits0 with **787passed/0failed/0skipped** (687318.9ms), including the real selection-change regression and the four new room-driver cases. Fresh ARM64 build80398 and static verification39393 pass source/version/icons/14MachO/deep signature; independent packaged inverse retains the old panel after removing only the new listener, and original engine bytes are unchanged. Metadata-only package/lock version differences are verified separately from dependencies.
 
 Announced muted native73030/attempt1 now uses this verified Beta106 app, unchanged clean earned430XP fixture and53frozen project/server/fixture/app inputs. It repeats the actual room menu actions that failed on Beta105, then must admit all3saved guests, preserve movement/normal autosave/End session/party reopen/solo restoration. Do not edit source or helpers while live. No native success claimed yet; no public release/push yet. Evidence under ignored `test-results/beta-106-room-approval/native-attempt-1` preserves this exact input set; Beta105's failed54-file capsule remains intact.
 
-### Beta106 room approval fix — verification in progress, 2026-11-22
+#### Beta106 room approval fix — verification in progress, 2026-11-22
 
 Announced muted native10575/attempt1 exits1: guest1 joins its saved hero through real room/password UI and direct TCP/TLS, but selecting guest2's waiting request leaves Approve guest disabled. The pre-teardown JSON records the correct waiting request/status; the helper never bypasses the disabled button. All52executed pins match and54failed evidence files are sealed; owned apps are absent. No four-player motion/autosave/final-reload acceptance in this attempt.
 
 A real mounted-panel regression reproduces the missing selection redraw: selecting the waiting request after an approved request keeps stale button state (red8passed/2failed including parent). Failing panel bytes match the executed Beta105 ASAR. One `room-request` change listener now reuses the existing render function, retaining approved/approving/disconnected guards. Focused108/0 passes, including the new mounted-panel subtest and four room-driver contracts. Package/lock versions increment to1.0.0-beta.106; engine/assets/save/room/runtime formats and dependencies are unchanged. Full non-graphical session17915 remains live with source/tests frozen. Fresh ARM64 build80398 exits0; static verification39393 passes packaged source/version/original icon,14ARM64MachO and deep/strict signature. Independent ASAR comparison removes exactly the added listener to recover the previously executed Beta105 panel bytes, while engineSHA256 remains ec0946272f9bf4ff4aacb5aff42821db0b79d7f9f8a4a27248e143dd93ace952. No game windows during these checks. Wait for the broad suite before retrying visible admission on this verified106app; the old105app cannot validate the fix. Evidence: ignored `test-results/beta-106-room-approval` and the preserved Beta105 failed capsule.
 
-### Earned four-player room-code acceptance — in progress, 2026-11-22
+#### Earned four-player room-code acceptance — in progress, 2026-11-22
 
 Older room UI coverage uses two staged islands; the four-player full-game relay-renewal fixture also stages tutorial/positions. New `--coop --natural-campaign --autosave-motion --room-code` retains the earned clean430XP source and actual four saved heroes, uses real Host room/Join room/disclaimer/password/request/approval/End session controls, and reuses ordinary movement, normal autosave and full party reopen/guest solo restoration. It must reject a case-wrong password without admitting a hero, require host approval for each existing identity, report actual direct TCP/TLS, close the room and preserve all solo histories. The owned room service binds loopback; native address and STUN are loopback-only, TURN is absent and UPnP remains off. This is not WAN/NAT/router acceptance.
 
 Four new contracts cover renderer-safe diagnostic binding, saved-identity/snapshot/live-connection guards, original error forwarding/ownership and incompatible CLI refusal before fixture access/launch. Focused98/0 passes; no repeated full suite or production/version/schema/package changes. Announced muted native10575/attempt1 is live with52frozen project/server/fixture/app inputs on the unchanged named Beta105 ARM64 app. Do not edit those inputs while it runs. Evidence: ignored `test-results/beta-105-room-code-earned`; native result and save/reload acceptance remain pending.
-
-## Historical appendix: dated implementation and test evidence
-
-The remaining records preserve their original chronology, source hashes, test scopes, failed attempts and observations. Their headings may say “current,” “running,” “pending,” “next” or “paused”; those statements apply to the dated checkpoint only. The current roadmap above and later terminal evidence take precedence. Existing heading text and link anchors are preserved; heading depth is adjusted to place the records in this appendix. Ignored evidence paths require the retained local capsule and are not included in a Git clone.
 
 ### Current continuation — 2026-11-22
 
