@@ -5,6 +5,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
 
 (async () => {
   assert.ok(!['--natural-barricade', '--natural-gate', '--natural-gatling', '--natural-campaign'].some(flag => process.argv.includes(flag)) || !['--move-outpost', '--outpost-speedup', '--save-timing', '--focus-diagnostic'].some(flag => process.argv.includes(flag)), 'Choose the earned construction or campaign phase alone.');
+  assert.ok(!process.argv.includes('--autosave-motion') || process.argv.includes('--coop') && process.argv.includes('--natural-campaign'), 'Autosave motion requires the earned visible co-op campaign fixture.');
   assert.ok(!process.argv.includes('--move-outpost') || process.argv.includes('--natural-outpost') && !['--outpost-speedup', '--save-timing', '--focus-diagnostic'].some(flag => process.argv.includes(flag)), 'Choose the earned Outpost move phase alone.');
   assert.ok(!process.argv.includes('--save-timing') || process.argv.includes('--natural-outpost'), 'Save timing requires the disposable earned Outpost fixture.');
   assert.ok(!process.argv.includes('--speedup-only') || process.argv.includes('--outpost-speedup'), 'Speedup-only requires the Outpost speedup phase.');
@@ -87,7 +88,7 @@ const fs = require('node:fs'), os = require('node:os'), path = require('node:pat
       const window = BrowserWindow.getAllWindows()[0]; if (!window.isVisible()) throw new Error('Worker restart test must be visible.');
       if (!window.webContents.isAudioMuted()) throw new Error('Temporary test windows must be muted. Use the verified muted test build.');
       window.on('page-title-updated', event => event.preventDefault()); window.setTitle('PolyCraft temporary island — ' + label);
-    }, process.argv.includes('--natural-campaign') ? 'four-player natural campaign test' : process.argv.includes('--pvp-death') ? 'co-op PvP lifecycle and worker save test' : process.argv.includes('--coop') ? 'co-op worker save test' : 'solo worker restart');
+    }, process.argv.includes('--autosave-motion') ? 'four-player moving autosave test' : process.argv.includes('--natural-campaign') ? 'four-player natural campaign test' : process.argv.includes('--pvp-death') ? 'co-op PvP lifecycle and worker save test' : process.argv.includes('--coop') ? 'co-op worker save test' : 'solo worker restart');
     await focus();
     await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#save-list article').first().getByRole('button', { name: 'Continue', exact: true }).click({ noWaitAfter: true })]);
     await page.waitForFunction(() => window.polycraft?.controls.ready(), null, { timeout: 60000 });

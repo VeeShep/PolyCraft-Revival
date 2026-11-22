@@ -1,13 +1,13 @@
 'use strict';
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 function installSaveTiming() {
-  const controls = window.polycraft.controls, game = controls.manager(), records = [], frames = [], status = [], restores = [];
-  let running = true, previous, previousTick, unchangedSince;
+  const controls = window.polycraft.controls, game = controls.manager(), records = [], frames = [], frameIntervals = [], status = [], restores = [];
+  let running = true, previous, previousAt, previousTick, unchangedSince;
   const simulationGaps = [];
   const observe = (object, key) => {
     const original = object[key], own = Object.hasOwn(object, key);
     object[key] = function (...args) {
-      const start = performance.now(), done = () => records.push({ phase: key, milliseconds: performance.now() - start });
+      const start = performance.now(), startedAt = Date.now(), done = () => records.push({ phase: key, milliseconds: performance.now() - start, startedAt, endedAt: Date.now() });
       try {
         const value = original.apply(this, args);
         if (value && typeof value.then === 'function') value.then(done, done); else done();
@@ -18,17 +18,18 @@ function installSaveTiming() {
   };
   observe(controls, 'checkpoint'); observe(controls, 'writeCheckpoint'); observe(game, 'saveLevel');
   if (game.desktopPlayers) observe(game.desktopPlayers, 'capture');
-  const element = document.getElementById('status'), observer = new MutationObserver(() => status.push({ time: performance.now(), text: element.textContent }));
+  const element = document.getElementById('status'), observer = new MutationObserver(() => status.push({ time: performance.now(), wallTime: Date.now(), text: element.textContent }));
   observer.observe(element, { childList: true, subtree: true, characterData: true });
   const frame = time => {
     if (!running) return;
-    if (previous !== undefined) frames.push(time - previous);
+    const now = Date.now();
+    if (previous !== undefined) { frames.push(time - previous); frameIntervals.push({ startedAt: previousAt, endedAt: now, milliseconds: time - previous }); }
     const tick = game.gameClock?.getFrameIndex();
     if (tick !== previousTick) { if (unchangedSince !== undefined) simulationGaps.push(time - unchangedSince); unchangedSince = time; previousTick = tick; }
-    previous = time; requestAnimationFrame(frame);
+    previous = time; previousAt = now; requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
-  window.saveTiming = { records, frames, status, simulationGaps, restore() { running = false; observer.disconnect(); restores.reverse().forEach(restore => restore()); delete window.saveTiming; } };
+  window.saveTiming = { records, frames, frameIntervals, status, simulationGaps, restore() { running = false; observer.disconnect(); restores.reverse().forEach(restore => restore()); delete window.saveTiming; } };
 }
 module.exports = async function saveTiming({ page, directory, activeHost = false }) {
   for (const online of activeHost ? [true] : [false, true]) {
@@ -44,11 +45,11 @@ module.exports = async function saveTiming({ page, directory, activeHost = false
       const baseline = await page.evaluate(() => window.saveTiming.frames.splice(0));
       const samples = [];
       for (let index = 0; index < 3; index++) {
-        await page.evaluate(() => { window.saveTiming.records.length = window.saveTiming.frames.length = window.saveTiming.status.length = window.saveTiming.simulationGaps.length = 0; });
+        await page.evaluate(() => { window.saveTiming.records.length = window.saveTiming.frames.length = window.saveTiming.frameIntervals.length = window.saveTiming.status.length = window.saveTiming.simulationGaps.length = 0; });
         await page.locator('#save-now').click();
         await page.waitForFunction(() => window.saveTiming.status.some(row => row.text.startsWith('Saved locally at')));
         await page.waitForTimeout(200);
-        const sample = await page.evaluate(() => ({ records: window.saveTiming.records, frames: window.saveTiming.frames, status: window.saveTiming.status, simulationGaps: window.saveTiming.simulationGaps }));
+        const sample = await page.evaluate(() => ({ records: window.saveTiming.records, frames: window.saveTiming.frames, frameIntervals: window.saveTiming.frameIntervals, status: window.saveTiming.status, simulationGaps: window.saveTiming.simulationGaps }));
         assert.ok(sample.records.some(row => row.phase === 'saveLevel'));
         const start = sample.status.find(row => row.text === 'Saving…'), end = sample.status.find(row => row.text.startsWith('Saved locally at'));
         assert.ok(start && end); sample.totalMilliseconds = end.time - start.time; samples.push(sample);
