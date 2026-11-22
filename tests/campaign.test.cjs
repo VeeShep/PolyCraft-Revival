@@ -4,6 +4,12 @@ const assert = require('node:assert/strict');
 const ast = require('./runtime-ast.cjs');
 const { campaignContext, validateCampaign, GuestCampaign } = require('../desktop/campaign.js');
 const { HostActions } = require('../desktop/coop-actions.js');
+test('original preparation and battle hide quests, and normal play restores them for reward collection', () => {
+  const flags = ast.objectWith('playFlagsNormal');
+  assert.equal(flags.playFlagsPrepareForWar.showTasks, false);
+  assert.equal(flags.playFlagsWar.showTasks, false);
+  assert.equal(flags.playFlagsNormal.showTasks, true);
+});
 for (const [commandName, eventName] of [['WaitUntilCampaignBeginsCommand', 'CampaignStarted'], ['WaitUntilCampaignEndsCommand', 'CampaignScoreScreenExited']]) {
   test('original ' + commandName + ' waits for its exact native event and releases pending subscriptions', () => {
     const methods = ast.campaignWaitMethods(commandName), listeners = new Map(); let subscriptions = 0;

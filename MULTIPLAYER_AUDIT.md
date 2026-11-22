@@ -4,17 +4,21 @@ The current authority is [RESTORATION_STATUS.md](RESTORATION_STATUS.md). The sec
 
 ## Natural campaign continuation audit — 2026-11-22
 
+Accepted natural continuation: announced muted native86509/attempt3 passes original banner navigation/preview/confirmation,14spawned identities/native wave completion/zero remaining, independent victory, exact guest20/300XP pickup grants, host33XP/166stone score claim, normal party save/reopen/next-campaign and guest solo restoration. Final party[33,780,220,0],bank292/291/65,clean/no pending/no held claims;50evidence files/44input pins/eight fixture pairs preserved. Focused90/0 passes; otherOS/WAN/endurance remain open. Earlier source audit below records its original narrower scope.
+
 Scope: current Beta105 runtime (`coop-43`), following accepted natural Gatling/speedup. This is source/native-method evidence and fixture preparation, not natural campaign gameplay acceptance. Current source, save and build status remain in [RESTORATION_STATUS.md](RESTORATION_STATUS.md).
 
 The earned temporary checkpoint has party XP `[0,430,120,0]`, shared bank300wood/133stone/61Amber, no pending quest/campaign rewards or held claims, and clean cheat history. Guest One retains the original `wp_h_shotgun_cone01`, two rounds and50/50health. Eight save/backup files are copied byte-identically from sealed Gatling attempt2 into a separate recovery-test fixture. The ignored `test-results/beta-105-natural-campaign/prepared-stage.json` records source/copy hashes and inventory; never replace these with assigned progress, a pistol, teleports or easier enemy values.
 
 Verified original rules:
 
+- Native ECHealth emits EnemyKilled only for hero-faction aggressors. Wave completion uses every issued wave plus zero remaining spawned entities, not the number of credited kill events. Natural attempt2 records victory and12credited events for the14-enemy campaign; its last exact14-event assertion failed before reload. The corrected observer must independently record14spawned identities and native completion/zero remaining. The cause of uncredited retirements is unproven.
+
 - `startCampaign` pays20XP/1Amber. Its visible script enables campaigns through the original script queue, then `WaitUntilCampaignBeginsCommand` waits for `CampaignStarted`; closing a preview cannot satisfy it.
 - `winCampaign` pays300XP/1Amber. `WaitUntilCampaignEndsCommand` waits for `CampaignScoreScreenExited`, not a victory predicate. Assert native `score.wasVictory === true` independently before calling a run a victory.
 - The native host score panel's `exitState` emits `CampaignScoreScreenExited`. Guest `GuestCampaign.dismissResult()` only dismisses the local copy; it neither collects the host-owned score reward nor advances that native exit event.
 - `campaignContext` requires original campaign eligibility, an enabled/active native starter, an existing Outpost, no active campaign and normal play. Serialized saved entity archetype text does not locate the runtime banner; query eligible `ECCampaignStarter` entities in the loaded game and use the native navigation route.
-- The shared natural quest helper currently asserts20XP. Supporting the300XP quest requires explicit original reward handling and resolving the current assigned hero after any earned rank-up.
+- At published sourcee815da0 the shared natural quest helper asserted20XP. The later local campaign draft supports300XP through native pickup accounting; it still needs live acceptance, including resolving the current assigned hero after an earned rank-up.
 
 The old `coop-campaign-acceptance.cjs` and `coop-campaign-victory.cjs` remain useful staged coverage. They explicitly enable campaign flags, create a temporary Outpost if missing, teleport actors and equip a pistol. Do not run them unchanged and call that natural progression from the earned save.
 

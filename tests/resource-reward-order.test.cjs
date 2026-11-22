@@ -187,7 +187,7 @@ test('Barricade continuation requires the earned clean350XP stage with no pendin
 test('Barricade phase refuses incompatible arguments before reading a fixture or launching Electron', () => {
   const { spawnSync } = require('node:child_process');
   for (const [flags, message] of [[['--natural-barricade'], /requires the visible co-op/], [['--coop', '--natural-barricade', '--natural-outpost'], /Choose one special phase/],
-    ...['--focus-diagnostic', '--outpost-speedup', '--save-timing', '--move-outpost'].map(flag => [['--coop', '--natural-barricade', flag], /earned Barricade, Gate or Gatling phase alone/])]) {
+    ...['--focus-diagnostic', '--outpost-speedup', '--save-timing', '--move-outpost'].map(flag => [['--coop', '--natural-barricade', flag], /earned construction or campaign phase alone/])]) {
     const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-barricade-test-fixture' } });
     assert.equal(result.status, 1); assert.match(result.stderr, message); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
   }
@@ -232,7 +232,7 @@ test('Wooden Gate phase rejects mixed modes before missing fixture reads and ret
   const { spawnSync } = require('node:child_process'), native = require('./runtime-ast.cjs'), build = require('./coop-natural-building.cjs'), stop = new Error('Before UI');
   for (const flags of [['--natural-gate'], ['--coop', '--natural-gate', '--natural-barricade'], ...['--natural-outpost', '--move-outpost', '--focus-diagnostic', '--outpost-speedup', '--save-timing'].map(flag => ['--coop', '--natural-gate', flag])]) {
     const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-gate-test-fixture' } });
-    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned Barricade, Gate or Gatling phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
+    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned construction or campaign phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
   }
   const balance = native.assignedObject('balanceBarricades').a_d_barricadegate;
   assert.equal(balance.resourceCost, 50); assert.equal(balance.buildTime, 10); assert.equal(balance.health, 100);
@@ -288,7 +288,7 @@ test('Gatling mode refuses mixed arguments before launch and retains the origina
   const { spawnSync } = require('node:child_process'), native = require('./runtime-ast.cjs'), build = require('./coop-natural-building.cjs'), stop = new Error('Before UI');
   for (const flags of [['--natural-gatling'], ...['--natural-gate', '--natural-barricade', '--natural-outpost', '--move-outpost', '--focus-diagnostic', '--outpost-speedup', '--save-timing'].map(flag => ['--coop', '--natural-gatling', flag])]) {
     const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-gatling-test-fixture' } });
-    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned Barricade, Gate or Gatling phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
+    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned construction or campaign phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
   }
   const balance = native.assignedObject('balanceTurrets').a_d_turret_level_1;
   assert.equal(balance.resourceCost, 200); assert.equal(balance.buildTime, 900); assert.equal(balance.health, 200);
@@ -311,12 +311,32 @@ test('Gatling construction accounts for the native200wood debit without requirin
   }
   root.restoreNativeBuildingIncome();
 });
+test('natural campaign continuation requires earned430XP, original completed defences and no previous or pending campaign', async () => {
+  const code = block('worker-reload-smoke.cjs', node => node.name === 'campaignContinuation');
+  const flags = { moveBuilding: true, buildBarricade: true, buildGate: true, buildGatling: true, speedUpGatling: true };
+  const valid = { state: { userData: { taskFlags: JSON.stringify(flags), desktopCampaignRewards: '{"pending":[]}' } }, pending: [], party: JSON.stringify({ players: [0, 430, 120, 0].map(xp => ({ progress: { xp }, construction: null })) }),
+    buildings: ['a_b_outpost', 'a_d_barricade', 'a_d_barricadegate', 'a_d_turret_level_1'].map(archetypeName => ({ archetypeName })) };
+  await vm.runInNewContext(code, { ...structuredClone(valid), assert });
+  for (const change of [f => f.pending.push({}), f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, speedUpGatling: false }); }, f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, startCampaign: true }); },
+    f => { f.state.userData.taskFlags = JSON.stringify({ ...flags, winCampaign: true }); }, f => { f.state.userData.desktopCampaignRewards = '{"pending":[{}]}'; },
+    f => { const p = JSON.parse(f.party); p.players[1].progress.xp = 410; f.party = JSON.stringify(p); }, f => { const p = JSON.parse(f.party); p.players[2].construction = {}; f.party = JSON.stringify(p); },
+    f => f.buildings.pop(), f => f.buildings.push({ archetypeName: 'a_d_turret_level_1' }), f => f.buildings.push({ archetypeName: 'a_b_scaffoldWarSmall' })]) {
+    const value = structuredClone(valid); change(value); await assert.rejects(vm.runInNewContext(code, { ...value, assert }), assert.AssertionError);
+  }
+});
+test('natural campaign mode refuses incompatible flags before missing fixture reads or game launch', () => {
+  const { spawnSync } = require('node:child_process');
+  for (const flags of [['--natural-campaign'], ...['--natural-gatling', '--natural-gate', '--natural-outpost', '--move-outpost', '--outpost-speedup', '--save-timing', '--focus-diagnostic'].map(flag => ['--coop', '--natural-campaign', flag])]) {
+    const result = spawnSync(process.execPath, [path.join(__dirname, 'worker-reload-smoke.cjs'), ...flags], { encoding: 'utf8', env: { ...process.env, POLYCRAFT_WORKER_FIXTURE: '/missing-campaign-test-fixture' } });
+    assert.equal(result.status, 1); assert.match(result.stderr, /requires the visible co-op|Choose one special phase|earned construction or campaign phase alone/); assert.doesNotMatch(result.stderr, /ENOENT|electron\.launch/);
+  }
+});
 test('natural Defence reward approach excludes old pickups, new worker resources and destroyed reward remnants', () => {
   const entity = (id, pickup, destroyed = false) => ({ getName: () => id, getEC: () => pickup, shouldBeDestroyed: () => destroyed });
   const entities = [entity('old', { xp: 20, archetype: {} }), entity('stone', { xp: 0, archetype: { resource: [0, 1] } }),
     entity('dead', { xp: 20, archetype: {} }, true), entity('xp', { xp: 20, archetype: {} }), entity('amber', { xp: 0, archetype: { softCurrency: 1 } })];
   const select = vm.runInNewContext('(' + evaluatedCallback('coop-natural-defence.cjs', 'drops') + ')', { window: { hostWorld: { game: { getGameSpaceList: () => [{ getEntitiesWithEC: () => entities }] } } } });
-  assert.deepEqual(Array.from(select(['old'])), ['xp', 'amber']);
+  assert.deepEqual(Array.from(select({ old: ['old'], campaignTask: false })), ['xp', 'amber']);
 });
 test('natural Defendling recipe selects the original war hut and rejects simultaneous factory construction', async () => {
   const build = require('./coop-natural-building.cjs'), stop = new Error('Stop before UI interaction');
