@@ -500,7 +500,7 @@ test('shared original pause settings use session data while native solo settings
   const profile = Object.assign(Object.create(ast.prototypeWith('saveSettings')), { globals, settings: { shadows: true, music: true, sounds: true }, saveSettings() { saves++; } });
   const session = Object.assign(Object.create(profile), { settings: { ...profile.settings }, saveSettings() {} });
   game.getPlayerData = () => assert.fail('guest settings cannot consult the solo profile');
-  const view = { gameManager: game, globals }, draw = ast.method('updateSettingsMenu', { Z: { BUTTON_NORMAL_HALF: 'half' } });
+  const view = { gameManager: game, globals }, draw = ast.method('updateSettingsMenu', { ...ast.imguiContext({ BUTTON_NORMAL_HALF: 'half' }) });
   for (const label of ['Disable Shadows', 'Disable Music', 'Disable Sound']) { clicked = 'Paused ' + label; draw.call(view, session); }
   assert.deepEqual(session.settings, { shadows: false, music: false, sounds: false });
   assert.deepEqual(profile.settings, { shadows: true, music: true, sounds: true }); assert.equal(saves, 0);
@@ -511,7 +511,7 @@ test('shared original pause settings use session data while native solo settings
   assert.deepEqual(Array.from(music.v2ScreenLocation), [100, 170]); assert.equal(music.guiArchetype, 'buttonHalf'); assert.equal(music.buttonType, 'half');
   game.getPlayerData = () => profile; clicked = 'Paused Disable Music'; draw.call(view);
   assert.equal(profile.settings.music, false); assert.equal(saves, 1, 'solo keeps original persistent settings behavior');
-  const native = ast.prototypeWith('updateSettingsMenu', { Z: {}, za: { offline: true } }); let called = 0;
+  const native = ast.prototypeWith('updateSettingsMenu', { ...ast.imguiContext({}), za: { offline: true } }); let called = 0;
   native.updateSettingsMenu = () => { called++; }; clicked = '';
   game.getGuiManager = () => ({ addDrawGui() {} });
   game.getIMGui = () => ({ doBackground() {}, doButton: () => false });

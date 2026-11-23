@@ -1,10 +1,10 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { component } = require('./runtime-ast.cjs');
+const { component, imguiContext } = require('./runtime-ast.cjs');
 const { HostConstruction } = require('../desktop/coop-construction.js');
 const { HostActions } = require('../desktop/coop-actions.js');
-const original = component('ECPlayerBuilder', { Z: { BUTTON_WIDE: 1 } });
+const original = component('ECPlayerBuilder', { ...imguiContext({ BUTTON_WIDE: 1 }) });
 function setup() {
   const events = [], payments = [], state = { move: null, critical: false, clicks: 0, valid: true, throwing: false, refunds: 0, placements: 0 };
   const definition = { buildingType: 'Wall', buildingName: 'Wall', prerequisites: [], scaffoldType: 'normal' };

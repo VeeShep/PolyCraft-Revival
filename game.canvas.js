@@ -175,7 +175,7 @@
     this.scratchpad = {};
   }
   function GuiManager() {}
-  function Z() {}
+  function ImmediateModeGui() {}
   function GameScoresUI() {}
   function Bf() {}
   function Cf() {}
@@ -37159,21 +37159,21 @@
       id: "Menu",
       text: "",
       v2ScreenLocation: d.getv2RenderLocation(79.5, 56, "topLeft"),
-      buttonType: Z.BUTTON_IN_GAME,
+      buttonType: ImmediateModeGui.BUTTON_IN_GAME,
       guiArchetype: "menu"
     });
     c.doButton({
       id: "Shop",
       text: void 0,
       v2ScreenLocation: d.getv2RenderLocation(79.5, 121, "topLeft"),
-      buttonType: Z.BUTTON_IN_GAME,
+      buttonType: ImmediateModeGui.BUTTON_IN_GAME,
       guiArchetype: "shop"
     });
     c.doButton({
       id: "FIGHT",
       text: void 0,
       v2ScreenLocation: d.getv2RenderLocation(79.5, 186, "topLeft"),
-      buttonType: Z.BUTTON_IN_GAME,
+      buttonType: ImmediateModeGui.BUTTON_IN_GAME,
       guiArchetype: "fight"
     });
   };
@@ -47366,14 +47366,14 @@
         text1: d,
         text2: f,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "speedup"
       }) && (this.payForInstantResearch(b), this.sendInstantResearchSpeedupBought(), this.completeUnlock()) : (d = this.globals.currentLanguage.GUI_BUTTON_BUY_AMBER, a.doButton({
         id: "eccapdispenser" + this.entity.getName() + "instantResearchUnavailable",
         text1: d,
         text2: f,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "addAmberShop"
       }) && this.openInstantResearchShop());
     },
@@ -47405,7 +47405,7 @@
         text4: l,
         text5: n,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: s
       }) && (this.payForUnlock(b, d), this.beginUnlock(b, d))) : (i = q ? i + "Research already\n in Progress" : p ? i + (f + "\nFully Researched") : "Research\n" + f + " Level " + h.level, a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "Upgrade Unavailable" + d,
@@ -47415,7 +47415,7 @@
         text4: l,
         text5: n,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: s
       }) && !q && !p && this.openUpgradeShop(b, d));
     },
@@ -48080,7 +48080,7 @@
         text4: n,
         text5: q,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: w
       }) && (this.getUsesInfiniteBuildMode(d) || this.payForDispensedEntity(b, d), this.dispenseToEntity(b, d)) : (this.arePrerequisitesMet(d) || (p = this.archetype.showUnavailableDueToPrerequisites, (i = i.getPrerequisitesDescription(this.getPrerequisites(d))) && (j = j + "\n" + i + " " + f.GAME_HUD_REQUIRED)), e === h ? j = (j = this.getBuildingToUpgradeToIncreaseBuildingCap(d)) ? f.GAME_HUD_UPGRADE + " " + j.name + " " + f.GAME_HUD_TO_LEVEL + " " + j.level + "\n" + f.GAME_HUD_TO_BUILD_MORE + " " + this.getDispenseName(d) + f.GAME_HUD_PLURAL_S : f.GAME_HUD_MAXIMUM + " " + this.getDispenseName(d) + f.GAME_HUD_PLURAL_S + " " + f.GAME_HUD_BUILT : this.hasFailedScaffoldCap(d) && (j = f.GAME_HUD_CANT_BUILD), p && a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "Build Unavailable" + d,
@@ -48090,7 +48090,7 @@
         text4: n,
         text5: q,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: w
       }) && this.arePrerequisitesMet(d) && h < e && !this.hasFailedScaffoldCap(d) && this.openPurchaseShop(b, d));
     },
@@ -48483,7 +48483,7 @@
         text2: h,
         text3: i,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "dispense"
       }) && this.dispenseToEntity(b) : (this.isCoolingDown() && (e = e + "\n " + this.globals.currentLanguage.GAME_HUD_COOL_DOWN + ": " + Math.ceil(this.getCooldownTimeRemaining()) + this.globals.currentLanguage.GAME_HUD_PLURAL_S), a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "Dispense Unavailable",
@@ -48492,7 +48492,7 @@
         text2: h,
         text3: i,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "dispenseInvalid"
       }));
     },
@@ -50483,7 +50483,7 @@
         text1: text,
         text4: boost ? "75" : "",
         v2ScreenLocation: location,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         svg1: this.archetype.svgPath
       }, "ecHeroShrine" + this.entity.getName() + (available ? "Upgrade" : "Upgrade Unavailable") + index);
       if (!clicked) return;
@@ -54111,14 +54111,14 @@
         text1: "BUY INSTANT REVIVE",
         text2: "" + b,
         v2ScreenLocation: f.getv2RenderLocation(0, -140, "bottom"),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "respawnButtonAmber"
       }) && this.payToRevive(b, c, !0)) : (c = 50, this.canAffordToRevive(b, c) && d.doButton({
         id: "ecPlayerLife" + this.entity.getName() + "Respawn",
         text1: "BUY INSTANT REVIVE",
         text2: "" + c,
         v2ScreenLocation: f.getv2RenderLocation(0, -140, "bottom"),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "respawnButtonLumber"
       }) && this.payToRevive(b, c, !1));
     },
@@ -54489,7 +54489,7 @@
           id: c,
           text: "Demolish",
           v2ScreenLocation: b,
-          buttonType: Z.BUTTON_ROUND,
+          buttonType: ImmediateModeGui.BUTTON_ROUND,
           guiArchetype: "demolish"
         }) && window.PolycraftControls.requestDemolition(f);
       },
@@ -54504,7 +54504,7 @@
           id: c,
           text: d.GAME_HUD_MOVE,
           v2ScreenLocation: b,
-          buttonType: Z.BUTTON_ROUND,
+          buttonType: ImmediateModeGui.BUTTON_ROUND,
           guiArchetype: "move"
         }) && f.getEC("ECBuilding").move(e);
       },
@@ -54543,7 +54543,7 @@
           id: c,
           text1: d.GUI_BUTTON_BUY_AMBER,
           v2ScreenLocation: b,
-          buttonType: Z.BUTTON_ROUND,
+          buttonType: ImmediateModeGui.BUTTON_ROUND,
           guiArchetype: "addAmberShop"
         }) && (a = f.gameManager, f = f.globals, a && (f = GamestateShop.create(a, f), a.setGameState(f), f.setButtonPanal("amber")));
       },
@@ -54871,7 +54871,7 @@
         text3: j,
         text4: "",
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: k
       }) && this.purchaseRepair(b, f, d) : a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "Repair Unavailable",
@@ -54880,7 +54880,7 @@
         text3: j,
         text4: "",
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: k
       }) && this.openPurchaseRepairShop(b);
     },
@@ -55014,7 +55014,7 @@
         text3: h,
         text4: "",
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "repairInvalidLumberAndStone"
       });else {
         var i = ECRepairable.prototype.canEntityAffordRepair(b, d[H.LUMBER], d[H.STONE]),
@@ -55026,7 +55026,7 @@
           text3: h,
           text4: "",
           v2ScreenLocation: c,
-          buttonType: Z.BUTTON_ROUND,
+          buttonType: ImmediateModeGui.BUTTON_ROUND,
           guiArchetype: "repairLumberAndStone"
         }) && this.purchaseRepair(b, d[H.LUMBER], d[H.STONE]) : a.doButton({
           id: "ecRadialMenu" + this.entity.getName() + "Repair Unavailable",
@@ -55035,7 +55035,7 @@
           text3: h,
           text4: "",
           v2ScreenLocation: c,
-          buttonType: Z.BUTTON_ROUND,
+          buttonType: ImmediateModeGui.BUTTON_ROUND,
           guiArchetype: "repairWithAmberLumberAndStone"
         }) && this.openPurchaseRepairShop(b);
       }
@@ -55497,14 +55497,14 @@
         text1: d,
         text2: f,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "speedup"
       }) && (this.sendBuildingSpeedupBought(this.getPlannedObject()), this.instantlyBuild(b)) : (d = this.globals.currentLanguage.GUI_BUTTON_BUY_AMBER, a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "InstantBuild Unavailable",
         text1: d,
         text2: f,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "addAmber"
       }) && this.openShop());
     },
@@ -56756,7 +56756,7 @@
         id: "ecPlayerBuilder Cancel",
         text: b,
         v2ScreenLocation: a.getv2ScreenBarLocation(),
-        buttonType: Z.BUTTON_WIDE,
+        buttonType: ImmediateModeGui.BUTTON_WIDE,
         guiArchetype: "buttonWide"
       }) || this.shouldPayWhenPlacingBuildings && !this.areBuildingPrerequisitesMet(this.heldObjectName)) this.cancelHeldBuilding();
     },
@@ -57326,13 +57326,13 @@
         id: "ecRadialMenu" + this.entity.getName() + "Craft",
         text1: "Go to\nResource Shop",
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: e.convertGUI
       }) && (a = GamestateShop.create(d, f), d.setGameState(a), a.setButtonPanal("resource")) : a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "Craft Unavailable",
         text1: "Go to\nResource Shop",
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: e.convertInvalidGUUI
       });
     },
@@ -58598,7 +58598,7 @@
         text4: l,
         text5: n,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: q
       }) && (a = GamestateBuildingInfoPanel.create(e, f), a.setBuilding(this.entity), e.setGameState(a)) : (this.arePrerequisitesMet() || (h && (d = h.getPrerequisitesDescription(this.getPrerequisites())), d && (i = i + "\n" + d + " " + this.globals.currentLanguage.GAME_HUD_REQUIRED)), this.hasFailedScaffoldCap() && (i = this.globals.currentLanguage.GAME_HUD_CANT_UPGRADE), a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "Upgrade Unavailable",
@@ -58608,7 +58608,7 @@
         text4: l,
         text5: n,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: q
       }));
     },
@@ -58633,7 +58633,7 @@
         text4: k,
         text5: l,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: n
       }) && this.attemptToPurchaseMultipleUpgrade(b, h) : (this.arePrerequisitesMet() || (e && (d = e.getPrerequisitesDescription(this.getPrerequisites())), d && (f = f + "\n" + d + " " + this.globals.currentLanguage.GAME_HUD_REQUIRED)), this.hasFailedScaffoldCap() && (f = this.globals.currentLanguage.GAME_HUD_CANT_UPGRADE), a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "MultipleUpgrade Unavailable",
@@ -58643,7 +58643,7 @@
         text4: k,
         text5: l,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: n
       }));
     },
@@ -58944,7 +58944,7 @@
         id: "ecRadialMenu" + this.entity.getName() + "CancelUpgrade",
         text: d,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "cancelUpgrade"
       }) && this.cancelUpgrade(b);
     },
@@ -58956,14 +58956,14 @@
         text1: d,
         text2: f,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "speedup"
       }) && (this.sendUpgradeSpeedupBought(this.upgradedArchetypeName), this.instantlyUpgrade(b)) : (d = this.globals.currentLanguage.GUI_BUTTON_BUY_AMBER, a.doButton({
         id: "ecRadialMenu" + this.entity.getName() + "InstantUpgrade Unavailable",
         text1: d,
         text2: f,
         v2ScreenLocation: c,
-        buttonType: Z.BUTTON_ROUND,
+        buttonType: ImmediateModeGui.BUTTON_ROUND,
         guiArchetype: "addAmber"
       }) && this.openShop());
     },
@@ -61720,7 +61720,7 @@
     b.drawGuiMap = {};
     return b;
   };
-  Z.prototype = {
+  ImmediateModeGui.prototype = {
     init: function () {
       this.drawList = [];
       this.drawBoxThickness = 2;
@@ -61850,7 +61850,7 @@
       return d.v2Lerp(c, f, e);
     },
     doButtonFromGuiArchetype: function (a, b, c) {
-      var d = b.buttonType || Z.BUTTON_NORMAL,
+      var d = b.buttonType || ImmediateModeGui.BUTTON_NORMAL,
         f = d.round,
         e = this.globals.guiRenderer,
         d = e.getGuiInfo(a).buttonSize || [d.width, d.height],
@@ -61879,12 +61879,12 @@
     },
     doButton: function (a) {
       var b = a.id,
-        c = a.buttonType ? a.buttonType : Z.BUTTON_NORMAL,
+        c = a.buttonType ? a.buttonType : ImmediateModeGui.BUTTON_NORMAL,
         d = c.round,
         f,
         e;
-      f = void 0 !== a.buttonWidth ? a.buttonWidth : c.width ? c.width : d ? Z.BUTTON_ROUND.width : Z.BUTTON_NORMAL.width;
-      e = void 0 !== a.buttonHeight ? a.buttonHeight : c.height ? c.height : d ? Z.BUTTON_ROUND.height : Z.BUTTON_NORMAL.height;
+      f = void 0 !== a.buttonWidth ? a.buttonWidth : c.width ? c.width : d ? ImmediateModeGui.BUTTON_ROUND.width : ImmediateModeGui.BUTTON_NORMAL.width;
+      e = void 0 !== a.buttonHeight ? a.buttonHeight : c.height ? c.height : d ? ImmediateModeGui.BUTTON_ROUND.height : ImmediateModeGui.BUTTON_NORMAL.height;
       var h = this.globals.guiRenderer,
         i;
       if (a.guiArchetype && (i = h.getGuiInfo(a.guiArchetype)) && i.buttonSize) f = i.buttonSize[0], e = i.buttonSize[1];
@@ -61968,7 +61968,7 @@
     doDialog: function (a, b, c, d) {
       this.gobbleCursor();
       var f = this.globals,
-        e = Z.DIALOG_BOX,
+        e = ImmediateModeGui.DIALOG_BOX,
         h = e.width,
         e = e.height,
         a = {
@@ -61986,14 +61986,14 @@
         id: "okButton",
         text: "Ok",
         v2ScreenLocation: c,
-        buttonType: Z.DIALOG_OK
+        buttonType: ImmediateModeGui.DIALOG_OK
       })) : !1;
     },
     doPagedDialog: function (a, b, c) {
       this.gobbleCursor();
       var d = this.globals,
         f = d.mathDevice,
-        e = Z.DIALOG_BOX,
+        e = ImmediateModeGui.DIALOG_BOX,
         h = e.width,
         i = e.height,
         e = this.globals.guiRenderer.getScaleFactor(),
@@ -62020,19 +62020,19 @@
         id: "Back",
         text: "Back",
         v2ScreenLocation: a,
-        buttonType: Z.DIALOG_NEXT
+        buttonType: ImmediateModeGui.DIALOG_NEXT
       }) && (l -= 1));
       a = d.v2Build(c[0] + j * e, c[1] + v * e);
       if (s !== l) this.doButton({
         id: "Next",
         text: "Next",
         v2ScreenLocation: a,
-        buttonType: Z.DIALOG_BACK
+        buttonType: ImmediateModeGui.DIALOG_BACK
       }) && (l += 1);else if (this.doButton({
         id: q,
         text: q,
         v2ScreenLocation: a,
-        buttonType: Z.DIALOG_OK
+        buttonType: ImmediateModeGui.DIALOG_OK
       })) return !0;
       b.currentPage = l;
       return !1;
@@ -62085,11 +62085,11 @@
         c = a.graphicsDevice,
         d = c.width,
         c = c.height,
-        f = Z.BACKGROUND.borderThickness;
+        f = ImmediateModeGui.BACKGROUND.borderThickness;
       if (a = a.textureManager.load(k.t_block)) b.begin("alpha", "texture"), b.draw({
         texture: a,
         destinationRectangle: [f, f, d - f, c - f],
-        color: Z.BACKGROUND.color
+        color: ImmediateModeGui.BACKGROUND.color
       }), b.end();
     },
     drawDebugBox: function (a, b, c, d) {
@@ -62170,61 +62170,61 @@
       return this.hotID || this.activeID || this.prevGobbled ? !0 : !1;
     }
   };
-  Z.DIALOG_BOX = {
+  ImmediateModeGui.DIALOG_BOX = {
     width: 750,
     height: 80
   };
-  Z.DIALOG_OK = {
+  ImmediateModeGui.DIALOG_OK = {
     width: 120,
     height: 60,
     guiRendererArchetype: "dialogButtonOk"
   };
-  Z.DIALOG_NEXT = {
+  ImmediateModeGui.DIALOG_NEXT = {
     width: 120,
     height: 60,
     guiRendererArchetype: "dialogButton"
   };
-  Z.DIALOG_BACK = {
+  ImmediateModeGui.DIALOG_BACK = {
     width: 120,
     height: 60,
     guiRendererArchetype: "dialogButton"
   };
-  Z.DIALOG_SMALL = {
+  ImmediateModeGui.DIALOG_SMALL = {
     width: 850,
     height: 150
   };
-  Z.BUTTON_IN_GAME_TINY = {
+  ImmediateModeGui.BUTTON_IN_GAME_TINY = {
     width: 55,
     height: 55
   };
-  Z.BUTTON_IN_GAME = {
+  ImmediateModeGui.BUTTON_IN_GAME = {
     width: 110,
     height: 55
   };
-  Z.BUTTON_WIDE = {
+  ImmediateModeGui.BUTTON_WIDE = {
     width: 555,
     height: 85
   };
-  Z.BUTTON_NORMAL = {
+  ImmediateModeGui.BUTTON_NORMAL = {
     guiRendererArchetype: "button",
     width: 370,
     height: 85
   };
-  Z.BUTTON_NORMAL_HALF = {
+  ImmediateModeGui.BUTTON_NORMAL_HALF = {
     width: 185,
     height: 85
   };
-  Z.BUTTON_ROUND = {
+  ImmediateModeGui.BUTTON_ROUND = {
     width: 70,
     height: 70,
     round: !0
   };
-  Z.BACKGROUND = {
+  ImmediateModeGui.BACKGROUND = {
     borderThickness: 0,
     color: k.modalBack
   };
-  Z.create = function (a, b, c) {
-    var d = new Z();
+  ImmediateModeGui.create = function (a, b, c) {
+    var d = new ImmediateModeGui();
     d.globals = a;
     d.gameManager = b;
     d.controller = c;
@@ -62820,7 +62820,7 @@
       var c = this.globals,
         d = c.mathDevice,
         f = c.graphicsDevice.width;
-      this.smallScaleFactor = Z.scaleFactor;
+      this.smallScaleFactor = ImmediateModeGui.scaleFactor;
       void 0 === this.smallScaleFactor && (this.smallScaleFactor = 1);
       var e = c.gameManager.getPlayFlags(),
         h = c.guiRenderer;
@@ -68467,7 +68467,7 @@
     c.uniqueLevelIndex = 0;
     c.gameCamera = GameCamera.create(b, c);
     c.gameController = GameInputController.create(b, c);
-    c.imgui = Z.create(b, c, c.gameController);
+    c.imgui = ImmediateModeGui.create(b, c, c.gameController);
     c.guiManager = GuiManager.create(b, c.gameController);
     c.gameScoresUI = GameScoresUI.create(b, c.imgui);
     c.gameClock = GameClock.create(b);
@@ -71366,7 +71366,7 @@
         id: "Tutorial Ok" + this.archetypeIndex,
         text: this.globals.currentLanguage.TXT_TUTORIAL_OKAY,
         v2ScreenLocation: c.getv2RenderLocation(-130, -50, "bottomRight"),
-        buttonType: Z.DIALOG_OK,
+        buttonType: ImmediateModeGui.DIALOG_OK,
         guiArchetype: "tutorialButtonOk"
       }) && (b = GamestatePaused.create(a, this.globals), a.setGameState(b));
     },
@@ -71532,7 +71532,7 @@
         id: "Paused Resume",
         text: this.globals.currentLanguage.GUI_BUTTON_PLAY,
         v2ScreenLocation: c.getv2RenderLocation(-220, -70),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "buttonStart",
         passive: !0
       });
@@ -71540,7 +71540,7 @@
         id: "Go to Shop Amber",
         text: this.globals.currentLanguage.GUI_BUTTON_GO_TO_SHOP,
         v2ScreenLocation: c.getv2RenderLocation(-220, 50),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "buttonShop"
       }) && (d = GamestateShop.create(a, this.globals), a.setGameState(d), d.setButtonPanal("amber"));
       b.doButton({
@@ -71556,7 +71556,7 @@
       za.offline || (this.readyToOpenWonderstruck = b.doButton({
         id: "Paused Go to Wonderstruck",
         v2ScreenLocation: c.getv2RenderLocation(-220, 170),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "buttonWonderstruck",
         passive: !0
       }), this.readyToOpenTwitter = b.doButton({
@@ -71564,7 +71564,7 @@
         text: "SHARE",
         text2: "Get " + this.gameManager.getShareReward() + " Amber!",
         v2ScreenLocation: c.getv2RenderLocation(-320, 290),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: this.gameManager.validToRewardShare("twitter") ? "buttonShareTwitterReward" : "buttonShareTwitter",
         passive: !0
       }), this.readyToOpenFacebook = b.doButton({
@@ -71572,7 +71572,7 @@
         text: "SHARE",
         text2: "Get " + this.gameManager.getShareReward() + " Amber!",
         v2ScreenLocation: c.getv2RenderLocation(-120, 290),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: this.gameManager.validToRewardShare("facebook") ? "buttonShareFacebookReward" : "buttonShareFacebook",
         passive: !0
       }));
@@ -71596,26 +71596,26 @@
         id: "Paused Disable Music",
         text: this.globals.currentLanguage.GUI_BUTTON_DISABLE_MUSIC,
         v2ScreenLocation: renderer.getv2RenderLocation(100, 170),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
       }) && profile.setMusicEnabled(!1) : gui.doButton({
         id: "Paused Enable Music",
         text: this.globals.currentLanguage.GUI_BUTTON_ENABLE_MUSIC,
         v2ScreenLocation: renderer.getv2RenderLocation(100, 170),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
       }) && profile.setMusicEnabled(!0);
       game.gameSoundManager.getSoundsEnabled() ? gui.doButton({
         id: "Paused Disable Sound",
         text: this.globals.currentLanguage.GUI_BUTTON_DISABLE_SOUNDS,
         v2ScreenLocation: renderer.getv2RenderLocation(300, 170),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
       }) && (game.gameSoundManager.setSoundsEnabled(!1), profile.setSoundsEnabled(!1)) : gui.doButton({
         id: "Paused Enable Sound",
         text: this.globals.currentLanguage.GUI_BUTTON_ENABLE_SOUNDS,
         v2ScreenLocation: renderer.getv2RenderLocation(300, 170),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: "buttonHalf"
       }) && (game.gameSoundManager.setSoundsEnabled(!0), profile.setSoundsEnabled(!0));
     },
@@ -71678,21 +71678,21 @@
         id: "Pause",
         text: "",
         v2ScreenLocation: d.getv2RenderLocation(116, 52, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME_TINY,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME_TINY,
         guiArchetype: "pause"
       }) && a.togglePause();
       0.5 < e && (c.graphicsDevice.fullscreen ? b.doButton({
         id: "FullScreen",
         text: "",
         v2ScreenLocation: d.getv2RenderLocation(54, 52, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME_TINY,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME_TINY,
         guiArchetype: "minimize",
         passive: !0
       }) ? a.gameController.setWantsToMinScreen(!0) : a.gameController.setWantsToMinScreen(!1) : b.doButton({
         id: "FullScreen",
         text: "",
         v2ScreenLocation: d.getv2RenderLocation(54, 52, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME_TINY,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME_TINY,
         guiArchetype: "fullscreen",
         passive: !0
       }) ? a.gameController.setWantsToFullScreen(!0) : a.gameController.setWantsToFullScreen(!1));
@@ -71700,21 +71700,21 @@
         id: "Shop",
         text: void 0,
         v2ScreenLocation: d.getv2RenderLocation(85, 113, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME,
         guiArchetype: "shop"
       }) && (c = GamestateShop.create(a, this.globals), a.setGameState(c));
       a.getGuest() && 30 < this.globals.gameCurrentTime && ba.displayGuestAlert && b.doButton({
         id: "Register",
         text: void 0,
         v2ScreenLocation: d.getv2RenderLocation(0, 52, "top"),
-        buttonType: Z.BUTTON_IN_GAME,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME,
         guiArchetype: "register"
       }) && (c = GamestateRegister.create(a, this.globals), a.setGameState(c));
       b.doButton({
         id: "AmberShop",
         text: void 0,
         v2ScreenLocation: d.getv2RenderLocation(-135, -230, "bottomRight"),
-        buttonType: Z.BUTTON_IN_GAME,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME,
         guiArchetype: "shopAmberTopup"
       }) && (c = GamestateShop.create(a, this.globals), a.setGameState(c));
       c = a.getPlayFlags();
@@ -71722,26 +71722,26 @@
         id: "FIGHT N",
         text: void 0,
         v2ScreenLocation: d.getv2RenderLocation(85, 174, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME,
         guiArchetype: "fightN"
       }) && (ba.showTutorialScreens ? e = GamestateTutorial.create(a, this.globals, !0) : (e = GamestatePrepareForCampaign.create(a, this.globals), e.setCampaignRegionName("N")), a.setGameState(e)), b.doButton({
         id: "FIGHT E",
         text: void 0,
         v2ScreenLocation: d.getv2RenderLocation(85, 235, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME,
         guiArchetype: "fightE"
       }) && (ba.showTutorialScreens ? e = GamestateTutorial.create(a, this.globals, !0) : (e = GamestatePrepareForCampaign.create(a, this.globals), e.setCampaignRegionName("E")), a.setGameState(e)), b.doButton({
         id: "FIGHT W",
         text: void 0,
         v2ScreenLocation: d.getv2RenderLocation(85, 296, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME,
         guiArchetype: "fightW"
       }) && (ba.showTutorialScreens ? e = GamestateTutorial.create(a, this.globals, !0) : (e = GamestatePrepareForCampaign.create(a, this.globals), e.setCampaignRegionName("W")), a.setGameState(e)));
       c.displaySkipPrepareButton && b.doButton({
         id: "SKIP PREPARE",
         text: void 0,
         v2ScreenLocation: d.getv2RenderLocation(85, 174, "topLeft"),
-        buttonType: Z.BUTTON_IN_GAME,
+        buttonType: ImmediateModeGui.BUTTON_IN_GAME,
         guiArchetype: "skipPrepare"
       }) && this.setPlayState("PlayStateBattle");
     },
@@ -71884,7 +71884,7 @@
         id: "prepare_for_war_fight",
         text: this.globals.currentLanguage.GUI_BUTTON_PREPARE_FOR_WAR_CONTINUE,
         v2ScreenLocation: a.getv2RenderLocation(0, 300),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "buttonPrepareForWarContinue"
       }) && (a = GamestatePlaying.create(b, this.globals), a.setPlayState("PlayStatePrepareForBattle"), b.setGameState(a));
       b = this.ecWarManager.getActiveCampaignRegionName();
@@ -72391,7 +72391,7 @@
         id: "Shop Resume",
         text: this.globals.currentLanguage.GUI_BUTTON_PLAY,
         v2ScreenLocation: c.getv2RenderLocation(-100, 100, "topRight"),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "shopClose",
         passive: !0
       }) && (this.buttonFn = this.exit);
@@ -72645,7 +72645,7 @@
         id: "Play",
         text: this.globals.currentLanguage.GUI_BUTTON_PLAY,
         v2ScreenLocation: c.getv2RenderLocation(-220, -70),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "buttonStart",
         passive: !0
       });
@@ -72653,14 +72653,14 @@
         id: "Go to Shop Amber",
         text: this.globals.currentLanguage.GUI_BUTTON_GO_TO_SHOP,
         v2ScreenLocation: c.getv2RenderLocation(-220, 50),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "buttonShop"
       }) && (d = GamestateShop.create(a, this.globals), a.setGameState(d), d.setButtonPanal("amber"));
       this.readyToOpenWonderstruck = b.doButton({
         id: "Go to Wonderstruck",
         text: "WONDERSTRUCK",
         v2ScreenLocation: c.getv2RenderLocation(-220, 170),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "buttonWonderstruck",
         passive: !0
       });
@@ -72669,7 +72669,7 @@
         text: "SHARE",
         text2: "Get " + this.gameManager.getShareReward() + " Amber!",
         v2ScreenLocation: c.getv2RenderLocation(-320, 290),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: this.gameManager.validToRewardShare("twitter") ? "buttonShareTwitterReward" : "buttonShareTwitter",
         passive: !0
       }), this.readyToOpenFacebook = b.doButton({
@@ -72677,7 +72677,7 @@
         text: "SHARE",
         text2: "Get " + this.gameManager.getShareReward() + " Amber!",
         v2ScreenLocation: c.getv2RenderLocation(-120, 290),
-        buttonType: Z.BUTTON_NORMAL_HALF,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL_HALF,
         guiArchetype: this.gameManager.validToRewardShare("facebook") ? "buttonShareFacebookReward" : "buttonShareFacebook",
         passive: !0
       }));
@@ -72927,7 +72927,7 @@
         id: "idRegisterOK",
         text: "REGISTER!",
         v2ScreenLocation: c.getv2RenderLocation(0, 150, "centre"),
-        buttonType: Z.DIALOG_OK,
+        buttonType: ImmediateModeGui.DIALOG_OK,
         guiArchetype: "registerOK",
         passive: !0
       })) : a.addDrawGui("registerInstruction", {
@@ -72937,7 +72937,7 @@
         id: "Register Resume",
         text: this.globals.currentLanguage.GUI_BUTTON_PLAY,
         v2ScreenLocation: c.getv2RenderLocation(-100, 100, "topRight"),
-        buttonType: Z.BUTTON_NORMAL,
+        buttonType: ImmediateModeGui.BUTTON_NORMAL,
         guiArchetype: "shopClose",
         passive: !0
       });
@@ -73002,7 +73002,7 @@
         id: "Tutorial Ok" + this.archetypeIndex,
         text: this.archetypeIndex < this.archetypeList.length - 1 ? "Okay" : "Let\u2019s play!",
         v2ScreenLocation: c.getv2RenderLocation(-130, -50, "bottomRight"),
-        buttonType: Z.DIALOG_OK,
+        buttonType: ImmediateModeGui.DIALOG_OK,
         guiArchetype: "tutorialButtonOk"
       })) this.archetypeIndex += 1, this.archetypeIndex >= this.archetypeList.length && this.goToNextState();
     },
@@ -145074,7 +145074,7 @@
   };
   TurbulenzEngine.onload = function () {
     var a = of.create();
-    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, Z, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, GameEntity.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, selectable: ECSelectable.prototype, centre: GameEntity.prototype.getCentreLocation, worldText: GameEntity.prototype.drawWorldText, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L }, { archetypes: ca, enabled: function () { return Sb.campaignsEnabled; }, create: GamestatePrepareForCampaign.create, createScore: GamestateCampaignScore.create }, GamestateShop.prototype);
+    if (window.PolycraftControls) window.PolycraftControls.attach(a, kd.xpTable, ImmediateModeGui, wa, ECUpgradable.prototype, ECPlayerData.prototype, ECHealth.prototype, GameEntity.prototype.drawProgressBarFromFraction, GamestatePaused.prototype.updateSettingsMenu, ECAutoFire.prototype.drawTargetCross, { destination: HeroControllerAction.prototype.setControllableDestination, collision: GameInputController.prototype.buildCollisionInfo, gesture: HeroControllerAction.prototype, selectable: ECSelectable.prototype, centre: GameEntity.prototype.getCentreLocation, worldText: GameEntity.prototype.drawWorldText, targetType: GameInputController.prototype.getSelectedType, rangedType: GameInputController.interactTypes.ENEMY_RANGED }, { create: K.create, factory: K, archetypes: K.archetypes, tweens: L }, { archetypes: ca, enabled: function () { return Sb.campaignsEnabled; }, create: GamestatePrepareForCampaign.create, createScore: GamestateCampaignScore.create }, GamestateShop.prototype);
     TurbulenzEngine.onunload = function () {
       a.shutdown();
     };

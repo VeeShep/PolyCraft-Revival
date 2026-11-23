@@ -2,7 +2,7 @@
 
 This is the test map and runbook, not a blanket claim that every platform or scenario passes. Read the current section of [RESTORATION_STATUS.md](RESTORATION_STATUS.md) before continuing work; it owns the dated success/failure ledger, exact source/package identities, evidence paths and open acceptance gates. [README.md](README.md#checks) describes player-facing setup and the main acceptance commands. [AGENTS.md](AGENTS.md) defines repository safety and publication rules.
 
-Inventory date: **2026-11-22**. Application **1.0.0-beta.106**, source `8baca11`, has **787 passing local full-suite checks** and **114 passing final focused checks**. Exact CI45084008242 passes **793 checks and all eight jobs**; this includes the six later test-only cases, without implying an additional local full-suite run. The 80 suite files and current native/CI acceptance are tracked in [RESTORATION_STATUS.md](RESTORATION_STATUS.md#current-evidence-and-next-actions). The earlier Beta105 results below retain their dated scope.
+Inventory date: **2026-11-22**. Application **1.0.0-beta.107** has **797 passing local full-suite checks**, **83 focused checks before and after naming**, exact inverse proof and fresh ARM64 package verification. All **81 suite files** map once below. The completed previous source `8baca11` / CI45084008242 passes793/all eight jobs; Beta107 CI requires independent inspection after source publication. [RESTORATION_STATUS.md](RESTORATION_STATUS.md#current-evidence-and-next-actions) owns current native/CI acceptance. Earlier results below retain their dated scope.
 
 ### Native focus prerequisite — 2026-11-22
 
@@ -19,6 +19,8 @@ Executed on Node 22.18.0 with the 53,971-byte earned fixture: total 41.9/25.1/22
 Exact source `8baca11` / CI45084008242 passes 793 checks with zero failures/cancellations/skips and all eight jobs. This covers the six later test-only cases beyond the local 787 run. Inspect all eight terminal logs, compare every uploaded artifact digest/ID with run metadata, and record expiry separately from package contents. Completed verification covers source/version/icons/architectures/Mac ad-hoc signatures plus local native two/four-player direct/relay/credential-renewal cases, including post-close credential retirement. Twelve files are sealed under ignored `test-results/beta-106-room-approval/ci-beta106`. Archives were not independently downloaded/launched; native gameplay/real-network gates remain open. All 259 local file/fragment links across the six handoff documents and whitespace checks pass; no broad suite or game launch was repeated for these documentation changes.
 
 ## Current evidence and its limits
+
+**Beta107 immediate-mode GUI readability — 2026-11-22:** `scripts/name-imgui.cjs` follows the actual created manager's `imgui` factory, eight native methods and matching constructor binding. Four new checks cover fixture behavior/public keys/artwork/shadows, invalid role/owner/method/scope refusal, immutable baseline/prior manifest/repeat guards, and real native hover/press/release/sound/modal capture before/after naming. Run `node --test tests/imgui-naming.test.cjs tests/crafting.test.cjs tests/held-construction.test.cjs tests/totems.test.cjs tests/desktop-regressions.test.cjs tests/guest-world.test.cjs`; both pre/post runs pass 83/0. `runtime-ast.imguiContext` resolves each affected fixture's dependency namespace from its factory role instead of private spelling. Independent token alignment reverses 97 identifier edits to every prior engine byte, and earlier manifest entries/Beta1 remain unchanged. Evidence is under ignored `test-results/beta-107-imgui`; full session64341 passes 797/0/0 with frozen-source hashes intact, and fresh ARM64 source/version/icon/14Mach-O/signature verification passes. All81table rows match the81suite files exactly once; 263local file/fragment links, syntax and whitespace pass. Graphical/platform acceptance remains open. No windows opened in this pass.
 
 Use focused checks while correcting test setup; run the full regression suite once the feature is stable before publication. Audit original eligibility, placement and worker/timer rules before treating a harness failure as a game bug. Reuse verified earned-stage copies instead of replaying unrelated quests.
 
@@ -243,7 +245,7 @@ All paths in this section are under `tests/`. Descriptions summarize assertions 
 | [session-panel.test.cjs](tests/session-panel.test.cjs) | UI session lifecycle/cancellation, saved hero assignment, request-selection redraw with approved/pending/disconnected guards, service-free direct setup, failed-init cleanup and redacted reports. |
 | [online-world.test.cjs](tests/online-world.test.cjs) | Coherent tick-boundary captures, action-save acknowledgements/failures, guest slot ownership, menu-independent simulation and orderly final saves; original simulation-scope/return/error/teardown contract; reward-ready waits, initial solo refresh, timeout retention and final-save clock/tween freeze/acknowledgement/rollback. |
 
-### Assigned heroes, actions, construction and progression (18)
+### Assigned heroes, actions, construction and progression (24)
 
 | Suite | Checks |
 | --- | --- |
@@ -257,6 +259,7 @@ All paths in this section are under `tests/`. Descriptions summarize assertions 
 | [coop-construction.test.cjs](tests/coop-construction.test.cjs) | Original dry-run menus/previews, payment/refunds, in-flight shared capacity, source ownership and save barriers. |
 | [coop-building-ledger.test.cjs](tests/coop-building-ledger.test.cjs) | Barricade observer: all active hero models sharing the bank, original model caps, ordered real deltas, native return/error forwarding, bounded evidence and hook ownership; native MacARM64 acceptance recorded above. |
 | [coop-building-upgrade.test.cjs](tests/coop-building-upgrade.test.cjs) | Native upgrade payment/progress/cancellation, exact quotes/prerequisites, once-only competing requests and source claims. |
+| [coop-scaffold-speedup.test.cjs](tests/coop-scaffold-speedup.test.cjs) | Original scaffold speedup eligibility/payment/ownership, current quotes, replay refusal, planned faction and save-required results. |
 | [coop-move.test.cjs](tests/coop-move.test.cjs) | Native building pickup/move references, active/offline claims, territory/movement restrictions and non-resurrection cleanup. |
 | [coop-repair.test.cjs](tests/coop-repair.test.cjs) | Original costs/healing/broken-building restoration, changed quotes, shared-budget races and move/source restrictions. |
 | [held-construction.test.cjs](tests/held-construction.test.cjs) | Restored prepaid/infinite/moved held objects, original cancellation/refunds, protected objects and per-segment capacity. |
@@ -303,7 +306,7 @@ All paths in this section are under `tests/`. Descriptions summarize assertions 
 | [resource-reward-order.test.cjs](tests/resource-reward-order.test.cjs) | Campaign staging reward boundaries, vanished/dead-victim refusal and persistent-player lookup after native hero replacement; Reward-ready/current-actor natural weapon/crate/bandit/gear observations; original solo quest-reward readiness before reward-sensitive hosting; actual bootstrap fixed-PvP choice, muzzle offset contract against original firing with scaled/tilted mesh axes and passive native-payment forwarding/exact resource accounting original GUI retained-metadata/current-render distinction, and normal solo reward approach/no-op/key-release cases and strict waiting-versus-normal reconnect readiness; held final-save observer success/rejection, method ownership and late-capture timeout cleanup; Natural wood/stone helpers collect original completed rewards before navigation/deposit/building continues. |
 | [projectile-collision.test.cjs](tests/projectile-collision.test.cjs) | Original projectile collision behavior and relevant collision/protection regression boundaries. |
 
-### Runtime readability and immutable inverse proofs (8)
+### Runtime readability and immutable inverse proofs (10)
 
 | Suite | Checks |
 | --- | --- |
@@ -314,6 +317,8 @@ All paths in this section are under `tests/`. Descriptions summarize assertions 
 | [world-model-naming.test.cjs](tests/world-model-naming.test.cjs) | World/clock/persistence model naming, native save filters/keys/geometry, scope safety and immutable provenance. |
 | [world-factory-naming.test.cjs](tests/world-factory-naming.test.cjs) | Entity/block factory roles, native component/default forwarding, owner/product validation and inverse proof. |
 | [ui-model-naming.test.cjs](tests/ui-model-naming.test.cjs) | Event/GUI/game-camera model roles, original queue/event behavior, scope safety and append-only provenance. |
+| [imgui-naming.test.cjs](tests/imgui-naming.test.cjs) | Immediate-mode GUI role/scope/provenance guards and actual native pointer/button/sound/modal behavior before/after naming. |
+| [game-monitor-naming.test.cjs](tests/game-monitor-naming.test.cjs) | Resource-monitor role/scope/provenance guards and actual native gathering/deposit/time-bucket callbacks. |
 | [presentation-model-naming.test.cjs](tests/presentation-model-naming.test.cjs) | Lighting/audio/effect role matching, call/public-key preservation, conflicting bindings and exact inverse restoration. |
 
 ### Packaging and runtime acquisition (3)
@@ -490,7 +495,7 @@ For downloaded artifacts retain API/run/job/artifact metadata, outer artifact SH
 
 ## Immutable runtime/readability proofs
 
-[RUNTIME_READABILITY.md](RUNTIME_READABILITY.md), `scripts/runtime-names.json` and the eight naming suites describe the accumulated scope-aware transformations. `tests/runtime-ast.cjs` extracts actual engine functions for many host checks, with controlled rendering/math/platform dependencies where needed.
+[RUNTIME_READABILITY.md](RUNTIME_READABILITY.md), `scripts/runtime-names.json` and the naming suites mapped above describe the accumulated scope-aware transformations. `tests/runtime-ast.cjs` extracts actual engine functions for many host checks, with controlled rendering/math/platform dependencies where needed.
 
 Naming passes must preserve public/save/network keys, strings/assets, evaluation order, shadowed bindings and prior provenance. They reject ambiguous bodies/factories, capture, reassignment, unsupported forms, repeated application and damaged immutable baselines. The inverse proof must restore **every previous engine byte**, not merely parse equivalent code. Keep original references and prior reports unchanged. Do not rerun mutation CLIs casually as a “test.”
 

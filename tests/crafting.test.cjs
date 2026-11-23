@@ -8,7 +8,7 @@ const { CoopData } = require('../desktop/coop-data.js');
 const { emptyState } = require('../desktop/saves.cjs');
 const runtime = require('./runtime-ast.cjs');
 const window = { PolycraftControls: { cheatsEnabled: () => true } };
-const methods = runtime.prototypeWith('getFillFractionText', { window, H: { LUMBER: 0, STONE: 1, NUM_RESOURCES: 2 }, Za: [{ string: 'Wood', convertMetricName: 'wood' }, { string: 'Stone', convertMetricName: 'stone' }], Z: { BUTTON_NORMAL: {} } });
+const methods = runtime.prototypeWith('getFillFractionText', { window, H: { LUMBER: 0, STONE: 1, NUM_RESOURCES: 2 }, Za: [{ string: 'Wood', convertMetricName: 'wood' }, { string: 'Stone', convertMetricName: 'stone' }], ...runtime.imguiContext({ BUTTON_NORMAL: {} }) });
 const remap = runtime.staticMethod('A', 'remap', { A: { getFactor: (a, b, x) => (x - a) / (b - a), saturate: x => Math.max(0, Math.min(1, x)), lerp: (a, b, x) => a + (b - a) * x } });
 function setup(count = 2) {
   const state = emptyState(), registry = new CoopData(state), metrics = [];

@@ -88,7 +88,7 @@ for (const testData of [undefined, '/tmp/polycraft-muted-test']) test('local ful
 
 test('the original Craft Resource menu explains unavailable storage and shows offers as room appears', () => {
   function Shop() {}
-  Shop.prototype = runtime.prototypeWith('setButtonPanal', { window: {}, H: { LUMBER: 0, STONE: 1, NUM_RESOURCES: 2 }, Z: { BUTTON_NORMAL: 0 }, Za: [{ string: 'Lumber' }, { string: 'Stone' }] });
+  Shop.prototype = runtime.prototypeWith('setButtonPanal', { window: {}, H: { LUMBER: 0, STONE: 1, NUM_RESOURCES: 2 }, ...runtime.imguiContext({ BUTTON_NORMAL: 0 }), Za: [{ string: 'Lumber' }, { string: 'Stone' }] });
   const shop = new Shop();
   let caps = [0, 0]; let amounts = [0, 0]; let text = []; let buttons = [];
   const player = { getResourceCap: i => caps[i], getResource: i => amounts[i] };
@@ -198,7 +198,7 @@ test('returning with an already focused canvas reinstalls the actual root mouse-
 test('normal shop opens Craft Resource and preserves its conversion flow; premium tabs require cheat mode', () => {
   let enabled = false;
   function Shop() {}
-  Shop.prototype = runtime.prototypeWith('setButtonPanal', { window: { PolycraftControls: { cheatsEnabled: () => enabled } }, H: { LUMBER: 0, STONE: 1, NUM_RESOURCES: 2 }, Z: { BUTTON_NORMAL: {} } });
+  Shop.prototype = runtime.prototypeWith('setButtonPanal', { window: { PolycraftControls: { cheatsEnabled: () => enabled } }, H: { LUMBER: 0, STONE: 1, NUM_RESOURCES: 2 }, ...runtime.imguiContext({ BUTTON_NORMAL: {} }) });
   const shop = new Shop();
   shop.setButtonPanal('amber'); assert.equal(shop.panelName, 'resource');
   assert.deepEqual(Array.from(shop.tabList, tab => tab.text1), ['Craft Resource']);

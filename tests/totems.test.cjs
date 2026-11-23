@@ -108,7 +108,7 @@ test('guest totem radial menus retain space for the lower label at the canvas ed
 
 test('original solo and host paid-totem buttons apply the upgrade to the replacement hero', () => {
   for (const online of [false, true]) {
-    const shrine = runtime.component('ECHeroShrine', { Z: { BUTTON_ROUND: 'round' }, kd: { getXPFromLevel: level => level <= 40 ? level * 100 : undefined } });
+    const shrine = runtime.component('ECHeroShrine', { ...runtime.imguiContext({ BUTTON_ROUND: 'round' }), kd: { getXPFromLevel: level => level <= 40 ? level * 100 : undefined } });
     let level = 1, amber = 150, upgraded = 1, staleWrites = 0, freshWrites = 0;
     const old = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade() { staleWrites++; } } };
     const fresh = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade(type, value) { assert.equal(type, 'movementSpeed'); upgraded = value; freshWrites++; } } };
@@ -163,7 +163,7 @@ test('original totem buttons enforce boost locks, permit the purchased minimum l
     { level: 0, index: 0, upgrades: [0, 0], prerequisites: [true, false], points: true }
   ]) {
     let amber = scenario.short ? 74 : 150, levelsBought = 0, upgradesBought = 0, shopOpened = 0;
-    const shrine = runtime.component('ECHeroShrine', { Z: { BUTTON_ROUND: 'round' }, kd: { getXPFromLevel: level => level <= 40 ? level * 100 : undefined } });
+    const shrine = runtime.component('ECHeroShrine', { ...runtime.imguiContext({ BUTTON_ROUND: 'round' }), kd: { getXPFromLevel: level => level <= 40 ? level * 100 : undefined } });
     const data = { getLevel: () => scenario.level, canUpgrade: () => !!scenario.points, getSoftCurrency: () => amber, adjustSoftCurrency: amount => { amber += amount; }, levelUp: () => { levelsBought++; } };
     const hero = { getEC: key => key === 'ECPlayerData' ? data : { setHeroUpgrade: () => { upgradesBought++; } } };
     shrine.gameManager = { getHero: () => hero, getGuiManager: () => ({ addGameMessage() {} }), getGameSoundManager: () => ({ play() {} }), getEventManager: () => ({ notify() {} }) };
